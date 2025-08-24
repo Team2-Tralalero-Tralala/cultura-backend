@@ -1,8 +1,6 @@
 import express from "express";
-import dotenv from "dotenv";
+import dotenv from "dotenv/config";
 import rootRouter from "./Routes/index-route.js";
-
-dotenv.config();
 
 const app = express();
 app.use(express.json());

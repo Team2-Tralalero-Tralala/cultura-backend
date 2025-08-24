@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-prisma.$connect()
+await prisma.$connect()
+console.log("Connected to the database")
 
 export default prisma;
