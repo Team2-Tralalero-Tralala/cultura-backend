@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import prisma from "./database-service.js";
 
-export const prisma = new PrismaClient();
 
 async function findRoleIdByName(name: string) {
   const role = await prisma.role.findUnique({ where: { name } });
