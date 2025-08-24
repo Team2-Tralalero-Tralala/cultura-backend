@@ -1,0 +1,386 @@
+// prisma/schema.prisma
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/* ===================== Enums ===================== */
+
+enum Gender {
+  FEMALE
+  MALE
+  NONE
+}
+
+enum CommunityStatus {
+  OPEN
+  CLOSED
+}
+
+enum PackagePublishStatus {
+  PUBLISH
+  UNPUBLISH
+  DRAFT
+}
+
+enum PackageApproveStatus {
+  WAIT
+  APPROVE
+}
+
+enum BookingStatus {
+  PENDING
+  REFUND_PENDING
+  REFUNDED
+  BOOKED
+  CANCELLED
+}
+
+enum HHStatus {
+  AVAILABLE
+  BOOKED
+}
+
+enum LogStatus {
+  SUCCESS
+  FAILED
+}
+
+/* ===================== Models ===================== */
+
+model Role {
+  id              Int               @id @default(autoincrement()) @map("re_id")
+  name            String            @unique @db.VarChar(45) @map("re_name")
+
+  // Relations
+  users               User[]
+  communityMembers    CommunityMember[]
+  permissionRoles     PermissionRole[]
+
+  @@map("roles")
+}
+
+model User {
+  id            Int       @id @default(autoincrement()) @map("us_id")
+  roleId        Int       @map("us_role_id")
+  username      String    @unique @db.VarChar(50)  @map("us_username")
+  email         String    @unique @db.VarChar(65)  @map("us_email")
+  password      String    @db.VarChar(255)         @map("us_password")
+  fname         String    @db.VarChar(100)         @map("us_fname")
+  lname         String    @db.VarChar(100)         @map("us_lname")
+  phone         String    @unique @db.VarChar(10)  @map("us_phone")
+  gender        Gender?                         @map("us_gender")
+  birthDate     DateTime? @db.Date              @map("us_birth_date")
+  subDistrict   String?   @db.VarChar(60)       @map("us_sub_district")
+  district      String?   @db.VarChar(60)       @map("us_district")
+  province      String?   @db.VarChar(60)       @map("us_province")
+  postalCode    String?   @db.VarChar(5)        @map("us_postal_code")
+  activityRole  String?   @db.VarChar(100)      @map("us_activity_role")
+
+  // Relations
+  role             Role            @relation(fields: [roleId], references: [id] , map: "fk_users_roles")
+  communityMembers CommunityMember[] @relation("MemberUser")
+  bookingHistories BookingHistory[]  @relation("Tourist")
+  logs             Log[]
+  feedbacksReplied Feedback[]        @relation("FeedbackResponder")
+
+  @@index([roleId], map: "fk_users_roles_idx")
+  @@map("users")
+}
+
+model Location {
+  id            Int     @id @default(autoincrement()) @map("lt_id")
+  houseNumber   String  @db.VarChar(10)               @map("lt_houseNumber")
+  villageNumber Int?                                  @map("lt_village_number")
+  alley         String? @db.VarChar(60)               @map("lt_alley")
+  subDistrict   String  @db.VarChar(60)               @map("lt_sub_district")
+  district      String  @db.VarChar(60)               @map("lt_district")
+  province      String  @db.VarChar(60)               @map("lt_province")
+  postalCode    String  @db.VarChar(5)                @map("lt_postal_code")
+  latitude      Float   @db.Double                    @map("lt_latitude")
+  longitude     Float   @db.Double                    @map("lt_longitude")
+
+  // Relations
+  communities Community[]
+  packages    Package[]
+  stores      Store[]
+
+  @@map("locations")
+}
+
+model Community {
+  id                        Int       @id @default(autoincrement()) @map("ct_id")
+  locationId                Int       @map("ct_location_id")
+  name                      String    @unique @db.VarChar(150) @map("ct_name")
+  alias                     String?   @db.VarChar(100)          @map("ct_alias")
+  type                      String    @db.VarChar(90)           @map("ct_type")
+  registerNumber            String    @unique @db.VarChar(45)   @map("ct_register_number")
+  registerDate              DateTime  @db.Date                  @map("ct_register_date")
+  description               String    @db.VarChar(200)          @map("ct_description")
+  mainActivityName          String    @db.VarChar(80)           @map("ct_main_activity_name")
+  mainActivityDescription   String    @db.VarChar(150)          @map("ct_main_activity_description")
+  status                    CommunityStatus                    @map("ct_status")
+  phone                     String    @unique @db.VarChar(10)   @map("ct_phone")
+  rating                    Float     @db.Double                @map("ct_rating")
+  email                     String    @unique @db.VarChar(65)   @map("ct_email")
+  bank                      String    @db.VarChar(100)          @map("ct_bank")
+  bankAccountName           String    @db.VarChar(70)           @map("ct_bank_account_name")
+  bankAccountNumber         String    @db.VarChar(20)           @map("ct_bank_account_number")
+  mainAdmin                 String?   @db.VarChar(100)          @map("ct_main_admin")
+  mainAdminPhone            String?   @db.VarChar(10)           @map("ct_main_admin_phone")
+  coordinatorName           String?   @db.VarChar(150)          @map("ct_coordinator_name")
+  coordinatorPhone          String?   @db.VarChar(10)           @map("ct_coordinator_phone")
+  urlWebsite                String?   @db.VarChar(2048)         @map("ct_url_website")
+  urlFacebook               String?   @db.VarChar(2048)         @map("ct_url_facebook")
+  urlLine                   String?   @db.VarChar(2048)         @map("ct_url_line")
+  urlTiktok                 String?   @db.VarChar(2048)         @map("ct_url_tiktok")
+  urlOther                  String?   @db.VarChar(2048)         @map("ct_url_other")
+
+  // Relations
+  location     Location   @relation(fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_communities_locations1")
+  members      CommunityMember[]
+  packages     Package[]
+  stores       Store[]
+
+  @@index([locationId], map: "fk_communities_locations1_idx")
+  @@map("communities")
+}
+
+model CommunityMember {
+  communityId Int  @map("cm_community_id")
+  memberId    Int  @map("cm_member_id")
+  roleId      Int  @map("cm_re_id")
+
+  // Relations
+  community   Community @relation(fields: [communityId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_communities_has_users_communities1")
+  member      User      @relation("MemberUser", fields: [memberId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_communities_has_users_users1")
+  role        Role      @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_community_members_roles1")
+  overseerOf  Package[] // back-relations from Package.communityMember
+
+  @@id([communityId, memberId])
+  @@index([memberId], map: "fk_communities_has_users_users1_idx")
+  @@index([communityId], map: "fk_communities_has_users_communities1_idx")
+  @@index([roleId], map: "fk_community_members_roles1_idx")
+  @@map("community_members")
+}
+
+model Package {
+  id               Int                     @id @default(autoincrement()) @map("pk_id")
+  communityId      Int                     @map("pk_community_id")
+  locationId       Int                     @map("pk_location_id")
+  overseerMemberId Int                     @map("pk_overseer_member_id")
+  name             String                  @db.VarChar(100)              @map("pk_name")
+  description      String                  @db.VarChar(500)              @map("pk_description")
+  capacity         Int                                                   @map("pk_capacity")
+  price            Float                   @db.Double                    @map("pk_price")
+  warning          String                  @db.VarChar(200)              @map("pk_warning")
+  statusPackage    PackagePublishStatus                                   @map("pk_status_package")
+  statusApprove    PackageApproveStatus?                                  @map("pk_status_approve")
+  startDate        DateTime                @db.DateTime                  @map("pk_start_date")
+  dueDate          DateTime                @db.DateTime                  @map("pk_due_date")
+  facility         String                  @db.VarChar(200)              @map("pk_facility")
+
+  // Relations
+  community        Community       @relation(fields: [communityId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_packages_communities1")
+  location         Location        @relation(fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_packages_locations1")
+
+  // composite FK -> community_members (cm_community_id, cm_member_id)
+  communityMember  CommunityMember @relation(fields: [communityId, overseerMemberId], references: [communityId, memberId], onDelete: NoAction, onUpdate: NoAction, map: "fk_packages_community_members1")
+
+  bookingHistories  BookingHistory[]
+  homestayHistories HomestayHistory[]
+  tagPackages       TagsPackages[]
+
+  @@index([communityId], map: "fk_packages_communities1_idx")
+  @@index([locationId], map: "fk_packages_locations1_idx")
+  @@index([overseerMemberId, communityId], map: "fk_packages_community_members1_idx")
+  @@map("packages")
+}
+
+model Homestay {
+  id        Int      @id @default(autoincrement()) @map("ht_id")
+  name      String   @db.VarChar(60)               @map("ht_name")
+  roomType  String   @db.VarChar(45)               @map("ht_room_type")
+  capacity  Int                                   @map("ht_capacity")
+
+  // Relations
+  homestayHistories HomestayHistory[]
+  tagHomestays      TagHomestay[]
+
+  @@map("homestays")
+}
+
+model Store {
+  id           Int     @id @default(autoincrement()) @map("st_id")
+  name         String  @db.VarChar(80)               @map("st_name")
+  detail       String  @db.VarChar(200)              @map("st_detail")
+  communityId  Int     @map("st_community_id")
+  locationId   Int     @map("st_location_id")
+
+  // Relations
+  community   Community @relation(fields: [communityId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_restaurants_communities1")
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_restaurants_locations1")
+  tagStores   TagStore[]
+
+  @@index([communityId], map: "fk_restaurants_communities1_idx")
+  @@index([locationId], map: "fk_restaurants_locations1_idx")
+  @@map("stores")
+}
+
+model BookingHistory {
+  id               Int        @id @map("bh_id") // ไม่ได้ AUTO_INCREMENT ในสคีมาเดิม
+  touristId        Int        @map("bh_tourist_id")
+  packageId        Int        @map("bh_package_id")
+  bookingAt        DateTime   @db.Timestamp(0)  @map("bh_booking_at")
+  cancelAt         DateTime?  @db.Timestamp(0)  @map("bh_cancel_at")
+  refundAt         DateTime?  @db.Timestamp(0)  @map("bh_refund_at")
+  status           BookingStatus?               @map("bh_status")
+  totalParticipant Int                            @map("bh_total_participant")
+  rejectReason     String?    @db.VarChar(100)  @map("bh_reject_reason")
+
+  // Relations
+  tourist  User    @relation("Tourist", fields: [touristId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_has_packages_users1")
+  package  Package @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_has_packages_packages1")
+  feedbacks Feedback[]
+
+  @@index([packageId], map: "fk_users_has_packages_packages1_idx")
+  @@index([touristId], map: "fk_users_has_packages_users1_idx")
+  @@map("booking_histories")
+}
+
+model Feedback {
+  id                Int       @id @default(autoincrement()) @map("fb_id")
+  bookingHistoryId  Int       @map("fb_booking_history_id")
+  createdAt         DateTime  @db.Timestamp(0)              @map("fb_created_at")
+  message           String    @db.VarChar(200)              @map("fb_message")
+  rating            Float     @db.Double                    @map("fb_rating")
+  responderId       Int?                                     @map("fb_responder_id")
+  replyTime         DateTime? @db.Timestamp(0)              @map("fb_reply_time")
+  replyMessage      String?   @db.VarChar(100)              @map("fb_reply_message")
+
+  // Relations
+  bookingHistory BookingHistory @relation(fields: [bookingHistoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_feedbacks_booking_histories1")
+  responder      User?          @relation("FeedbackResponder", fields: [responderId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_feedbacks_users2")
+
+  @@index([bookingHistoryId], map: "fk_feedbacks_booking_histories1_idx")
+  @@index([responderId], map: "fk_feedbacks_users2_idx")
+  @@map("feedbacks")
+}
+
+model Permission {
+  id      Int    @id @map("ps_id") // ไม่ได้ AUTO_INCREMENT
+  name    String @db.VarChar(65)   @map("ps_name")
+
+  // Relations
+  permissionRoles PermissionRole[]
+
+  @@map("permissions")
+}
+
+model Tag {
+  id      Int    @id @default(autoincrement()) @map("tg_id")
+  name    String @unique @db.VarChar(90) @map("tg_name")
+
+  // Relations
+  tagHomestays  TagHomestay[]
+  tagPackages   TagsPackages[]
+  tagStores     TagStore[]
+
+  @@map("tags")
+}
+
+model HomestayHistory {
+  id            Int        @id @default(autoincrement()) @map("hh_id")
+  packageId     Int        @map("hh_package_id")
+  homestayId    Int        @map("hh_homestay_id")
+  guestAmount   Int        @map("hh_guest_amount")
+  checkInTime   DateTime   @db.DateTime                 @map("hh_check_in_time")
+  checkOutTime  DateTime   @db.DateTime                 @map("hh_check_out_time")
+  status        HHStatus                               @map("hh_status")
+
+  // Relations
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_packages_has_homestays_packages1")
+  homestay  Homestay @relation(fields: [homestayId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_packages_has_homestays_homestays1")
+
+  @@index([homestayId], map: "fk_packages_has_homestays_homestays1_idx")
+  @@index([packageId], map: "fk_packages_has_homestays_packages1_idx")
+  @@map("homestay_histories")
+}
+
+model Log {
+  id          Int       @id @default(autoincrement()) @map("lg_id")
+  userId      Int       @map("lg_user_id")
+  loginTime   DateTime  @db.Timestamp(0)              @map("lg_login_time")
+  logoutTime  DateTime? @db.Timestamp(0)              @map("lg_logout_time")
+  status      LogStatus                              @map("lg_status")
+  ipAddress   String    @db.VarChar(45)              @map("lg_ip_address")
+
+  // Relations
+  user  User @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_logs_users1")
+
+  @@index([userId], map: "fk_logs_users1_idx")
+  @@map("logs")
+}
+
+/* ====== Explicit join tables (ตามสคีมาเดิม) ====== */
+
+model PermissionRole {
+  permissionId Int @map("psre_permission_id")
+  roleId       Int @map("psre_role_id")
+
+  // Relations
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_permissions_has_roles_permissions1")
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_permissions_has_roles_roles1")
+
+  @@id([permissionId, roleId])
+  @@index([roleId], map: "fk_permissions_has_roles_roles1_idx")
+  @@index([permissionId], map: "fk_permissions_has_roles_permissions1_idx")
+  @@map("permission_roles")
+}
+
+model TagHomestay {
+  tagId      Int @map("tght_tag_id")
+  homestayId Int @map("tght_homestay_id")
+
+  // Relations
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tags_has_homestays_tags1")
+  homestay Homestay @relation(fields: [homestayId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tags_has_homestays_homestays1")
+
+  @@id([tagId, homestayId])
+  @@index([homestayId], map: "fk_tags_has_homestays_homestays1_idx")
+  @@index([tagId], map: "fk_tags_has_homestays_tags1_idx")
+  @@map("tag_homestays")
+}
+
+model TagsPackages {
+  tagId     Int @map("tgpk_tag_id")
+  packageId Int @map("tgpk_package_id")
+
+  // Relations
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tags_has_packages_tags1")
+  package Package @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tags_has_packages_packages1")
+
+  @@id([tagId, packageId])
+  @@index([packageId], map: "fk_tags_has_packages_packages1_idx")
+  @@index([tagId], map: "fk_tags_has_packages_tags1_idx")
+  @@map("tags_packages")
+}
+
+model TagStore {
+  tagId   Int @map("tgst_tag_id")
+  storeId Int @map("tgst_store_id")
+
+  // Relations
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tags_has_restaurants_tags1")
+  store Store @relation(fields: [storeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tags_has_restaurants_restaurants1")
+
+  @@id([tagId, storeId])
+  @@index([storeId], map: "fk_tags_has_restaurants_restaurants1_idx")
+  @@index([tagId], map: "fk_tags_has_restaurants_tags1_idx")
+  @@map("tag_stores")
+}
