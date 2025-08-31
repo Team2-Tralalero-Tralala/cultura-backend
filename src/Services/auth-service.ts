@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
+import { IsEmail, IsString } from "class-validator";
 
 
 async function findRoleIdByName(name: string) {
@@ -8,15 +9,25 @@ async function findRoleIdByName(name: string) {
   return role.id;
 }
 
-export async function signup(data: {
+export class signupDto {
+  @IsString()
   username: string;
+  @IsString()
   password: string;
+  @IsString()
+  @IsEmail()
   email: string;
+  @IsString()
   fname: string;
+  @IsString()
   lname: string;
+  @IsString()
   phone: string;
+  @IsString()
   role: string;
-}) {
+}
+
+export async function signup(data: signupDto) {
   const account = await prisma.user.findFirst({
     where: {
       OR: [
@@ -48,14 +59,17 @@ export async function signup(data: {
   return userWithoutPassword;
 }
 
-export async function login(data: {
-  email: string;
+export class loginDto {
+  @IsString()
   username: string;
+  @IsString()
   password: string;
-}) {
+}
+
+export async function login(data: loginDto) {
   const user = await prisma.user.findFirst({
     where: {
-      OR: [{ username: data.username }, { email: data.email }],
+      OR: [{ username: data.username }, { email: data.username }],
     },
     include: { role: true },
   });
