@@ -131,7 +131,7 @@ model Community {
   description               String    @db.VarChar(200)          @map("ct_description")
   mainActivityName          String    @db.VarChar(80)           @map("ct_main_activity_name")
   mainActivityDescription   String    @db.VarChar(150)          @map("ct_main_activity_description")
-  status                    CommunityStatus                    @map("ct_status")
+  status                    CommunityStatus? @default(CLOSED)                  @map("ct_status")
   phone                     String    @unique @db.VarChar(10)   @map("ct_phone")
   rating                    Float     @db.Double                @map("ct_rating")
   email                     String    @unique @db.VarChar(65)   @map("ct_email")
