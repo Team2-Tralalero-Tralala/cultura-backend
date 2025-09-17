@@ -4,6 +4,7 @@
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
+    "typeRoots": ["./node_modules/@types", "./src/Libs/Types"],
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
@@ -38,9 +39,7 @@
     "strictPropertyInitialization": false,
     "skipLibCheck": true,
     "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-    },
+      "~/*": ["./src/*"]
+    }
   }
 }
