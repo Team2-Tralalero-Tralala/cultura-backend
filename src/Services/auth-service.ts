@@ -129,11 +129,11 @@ export async function login(data: loginDto) {
   });
   if (!user) throw new Error("User not found");
 
-  if (user.status === UserStatus.BLOCKED)
-    throw new Error(`${user.role.name} is blocked`);
-
   const match = await bcrypt.compare(data.password, user.password);
   if (!match) throw new Error("Invalid password");
+
+  if (user.status === UserStatus.BLOCKED)
+    throw new Error(`${user.role.name} is blocked`);
 
   const payload = {
     id: user.id,
