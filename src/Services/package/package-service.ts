@@ -6,13 +6,12 @@ export const createPackage = async (data: any) => {
 
 export const editPackage = async (id: number, data: any) => {
     return await prisma.package.update({ 
-        where: { id: id }, 
-        data});
+        where: { id: id }, data});
 };
 
-export const getPackageByMemberID = async (memberId: number) => {
+export const getPackageByMemberID = async (id: number) => {
     return await prisma.package.findMany({
-        where: { overseerMemberId: memberId }
+        where: { id: id }
     });
 };
 
