@@ -7,7 +7,10 @@
 import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
 import { IsEmail, IsString } from "class-validator";
-import { UserStatus } from "@prisma/client";
+import { 
+  
+  
+ } from "@prisma/client";
 import { generateToken } from "~/Libs/token.js";
 
 /*
