@@ -250,7 +250,7 @@ model Store {
 }
 
 model BookingHistory {
-  id               Int        @id @map("bh_id") 
+  id               Int        @id @default(autoincrement()) @map("bh_id") 
   touristId        Int        @map("bh_tourist_id")
   packageId        Int        @map("bh_package_id")
   bookingAt        DateTime   @db.Timestamp(0)  @map("bh_booking_at")

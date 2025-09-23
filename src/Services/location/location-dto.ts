@@ -57,4 +57,9 @@ export class LocationDto {
   @IsOptional()
   @IsLongitude({ message: "ลองจิจูดไม่ถูกต้อง" })
   longitude: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100, { message: "รายละเอียดที่อยู่ต้องไม่เกิน 60 ตัวอักษร" })
+  detail: string;
 }
