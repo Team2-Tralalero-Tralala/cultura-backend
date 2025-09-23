@@ -1,4 +1,4 @@
-import prisma from "../database-service.js";
+import prisma from "./database-service.js";
 
 export const createPackage = async (data: any) => {
     return await prisma.package.create({ data });
@@ -9,9 +9,15 @@ export const editPackage = async (id: number, data: any) => {
         where: { id: id }, data});
 };
 
-export const getPackageByMemberID = async (id: number) => {
+export const getPackageByRole = async (id: number) => {
     return await prisma.package.findMany({
         where: { id: id }
+    })
+}
+
+export const getPackageByMemberID = async (id: number) => {
+    return await prisma.package.findMany({
+        where: { overseerMemberId: id }
     });
 };
 
