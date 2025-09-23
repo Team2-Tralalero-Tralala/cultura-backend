@@ -18,19 +18,49 @@ export const getPackageByRole = async (req: Request, res: Response) => {
         if (!id) {
             return res.status(400).json({ status: 400, message: "memberID is require" })
         }
-        const result = await PackageService.getPackageByRole(Number(id));
+        // const result = await PackageService.getPackageByRole(Number(id));
         // console.log(result);
-        res.json({ status: 200, data: result });
+        // res.json({ status: 200, data: result });
         /* ********************************************************** */
         /* ไม่แน่ใจว่าต้องรอดึงของ getUserRole ของฝั่ง User ไหม */
         const user = await prisma.user.findUnique({
-            where: { id: Number(id) }
-        })
+            where: { id: Number(id) },
+            include: { role: true, communityMembers: true }
+        });
 
+        if (!user) {
+            return res.status(404).json({ status: 404, message: "User not found" });
+        }
 
-
-
-
+        let result: any;
+        switch (user.roleId) {
+            case 1: //tourist
+                // ไม่สามารถเข้าถึงข้อมูลได้
+                result = [];
+                console.log("นี้คือ Member", result);
+                break;
+            case 2: //superadmin
+                result = await prisma.package.findMany();
+                console.log("นี้คือ Super Admin", result);
+                break;
+            case 3: //member
+                result = await prisma.package.findMany({
+                    where: { overseerMemberId: user.id }
+                });
+                console.log("นี้คือ Member", result);
+                break;
+            case 4://admin
+            const communityIds = user.communityMembers?.map(cm => cm.communityId);
+                result = await prisma.package.findMany({
+                    where: { communityId: { in: communityIds } }
+                });
+                console.log("นี้คือ Admin", result);
+                break;
+            default:
+                return res.status(400).json({ status: 400, message: "Invalid user role" });
+        }
+        res.json({ status: 200, role: user.roleId, data: result });
+        /* ********************************************************** */
     } catch (error: any) {
         res.status(500).json({ status: 500, message: error.message });
     }
