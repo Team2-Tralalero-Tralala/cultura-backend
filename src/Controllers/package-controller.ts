@@ -1,10 +1,16 @@
 import type { Request, Response } from "express";
 import { getApprovedPublishedPackages } from "../Services/package-service.js";
-
-// Controller เพื่อดึงแพ็กเกจที่ได้รับการอนุมัติและเผยแพร่แล้ว
+/*
+ * Controller : getApprovedPublishedPackagesController
+ * คำอธิบาย : ดึงแพ็กเกจที่ถูกอนุมัติและเผยแพร่แล้ว
+ * Process :
+ *   1. เรียกใช้ service getApprovedPublishedPackages
+ *   2. ส่งผลลัพธ์กลับ client พร้อม status 200
+ *   3. จัดการข้อผิดพลาดด้วย status 500
+ */
 export async function getApprovedPublishedPackagesController(req: Request, res: Response) {// ฟังก์ชัน controller
   try {
-    const packages = await getApprovedPublishedPackages();// เรียกใช้ฟังก์ชันจาก service
+    const packages = await getApprovedPublishedPackages(req.body);// เรียกใช้ฟังก์ชันจาก service พร้อมข้อมูลจาก client
     return res.status(200).json({// ส่งข้อมูลกลับไปยัง client
       success: true,// เพิ่มฟิลด์ success
       data: packages,// ข้อมูลแพ็กเกจ
