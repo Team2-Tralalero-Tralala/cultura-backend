@@ -250,7 +250,7 @@ model Store {
 model BookingHistory {
   id               Int        @id @default(autoincrement()) @map("bh_id") 
   touristId        Int        @map("bh_tourist_id")
-  packageId        Int        @map("bh_package_id")
+  packageId        Int?        @map("bh_package_id")
   bookingAt        DateTime   @db.Timestamp(0)  @map("bh_booking_at")
   cancelAt         DateTime?  @db.Timestamp(0)  @map("bh_cancel_at")
   refundAt         DateTime?  @db.Timestamp(0)  @map("bh_refund_at")
@@ -260,7 +260,7 @@ model BookingHistory {
 
   // Relations
   tourist  User    @relation("Tourist", fields: [touristId], references: [id])
-  package  Package @relation(fields: [packageId], references: [id])
+  package  Package? @relation(fields: [packageId], references: [id],onDelete: SetNull)
   feedbacks Feedback[]
 
   @@index([packageId])
@@ -364,7 +364,7 @@ model TagHomestay {
 
   // Relations
   tag      Tag      @relation(fields: [tagId], references: [id])
-  homestay Homestay @relation(fields: [homestayId], references: [id])
+  homestay Homestay @relation(fields: [homestayId], references: [id],onDelete: Cascade)
 
   @@id([tagId, homestayId])
   @@index([homestayId])
@@ -378,7 +378,7 @@ model TagsPackages {
 
   // Relations
   tag     Tag     @relation(fields: [tagId], references: [id])
-  package Package @relation(fields: [packageId], references: [id])
+  package Package @relation(fields: [packageId], references: [id],onDelete: Cascade)
 
   @@id([tagId, packageId])
   @@index([packageId])
@@ -392,7 +392,7 @@ model TagStore {
 
   // Relations
   tag   Tag   @relation(fields: [tagId], references: [id])
-  store Store @relation(fields: [storeId], references: [id])
+  store Store @relation(fields: [storeId], references: [id],onDelete: Cascade)
 
   @@id([tagId, storeId])
   @@index([storeId])
