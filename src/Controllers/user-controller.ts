@@ -3,9 +3,10 @@
  * ทำหน้าที่รับค่าจาก client, ตรวจสอบความถูกต้อง,
  * เรียกใช้ UserService เพื่อเชื่อมกับฐานข้อมูล และส่ง response กลับไปยัง client
  * ฟังก์ชันหลัก:
- *   - getById : ดึงข้อมูลผู้ใช้จาก id
- *   - getByStatus : ดึงข้อมูลผู้ใช้ทั้งหมดตามสถานะ (ACTIVE, BLOCKED)
+ *   - getUserById : ดึงข้อมูลผู้ใช้จาก id
+ *   - getUserByStatus : ดึงข้อมูลผู้ใช้ทั้งหมดตามสถานะ (ACTIVE, BLOCKED)
  *   - deleteAccount : ลบผู้ใช้ตาม id
+ *   - blockAccount : สลับสถานะผู้ใช้ (ACTIVE <-> BLOCKED)
  */
 
 import type { Request, Response } from "express";
@@ -15,10 +16,12 @@ import { UserStatus } from "@prisma/client";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 
 /*
- * ฟังก์ชัน : getById
+ * ฟังก์ชัน : getUserById
  * คำอธิบาย : ดึงข้อมูลผู้ใช้จาก id ที่ client ส่งมา
- * Input : req.params.id (string) → แปลงเป็น number
- * Output : user object (JSON)
+ * Input :
+ *   - req.params.id (string) → แปลงเป็น number
+ * Output :
+ *   - user (object) : ข้อมูลผู้ใช้ที่พบ
  * Error :
  *   - 400 : ถ้า id ไม่ใช่ตัวเลข
  *   - 404 : ถ้าไม่พบผู้ใช้
@@ -37,14 +40,14 @@ export const getUserById = async (req: Request, res: Response) => {
 };
 
 /*
- * ฟังก์ชัน : getByStatus
+ * ฟังก์ชัน : getUserByStatus
  * คำอธิบาย : ดึงข้อมูลผู้ใช้ทั้งหมดที่มีสถานะตรงกับค่าที่กำหนดใน UserStatus enum
  * Input :
- *   - req.params.status (string) : สถานะผู้ใช้ เช่น "ACTIVE" หรือ "BLOCKED" → แปลงเป็น uppercase
+ *   - req.params.status (string) → สถานะผู้ใช้ เช่น "ACTIVE", "BLOCKED"
  * Output :
- *   - users (array of user object) : รายชื่อผู้ใช้ที่มีสถานะตรงตามที่ระบุ
+ *   - users (array of object) : รายชื่อผู้ใช้ที่ตรงกับสถานะที่กำหนด
  * Error :
- *   - 400 : ถ้า status ไม่ถูกต้องหรือไม่ตรงกับค่าใน UserStatus enum
+ *   - 400 : ถ้า status ไม่ถูกต้อง (ไม่ตรงกับ UserStatus enum)
  *   - 500 : ถ้าเกิดข้อผิดพลาดภายในระบบ/ฐานข้อมูล
  */
 export const getUserByStatus = async (req: Request, res: Response) => {
@@ -63,10 +66,11 @@ export const getUserByStatus = async (req: Request, res: Response) => {
 /*
  * ฟังก์ชัน : deleteAccount
  * คำอธิบาย : ลบผู้ใช้จากฐานข้อมูลตาม id ที่ส่งมา
- * Input : req.params.id (string) → แปลงเป็น number
- * Output : 
+ * Input :
+ *   - req.params.id (string) → แปลงเป็น number
+ * Output :
  *   - message (string) : "User deleted successfully"
- *   - user (object) : ข้อมูลผู้ใช้ที่ถูกลบ
+ *   - result (object) : ผลลัพธ์จากการลบ (เช่น { count: 1 })
  * Error :
  *   - 400 : ถ้า id ไม่ใช่ตัวเลข
  *   - 404 : ถ้าไม่พบผู้ใช้
@@ -84,7 +88,18 @@ export const deleteAccount = async (req: Request, res: Response) => {
     }
 };
 
-
+/*
+ * ฟังก์ชัน : blockAccount
+ * คำอธิบาย : สลับสถานะผู้ใช้จาก ACTIVE → BLOCKED หรือ BLOCKED → ACTIVE
+ * Input :
+ *   - req.params.id (string) → แปลงเป็น number
+ * Output :
+ *   - message (string) : "User blocked successfully"
+ *   - updatedUser (object) : ข้อมูลผู้ใช้ที่ถูกอัปเดตพร้อมสถานะใหม่
+ * Error :
+ *   - 400 : ถ้า id ไม่ใช่ตัวเลข
+ *   - 404 : ถ้าไม่พบผู้ใช้
+ */
 export const blockAccount = async (req: Request, res: Response) => {
     const id = parseInt(req.params.id ?? "0", 10);
     if (isNaN(id)) {

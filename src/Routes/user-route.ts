@@ -3,12 +3,12 @@ import { getUserById, getUserByStatus, deleteAccount, blockAccount } from "../Co
 
 const userRoutes = Router();
 
-userRoutes.get("/:id", getUserById);
+userRoutes.get("/getUserById/:id", getUserById);
 
-userRoutes.get("/status/:status", getUserByStatus);
+userRoutes.get("/getUserByStatus/:status", getUserByStatus);
 
-userRoutes.delete("/:id", deleteAccount);
+userRoutes.delete("/deleteAccount/:id", deleteAccount);
 
-userRoutes.put("/block/:id", blockAccount); 
+userRoutes.put("/blockAccount/:id", blockAccount); 
 
 export default userRoutes;
