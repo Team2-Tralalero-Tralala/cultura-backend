@@ -14,29 +14,28 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 async function main() {
   const hash = (password: string) => bcrypt.hashSync(password, 10);
-  const now = new Date();
 
   // --- role ---
   const [roleSuper, roleAdmin, roleMember, roleTourist] = await Promise.all([
     prisma.role.upsert({
       where: { name: "superadmin" },
       update: {},
-      create: { name: "superadmin" },
+      create: { id: 1, name: "superadmin" },
     }),
     prisma.role.upsert({
       where: { name: "admin" },
       update: {},
-      create: { name: "admin" },
+      create: { id: 2, name: "admin" },
     }),
     prisma.role.upsert({
       where: { name: "member" },
       update: {},
-      create: { name: "member" },
+      create: { id: 3, name: "member" },
     }),
     prisma.role.upsert({
       where: { name: "tourist" },
       update: {},
-      create: { name: "tourist" },
+      create: { id: 4, name: "tourist" },
     }),
   ]);
 
@@ -48,7 +47,7 @@ async function main() {
       roleId: roleTourist.id,
       username: "tourist1",
       email: "tourist1@cultura.local",
-      password: "tourist@1",
+      password: hash("tourist@1"),
       fname: "tourist1",
       lname: "tourist1",
       phone: "0900000000",
@@ -68,7 +67,7 @@ async function main() {
       roleId: roleTourist.id,
       username: "tourist2",
       email: "tourist2@cultura.local",
-      password: "tourist@2",
+      password: hash("tourist@2"),
       fname: "tourist2",
       lname: "tourist2",
       phone: "0800000000",
@@ -88,7 +87,7 @@ async function main() {
       roleId: roleAdmin.id,
       username: "admin1",
       email: "admin1@cultura.local",
-      password: "admin@1",
+      password: hash("admin@1"),
       fname: "admin1",
       lname: "admin1",
       phone: "0810002000",
@@ -103,7 +102,7 @@ async function main() {
       roleId: roleAdmin.id,
       username: "admin2",
       email: "admin2@cultura.local",
-      password: "admin@2",
+      password: hash("admin@2"),
       fname: "admin2",
       lname: "admin2",
       phone: "0810000000",
@@ -118,7 +117,7 @@ async function main() {
       roleId: roleMember.id,
       username: "member1",
       email: "member1@cultura.local",
-      password: "member@1",
+      password: hash("member@1"),
       fname: "member1",
       lname: "member1",
       phone: "0811000000",
@@ -133,7 +132,7 @@ async function main() {
       roleId: roleMember.id,
       username: "member2",
       email: "member2@cultura.local",
-      password: "member@2",
+      password: hash("member@2"),
       fname: "member2",
       lname: "member2",
       phone: "0811000100",
@@ -150,7 +149,7 @@ async function main() {
       roleId: roleSuper.id,
       username: "superAdmin1",
       email: "superAdmin1@cultura.local",
-      password: "superAdmin@1",
+      password: hash("superAdmin@1"),
       fname: "superAdmin1",
       lname: "superAdmin1",
       phone: "0811000120",
@@ -165,7 +164,7 @@ async function main() {
       roleId: roleSuper.id,
       username: "superAdmin2",
       email: "superAdmin2@cultura.local",
-      password: "superAdmin@2",
+      password: hash("superAdmin@2"),
       fname: "superAdmin2",
       lname: "superAdmin2",
       phone: "0811010120",
