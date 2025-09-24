@@ -133,6 +133,13 @@ export class CommunityDto {
   urlOther?: string; // ct_url_other
 }
 
+/* 
+ฟังก์ชัน : getCommunityById
+คำอธิบาย : ค้นหาชุมชนในฐานข้อมูลจาก id
+Input : id (number) - id ชุมชน
+Output : community object - ข้อมูลชุมชนที่พบ
+Error : throw error ถ้าไม่พบชุมชน
+*/
 export async function getCommunityById(id: number) {
     const community = await prisma.community.findUnique({
       where: { id },
