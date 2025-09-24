@@ -7,7 +7,7 @@
 import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
 import { IsEmail, IsString } from "class-validator";
-import { UserStatus } from "@prisma/client";
+// import { UserStatus } from "@prisma/client";
 import { generateToken } from "~/Libs/token.js";
 
 /*
@@ -132,7 +132,7 @@ export async function login(data: loginDto) {
   const match = await bcrypt.compare(data.password, user.password);
   if (!match) throw new Error("Invalid password");
 
-  if (user.status === UserStatus.BLOCKED)
+  if (user.status === "BLOCKED")
     throw new Error(`${user.role.name} is blocked`);
 
   const payload = {
