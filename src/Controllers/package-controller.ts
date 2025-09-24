@@ -14,13 +14,10 @@ export const createPackage = async (req: Request, res: Response) => {
 
 export const getPackageByRole = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
-        if (!id) {
-            return res.status(400).json({ status: 400, message: "memberID is require" })
+        const { id } = (req.params);
+        if (!Number(id)){
+            return res.status(400).json({ status: 400, message: "ID must be Number" })  
         }
-        // const result = await PackageService.getPackageByRole(Number(id));
-        // console.log(result);
-        // res.json({ status: 200, data: result });
         /* ********************************************************** */
         /* ไม่แน่ใจว่าต้องรอดึงของ getUserRole ของฝั่ง User ไหม */
         const user = await prisma.user.findUnique({
