@@ -120,7 +120,6 @@ model Location {
 
   @@map("locations")
 
-  // ✅ Unique composite index
   @@unique([houseNumber, villageNumber, alley, subDistrict, district, province, postalCode, detail, latitude, longitude])
 }
 
@@ -170,7 +169,7 @@ model CommunityMember {
   roleId      Int  @map("cm_re_id")
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id],  map: "fk_community_members_communities1")
+  community   Community @relation(fields: [communityId], references: [id],  map: "fk_community_members_communities1",onDelete: Cascade)
   member      User      @relation("MemberUser", fields: [memberId], references: [id],  map: "fk_community_members_users1")
   role        Role      @relation(fields: [roleId], references: [id],  map: "fk_community_members_roles1")
   overseerOf  Package[] // back-relations from Package.communityMember
