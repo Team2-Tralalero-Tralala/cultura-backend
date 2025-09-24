@@ -95,7 +95,7 @@ model User {
   logs             Log[]
   feedbacksReplied Feedback[]        @relation("FeedbackResponder")
 
-  @@index([roleId], map: "fk_users_roles_idx")
+  @@index([roleId])
   @@map("users")
 }
 
@@ -108,6 +108,7 @@ model Location {
   district      String  @db.VarChar(60)               @map("lt_district")
   province      String  @db.VarChar(60)               @map("lt_province")
   postalCode    String  @db.VarChar(5)                @map("lt_postal_code")
+  detail        String?  @db.VarChar(100)              @map("lt_detail")
   latitude      Float   @db.Double                    @map("lt_latitude")
   longitude     Float   @db.Double                    @map("lt_longitude")
 
@@ -118,7 +119,9 @@ model Location {
   homestays   Homestay[]
 
   @@map("locations")
+
 }
+
 
 model Community {
   id                        Int       @id @default(autoincrement()) @map("ct_id")
@@ -131,7 +134,7 @@ model Community {
   description               String    @db.VarChar(200)          @map("ct_description")
   mainActivityName          String    @db.VarChar(80)           @map("ct_main_activity_name")
   mainActivityDescription   String    @db.VarChar(150)          @map("ct_main_activity_description")
-  status                    CommunityStatus                    @map("ct_status")
+  status                    CommunityStatus? @default(CLOSED)                  @map("ct_status")
   phone                     String    @unique @db.VarChar(10)   @map("ct_phone")
   rating                    Float     @db.Double                @map("ct_rating")
   email                     String    @unique @db.VarChar(65)   @map("ct_email")
@@ -149,13 +152,13 @@ model Community {
   urlOther                  String?   @db.VarChar(2048)         @map("ct_url_other")
 
   // Relations
-  location     Location   @relation(fields: [locationId], references: [id],  map: "fk_communities_locations1")
+  location     Location   @relation(fields: [locationId], references: [id])
   members      CommunityMember[]
   packages     Package[]
   stores       Store[]
   homestays    Homestay[]
 
-  @@index([locationId], map: "fk_communities_locations1_idx")
+  @@index([locationId])
   @@map("communities")
 }
 
@@ -165,15 +168,15 @@ model CommunityMember {
   roleId      Int  @map("cm_re_id")
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id],  map: "fk_community_members_communities1")
-  member      User      @relation("MemberUser", fields: [memberId], references: [id],  map: "fk_community_members_users1")
-  role        Role      @relation(fields: [roleId], references: [id],  map: "fk_community_members_roles1")
+  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  member      User      @relation("MemberUser", fields: [memberId], references: [id])
+  role        Role      @relation(fields: [roleId], references: [id])
   overseerOf  Package[] // back-relations from Package.communityMember
 
   @@id([communityId, memberId])
-  @@index([memberId], map: "fk_community_members_users1_idx")
-  @@index([communityId], map: "fk_community_members_communities1_idx")
-  @@index([roleId], map: "fk_community_members_roles1_idx")
+  @@index([memberId])
+  @@index([communityId])
+  @@index([roleId])
   @@map("community_members")
 }
 
@@ -194,19 +197,19 @@ model Package {
   facility         String                  @db.VarChar(200)              @map("pk_facility")
 
   // Relations
-  community        Community       @relation(fields: [communityId], references: [id],  map: "fk_packages_communities1")
-  location         Location        @relation(fields: [locationId], references: [id],  map: "fk_packages_locations1")
+  community        Community       @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location         Location        @relation(fields: [locationId], references: [id],onDelete: Cascade)
 
   // composite FK -> community_members (cm_community_id, cm_member_id)
-  communityMember  CommunityMember @relation(fields: [communityId, overseerMemberId], references: [communityId, memberId],  map: "fk_packages_community_members1")
+  communityMember  CommunityMember @relation(fields: [communityId, overseerMemberId], references: [communityId, memberId],onDelete: Cascade)
 
   bookingHistories  BookingHistory[]
   homestayHistories HomestayHistory[]
   tagPackages       TagsPackages[]
 
-  @@index([communityId], map: "fk_packages_communities1_idx")
-  @@index([locationId], map: "fk_packages_locations1_idx")
-  @@index([overseerMemberId, communityId], map: "fk_packages_community_members1_idx")
+  @@index([communityId])
+  @@index([locationId])
+  @@index([overseerMemberId, communityId])
   @@map("packages")
 }
 
@@ -219,8 +222,8 @@ model Homestay {
   locationId   Int     @map("st_location_id")
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id], map: "fk_homestays_communities1")
-  location    Location  @relation(fields: [locationId], references: [id], map: "fk_homestays_locations1")
+  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
   homestayHistories HomestayHistory[]
   tagHomestays      TagHomestay[]
 
@@ -235,19 +238,19 @@ model Store {
   locationId   Int     @map("st_location_id")
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id], map: "fk_stores_communities1")
-  location    Location  @relation(fields: [locationId], references: [id], map: "fk_stores_locations1")
+  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
   tagStores   TagStore[]
 
-  @@index([communityId], map: "fk_stores_communities1_idx")
-  @@index([locationId], map: "fk_stores_locations1_idx")
+  @@index([communityId])
+  @@index([locationId])
   @@map("stores")
 }
 
 model BookingHistory {
-  id               Int        @id @map("bh_id") 
+  id               Int        @id @default(autoincrement()) @map("bh_id") 
   touristId        Int        @map("bh_tourist_id")
-  packageId        Int        @map("bh_package_id")
+  packageId        Int?        @map("bh_package_id")
   bookingAt        DateTime   @db.Timestamp(0)  @map("bh_booking_at")
   cancelAt         DateTime?  @db.Timestamp(0)  @map("bh_cancel_at")
   refundAt         DateTime?  @db.Timestamp(0)  @map("bh_refund_at")
@@ -256,12 +259,12 @@ model BookingHistory {
   rejectReason     String?    @db.VarChar(100)  @map("bh_reject_reason")
 
   // Relations
-  tourist  User    @relation("Tourist", fields: [touristId], references: [id],  map: "fk_users_has_packages_users1")
-  package  Package @relation(fields: [packageId], references: [id],  map: "fk_users_has_packages_packages1")
+  tourist  User    @relation("Tourist", fields: [touristId], references: [id])
+  package  Package? @relation(fields: [packageId], references: [id],onDelete: SetNull)
   feedbacks Feedback[]
 
-  @@index([packageId], map: "fk_users_has_packages_packages1_idx")
-  @@index([touristId], map: "fk_users_has_packages_users1_idx")
+  @@index([packageId])
+  @@index([touristId])
   @@map("booking_histories")
 }
 
@@ -276,16 +279,16 @@ model Feedback {
   replyMessage      String?   @db.VarChar(100)              @map("fb_reply_message")
 
   // Relations
-  bookingHistory BookingHistory @relation(fields: [bookingHistoryId], references: [id],  map: "fk_feedbacks_booking_histories1")
-  responder      User?          @relation("FeedbackResponder", fields: [responderId], references: [id],  map: "fk_feedbacks_users2")
+  bookingHistory BookingHistory @relation(fields: [bookingHistoryId], references: [id])
+  responder      User?          @relation("FeedbackResponder", fields: [responderId], references: [id])
 
-  @@index([bookingHistoryId], map: "fk_feedbacks_booking_histories1_idx")
-  @@index([responderId], map: "fk_feedbacks_users2_idx")
+  @@index([bookingHistoryId])
+  @@index([responderId])
   @@map("feedbacks")
 }
 
 model Permission {
-  id      Int    @id @map("ps_id") // ไม่ได้ AUTO_INCREMENT
+  id      Int    @id @default(autoincrement())  @map("ps_id") 
   name    String @db.VarChar(65)   @map("ps_name")
 
   // Relations
@@ -316,11 +319,11 @@ model HomestayHistory {
   status        HHStatus                               @map("hh_status")
 
   // Relations
-  package   Package  @relation(fields: [packageId], references: [id],  map: "fk_homestay_histories_packages1")
-  homestay  Homestay @relation(fields: [homestayId], references: [id],  map: "fk_homestay_histories_homestays1")
+  package   Package  @relation(fields: [packageId], references: [id])
+  homestay  Homestay @relation(fields: [homestayId], references: [id])
 
-  @@index([homestayId], map: "fk_homestay_histories_homestays1_idx")
-  @@index([packageId], map: "fk_homestay_histories_packages1_idx")
+  @@index([homestayId])
+  @@index([packageId])
   @@map("homestay_histories")
 }
 
@@ -333,9 +336,9 @@ model Log {
   ipAddress   String    @db.VarChar(45)              @map("lg_ip_address")
 
   // Relations
-  user  User @relation(fields: [userId], references: [id],  map: "fk_logs_users1")
+  user  User @relation(fields: [userId], references: [id])
 
-  @@index([userId], map: "fk_logs_users1_idx")
+  @@index([userId])
   @@map("logs")
 }
 
@@ -346,12 +349,12 @@ model PermissionRole {
   roleId       Int @map("psre_role_id")
 
   // Relations
-  permission Permission @relation(fields: [permissionId], references: [id],  map: "fk_permission_roles_permissions1")
-  role       Role       @relation(fields: [roleId], references: [id],  map: "fk_permission_roles_roles1")
+  permission Permission @relation(fields: [permissionId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id])
 
   @@id([permissionId, roleId])
-  @@index([roleId], map: "fk_permission_roles_roles1_idx")
-  @@index([permissionId], map: "fk_permission_roles_permissions1_idx")
+  @@index([roleId])
+  @@index([permissionId])
   @@map("permission_roles")
 }
 
@@ -360,12 +363,12 @@ model TagHomestay {
   homestayId Int @map("tght_homestay_id")
 
   // Relations
-  tag      Tag      @relation(fields: [tagId], references: [id],  map: "fk_tag_homestays_tags1")
-  homestay Homestay @relation(fields: [homestayId], references: [id],  map: "fk_tag_homestays_homestays1")
+  tag      Tag      @relation(fields: [tagId], references: [id])
+  homestay Homestay @relation(fields: [homestayId], references: [id],onDelete: Cascade)
 
   @@id([tagId, homestayId])
-  @@index([homestayId], map: "fk_tag_homestays_homestays1_idx")
-  @@index([tagId], map: "fk_tag_homestays_tags1_idx")
+  @@index([homestayId])
+  @@index([tagId])
   @@map("tag_homestays")
 }
 
@@ -374,12 +377,12 @@ model TagsPackages {
   packageId Int @map("tgpk_package_id")
 
   // Relations
-  tag     Tag     @relation(fields: [tagId], references: [id],  map: "fk_tag_packages_tags1")
-  package Package @relation(fields: [packageId], references: [id],  map: "fk_tag_packages_packages1")
+  tag     Tag     @relation(fields: [tagId], references: [id])
+  package Package @relation(fields: [packageId], references: [id],onDelete: Cascade)
 
   @@id([tagId, packageId])
-  @@index([packageId], map: "fk_tag_packages_packages1_idx")
-  @@index([tagId], map: "fk_tag_packages_tags1_idx")
+  @@index([packageId])
+  @@index([tagId])
   @@map("tags_packages")
 }
 
@@ -388,11 +391,11 @@ model TagStore {
   storeId Int @map("tgst_store_id")
 
   // Relations
-  tag   Tag   @relation(fields: [tagId], references: [id],  map: "fk_tag_stores_tags1")
-  store Store @relation(fields: [storeId], references: [id],  map: "fk_tag_stores_stores1")
+  tag   Tag   @relation(fields: [tagId], references: [id])
+  store Store @relation(fields: [storeId], references: [id],onDelete: Cascade)
 
   @@id([tagId, storeId])
-  @@index([storeId], map: "fk_tag_stores_stores1_idx")
-  @@index([tagId], map: "fk_tag_stores_tags1_idx")
+  @@index([storeId])
+  @@index([tagId])
   @@map("tag_stores")
 }
