@@ -9,7 +9,9 @@ import {
   Matches,
   IsLatitude,
   IsLongitude,
+  ValidateIf,
 } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class LocationDto {
   @IsString()
@@ -50,13 +52,18 @@ export class LocationDto {
   @Matches(/^[0-9]{5}$/, { message: "รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก" })
   postalCode: string;
 
+  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
   @IsOptional()
-  @IsLatitude({ message: "ละติจูดไม่ถูกต้อง" })
+  @IsNumber({}, { message: "latitude ต้องเป็นตัวเลข" })
+  @IsLatitude({ message: "latitude ต้องเป็นค่าละติจูดที่ถูกต้อง" })
   latitude: number;
 
+  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
   @IsOptional()
-  @IsLongitude({ message: "ลองจิจูดไม่ถูกต้อง" })
+  @IsNumber({}, { message: "longitude ต้องเป็นตัวเลข" })
+  @IsLongitude({ message: "longitude ต้องเป็นค่าลองจิจูดที่ถูกต้อง" })
   longitude: number;
+
 
   @IsOptional()
   @IsString()

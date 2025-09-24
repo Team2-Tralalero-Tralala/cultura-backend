@@ -5,21 +5,26 @@ import {
   IsNumber,
   Min,
   IsEnum,
-  IsDate,
   IsOptional,
-  Matches
+  Matches,
+  ValidateNested,
+  IsObject
 } from "class-validator";
 import { Type } from "class-transformer";
 import { PackagePublishStatus, PackageApproveStatus } from "@prisma/client";
+import { LocationDto } from "../location/location-dto.js";
+import "reflect-metadata";
+
 
 export class PackageDto {
   @IsNumber()
   @IsNotEmpty({ message: "communityId ห้ามว่าง" })
   communityId: number;
 
-  @IsNumber()
-  @IsNotEmpty({ message: "locationId ห้ามว่าง" })
-  locationId: number;
+  @ValidateNested() // ✅ บอก class-validator ว่า validate field ข้างในด้วย
+  @Type(() => LocationDto) // ✅ ชี้ให้แปลงเป็น LocationDto
+  @IsNotEmpty({ message: "location ห้ามว่าง" })
+  location: LocationDto;
 
   @IsNumber()
   @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
@@ -82,10 +87,11 @@ export class updatePackageDto {
   @IsOptional()
   communityId?: number;
 
-  @IsNumber()
-  @IsNotEmpty({ message: "locationId ห้ามว่าง" })
+  @ValidateNested() // ✅ บอก class-validator ว่า validate field ข้างในด้วย
+  @Type(() => LocationDto) // ✅ ชี้ให้แปลงเป็น LocationDto
+  @IsNotEmpty({ message: "location ห้ามว่าง" })
   @IsOptional()
-  locationId?: number;
+  location?: LocationDto;
 
   @IsNumber()
   @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
