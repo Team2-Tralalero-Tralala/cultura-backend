@@ -13,6 +13,6 @@ const authRoutes = Router();
 
 authRoutes.post("/signup", await validateDto(signupDto), signup);
 authRoutes.post("/login", await validateDto(loginDto), login);
-authRoutes.post("/logout", authMiddleware, logout);
+authRoutes.post("/logout", authMiddleware, allowRoles("superadmin"),logout);
 
 export default authRoutes;

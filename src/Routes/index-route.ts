@@ -9,4 +9,7 @@ const rootRouter: Router = Router();
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/role", roleRoutes);
 rootRouter.use("/community", communityRoutes);
+
+rootRouter.use("/package", packageRoutes);
+
 export default rootRouter;

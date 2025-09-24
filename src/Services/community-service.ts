@@ -147,3 +147,28 @@ export async function getCommunityById(id: number) {
     if (!community) throw new Error("Community not found");
     return community;
 }
+
+
+/* 
+ฟังก์ชัน : getCommunityByRole
+คำอธิบาย : ค้นหาชุมชนในฐานข้อมูลจาก Role ของผู้ใช้
+Input : id (number) - id ชุมชน
+Output : community object - ข้อมูลชุมชนที่พบ
+Error : throw error ถ้าไม่พบชุมชน
+*/
+
+/* // code from JENG
+export const getCommunityByRole = async (id: number) => {
+    return await prisma.community.findMany({
+        where: { id: id }
+    })  
+}
+*/
+
+export async function getCommunityByRole(id: number) {
+    const community = await prisma.community.findMany({
+      where: { id: id },
+    });
+    if (!community) throw new Error("Community not found");
+    return community;
+}
