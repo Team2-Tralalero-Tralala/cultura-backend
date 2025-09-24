@@ -20,22 +20,22 @@ async function main() {
     prisma.role.upsert({
       where: { name: "superadmin" },
       update: {},
-      create: { name: "superadmin" },
+      create: { id: 1, name: "superadmin" },
     }),
     prisma.role.upsert({
       where: { name: "admin" },
       update: {},
-      create: { name: "admin" },
+      create: { id: 2, name: "admin" },
     }),
     prisma.role.upsert({
       where: { name: "member" },
       update: {},
-      create: { name: "member" },
+      create: { id: 3, name: "member" },
     }),
     prisma.role.upsert({
       where: { name: "tourist" },
       update: {},
-      create: { name: "tourist" },
+      create: { id: 4, name: "tourist" },
     }),
   ]);
 
