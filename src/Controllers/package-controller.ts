@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import * as PackageService from "../Services/package-service.js";
 import prisma from "~/Services/database-service.js";
 import type { commonDto } from "~/Libs/Types/TypedHandler.js";
-import { PackageDto } from "~/Services/package/package-dto.js";
+import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js";
 
 export const createPackageDto = {
   body: PackageDto,
@@ -83,7 +83,7 @@ export const getPackageByMemberID = async (req: Request, res: Response) => {
 };
 
 export const editPackageDto = {
-  body: PackageDto,
+  body: updatePackageDto,
 } satisfies commonDto;
 
 export const editPackage = async (req: Request, res: Response) => {
