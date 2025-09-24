@@ -45,9 +45,6 @@ export async function createCommunity(
   const communityMemberList = Array.isArray(communityMember)
     ? communityMember
     : [communityMember];
-  console.log("homestayList", homestayList);
-  console.log("storeList", storeList);
-  console.log("communityMemberList", communityMemberList);
 
   const findCommunity = await prisma.community.findFirst({
     where: {
