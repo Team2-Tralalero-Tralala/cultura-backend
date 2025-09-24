@@ -107,9 +107,7 @@ export const deleteCommunityById: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const communityId = Number(req.params.communityId);
-    console.log(communityId);
     const result = await CommunityService.deleteCommunityById(communityId);
-    console.log(result);
     return createResponse(res, 201, "Deleted community successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
