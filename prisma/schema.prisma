@@ -108,6 +108,7 @@ model Location {
   district      String  @db.VarChar(60)               @map("lt_district")
   province      String  @db.VarChar(60)               @map("lt_province")
   postalCode    String  @db.VarChar(5)                @map("lt_postal_code")
+  detail        String?  @db.VarChar(100)              @map("lt_detail")
   latitude      Float   @db.Double                    @map("lt_latitude")
   longitude     Float   @db.Double                    @map("lt_longitude")
 
@@ -118,7 +119,11 @@ model Location {
   homestays   Homestay[]
 
   @@map("locations")
+
+  // ✅ Unique composite index
+  @@unique([houseNumber, villageNumber, alley, subDistrict, district, province, postalCode, detail, latitude, longitude])
 }
+
 
 model Community {
   id                        Int       @id @default(autoincrement()) @map("ct_id")
@@ -131,7 +136,7 @@ model Community {
   description               String    @db.VarChar(200)          @map("ct_description")
   mainActivityName          String    @db.VarChar(80)           @map("ct_main_activity_name")
   mainActivityDescription   String    @db.VarChar(150)          @map("ct_main_activity_description")
-  status                    CommunityStatus                    @map("ct_status")
+  status                    CommunityStatus? @default(CLOSED)                  @map("ct_status")
   phone                     String    @unique @db.VarChar(10)   @map("ct_phone")
   rating                    Float     @db.Double                @map("ct_rating")
   email                     String    @unique @db.VarChar(65)   @map("ct_email")
@@ -194,8 +199,8 @@ model Package {
   facility         String                  @db.VarChar(200)              @map("pk_facility")
 
   // Relations
-  community        Community       @relation(fields: [communityId], references: [id],  map: "fk_packages_communities1")
-  location         Location        @relation(fields: [locationId], references: [id],  map: "fk_packages_locations1")
+  community        Community       @relation(fields: [communityId], references: [id],  map: "fk_packages_communities1",onDelete: Cascade)
+  location         Location        @relation(fields: [locationId], references: [id],  map: "fk_packages_locations1",onDelete: Cascade)
 
   // composite FK -> community_members (cm_community_id, cm_member_id)
   communityMember  CommunityMember @relation(fields: [communityId, overseerMemberId], references: [communityId, memberId],  map: "fk_packages_community_members1")
@@ -219,8 +224,8 @@ model Homestay {
   locationId   Int     @map("st_location_id")
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id], map: "fk_homestays_communities1")
-  location    Location  @relation(fields: [locationId], references: [id], map: "fk_homestays_locations1")
+  community   Community @relation(fields: [communityId], references: [id], map: "fk_homestays_communities1",onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id], map: "fk_homestays_locations1",onDelete: Cascade)
   homestayHistories HomestayHistory[]
   tagHomestays      TagHomestay[]
 
@@ -235,8 +240,8 @@ model Store {
   locationId   Int     @map("st_location_id")
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id], map: "fk_stores_communities1")
-  location    Location  @relation(fields: [locationId], references: [id], map: "fk_stores_locations1")
+  community   Community @relation(fields: [communityId], references: [id], map: "fk_stores_communities1",onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id], map: "fk_stores_locations1",onDelete: Cascade)
   tagStores   TagStore[]
 
   @@index([communityId], map: "fk_stores_communities1_idx")
@@ -245,7 +250,7 @@ model Store {
 }
 
 model BookingHistory {
-  id               Int        @id @map("bh_id") 
+  id               Int        @id @default(autoincrement()) @map("bh_id") 
   touristId        Int        @map("bh_tourist_id")
   packageId        Int        @map("bh_package_id")
   bookingAt        DateTime   @db.Timestamp(0)  @map("bh_booking_at")
