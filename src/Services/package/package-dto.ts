@@ -1,0 +1,77 @@
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsNumber,
+  Min,
+  IsEnum,
+  IsDate,
+  IsOptional,
+  Matches
+} from "class-validator";
+import { Type } from "class-transformer";
+import { PackagePublishStatus, PackageApproveStatus } from "@prisma/client";
+
+export class PackageDto {
+  @IsNumber()
+  @IsNotEmpty({ message: "communityId ห้ามว่าง" })
+  communityId: number;
+
+  @IsNumber()
+  @IsNotEmpty({ message: "locationId ห้ามว่าง" })
+  locationId: number;
+
+  @IsNumber()
+  @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
+  overseerMemberId: number;
+
+  @IsString()
+  @IsNotEmpty({ message: "name ห้ามว่าง" })
+  @MaxLength(100, { message: "name ยาวเกิน 100 ตัวอักษร" })
+  name: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "description ห้ามว่าง" })
+  @MaxLength(500, { message: "description ยาวเกิน 500 ตัวอักษร" })
+  description: string;
+
+  @IsNumber()
+  @IsNotEmpty({ message: "capacity ห้ามว่าง" })
+  @Min(1, { message: "capacity ต้องมากกว่า 0" })
+  capacity: number;
+
+  @IsNumber()
+  @IsNotEmpty({ message: "price ห้ามว่าง" })
+  @Min(0, { message: "price ต้องไม่น้อยกว่า 0" })
+  price: number;
+
+  @IsString()
+  @IsNotEmpty({ message: "warning ห้ามว่าง" })
+  @MaxLength(200, { message: "warning ยาวเกิน 200 ตัวอักษร" })
+  warning: string;
+
+  @IsEnum(PackagePublishStatus, {
+    message: "statusPackage ต้องเป็น PUBLISH | UNPUBLISH | DRAFT",
+  })
+  statusPackage: PackagePublishStatus;
+
+  @IsEnum(PackageApproveStatus, {
+    message: "statusApprove ต้องเป็น WAIT หรือ APPROVE",
+  })
+  statusApprove: PackageApproveStatus;
+
+  @IsString()
+  @IsNotEmpty({ message: "startDate ห้ามว่าง" })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+  startDate: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "dueDate ห้ามว่าง" })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+  dueDate: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "facility ห้ามว่าง" })
+  @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
+  facility: string;
+}

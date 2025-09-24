@@ -1,7 +1,24 @@
 import prisma from "./database-service.js";
+import type { PackageDto } from "./package/package-dto.js";
 
-export const createPackage = async (data: any) => {
-    return await prisma.package.create({ data });
+export const createPackage = async (data: PackageDto) => {
+    return await prisma.package.create({ 
+        data: {
+            communityId: data.communityId,      // ต้องเป็น number
+            locationId: data.locationId,        // number
+            overseerMemberId: data.overseerMemberId, // number
+            name: data.name,
+            description: data.description,
+            capacity: data.capacity,
+            price: data.price,
+            warning: data.warning,
+            statusPackage: data.statusPackage,
+            statusApprove: data.statusApprove,
+            startDate: new Date(data.startDate),
+            dueDate: new Date(data.dueDate),
+            facility: data.facility,
+        }
+     });
 };
 
 export const editPackage = async (id: number, data: any) => {

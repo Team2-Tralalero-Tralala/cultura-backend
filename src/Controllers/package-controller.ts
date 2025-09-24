@@ -1,14 +1,20 @@
 import type { Request, Response } from "express";
 import * as PackageService from "../Services/package-service.js";
 import prisma from "~/Services/database-service.js";
+import type { commonDto } from "~/Libs/Types/TypedHandler.js";
+import { PackageDto } from "~/Services/package/package-dto.js";
+
+export const createPackageDto = {
+  body: PackageDto,
+} satisfies commonDto;
 
 
 export const createPackage = async (req: Request, res: Response) => {
     try {
         const result = await PackageService.createPackage(req.body);
-        res.json({ status:200, data: result })
+        return res.json({ status:200, data: result });
     } catch (error: any) {
-        res.status(500).json({ status: 500, message: error.message });
+        return res.status(500).json({ status: 500, message: error.message });
     }
 };
 
@@ -76,9 +82,16 @@ export const getPackageByMemberID = async (req: Request, res: Response) => {
     }
 };
 
+export const editPackageDto = {
+  body: PackageDto,
+} satisfies commonDto;
+
 export const editPackage = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const { id } = (req.params);
+        if (!Number(id)){
+            return res.status(400).json({ status: 400, message: "ID must be Number" })  
+        }
         const data = req.body;
         const result = await PackageService.editPackage(Number(id), data)
         res.json({ status: 200, message: "Package Updated", data: result })
