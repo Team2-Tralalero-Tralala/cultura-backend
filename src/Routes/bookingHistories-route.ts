@@ -3,7 +3,7 @@ import { Router } from "express";
 // นำเข้าฟังก์ชันควบคุม (Controller) ที่ใช้จัดการข้อมูลการจอง
 // getByCommunity → ดึงข้อมูลประวัติการจองตาม communityId
 // getByMember → ดึงข้อมูลประวัติการจองตาม memberId
-import { getByCommunity, getByMember } from "../Controllers/bookingHistories-controller.js";
+import { getByCommunity, getByMember } from "../Controllers/booking-history-controller.js";
 
 // สร้างตัว router สำหรับกำหนดเส้นทาง
 const router = Router();
