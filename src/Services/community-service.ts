@@ -132,3 +132,11 @@ export class CommunityDto {
   @MaxLength(2048)
   urlOther?: string; // ct_url_other
 }
+
+export async function getCommunityById(id: number) {
+    const community = await prisma.community.findUnique({
+      where: { id },
+    });
+    if (!community) throw new Error("Community not found");
+    return community;
+}
