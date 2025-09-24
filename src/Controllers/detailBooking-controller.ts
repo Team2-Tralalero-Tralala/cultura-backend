@@ -10,7 +10,7 @@ import * as bookingService from "../Services/detailBooking-service.js";
  * Output :
  *   - booking (object) : ข้อมูลการจองที่ตรงกับ id
  *   - error (json) : ถ้าเกิดข้อผิดพลาด จะส่ง error กลับไปในรูปแบบ JSON
- * Error :
+ * Error :  
  *   - ถ้า id ไม่ถูกต้อง (ไม่ใช่ตัวเลข) -> ส่งสถานะ 400 (Bad Request)
  *   - ถ้าไม่พบการจอง -> ส่งสถานะ 404 (Not Found)
  *   - ถ้าเกิดข้อผิดพลาดอื่น ๆ -> ส่งสถานะ 500 (Internal Server Error)

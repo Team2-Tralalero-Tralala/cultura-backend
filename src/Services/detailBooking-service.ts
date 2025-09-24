@@ -11,7 +11,7 @@ import prisma from "./database-service.js";
  *       - ถ้าพบ : object ของการจองที่ตรงกับ id 
  *       - ถ้าไม่พบ : คืนค่า null
  * Error :
- *    - ถ้า id ไม่ถูกต้องหรือไม่เจอข้อมูล 
+ *    - ถ้า id ไม่ถูกต้องจะไม่เจอข้อมูล 
  */
 
 // ค้นหาข้อมูลการจองจาก bookingHistory ด้วย id
