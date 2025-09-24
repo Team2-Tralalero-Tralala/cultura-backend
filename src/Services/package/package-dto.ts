@@ -15,7 +15,12 @@ import { PackagePublishStatus, PackageApproveStatus } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
 import "reflect-metadata";
 
-
+/*
+ * คำอธิบาย : DTO สำหรับการสร้าง Package ใหม่
+ * ใช้ตรวจสอบความถูกต้องของข้อมูลจาก Client ก่อนบันทึกลงฐานข้อมูล
+ * Input : JSON body ที่มีข้อมูล communityId, location, overseerMemberId, name, description, ฯลฯ
+ * Output : Object PackageDto ที่ผ่านการ validate แล้ว
+ */
 export class PackageDto {
   @IsNumber()
   @IsNotEmpty({ message: "communityId ห้ามว่าง" })
@@ -81,6 +86,16 @@ export class PackageDto {
   facility: string;
 }
 
+
+
+
+
+/*
+ * คำอธิบาย : DTO สำหรับการแก้ไข Package เดิม
+ * ฟิลด์ทั้งหมดเป็น Optional (เลือกแก้ได้) แต่ยังคงตรวจสอบรูปแบบตาม Validation rule
+ * Input : JSON body ที่มีข้อมูล field ใดๆ ที่ต้องการแก้ เช่น name, price, location
+ * Output : Object updatePackageDto ที่ผ่านการ validate แล้ว
+ */
 export class updatePackageDto {
   @IsNumber()
   @IsNotEmpty({ message: "communityId ห้ามว่าง" })

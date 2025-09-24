@@ -4,11 +4,23 @@ import prisma from "~/Services/database-service.js";
 import type { commonDto } from "~/Libs/Types/TypedHandler.js";
 import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js";
 
+
+/*
+ * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอนสร้าง Package
+ * Input  : body (PackageDto)
+ * Output : commonDto object
+ */
 export const createPackageDto = {
   body: PackageDto,
 } satisfies commonDto;
 
 
+
+/*
+ * คำอธิบาย : Controller สำหรับสร้าง Package ใหม่
+ * Input  : Request body (ข้อมูล PackageDto)
+ * Output : JSON response { status, data }
+ */
 export const createPackage = async (req: Request, res: Response) => {
     try {
         const result = await PackageService.createPackage(req.body);
@@ -17,6 +29,13 @@ export const createPackage = async (req: Request, res: Response) => {
         return res.status(500).json({ status: 500, message: error.message });
     }
 };
+
+
+/*
+ * คำอธิบาย : ดึงรายการ Package ตามบทบาท (role) ของ user
+ * Input  : userId (จาก params)
+ * Output : JSON response { status, role, data }
+ */
 
 export const getPackageByRole = async (req: Request, res: Response) => {
     try {
@@ -37,12 +56,12 @@ export const getPackageByRole = async (req: Request, res: Response) => {
 
         let result: any;
         switch (user.roleId) {
-            case 1: //tourist
+            case 4: //tourist
                 // ไม่สามารถเข้าถึงข้อมูลได้
                 result = [];
                 console.log("นี้คือ Member", result);
                 break;
-            case 2: //superadmin
+            case 1: //superadmin
                 result = await prisma.package.findMany();
                 console.log("นี้คือ Super Admin", result);
                 break;
@@ -52,7 +71,7 @@ export const getPackageByRole = async (req: Request, res: Response) => {
                 });
                 console.log("นี้คือ Member", result);
                 break;
-            case 4://admin
+            case 2://admin
             const communityIds = user.communityMembers?.map(cm => cm.communityId);
                 result = await prisma.package.findMany({
                     where: { communityId: { in: communityIds } }
@@ -69,6 +88,13 @@ export const getPackageByRole = async (req: Request, res: Response) => {
     }
 }
 
+
+
+/*
+ * คำอธิบาย : ดึงรายการ Package ตาม overseerMemberId
+ * Input  : memberId (จาก params)
+ * Output : JSON response { status, data }
+ */
 export const getPackageByMemberID = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -82,10 +108,25 @@ export const getPackageByMemberID = async (req: Request, res: Response) => {
     }
 };
 
+
+
+/*
+ * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอนแก้ไข Package
+ * Input  : body (updatePackageDto)
+ * Output : commonDto object
+ */
 export const editPackageDto = {
   body: updatePackageDto,
 } satisfies commonDto;
 
+
+
+
+/*
+ * คำอธิบาย : Controller สำหรับแก้ไข Package
+ * Input  : packageId (จาก params), Request body (updatePackageDto)
+ * Output : JSON response { status, message, data }
+ */
 export const editPackage = async (req: Request, res: Response) => {
     try {
         const { id } = (req.params);
@@ -101,6 +142,12 @@ export const editPackage = async (req: Request, res: Response) => {
     }
 }
 
+
+/*
+ * คำอธิบาย : Controller สำหรับลบ Package
+ * Input  : packageId (จาก params)
+ * Output : JSON response { status, message }
+ */
 export const deletePackage = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

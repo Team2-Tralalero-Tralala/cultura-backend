@@ -1,6 +1,11 @@
 import prisma from "./database-service.js";
 import type { PackageDto } from "./package/package-dto.js";
 
+/*
+ * คำอธิบาย : ฟังก์ชันสร้าง Package ใหม่ในระบบ
+ * Input  : ข้อมูล PackageDto (communityId, overseerMemberId, location, name, ฯลฯ)
+ * Output : ข้อมูล Package ที่ถูกสร้างใหม่
+ */
 export const createPackage = async (data: PackageDto) => {
   // ตรวจสอบว่า community มีจริง
   const community = await prisma.community.findUnique({
@@ -18,8 +23,8 @@ export const createPackage = async (data: PackageDto) => {
     throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
   }
 
-  // ✅ ใช้ location.create แทน locationId
-   const location = await prisma.location.create({
+  // สร้าง location ใหม่
+  const location = await prisma.location.create({
     data: {
       houseNumber: data.location.houseNumber,
       subDistrict: data.location.subDistrict,
@@ -32,11 +37,11 @@ export const createPackage = async (data: PackageDto) => {
     },
   });
 
-  // 2. สร้าง Package โดยใช้ location.id ที่เพิ่งสร้าง
+  // สร้าง Package โดยผูกกับ location ที่เพิ่งสร้าง
   return await prisma.package.create({
     data: {
       communityId: data.communityId,
-      locationId: location.id,   // 👈 ใช้ id ที่เพิ่งสร้าง
+      locationId: location.id,
       overseerMemberId: data.overseerMemberId,
       name: data.name,
       description: data.description,
@@ -52,9 +57,13 @@ export const createPackage = async (data: PackageDto) => {
   });
 };
 
-
+/*
+ * คำอธิบาย : ฟังก์ชันแก้ไขข้อมูล Package ที่มีอยู่
+ * Input  : id (หมายเลข Package), data (ข้อมูล Package ที่แก้ไข)
+ * Output : ข้อมูล Package ที่ถูกอัปเดต พร้อม location
+ */
 export const editPackage = async (id: number, data: any) => {
-  // ตรวจสอบว่า package ที่จะแก้มีจริง
+  // ตรวจสอบว่า package มีจริง
   const pkg = await prisma.package.findUnique({
     where: { id },
     include: { location: true },
@@ -63,7 +72,7 @@ export const editPackage = async (id: number, data: any) => {
     throw new Error(`Package ID ${id} ไม่พบในระบบ`);
   }
 
-  // ถ้ามีการแก้ communityId → ตรวจสอบว่า community นั้นมีจริง
+  // ตรวจสอบ communityId ถ้ามีการแก้ไข
   if (data.communityId) {
     const community = await prisma.community.findUnique({
       where: { id: data.communityId },
@@ -73,7 +82,7 @@ export const editPackage = async (id: number, data: any) => {
     }
   }
 
-  // ถ้ามีการแก้ locationId → ต้องเป็นของ package เดิมเท่านั้น
+  // ตรวจสอบ locationId ถ้ามีการแก้ไข
   if (data.locationId) {
     if (data.locationId !== pkg.locationId) {
       throw new Error(`ไม่สามารถเปลี่ยน Location ID ของ Package ${id} ได้`);
@@ -86,7 +95,7 @@ export const editPackage = async (id: number, data: any) => {
     }
   }
 
-  // ถ้ามีการแก้ overseerMemberId → ตรวจสอบว่า member นั้นมีจริง
+  // ตรวจสอบ overseerMemberId ถ้ามีการแก้ไข
   if (data.overseerMemberId) {
     const overseer = await prisma.user.findUnique({
       where: { id: data.overseerMemberId },
@@ -96,7 +105,7 @@ export const editPackage = async (id: number, data: any) => {
     }
   }
 
-  // แยก location ออกมา (ห้ามเปลี่ยน locationId แต่แก้รายละเอียดได้)
+  // แยก location ออกมา (แก้ field ได้ แต่ห้ามเปลี่ยน locationId)
   const { location, locationId, ...packageData } = data;
 
   return await prisma.package.update({
@@ -106,7 +115,7 @@ export const editPackage = async (id: number, data: any) => {
       ...(location
         ? {
             location: {
-              update: { ...location }, // ✅ Prisma จะ update fields ของ location เดิม
+              update: { ...location }, // update fields ของ location เดิม
             },
           }
         : {}),
@@ -115,28 +124,40 @@ export const editPackage = async (id: number, data: any) => {
   });
 };
 
-
-
+/*
+ * คำอธิบาย : ดึง Package ตามหมายเลข ID
+ * Input  : id (หมายเลข Package)
+ * Output : รายการ Package ที่พบ (อาจเป็น array)
+ */
 export const getPackageByRole = async (id: number) => {
-    return await prisma.package.findMany({
-        where: { id: id }
-    })
-}
-
-export const getPackageByMemberID = async (id: number) => {
-    return await prisma.package.findMany({
-        where: { overseerMemberId: id }
-    });
+  return await prisma.package.findMany({
+    where: { id: id }
+  });
 };
 
-export const deletePackage = async (id: number) => {
+/*
+ * คำอธิบาย : ดึง Package ตาม overseerMemberId
+ * Input  : id (หมายเลข Member)
+ * Output : รายการ Package ที่ overseer รับผิดชอบ
+ */
+export const getPackageByMemberID = async (id: number) => {
+  return await prisma.package.findMany({
+    where: { overseerMemberId: id }
+  });
+};
 
-    // ตรวจสอบว่า package ที่จะลบมีจริง
-    const pkg = await prisma.package.findUnique({ where: { id } });
-    if (!pkg) {
-        throw new Error(`Package ID ${id} ไม่พบในระบบ`);
-    }
-    return await prisma.package.delete({
-        where: { id: id }
-    });
+/*
+ * คำอธิบาย : ลบ Package ออกจากระบบ
+ * Input  : id (หมายเลข Package)
+ * Output : ข้อมูล Package ที่ถูกลบ
+ */
+export const deletePackage = async (id: number) => {
+  // ตรวจสอบว่า package มีจริงก่อนลบ
+  const pkg = await prisma.package.findUnique({ where: { id } });
+  if (!pkg) {
+    throw new Error(`Package ID ${id} ไม่พบในระบบ`);
+  }
+  return await prisma.package.delete({
+    where: { id: id }
+  });
 };
