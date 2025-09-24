@@ -1,10 +1,6 @@
 import { Router } from "express";
-import authRoutes from "./auth-route.js";
-import roleRoutes from "./role-route.js";
+import accountRoutes from "./account-routes.js";
 
-const rootRouter: Router = Router();
-
-rootRouter.use("/auth", authRoutes);
-rootRouter.use("/role", roleRoutes);
-
+const rootRouter = Router();
+rootRouter.use(accountRoutes);        // รวมเส้นทางของ account
 export default rootRouter;
