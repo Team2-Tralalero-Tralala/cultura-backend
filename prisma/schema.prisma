@@ -46,10 +46,6 @@ enum HHStatus {
   BOOKED
 }
 
-enum LogStatus {
-  SUCCESS
-  FAILED
-}
 
 enum UserStatus {
   ACTIVE
@@ -330,9 +326,8 @@ model HomestayHistory {
 model Log {
   id          Int       @id @default(autoincrement()) @map("lg_id")
   userId      Int       @map("lg_user_id")
-  loginTime   DateTime  @db.Timestamp(0)              @map("lg_login_at")
+  loginTime   DateTime?  @db.Timestamp(0)              @map("lg_login_at")
   logoutTime  DateTime? @db.Timestamp(0)              @map("lg_logout_at")
-  status      LogStatus                              @map("lg_status")
   ipAddress   String    @db.VarChar(45)              @map("lg_ip_address")
 
   // Relations
