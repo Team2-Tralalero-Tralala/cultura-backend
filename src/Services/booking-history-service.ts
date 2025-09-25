@@ -15,7 +15,6 @@ export const getHistoriesByCommunity = async (communityId: number) => {
 };
 
 //ดึงbooking histories ทั้งหมดของ member
-
 export const getHistoriesByMember = async (memberId: number) => {
   return prisma.bookingHistory.findMany({
     where: { package: { overseerMemberId: memberId } }, 
