@@ -1,11 +1,11 @@
 import {
-  PrismaClient,
-  Gender,
-  CommunityStatus,
-  PackagePublishStatus,
-  PackageApproveStatus,
   BookingStatus,
-  UserStatus,
+  CommunityStatus,
+  Gender,
+  PackageApproveStatus,
+  PackagePublishStatus,
+  PrismaClient,
+  UserStatus
 } from "@prisma/client";
 
 import bcrypt from "bcrypt";
@@ -315,10 +315,36 @@ async function main() {
   // ========== LOG ==========
   await prisma.log.create({
     data: {
-      userId: roleSuper.id,
+      userId: superAdmin1.id,
       loginTime: new Date(),
-      status: "SUCCESS",
       ipAddress: "127.0.0.1",
+    },
+  });
+
+  await prisma.log.create({
+    data: {
+      userId: admin1.id,
+      loginTime: new Date("2025-01-26T08:00:00"),
+      logoutTime: new Date("2025-01-26T17:00:00"),
+      ipAddress: "192.168.1.100",
+    },
+  });
+
+  await prisma.log.create({
+    data: {
+      userId: member1.id,
+      loginTime: new Date("2025-01-25T10:30:00"),
+      logoutTime: new Date("2025-01-25T12:00:00"),
+      ipAddress: "192.168.1.101",
+    },
+  });
+
+  await prisma.log.create({
+    data: {
+      userId: tourist1.id,
+      loginTime: new Date("2025-01-24T14:15:00"),
+      logoutTime: new Date("2025-01-24T16:45:00"),
+      ipAddress: "203.154.123.45",
     },
   });
 
