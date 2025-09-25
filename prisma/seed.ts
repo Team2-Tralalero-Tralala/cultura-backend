@@ -5,8 +5,6 @@ import {
   PackagePublishStatus,
   PackageApproveStatus,
   BookingStatus,
-  HHStatus,
-  LogStatus,
   UserStatus,
 } from "@prisma/client";
 
