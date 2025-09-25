@@ -145,7 +145,7 @@ async function main() {
     update: {},
     create: {
       roleId: roleSuper.id,
-      username: "superAdmin1",
+      username: " ",
       email: "superAdmin1@cultura.local",
       password: hash("superAdmin@1"),
       fname: "superAdmin1",

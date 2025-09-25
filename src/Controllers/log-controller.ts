@@ -49,7 +49,7 @@ export const getLogs: TypedHandlerFromDto<typeof getLogsDto> = async (
     }
 
     const { page = 1, limit = 10 } = req.query;
-    
+
     const result = await LogService.getUserLogs(
       req.user,
       page,

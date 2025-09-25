@@ -35,7 +35,6 @@ export type LogWithUser = {
  *   - user (UserPayload) - ข้อมูลผู้ใช้จาก token
  *   - page (number) - หน้าที่ต้องการ
  *   - limit (number) - จำนวนรายการต่อหน้า
- *   - search (string, optional) - คำค้นหา (username, email)
  * Output : PaginationResponse<LogWithUser>
  * Logic :
  *   - superadmin เห็นทุก log
@@ -43,9 +42,9 @@ export type LogWithUser = {
  *   - member/tourist เห็นเฉพาะ log ของตนเอง
  */
 export async function getUserLogs(
-    user: UserPayload,
-    page: number = 1,
-    limit: number = 10
+  user: UserPayload,
+  page: number = 1,
+  limit: number = 10
 ): Promise<PaginationResponse<LogWithUser>> {
     const skip = (page - 1) * limit;
 

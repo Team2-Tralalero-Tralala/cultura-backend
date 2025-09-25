@@ -3,8 +3,8 @@
  * ใช้สำหรับ endpoints ที่ต้องการแบ่งหน้าข้อมูล
  */
 
-import { Transform, Type } from "class-transformer";
-import { IsInt, IsOptional, Max, Min } from "class-validator";
+import { Expose, Transform } from "class-transformer";
+import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 /*
  * Class : PaginationDto
@@ -16,25 +16,25 @@ import { IsInt, IsOptional, Max, Min } from "class-validator";
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export class PaginationDto {
+  @Expose()
   @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: "Page must be a number" })
-  @Min(1, { message: "Page must be greater than 0" })
   @Transform(({ value }) => {
     const num = parseInt(value);
     return !isNaN(num) && num > 0 ? num : 1;
   })
+  @IsInt({ message: "Page must be a number" })
+  @Min(1, { message: "Page must be greater than 0" })
   page?: number = 1;
 
+  @Expose()
   @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: "Limit must be a number" })
-  @Min(1, { message: "Limit must be at least 1" })
-  @Max(100, { message: "Limit cannot exceed 100" })
   @Transform(({ value }) => {
     const num = parseInt(value);
     return !isNaN(num) && num > 0 && num <= 100 ? num : 10;
   })
+  @IsInt({ message: "Limit must be a number" })
+  @Min(1, { message: "Limit must be at least 1" })
+  @Max(100, { message: "Limit cannot exceed 100" })
   limit?: number = 10;
 }
 
