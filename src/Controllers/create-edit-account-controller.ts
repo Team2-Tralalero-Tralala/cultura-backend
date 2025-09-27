@@ -28,7 +28,7 @@ export async function createAccount(req: Request, res: Response, next: NextFunct
       email: String(body.email),
       phone: String(body.phone),
       password: String(body.password),
-      avatarUrl: (body as any).avatarUrl ?? null,
+
     });
 
     return res.status(201).json({ ok: true, data });

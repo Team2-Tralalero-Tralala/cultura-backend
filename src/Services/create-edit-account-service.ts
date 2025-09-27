@@ -1,7 +1,8 @@
 import prisma from "./database-service.js";
 import { UserStatus } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
-/** ---------- Create ---------- */
+/* ---------- Types ---------- */
 export type CreateUserInput = {
   roleId: number;
   fname: string;
@@ -10,49 +11,83 @@ export type CreateUserInput = {
   email: string;
   phone: string;
   password: string;
-  avatarUrl?: string | null;
+
+  // ถ้า field เหล่านี้เป็น NOT NULL ที่ฝั่ง DB ให้ใส่ค่าว่างถ้าไม่ได้ส่งมา
+  subDistrict?: string;
+  district?: string;
+  province?: string;
+  postalCode?: string;
+  activityRole?: string;
 };
 
-const toEmpty = (v?: string) => v ?? "";
+export type EditUserInput = Partial<{
+  roleId: number;
+  fname: string;
+  lname: string;
+  phone: string;
 
-/** สร้างบัญชีผู้ใช้ใหม่ */
+  subDistrict: string;
+  district: string;
+  province: string;
+  postalCode: string;
+  activityRole: string;
+}>;
+
+const toEmpty = (v?: unknown) => (v == null ? "" : String(v).trim());
+
+/* ---------- Create ---------- */
 export async function createAccount(input: CreateUserInput) {
-  // 1) ตรวจ roleId
-  const role = await prisma.role.findUnique({ where: { id: input.roleId } });
+  // role ต้องมี
+  const role = await prisma.role.findUnique({
+    where: { id: input.roleId },
+    select: { id: true },
+  });
   if (!role) {
     const err: any = new Error("role_not_found");
     err.status = 400;
     throw err;
   }
 
-  // 2) กันอีเมลซ้ำ
-  const dup = await prisma.user.findUnique({
+  // กัน email/username ซ้ำ (อ่านง่ายกว่าปล่อย P2002)
+  const dupEmail = await prisma.user.findUnique({
     where: { email: input.email },
     select: { id: true },
   });
-  if (dup) {
+  if (dupEmail) {
     const err: any = new Error("email_duplicate");
     err.status = 409;
     throw err;
   }
+  const dupUsername = await prisma.user.findUnique({
+    where: { username: input.username },
+    select: { id: true },
+  });
+  if (dupUsername) {
+    const err: any = new Error("username_duplicate");
+    err.status = 409;
+    throw err;
+  }
 
-  // 3) บันทึก
+  // แฮชรหัสผ่าน
+  const hashed = await bcrypt.hash(input.password, 10);
+
+  // บันทึก
   const user = await prisma.user.create({
     data: {
       roleId: input.roleId,
       username: input.username,
       email: input.email,
-      password: input.password, // TODO: bcrypt.hash ภายหลัง
+      password: hashed,
+
       fname: input.fname,
       lname: input.lname,
       phone: input.phone,
 
-      // ฟิลด์ที่ schema ไม่อนุญาต null → ให้ค่าว่างไว้ก่อน
-      subDistrict: toEmpty(),
-      district: toEmpty(),
-      province: toEmpty(),
-      postalCode: toEmpty(),
-      activityRole: toEmpty(),
+      subDistrict: toEmpty(input.subDistrict),
+      district: toEmpty(input.district),
+      province: toEmpty(input.province),
+      postalCode: toEmpty(input.postalCode),
+      activityRole: toEmpty(input.activityRole),
 
       gender: null,
       status: UserStatus.ACTIVE,
@@ -66,79 +101,29 @@ export async function createAccount(input: CreateUserInput) {
       fname: true,
       lname: true,
       phone: true,
-      // avatarUrl: true,
     },
   });
 
   return user;
 }
 
-/** ---------- Edit ---------- */
-export type EditUserInput = {
-  roleId?: number;
-  fname?: string;
-  lname?: string;
-  username?: string;
-  email?: string;
-  phone?: string;
-  password?: string; // TODO: hash ถ้าจะเปิดแก้รหัสผ่าน
-  status?: UserStatus; // 'ACTIVE' | 'BLOCKED'
-
-  
-  // ข้อมูลส่วนตัว (เผื่อใช้)
-  subDistrict?: string;
-  district?: string;
-  province?: string;
-  postalCode?: string;
-  activityRole?: string;
- 
-
-  avatarUrl?: string | null;
-};
-
-const pick = (obj: Record<string, unknown>) =>
-  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
-
-/** แก้ไขบัญชีผู้ใช้ */
+/* ---------- Edit ---------- */
 export async function editAccount(id: number, input: EditUserInput) {
-  // กันยิงว่าง ๆ
-  const hasAny = Object.values(input).some((v) => v !== undefined);
-  if (!hasAny) {
-    const e: any = new Error("no_changes");
-    e.status = 400;
-    throw e;
-  }
+  const data: any = {};
 
-  // มีการเปลี่ยน roleId → ต้องตรวจว่า role มีจริง
-  if (typeof input.roleId === "number") {
-    const role = await prisma.role.findUnique({ where: { id: input.roleId } });
-    if (!role) {
-      const e: any = new Error("role_not_found");
-      e.status = 400;
-      throw e;
-    }
-  }
+  if (input.roleId !== undefined) data.roleId = input.roleId;
+  if (input.fname !== undefined) data.fname = input.fname;
+  if (input.lname !== undefined) data.lname = input.lname;
+  if (input.phone !== undefined) data.phone = input.phone;
 
-  // TODO: ถ้าเปิดแก้ password ให้ hash ที่นี่ก่อน
-  // if (input.password) input.password = await bcrypt.hash(input.password, 10);
-
-  const data = pick({
-    roleId: input.roleId,
-    username: input.username,
-    email: input.email,
-    password: input.password,
-    fname: input.fname,
-    lname: input.lname,
-    phone: input.phone,
-    status: input.status,
-    // เผื่อใช้
-    subDistrict: input.subDistrict,
-    district: input.district,
-    province: input.province,
-    postalCode: input.postalCode,
-    activityRole: input.activityRole,
-    
-  });
+  if (input.subDistrict !== undefined)
+    data.subDistrict = toEmpty(input.subDistrict);
+  if (input.district !== undefined) data.district = toEmpty(input.district);
+  if (input.province !== undefined) data.province = toEmpty(input.province);
+  if (input.postalCode !== undefined)
+    data.postalCode = toEmpty(input.postalCode);
+  if (input.activityRole !== undefined)
+    data.activityRole = toEmpty(input.activityRole);
 
   try {
     const user = await prisma.user.update({
@@ -153,7 +138,6 @@ export async function editAccount(id: number, input: EditUserInput) {
         fname: true,
         lname: true,
         phone: true,
-        // avatarUrl: true, // มีคอลัมน์นี้ค่อยเปิดใช้
       },
     });
     return user;
@@ -163,7 +147,7 @@ export async function editAccount(id: number, input: EditUserInput) {
       err.status = 404;
       throw err;
     }
-    if (e?.code === "P2002") throw e; // unique conflict
+    if (e?.code === "P2002") throw e;
     throw e;
   }
 }
