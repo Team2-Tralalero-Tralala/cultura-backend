@@ -9,38 +9,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* ===================== Enums ===================== */
-
+/*
+* คำอธิบาย : ประเภทของรูปภาพ/ไฟล์ที่ระบบรองรับ
+* Input : ค่า enum (COVER, GALLERY, VIDEO, LOGO)
+* Output : การกำหนดประเภทไฟล์ในตารางที่เกี่ยวข้อง
+*/
 enum ImageType {
   COVER
   GALLERY
   VIDEO
   LOGO
 }
-
+/*
+* คำอธิบาย : เพศของผู้ใช้งาน
+* Input : FEMALE, MALE, NONE
+* Output : เก็บข้อมูลเพศของ user
+*/
 enum Gender {
   FEMALE
   MALE
   NONE
 }
-
+/*
+* คำอธิบาย : สถานะของชุมชน
+* Input : OPEN, CLOSED
+* Output : ใช้ตรวจสอบว่า community เปิด/ปิด
+*/
 enum CommunityStatus {
   OPEN
   CLOSED
 }
-
+/*
+* คำอธิบาย : สถานะการเผยแพร่แพ็กเกจ
+* Input : PUBLISH, UNPUBLISH, DRAFT
+* Output : ใช้กำหนดสถานะการเผยแพร่ package
+*/
 enum PackagePublishStatus {
   PUBLISH
   UNPUBLISH
   DRAFT
 }
-
+/*
+* คำอธิบาย : สถานะการอนุมัติแพ็กเกจ
+* Input : PENDING, APPROVE, PENDING_SUPER
+* Output : ใช้ควบคุมการอนุมัติ package แต่ละระดับ
+*/
 enum PackageApproveStatus {
   PENDING
   APPROVE
   PENDING_SUPER
 }
-
+/*
+* คำอธิบาย : สถานะของการจอง
+* Input : PENDING, REFUND_PENDING, REFUNDED, BOOKED, CANCELLED
+* Output : ใช้บันทึกการจองใน booking history
+*/
 enum BookingStatus {
   PENDING
   REFUND_PENDING
@@ -48,26 +71,33 @@ enum BookingStatus {
   BOOKED
   CANCELLED
 }
-
-enum HHStatus {
-  AVAILABLE
-  BOOKED
-}
-
+/*
+* คำอธิบาย : สถานะการใช้งานของ user
+* Input : ACTIVE, BLOCKED
+* Output : ใช้ควบคุมการเข้าระบบ
+*/
 enum UserStatus {
   ACTIVE
   BLOCKED
 }
 
-/* ===================== Models ===================== */
 
+/*
+* คำอธิบาย : ตารางเก็บ banner ที่แสดงในหน้าเว็บ
+* Input : path ของรูป
+* Output : banner สำหรับหน้าเว็บ
+*/
 model Banner {
   id        Int         @id @default(autoincrement())   @map("bn_id")
   image     String      @db.VarChar(256)                @map("bn_image") 
 
   @@map("banners")
 }
-
+/*
+* คำอธิบาย : เก็บรูปภาพของ store
+* Input : storeId, image, type
+* Output : รูปประกอบร้านค้า
+*/
 model StoreImage {
   id        Int         @id @default(autoincrement())   @map("si_id")
   storeId   Int                                         @map("si_store_id")
@@ -78,7 +108,11 @@ model StoreImage {
   @@index([storeId])
   @@map("store_image")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูลร้านค้า
+* Input : ชื่อร้าน, รายละเอียด, communityId, locationId
+* Output : ร้านค้าในชุมชน
+*/
 model Store {
   id           Int     @id @default(autoincrement()) @map("st_id")
   name         String  @db.VarChar(80)               @map("st_name")
@@ -96,7 +130,11 @@ model Store {
   @@index([locationId])
   @@map("stores")
 }
-
+/*
+* คำอธิบาย : เก็บรูป homestay
+* Input : homestayId, image, type
+* Output : รูป homestay
+*/
 model HomestayImage {
   id        Int         @id @default(autoincrement())   @map("hi_id")
   homestayId   Int                                         @map("hi_homestay_id")
@@ -108,7 +146,11 @@ model HomestayImage {
   @@index([homestayId])
   @@map("homestay_images")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูล homestay
+* Input : communityId, locationId, ชื่อ, roomType, capacity
+* Output : ข้อมูล homestay สำหรับจอง
+*/
 model Homestay {
   id           Int      @id @default(autoincrement())   @map("ht_id")
   communityId  Int                                      @map("st_community_id")
@@ -130,7 +172,11 @@ model Homestay {
 
   @@map("homestays")
 }
-
+/*
+* คำอธิบาย : เก็บรูปภาพของชุมชน
+* Input : communityId, image, type
+* Output : รูปประกอบ community
+*/
 model CommunityImage {
   id            Int         @id @default(autoincrement())   @map("ci_id")
   communityId   Int                                         @map("ci_commuinty_id")
@@ -142,7 +188,11 @@ model CommunityImage {
   @@index([communityId])
   @@map("community_images")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูล community
+* Input : ชื่อ, ประเภท, ที่อยู่, adminId, bankAccountId
+* Output : ข้อมูลชุมชนพร้อมความสัมพันธ์
+*/
 model Community {
   id                        Int                 @id @default(autoincrement()) @map("ct_id")
   locationId                Int                 @map("ct_location_id")
@@ -188,7 +238,11 @@ model Community {
   @@index([bankAccountId])
   @@map("communities")
 }
-
+/*
+* คำอธิบาย : เก็บบัญชีธนาคาร
+* Input : bankName, accountName, accountNumber
+* Output : ใช้อ้างอิงใน community / booking
+*/
 model BankAccount {
   id                Int     @id @default(autoincrement())   @map("ba_id")
   bankName          String  @db.VarChar(45)                 @map("ba_bank_name")
@@ -200,6 +254,11 @@ model BankAccount {
   @@map("bank_accounts")
 }
 
+/*
+* คำอธิบาย : เก็บไฟล์ของ package
+* Input : packageId, path, type
+* Output : ไฟล์รูป/วิดีโอประกอบ package
+*/
 model PackageFile {
   id            Int         @id @default(autoincrement())   @map("pf_id")
   packageId     Int                                         @map("pf_package_id")
@@ -211,7 +270,11 @@ model PackageFile {
   @@index([packageId])
   @@map("package_files")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูล package
+* Input : communityId, locationId, overseerMemberId, createById, name, price, status
+* Output : package ท่องเที่ยว
+*/
 model Package {
   id               Int                     @id @default(autoincrement()) @map("pk_id")
   communityId      Int                     @map("pk_community_id")
@@ -247,7 +310,11 @@ model Package {
   @@index([overseerMemberId])
   @@map("packages")
 }
-
+/*
+* คำอธิบาย : เก็บ role ของระบบ
+* Input : SUPERADMIN, ADMIN, MEMBER, TOURIST
+* Output : กำหนดสิทธิ์ผู้ใช้งาน
+*/
 model Role {
   id              Int               @id @default(autoincrement()) @map("re_id")
   name            String            @unique @db.VarChar(45) @map("re_name")
@@ -256,7 +323,11 @@ model Role {
   users               User[]
   @@map("roles")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูล user
+* Input : roleId, username, email, password, profile
+* Output : ผู้ใช้งานระบบ
+*/
 model User {
   id            Int           @id @default(autoincrement())       @map("us_id")
   roleId        Int           @map("us_role_id")
@@ -291,7 +362,11 @@ model User {
   @@index([roleId])
   @@map("users")
 }
-
+/*
+* คำอธิบาย : เก็บรูป feedback
+* Input : feedbackId, image
+* Output : รูปแนบกับ feedback
+*/
 model FeedbackImage {
   id         Int      @id @default(autoincrement()) @map("fi_id")
   feedbackId Int      @unique                            @map("fi_feedback_id")
@@ -303,7 +378,11 @@ model FeedbackImage {
   @@index([feedbackId])
   @@map("feedback_images")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูล location
+* Input : รายละเอียดที่อยู่, lat, lng
+* Output : พิกัดและที่อยู่สำหรับ community/store/homestay/package
+*/
 model Location {
   id            Int       @id @default(autoincrement()) @map("lt_id")
   detail        String?   @db.VarChar(100)              @map("lt_detail")
@@ -325,7 +404,11 @@ model Location {
 
   @@map("locations")
 }
-
+/*
+* คำอธิบาย : เก็บประวัติการจอง
+* Input : touristId, packageId, status, participant, bookingAt
+* Output : booking history ของนักท่องเที่ยว
+*/
 model BookingHistory {
   id               Int        @id @default(autoincrement()) @map("bh_id") 
   touristId        Int        @map("bh_tourist_id")
@@ -349,7 +432,11 @@ model BookingHistory {
   @@index([touristId])
   @@map("booking_histories")
 }
-
+/*
+* คำอธิบาย : เก็บ feedback ของการจอง
+* Input : bookingHistoryId, message, rating, responderId
+* Output : คำติชมของนักท่องเที่ยว
+*/
 model Feedback {
   id                Int       @id @default(autoincrement()) @map("fb_id")
   bookingHistoryId  Int       @map("fb_booking_history_id")
@@ -370,6 +457,11 @@ model Feedback {
   @@map("feedbacks")
 }
 
+/*
+* คำอธิบาย : เก็บ tag สำหรับจัดกลุ่ม
+* Input : ชื่อ tag
+* Output : แท็กที่ผูกกับ homestay, store, package
+*/
 model Tag {
   id      Int    @id @default(autoincrement()) @map("tg_id")
   name    String @unique @db.VarChar(90) @map("tg_name")
@@ -381,7 +473,11 @@ model Tag {
 
   @@map("tags")
 }
-
+/*
+* คำอธิบาย : เก็บประวัติการใช้ homestay กับ package
+* Input : packageId, homestayId, checkInTime, checkOutTime
+* Output : ข้อมูลการจอง homestay
+*/
 model HomestayHistory {
   id            Int        @id @default(autoincrement()) @map("hh_id")
   packageId     Int        @map("hh_package_id")
@@ -398,7 +494,11 @@ model HomestayHistory {
   @@index([packageId])
   @@map("homestay_histories")
 }
-
+/*
+* คำอธิบาย : เก็บ log การเข้าใช้งาน
+* Input : userId, loginTime, logoutTime, ipAddress
+* Output : ประวัติการ login/logout
+*/
 model Log {
   id          Int       @id @default(autoincrement()) @map("lg_id")
   userId      Int       @map("lg_user_id")
@@ -413,8 +513,9 @@ model Log {
   @@map("logs")
 }
 
-/* ====== Explicit join tables (ตามสคีมาเดิม) ====== */
-
+/*
+* คำอธิบาย : ตารางเชื่อม tag กับ homestay
+*/
 model TagHomestay {
   tagId      Int @map("tght_tag_id")
   homestayId Int @map("tght_homestay_id")
@@ -429,6 +530,9 @@ model TagHomestay {
   @@map("tag_homestays")
 }
 
+/*
+* คำอธิบาย : ตารางเชื่อม tag กับ package
+*/
 model TagsPackages {
   tagId     Int @map("tgpk_tag_id")
   packageId Int @map("tgpk_package_id")
@@ -443,6 +547,9 @@ model TagsPackages {
   @@map("tags_packages")
 }
 
+/*
+* คำอธิบาย : ตารางเชื่อม tag กับ store
+*/
 model TagStore {
   tagId   Int @map("tgst_tag_id")
   storeId Int @map("tgst_store_id")
