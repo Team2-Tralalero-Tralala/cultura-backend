@@ -5,8 +5,8 @@
  * - admin เห็น logs ของสมาชิกในชุมชนของตนเองเท่านั้น
  * - member/tourist เห็น logs ของตนเองเท่านั้น
  */
-import { PaginationDto } from "~/Libs/Types/pagination-dto.js";
 import * as LogService from "~/Services/log-service.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 
 import type {
   commonDto,

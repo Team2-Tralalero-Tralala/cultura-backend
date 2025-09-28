@@ -6,7 +6,7 @@
  */
 
 import type { UserPayload } from "~/Libs/Types/index.js";
-import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
+import type { PaginationResponse } from "~/Services/pagination-dto.js";
 import prisma from "./database-service.js";
 
 /*
