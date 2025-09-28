@@ -11,7 +11,7 @@ import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js"
  * Output : commonDto object
  */
 export const createPackageDto = {
-  body: PackageDto,
+    body: PackageDto,
 } satisfies commonDto;
 
 
