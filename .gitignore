@@ -142,6 +142,9 @@ dist
 
 # SvelteKit build / generate output
 .svelte-kit
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 package-lock.json
 yarn.lock
