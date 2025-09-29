@@ -1,7 +1,7 @@
 import { Router } from "express";
 import authRoutes from "./auth-route.js";
 import roleRoutes from "./role-route.js";
-import bookingHistoryRoutes from "./detailBooking-route.js";
+import bookingHistoryRoutes from "./booking-history-route.js";
 
 const rootRouter: Router = Router();
 
