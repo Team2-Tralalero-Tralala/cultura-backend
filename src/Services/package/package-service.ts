@@ -109,7 +109,6 @@ export const editPackage = async (id: number, data: any) => {
 
   // แยก location ออกมา (แก้ field ได้ แต่ห้ามเปลี่ยน locationId)
   const { location, locationId, ...packageData } = data;
-
   return await prisma.package.update({
     where: { id },
     data: {
@@ -139,7 +138,6 @@ export const getPackageByRole = async (id: number) => {
             where: { id: id },
             include: { role: true, memberOf: true }
         });
-
         let result: any;
         switch (user?.role.name) {
             case "superadmin": //superadmin
@@ -168,12 +166,6 @@ export const getPackageByRole = async (id: number) => {
   return await result;
 };
 
-
-
-
-
-
-
 /*
  * คำอธิบาย : ลบ Package ออกจากระบบ
  * Input  : id (หมายเลข Package)
@@ -181,7 +173,7 @@ export const getPackageByRole = async (id: number) => {
  */
 export const deletePackage = async (id: number) => {
   // ตรวจสอบว่า package มีจริงก่อนลบ
-  const result = await prisma.package.findUnique({ 
+  const result = await prisma.package.findUnique({
     where: { id:id } });
   if (!result) {
     throw new Error(`Package ID ${id} ไม่พบในระบบ`);

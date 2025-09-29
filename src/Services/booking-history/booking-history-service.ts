@@ -1,6 +1,6 @@
 import prisma from "../database-service.js";
 
-export const createBookingHistory = async(data: any) => {
+export const createBooking = async(data: any) => {
     const packageId = await prisma.package.findUnique({
         where: { id: Number(data.packageId) }
     });

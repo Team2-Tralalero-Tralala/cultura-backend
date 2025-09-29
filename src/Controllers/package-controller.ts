@@ -4,10 +4,6 @@ import prisma from "~/Services/database-service.js";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
 import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import type { authMiddleware } from "~/Middlewares/auth-middleware.js";
-import type { loginDto } from "./auth-controller.js";
-import e from "cors";
-
 
 /*
  * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอนสร้าง Package
@@ -72,7 +68,6 @@ export const editPackage: TypedHandlerFromDto<typeof editPackageDto> = async (re
         return createErrorResponse(res, 404, (error as Error).message)
     }
 }
-
 
 /*
  * คำอธิบาย : Controller สำหรับลบ Package

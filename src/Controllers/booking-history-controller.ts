@@ -9,7 +9,7 @@ export const createBookingHistoryDto = {
 
 export const createBookingHistory: TypedHandlerFromDto<typeof createBookingHistoryDto> = async (req, res) => {
     try {
-        const result = await BookingHistoryService.createBookingHistory(req.body);
+        const result = await BookingHistoryService.createBooking(req.body);
         return createResponse(res, 200, "Success Created", {result})
     } catch (error: any) {
         return createErrorResponse(res, 404, (error as Error).message)
