@@ -1,8 +1,12 @@
 import type { Request, Response } from "express";
-import * as PackageService from "../Services/package-service.js";
+import * as PackageService from "../Services/package/package-service.js";
 import prisma from "~/Services/database-service.js";
-import type { commonDto } from "~/Libs/Types/TypedHandler.js";
+import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
 import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import type { authMiddleware } from "~/Middlewares/auth-middleware.js";
+import type { loginDto } from "./auth-controller.js";
+import e from "cors";
 
 
 /*
@@ -13,8 +17,6 @@ import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js"
 export const createPackageDto = {
     body: PackageDto,
 } satisfies commonDto;
-
-
 
 /*
  * คำอธิบาย : Controller สำหรับสร้าง Package ใหม่
@@ -30,85 +32,21 @@ export const createPackage = async (req: Request, res: Response) => {
     }
 };
 
-
 /*
  * คำอธิบาย : ดึงรายการ Package ตามบทบาท (role) ของ user
  * Input  : userId (จาก params)
  * Output : JSON response { status, role, data }
  */
-
 export const getPackageByRole = async (req: Request, res: Response) => {
     try {
-        const { id } = (req.params);
-        if (!Number(id)){
-            return res.status(400).json({ status: 400, message: "ID must be Number" })  
-        }
-        /* ********************************************************** */
-        /* ไม่แน่ใจว่าต้องรอดึงของ getUserRole ของฝั่ง User ไหม */
-        const user = await prisma.user.findUnique({
-            where: { id: Number(id) },
-            include: { role: true, communityMembers: true }
-        });
-
-        if (!user) {
-            return res.status(404).json({ status: 404, message: "User not found" });
-        }
-
-        let result: any;
-        switch (user.roleId) {
-            case 4: //tourist
-                // ไม่สามารถเข้าถึงข้อมูลได้
-                result = [];
-                console.log("นี้คือ Member", result);
-                break;
-            case 1: //superadmin
-                result = await prisma.package.findMany();
-                console.log("นี้คือ Super Admin", result);
-                break;
-            case 3: //member
-                result = await prisma.package.findMany({
-                    where: { overseerMemberId: user.id }
-                });
-                console.log("นี้คือ Member", result);
-                break;
-            case 2://admin
-            const communityIds = user.communityMembers?.map(cm => cm.communityId);
-                result = await prisma.package.findMany({
-                    where: { communityId: { in: communityIds } }
-                });
-                console.log("นี้คือ Admin", result);
-                break;
-            default:
-                return res.status(400).json({ status: 400, message: "Invalid user role" });
-        }
-        res.json({ status: 200, role: user.roleId, data: result });
+        const id = Number(req.params);
+        const result = await PackageService.getPackageByRole(id);
+        return createResponse(res, 200, "Get Packages Success", {result})
         /* ********************************************************** */
     } catch (error: any) {
-        res.status(500).json({ status: 500, message: error.message });
+        return createErrorResponse(res, 404, (error as Error).message)
     }
 }
-
-
-
-/*
- * คำอธิบาย : ดึงรายการ Package ตาม overseerMemberId
- * Input  : memberId (จาก params)
- * Output : JSON response { status, data }
- */
-export const getPackageByMemberID = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        if (!id) {
-            return res.status(400).json({ status: 400, message: "memberID is require" })
-        }
-        const result = await PackageService.getPackageByMemberID(Number(id));
-        res.json({ status: 200, data: result});
-    } catch (error: any) {
-        res.status(500).json({ status: 500, message: error.message });
-    }
-};
-
-
 
 /*
  * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอนแก้ไข Package
@@ -116,29 +54,22 @@ export const getPackageByMemberID = async (req: Request, res: Response) => {
  * Output : commonDto object
  */
 export const editPackageDto = {
-  body: updatePackageDto,
+    body: updatePackageDto,
 } satisfies commonDto;
-
-
-
 
 /*
  * คำอธิบาย : Controller สำหรับแก้ไข Package
  * Input  : packageId (จาก params), Request body (updatePackageDto)
  * Output : JSON response { status, message, data }
  */
-export const editPackage = async (req: Request, res: Response) => {
+export const editPackage: TypedHandlerFromDto<typeof editPackageDto> = async (req, res) => {
     try {
-        const { id } = (req.params);
-        if (!Number(id)){
-            return res.status(400).json({ status: 400, message: "ID must be Number" })  
-        }
+        const id = Number(req.params)
         const data = req.body;
-        const result = await PackageService.editPackage(Number(id), data)
-        res.json({ status: 200, message: "Package Updated", data: result })
+        const result = await PackageService.editPackage(id, data)
+        return createResponse(res, 200, "Package Updated", result)
     } catch (error: any) {
-        res.status(500).json({ status: 500, message: error.message })
-
+        return createErrorResponse(res, 404, (error as Error).message)
     }
 }
 
@@ -150,10 +81,10 @@ export const editPackage = async (req: Request, res: Response) => {
  */
 export const deletePackage = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
-        const result = await PackageService.deletePackage(Number(id));
-        res.json({ status:200, message: "Packeage Deleted" })
+        const id = Number(req.params);
+        const result = await PackageService.deletePackage(id);
+        return createResponse(res, 200, "Packeage Deleted", result)
     } catch (error: any) {
-        res.status(500).json({ status: 500, message: error.message })
+        return createErrorResponse(res, 404, (error as Error).message)
     }
 }

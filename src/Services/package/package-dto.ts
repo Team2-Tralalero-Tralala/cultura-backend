@@ -1,3 +1,4 @@
+import { Type } from "class-transformer";
 import {
   IsString,
   IsNotEmpty,
@@ -10,7 +11,6 @@ import {
   ValidateNested,
   IsObject
 } from "class-validator";
-import { Type } from "class-transformer";
 import { PackagePublishStatus, PackageApproveStatus } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
 import "reflect-metadata";
@@ -34,6 +34,10 @@ export class PackageDto {
   @IsNumber()
   @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
   overseerMemberId: number;
+
+  @IsNumber()
+  @IsNotEmpty({ message: "createById ห้ามว่าง" })
+  createById: number;
 
   @IsString()
   @IsNotEmpty({ message: "name ห้ามว่าง" })
@@ -112,6 +116,11 @@ export class updatePackageDto {
   @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
   @IsOptional()
   overseerMemberId?: number;
+
+  @IsNumber()
+  @IsNotEmpty({ message: "createById ห้ามว่าง" })
+  @IsOptional()
+  createById?: number;
 
   @IsString()
   @IsNotEmpty({ message: "name ห้ามว่าง" })

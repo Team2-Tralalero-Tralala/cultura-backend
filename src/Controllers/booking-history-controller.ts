@@ -1,19 +1,17 @@
-import type { Request, Response } from "express";
-import * as BookingHistoryService from "../Services/booking-history-service.js";
-import prisma from "~/Services/database-service.js";
-import type { commonDto } from "~/Libs/Types/TypedHandler.js";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import * as BookingHistoryService from "../Services/booking-history/booking-history-service.js";
+import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
 import { BookingHistoryDto } from "~/Services/booking-history/booking-history-dto.js";
-
 
 export const createBookingHistoryDto = {
     body: BookingHistoryDto,
 } satisfies commonDto;
 
-export const createBookingHistory = async (req: Request, res: Response) => {
+export const createBookingHistory: TypedHandlerFromDto<typeof createBookingHistoryDto> = async (req, res) => {
     try {
         const result = await BookingHistoryService.createBookingHistory(req.body);
-        return res.json({ status:200, data: result });
+        return createResponse(res, 200, "Success Created", {result})
     } catch (error: any) {
-        return res.status(500).json({ status: 500, message: error.message });
+        return createErrorResponse(res, 404, (error as Error).message)
     }
 };
