@@ -8,7 +8,7 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/role", roleRoutes);
-rootRouter.use("/package", packageRoutes);
+rootRouter.use(packageRoutes);
 rootRouter.use("/bookingHistory", bookingHistoryRoutes);
 
 export default rootRouter;

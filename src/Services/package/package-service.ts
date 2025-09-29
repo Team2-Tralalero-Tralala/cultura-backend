@@ -132,8 +132,6 @@ export const editPackage = async (id: number, data: any) => {
  * Output : รายการ Package ที่พบ (อาจเป็น array)
  */
 export const getPackageByRole = async (id: number) => {
-        console.log("Hiiiiiiiiiiiiiiiiiiiiiii");
-        
         if (!Number(id)){
           throw new Error(`Member ID ${id} ไม่พบในระบบ`);
         }
@@ -143,24 +141,24 @@ export const getPackageByRole = async (id: number) => {
         });
 
         let result: any;
-        switch (user?.role.id) {
-            case 1: //superadmin
+        switch (user?.role.name) {
+            case "superadmin": //superadmin
                 result = await prisma.package.findMany();
                 break;
-            case 2://admin
+            case "admin"://admin
                 const communityIds = user.memberOf ? [user.memberOf.id] : [];
                 result = await prisma.package.findMany({
                     where: { communityId: { in: communityIds } }
                 });
                 break;
-            case 3: //member
+            case "member": //member
                 result = await prisma.package.findMany({
                     where: { overseerMemberId: user.id }
                 });
                 break;
-            case 4: //tourist
+            case "tourist": //tourist
                 result = await prisma.package.findMany({
-                    where: { statusApprove: "APPROVE" }
+                    where: { statusApprove: "APPROVE", statusPackage: "PUBLISH" }
                 });
                 break;
             default:
@@ -184,7 +182,7 @@ export const getPackageByRole = async (id: number) => {
 export const deletePackage = async (id: number) => {
   // ตรวจสอบว่า package มีจริงก่อนลบ
   const result = await prisma.package.findUnique({ 
-    where: { id } });
+    where: { id:id } });
   if (!result) {
     throw new Error(`Package ID ${id} ไม่พบในระบบ`);
   }

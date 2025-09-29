@@ -39,9 +39,7 @@ export const createPackage = async (req: Request, res: Response) => {
  */
 export const getPackageByRole = async (req: Request, res: Response) => {
     try {
-        // const result = await PackageService.getPackageByRole(req.user.id);
-        const { id } = req.params;
-        console.log("Param ID:", id);
+        const id  = req.user.id;
         const result = await PackageService.getPackageByRole(Number(id));
         return createResponse(res, 200, "Get Packages Success", {result})
         /* ********************************************************** */
@@ -85,7 +83,7 @@ export const deletePackage = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params);
         const result = await PackageService.deletePackage(id);
-        return createResponse(res, 200, "Packeage Deleted", result)
+        return createResponse(res, 200, "Package Deleted", result)
     } catch (error: any) {
         return createErrorResponse(res, 404, (error as Error).message)
     }
