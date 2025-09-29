@@ -132,6 +132,8 @@ export const editPackage = async (id: number, data: any) => {
  * Output : รายการ Package ที่พบ (อาจเป็น array)
  */
 export const getPackageByRole = async (id: number) => {
+        console.log("Hiiiiiiiiiiiiiiiiiiiiiii");
+        
         if (!Number(id)){
           throw new Error(`Member ID ${id} ไม่พบในระบบ`);
         }

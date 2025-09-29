@@ -39,8 +39,10 @@ export const createPackage = async (req: Request, res: Response) => {
  */
 export const getPackageByRole = async (req: Request, res: Response) => {
     try {
-        const id = Number(req.params);
-        const result = await PackageService.getPackageByRole(id);
+        // const result = await PackageService.getPackageByRole(req.user.id);
+        const { id } = req.params;
+        console.log("Param ID:", id);
+        const result = await PackageService.getPackageByRole(Number(id));
         return createResponse(res, 200, "Get Packages Success", {result})
         /* ********************************************************** */
     } catch (error: any) {
