@@ -141,22 +141,27 @@ export const getPackageByRole = async (id: number) => {
         let result: any;
         switch (user?.role.name) {
             case "superadmin": //superadmin
-                result = await prisma.package.findMany();
+                result = await prisma.package.findMany({
+                  take: 10,
+                });
                 break;
             case "admin"://admin
                 const communityIds = user.memberOf ? [user.memberOf.id] : [];
                 result = await prisma.package.findMany({
-                    where: { communityId: { in: communityIds } }
+                  take: 10,
+                  where: { communityId: { in: communityIds } }
                 });
                 break;
             case "member": //member
                 result = await prisma.package.findMany({
-                    where: { overseerMemberId: user.id }
+                  take: 10,
+                  where: { overseerMemberId: user.id }
                 });
                 break;
             case "tourist": //tourist
                 result = await prisma.package.findMany({
-                    where: { statusApprove: "APPROVE", statusPackage: "PUBLISH" }
+                  take: 10,
+                  where: { statusApprove: "APPROVE", statusPackage: "PUBLISH" }
                 });
                 break;
             default:
