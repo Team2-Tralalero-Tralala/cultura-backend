@@ -9,30 +9,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* ===================== Enums ===================== */
-
+/*
+* คำอธิบาย : ประเภทของรูปภาพ/ไฟล์ที่ระบบรองรับ
+* Input : ค่า enum (COVER, GALLERY, VIDEO, LOGO)
+* Output : การกำหนดประเภทไฟล์ในตารางที่เกี่ยวข้อง
+*/
+enum ImageType {
+  COVER
+  GALLERY
+  VIDEO
+  LOGO
+}
+/*
+* คำอธิบาย : เพศของผู้ใช้งาน
+* Input : FEMALE, MALE, NONE
+* Output : เก็บข้อมูลเพศของ user
+*/
 enum Gender {
   FEMALE
   MALE
   NONE
 }
-
+/*
+* คำอธิบาย : สถานะของชุมชน
+* Input : OPEN, CLOSED
+* Output : ใช้ตรวจสอบว่า community เปิด/ปิด
+*/
 enum CommunityStatus {
   OPEN
   CLOSED
 }
-
+/*
+* คำอธิบาย : สถานะการเผยแพร่แพ็กเกจ
+* Input : PUBLISH, UNPUBLISH, DRAFT
+* Output : ใช้กำหนดสถานะการเผยแพร่ package
+*/
 enum PackagePublishStatus {
   PUBLISH
   UNPUBLISH
   DRAFT
 }
-
+/*
+* คำอธิบาย : สถานะการอนุมัติแพ็กเกจ
+* Input : PENDING, APPROVE, PENDING_SUPER
+* Output : ใช้ควบคุมการอนุมัติ package แต่ละระดับ
+*/
 enum PackageApproveStatus {
-  WAIT
+  PENDING
   APPROVE
+  PENDING_SUPER
 }
-
+/*
+* คำอธิบาย : สถานะของการจอง
+* Input : PENDING, REFUND_PENDING, REFUNDED, BOOKED, CANCELLED
+* Output : ใช้บันทึกการจองใน booking history
+*/
 enum BookingStatus {
   PENDING
   REFUND_PENDING
@@ -40,67 +71,318 @@ enum BookingStatus {
   BOOKED
   CANCELLED
 }
-
-enum HHStatus {
-  AVAILABLE
-  BOOKED
-}
-
-enum LogStatus {
-  SUCCESS
-  FAILED
-}
-
+/*
+* คำอธิบาย : สถานะการใช้งานของ user
+* Input : ACTIVE, BLOCKED
+* Output : ใช้ควบคุมการเข้าระบบ
+*/
 enum UserStatus {
   ACTIVE
   BLOCKED
 }
 
-/* ===================== Models ===================== */
 
+/*
+* คำอธิบาย : ตารางเก็บ banner ที่แสดงในหน้าเว็บ
+* Input : path ของรูป
+* Output : banner สำหรับหน้าเว็บ
+*/
+model Banner {
+  id        Int         @id @default(autoincrement())   @map("bn_id")
+  image     String      @db.VarChar(256)                @map("bn_image") 
+
+  @@map("banners")
+}
+/*
+* คำอธิบาย : เก็บรูปภาพของ store
+* Input : storeId, image, type
+* Output : รูปประกอบร้านค้า
+*/
+model StoreImage {
+  id        Int         @id @default(autoincrement())   @map("si_id")
+  storeId   Int                                         @map("si_store_id")
+  image     String      @db.VarChar(256)                @map("si_image") 
+  type      ImageType                                   @map("si_type")
+
+  store Store @relation(fields: [storeId],references: [id],onDelete: Cascade)
+  @@index([storeId])
+  @@map("store_image")
+}
+/*
+* คำอธิบาย : เก็บข้อมูลร้านค้า
+* Input : ชื่อร้าน, รายละเอียด, communityId, locationId
+* Output : ร้านค้าในชุมชน
+*/
+model Store {
+  id           Int     @id @default(autoincrement()) @map("st_id")
+  name         String  @db.VarChar(80)               @map("st_name")
+  detail       String  @db.VarChar(200)              @map("st_detail")
+  communityId  Int     @map("st_community_id")
+  locationId   Int     @map("st_location_id")
+
+  // Relations
+  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
+  tagStores   TagStore[]
+  storeImgae  StoreImage[]
+
+  @@index([communityId])
+  @@index([locationId])
+  @@map("stores")
+}
+/*
+* คำอธิบาย : เก็บรูป homestay
+* Input : homestayId, image, type
+* Output : รูป homestay
+*/
+model HomestayImage {
+  id        Int         @id @default(autoincrement())   @map("hi_id")
+  homestayId   Int                                         @map("hi_homestay_id")
+  image     String      @db.VarChar(256)                @map("hi_image") 
+  type      ImageType                                   @map("hi_type")
+
+  homestay Homestay     @relation(fields: [homestayId],references: [id],onDelete: Cascade)
+
+  @@index([homestayId])
+  @@map("homestay_images")
+}
+/*
+* คำอธิบาย : เก็บข้อมูล homestay
+* Input : communityId, locationId, ชื่อ, roomType, capacity
+* Output : ข้อมูล homestay สำหรับจอง
+*/
+model Homestay {
+  id           Int      @id @default(autoincrement())   @map("ht_id")
+  communityId  Int                                      @map("st_community_id")
+  locationId   Int                                      @map("st_location_id")
+  name         String   @db.VarChar(60)                 @map("ht_name")
+  roomType     String   @db.VarChar(45)                 @map("ht_room_type")
+  capacity     Int                                      @map("ht_capacity")
+  detail       String   @db.VarChar(200)                @map("ht_detail")
+
+  // Relations
+  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
+  homestayHistories HomestayHistory[]
+  tagHomestays      TagHomestay[]
+  homestayImage      HomestayImage[]
+
+  @@index([communityId])
+  @@index([locationId])
+
+  @@map("homestays")
+}
+/*
+* คำอธิบาย : เก็บรูปภาพของชุมชน
+* Input : communityId, image, type
+* Output : รูปประกอบ community
+*/
+model CommunityImage {
+  id            Int         @id @default(autoincrement())   @map("ci_id")
+  communityId   Int                                         @map("ci_commuinty_id")
+  image         String      @db.VarChar(256)                @map("ci_image") 
+  type          ImageType                                   @map("ci_type")
+
+  community     Community   @relation(fields: [communityId],references: [id],onDelete: Cascade)
+
+  @@index([communityId])
+  @@map("community_images")
+}
+/*
+* คำอธิบาย : เก็บข้อมูล community
+* Input : ชื่อ, ประเภท, ที่อยู่, adminId, bankAccountId
+* Output : ข้อมูลชุมชนพร้อมความสัมพันธ์
+*/
+model Community {
+  id                        Int                 @id @default(autoincrement()) @map("ct_id")
+  locationId                Int                 @map("ct_location_id")
+  adminId                   Int                 @unique @map("ct_admin_id")
+  bankAccountId             Int                 @unique @map("ct_bank_account_id")
+  name                      String              @unique @db.VarChar(150)  @map("ct_name")
+  alias                     String?             @db.VarChar(100)          @map("ct_alias")
+  type                      String              @db.VarChar(90)           @map("ct_type")
+  registerNumber            String              @unique @db.VarChar(45)   @map("ct_register_number")
+  registerDate              DateTime            @db.Date                  @map("ct_register_date")
+  description               String              @db.VarChar(200)          @map("ct_description")
+  mainActivityName          String              @db.VarChar(80)           @map("ct_main_activity_name")
+  mainActivityDescription   String              @db.VarChar(150)          @map("ct_main_activity_description")
+  status                    CommunityStatus?    @default(CLOSED)   @map("ct_status")
+  phone                     String              @unique @db.VarChar(10)   @map("ct_phone")
+  rating                    Float               @db.Double                @map("ct_rating")
+  email                     String              @unique @db.VarChar(65)   @map("ct_email")
+  mainAdmin                 String              @db.VarChar(100)           @map("ct_main_admin")
+  mainAdminPhone            String              @db.VarChar(10)            @map("ct_main_admin_phone")
+  coordinatorName           String?             @db.VarChar(150)          @map("ct_coordinator_name")
+  coordinatorPhone          String?             @db.VarChar(10)           @map("ct_coordinator_phone")
+  urlWebsite                String?             @db.VarChar(2048)         @map("ct_url_website")
+  urlFacebook               String?             @db.VarChar(2048)         @map("ct_url_facebook")
+  urlLine                   String?             @db.VarChar(2048)         @map("ct_url_line")
+  urlTiktok                 String?             @db.VarChar(2048)         @map("ct_url_tiktok")
+  urlOther                  String?             @db.VarChar(2048)         @map("ct_url_other")
+
+  // Relations
+  location        Location          @relation(fields: [locationId], references: [id])
+  admin           User              @relation("CommunityAdmin", fields: [adminId], references: [id])
+  bankAccount     BankAccount       @relation(fields: [bankAccountId], references: [id])
+  member          User[]            @relation("CommunityMember")
+  packages        Package[]
+  stores          Store[]
+  homestays       Homestay[]
+  communityImage  CommunityImage[]
+
+  @@index([locationId])
+  @@index([adminId])
+  @@index([bankAccountId])
+  @@map("communities")
+}
+/*
+* คำอธิบาย : เก็บบัญชีธนาคาร
+* Input : bankName, accountName, accountNumber
+* Output : ใช้อ้างอิงใน community / booking
+*/
+model BankAccount {
+  id                Int     @id @default(autoincrement())   @map("ba_id")
+  bankName          String  @db.VarChar(45)                 @map("ba_bank_name")
+  accountName       String  @db.VarChar(45)                 @map("ba_account_name")
+  accountNumber     String  @db.VarChar(45)                 @map("ba_account_number")
+
+  community Community[]
+  bookingHistory BookingHistory[]
+  @@map("bank_accounts")
+}
+
+/*
+* คำอธิบาย : เก็บไฟล์ของ package
+* Input : packageId, path, type
+* Output : ไฟล์รูป/วิดีโอประกอบ package
+*/
+model PackageFile {
+  id            Int         @id @default(autoincrement())   @map("pf_id")
+  packageId     Int                                         @map("pf_package_id")
+  filePath      String      @db.VarChar(256)                @map("pf_image") 
+  type          ImageType                          @map("pf_type")
+
+  package Package @relation(fields: [packageId],references: [id],onDelete: Cascade)
+
+  @@index([packageId])
+  @@map("package_files")
+}
+/*
+* คำอธิบาย : เก็บข้อมูล package
+* Input : communityId, locationId, overseerMemberId, createById, name, price, status
+* Output : package ท่องเที่ยว
+*/
+model Package {
+  id               Int                     @id @default(autoincrement()) @map("pk_id")
+  communityId      Int                     @map("pk_community_id")
+  locationId       Int                     @map("pk_location_id")
+  overseerMemberId Int                     @map("pk_overseer_member_id")
+  createById       Int                     @map("pk_create_by")
+  name             String                  @db.VarChar(100)              @map("pk_name")
+  description      String                  @db.VarChar(500)              @map("pk_description")
+  capacity         Int                                                   @map("pk_capacity")
+  price            Float                   @db.Double                    @map("pk_price")
+  warning          String                  @db.VarChar(200)              @map("pk_warning")
+  statusPackage    PackagePublishStatus                                  @map("pk_status_package")
+  statusApprove    PackageApproveStatus?                                 @map("pk_status_approve")
+  startDate        DateTime                @db.DateTime                  @map("pk_start_date")
+  dueDate          DateTime                @db.DateTime                  @map("pk_due_date")
+  facility         String                  @db.VarChar(200)              @map("pk_facility")
+  rejectReason     String?                 @db.VarChar(100)              @map("pk_reject_reason")
+
+  // Relations
+  community        Community       @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location         Location        @relation(fields: [locationId], references: [id],onDelete: Cascade)
+  createPackage    User            @relation("createPackage",fields: [createById], references: [id],onDelete: Cascade)
+  overseerPackage  User            @relation("OverseerMember", fields: [overseerMemberId], references: [id])
+
+  bookingHistories  BookingHistory[]
+  homestayHistories HomestayHistory[]
+  tagPackages       TagsPackages[]
+  packageFile       PackageFile[]
+
+  @@index([communityId])
+  @@index([locationId])
+  @@index([createById])
+  @@index([overseerMemberId])
+  @@map("packages")
+}
+/*
+* คำอธิบาย : เก็บ role ของระบบ
+* Input : SUPERADMIN, ADMIN, MEMBER, TOURIST
+* Output : กำหนดสิทธิ์ผู้ใช้งาน
+*/
 model Role {
   id              Int               @id @default(autoincrement()) @map("re_id")
   name            String            @unique @db.VarChar(45) @map("re_name")
 
   // Relations
   users               User[]
-  communityMembers    CommunityMember[]
-  permissionRoles     PermissionRole[]
-
   @@map("roles")
 }
-
+/*
+* คำอธิบาย : เก็บข้อมูล user
+* Input : roleId, username, email, password, profile
+* Output : ผู้ใช้งานระบบ
+*/
 model User {
-  id            Int       @id @default(autoincrement()) @map("us_id")
-  roleId        Int       @map("us_role_id")
-  username      String    @unique @db.VarChar(50)  @map("us_username")
-  email         String    @unique @db.VarChar(65)  @map("us_email")
-  password      String    @db.VarChar(255)         @map("us_password")
-  fname         String    @db.VarChar(100)         @map("us_fname")
-  lname         String    @db.VarChar(100)         @map("us_lname")
-  phone         String    @unique @db.VarChar(10)  @map("us_phone")
-  gender        Gender?                         @map("us_gender")
-  birthDate     DateTime? @db.Date              @map("us_birth_date")
-  subDistrict   String?   @db.VarChar(60)       @map("us_sub_district")
-  district      String?   @db.VarChar(60)       @map("us_district")
-  province      String?   @db.VarChar(60)       @map("us_province")
-  postalCode    String?   @db.VarChar(5)        @map("us_postal_code")
-  activityRole  String?   @db.VarChar(100)      @map("us_activity_role")
-  status        UserStatus?  @default(ACTIVE)                   @map("us_status")
+  id            Int           @id @default(autoincrement())       @map("us_id")
+  roleId        Int           @map("us_role_id")
+  memberOfCommunity Int?      @map("us_member_of_community")
+  profileImage  String?       @db.VarChar(256)                    @map("us_profile_image")
+  username      String        @unique @db.VarChar(50)             @map("us_username")
+  email         String        @unique @db.VarChar(65)             @map("us_email")
+  password      String        @db.VarChar(255)                    @map("us_password")
+  fname         String        @db.VarChar(100)                    @map("us_fname")
+  lname         String        @db.VarChar(100)                    @map("us_lname")
+  phone         String        @unique @db.VarChar(10)             @map("us_phone")
+  gender        Gender?                                           @map("us_gender")
+  birthDate     DateTime?     @db.Date                            @map("us_birth_date")
+  subDistrict   String?       @db.VarChar(60)                     @map("us_sub_district")
+  district      String?       @db.VarChar(60)                     @map("us_district")
+  province      String?       @db.VarChar(60)                     @map("us_province")
+  postalCode    String?       @db.VarChar(5)                      @map("us_postal_code")
+  activityRole  String?       @db.VarChar(100)                    @map("us_activity_role")
+  status        UserStatus?   @default(ACTIVE)                    @map("us_status")
 
   // Relations
-  role             Role            @relation(fields: [roleId], references: [id] , map: "fk_users_roles")
-  communityMembers CommunityMember[] @relation("MemberUser")
+  role             Role              @relation(fields: [roleId], references: [id])
+  memberOf         Community?        @relation("CommunityMember", fields: [memberOfCommunity], references: [id])
+  communitiesAdmin Community[]       @relation("CommunityAdmin")
   bookingHistories BookingHistory[]  @relation("Tourist")
-  logs             Log[]
   feedbacksReplied Feedback[]        @relation("FeedbackResponder")
+  logs             Log[]
+  overseerPackages Package[]          @relation("OverseerMember")
+  createdPackages   Package[]          @relation("createPackage")
 
-  @@index([roleId], map: "fk_users_roles_idx")
+
+  @@index([roleId])
   @@map("users")
 }
+/*
+* คำอธิบาย : เก็บรูป feedback
+* Input : feedbackId, image
+* Output : รูปแนบกับ feedback
+*/
+model FeedbackImage {
+  id         Int      @id @default(autoincrement()) @map("fi_id")
+  feedbackId Int      @unique                            @map("fi_feedback_id")
+  image      String   @db.VarChar(256)              @map("fi_image")
 
+  // Relations
+  feedback Feedback @relation(fields: [feedbackId], references: [id],onDelete: Cascade)
+
+  @@index([feedbackId])
+  @@map("feedback_images")
+}
+/*
+* คำอธิบาย : เก็บข้อมูล location
+* Input : รายละเอียดที่อยู่, lat, lng
+* Output : พิกัดและที่อยู่สำหรับ community/store/homestay/package
+*/
 model Location {
-  id            Int     @id @default(autoincrement()) @map("lt_id")
+  id            Int       @id @default(autoincrement()) @map("lt_id")
+  detail        String?   @db.VarChar(100)              @map("lt_detail")
   houseNumber   String  @db.VarChar(10)               @map("lt_houseNumber")
   villageNumber Int?                                  @map("lt_village_number")
   alley         String? @db.VarChar(60)               @map("lt_alley")
@@ -119,152 +401,39 @@ model Location {
 
   @@map("locations")
 }
-
-model Community {
-  id                        Int       @id @default(autoincrement()) @map("ct_id")
-  locationId                Int       @map("ct_location_id")
-  name                      String    @unique @db.VarChar(150) @map("ct_name")
-  alias                     String?   @db.VarChar(100)          @map("ct_alias")
-  type                      String    @db.VarChar(90)           @map("ct_type")
-  registerNumber            String    @unique @db.VarChar(45)   @map("ct_register_number")
-  registerDate              DateTime  @db.Date                  @map("ct_register_date")
-  description               String    @db.VarChar(200)          @map("ct_description")
-  mainActivityName          String    @db.VarChar(80)           @map("ct_main_activity_name")
-  mainActivityDescription   String    @db.VarChar(150)          @map("ct_main_activity_description")
-  status                    CommunityStatus                    @map("ct_status")
-  phone                     String    @unique @db.VarChar(10)   @map("ct_phone")
-  rating                    Float     @db.Double                @map("ct_rating")
-  email                     String    @unique @db.VarChar(65)   @map("ct_email")
-  bank                      String    @db.VarChar(100)          @map("ct_bank")
-  bankAccountName           String    @db.VarChar(70)           @map("ct_bank_account_name")
-  bankAccountNumber         String    @db.VarChar(20)           @map("ct_bank_account_number")
-  mainAdmin                 String?   @db.VarChar(100)          @map("ct_main_admin")
-  mainAdminPhone            String?   @db.VarChar(10)           @map("ct_main_admin_phone")
-  coordinatorName           String?   @db.VarChar(150)          @map("ct_coordinator_name")
-  coordinatorPhone          String?   @db.VarChar(10)           @map("ct_coordinator_phone")
-  urlWebsite                String?   @db.VarChar(2048)         @map("ct_url_website")
-  urlFacebook               String?   @db.VarChar(2048)         @map("ct_url_facebook")
-  urlLine                   String?   @db.VarChar(2048)         @map("ct_url_line")
-  urlTiktok                 String?   @db.VarChar(2048)         @map("ct_url_tiktok")
-  urlOther                  String?   @db.VarChar(2048)         @map("ct_url_other")
-
-  // Relations
-  location     Location   @relation(fields: [locationId], references: [id],  map: "fk_communities_locations1")
-  members      CommunityMember[]
-  packages     Package[]
-  stores       Store[]
-  homestays    Homestay[]
-
-  @@index([locationId], map: "fk_communities_locations1_idx")
-  @@map("communities")
-}
-
-model CommunityMember {
-  communityId Int  @map("cm_community_id")
-  memberId    Int  @map("cm_member_id")
-  roleId      Int  @map("cm_re_id")
-
-  // Relations
-  community   Community @relation(fields: [communityId], references: [id],  map: "fk_community_members_communities1")
-  member      User      @relation("MemberUser", fields: [memberId], references: [id],  map: "fk_community_members_users1")
-  role        Role      @relation(fields: [roleId], references: [id],  map: "fk_community_members_roles1")
-  overseerOf  Package[] // back-relations from Package.communityMember
-
-  @@id([communityId, memberId])
-  @@index([memberId], map: "fk_community_members_users1_idx")
-  @@index([communityId], map: "fk_community_members_communities1_idx")
-  @@index([roleId], map: "fk_community_members_roles1_idx")
-  @@map("community_members")
-}
-
-model Package {
-  id               Int                     @id @default(autoincrement()) @map("pk_id")
-  communityId      Int                     @map("pk_community_id")
-  locationId       Int                     @map("pk_location_id")
-  overseerMemberId Int                     @map("pk_overseer_member_id")
-  name             String                  @db.VarChar(100)              @map("pk_name")
-  description      String                  @db.VarChar(500)              @map("pk_description")
-  capacity         Int                                                   @map("pk_capacity")
-  price            Float                   @db.Double                    @map("pk_price")
-  warning          String                  @db.VarChar(200)              @map("pk_warning")
-  statusPackage    PackagePublishStatus                                   @map("pk_status_package")
-  statusApprove    PackageApproveStatus?                                  @map("pk_status_approve")
-  startDate        DateTime                @db.DateTime                  @map("pk_start_date")
-  dueDate          DateTime                @db.DateTime                  @map("pk_due_date")
-  facility         String                  @db.VarChar(200)              @map("pk_facility")
-
-  // Relations
-  community        Community       @relation(fields: [communityId], references: [id],  map: "fk_packages_communities1")
-  location         Location        @relation(fields: [locationId], references: [id],  map: "fk_packages_locations1")
-
-  // composite FK -> community_members (cm_community_id, cm_member_id)
-  communityMember  CommunityMember @relation(fields: [communityId, overseerMemberId], references: [communityId, memberId],  map: "fk_packages_community_members1")
-
-  bookingHistories  BookingHistory[]
-  homestayHistories HomestayHistory[]
-  tagPackages       TagsPackages[]
-
-  @@index([communityId], map: "fk_packages_communities1_idx")
-  @@index([locationId], map: "fk_packages_locations1_idx")
-  @@index([overseerMemberId, communityId], map: "fk_packages_community_members1_idx")
-  @@map("packages")
-}
-
-model Homestay {
-  id        Int      @id @default(autoincrement()) @map("ht_id")
-  name      String   @db.VarChar(60)               @map("ht_name")
-  roomType  String   @db.VarChar(45)               @map("ht_room_type")
-  capacity  Int                                   @map("ht_capacity")
-  communityId  Int     @map("st_community_id")
-  locationId   Int     @map("st_location_id")
-
-  // Relations
-  community   Community @relation(fields: [communityId], references: [id], map: "fk_homestays_communities1")
-  location    Location  @relation(fields: [locationId], references: [id], map: "fk_homestays_locations1")
-  homestayHistories HomestayHistory[]
-  tagHomestays      TagHomestay[]
-
-  @@map("homestays")
-}
-
-model Store {
-  id           Int     @id @default(autoincrement()) @map("st_id")
-  name         String  @db.VarChar(80)               @map("st_name")
-  detail       String  @db.VarChar(200)              @map("st_detail")
-  communityId  Int     @map("st_community_id")
-  locationId   Int     @map("st_location_id")
-
-  // Relations
-  community   Community @relation(fields: [communityId], references: [id], map: "fk_stores_communities1")
-  location    Location  @relation(fields: [locationId], references: [id], map: "fk_stores_locations1")
-  tagStores   TagStore[]
-
-  @@index([communityId], map: "fk_stores_communities1_idx")
-  @@index([locationId], map: "fk_stores_locations1_idx")
-  @@map("stores")
-}
-
+/*
+* คำอธิบาย : เก็บประวัติการจอง
+* Input : touristId, packageId, status, participant, bookingAt
+* Output : booking history ของนักท่องเที่ยว
+*/
 model BookingHistory {
-  id               Int        @id @map("bh_id") 
+  id               Int        @id @default(autoincrement()) @map("bh_id") 
   touristId        Int        @map("bh_tourist_id")
-  packageId        Int        @map("bh_package_id")
+  packageId        Int?       @map("bh_package_id")
+  touristBankId    Int?       @map("bh_tourist_bank_account_id")
   bookingAt        DateTime   @db.Timestamp(0)  @map("bh_booking_at")
   cancelAt         DateTime?  @db.Timestamp(0)  @map("bh_cancel_at")
   refundAt         DateTime?  @db.Timestamp(0)  @map("bh_refund_at")
   status           BookingStatus?               @map("bh_status")
   totalParticipant Int                            @map("bh_total_participant")
   rejectReason     String?    @db.VarChar(100)  @map("bh_reject_reason")
+  transferSlip     String?    @db.VarChar(256)  @map("bh_transfer_slip")
 
   // Relations
-  tourist  User    @relation("Tourist", fields: [touristId], references: [id],  map: "fk_users_has_packages_users1")
-  package  Package @relation(fields: [packageId], references: [id],  map: "fk_users_has_packages_packages1")
+  tourist  User         @relation("Tourist", fields: [touristId], references: [id])
+  package  Package?     @relation(fields: [packageId], references: [id],onDelete: SetNull)
+  bank      BankAccount? @relation(fields: [touristBankId], references: [id])
   feedbacks Feedback[]
 
-  @@index([packageId], map: "fk_users_has_packages_packages1_idx")
-  @@index([touristId], map: "fk_users_has_packages_users1_idx")
+  @@index([packageId])
+  @@index([touristId])
   @@map("booking_histories")
 }
-
+/*
+* คำอธิบาย : เก็บ feedback ของการจอง
+* Input : bookingHistoryId, message, rating, responderId
+* Output : คำติชมของนักท่องเที่ยว
+*/
 model Feedback {
   id                Int       @id @default(autoincrement()) @map("fb_id")
   bookingHistoryId  Int       @map("fb_booking_history_id")
@@ -276,24 +445,20 @@ model Feedback {
   replyMessage      String?   @db.VarChar(100)              @map("fb_reply_message")
 
   // Relations
-  bookingHistory BookingHistory @relation(fields: [bookingHistoryId], references: [id],  map: "fk_feedbacks_booking_histories1")
-  responder      User?          @relation("FeedbackResponder", fields: [responderId], references: [id],  map: "fk_feedbacks_users2")
+  bookingHistory BookingHistory @relation(fields: [bookingHistoryId], references: [id])
+  responder      User?          @relation("FeedbackResponder", fields: [responderId], references: [id])
+  feedbackImages FeedbackImage[]
 
-  @@index([bookingHistoryId], map: "fk_feedbacks_booking_histories1_idx")
-  @@index([responderId], map: "fk_feedbacks_users2_idx")
+  @@index([bookingHistoryId])
+  @@index([responderId])
   @@map("feedbacks")
 }
 
-model Permission {
-  id      Int    @id @map("ps_id") // ไม่ได้ AUTO_INCREMENT
-  name    String @db.VarChar(65)   @map("ps_name")
-
-  // Relations
-  permissionRoles PermissionRole[]
-
-  @@map("permissions")
-}
-
+/*
+* คำอธิบาย : เก็บ tag สำหรับจัดกลุ่ม
+* Input : ชื่อ tag
+* Output : แท็กที่ผูกกับ homestay, store, package
+*/
 model Tag {
   id      Int    @id @default(autoincrement()) @map("tg_id")
   name    String @unique @db.VarChar(90) @map("tg_name")
@@ -305,7 +470,11 @@ model Tag {
 
   @@map("tags")
 }
-
+/*
+* คำอธิบาย : เก็บประวัติการใช้ homestay กับ package
+* Input : packageId, homestayId, checkInTime, checkOutTime
+* Output : ข้อมูลการจอง homestay
+*/
 model HomestayHistory {
   id            Int        @id @default(autoincrement()) @map("hh_id")
   packageId     Int        @map("hh_package_id")
@@ -313,86 +482,81 @@ model HomestayHistory {
   guestAmount   Int        @map("hh_guest_amount")
   checkInTime   DateTime   @db.DateTime                 @map("hh_check_in_time")
   checkOutTime  DateTime   @db.DateTime                 @map("hh_check_out_time")
-  status        HHStatus                               @map("hh_status")
 
   // Relations
-  package   Package  @relation(fields: [packageId], references: [id],  map: "fk_homestay_histories_packages1")
-  homestay  Homestay @relation(fields: [homestayId], references: [id],  map: "fk_homestay_histories_homestays1")
+  package   Package  @relation(fields: [packageId], references: [id])
+  homestay  Homestay @relation(fields: [homestayId], references: [id])
 
-  @@index([homestayId], map: "fk_homestay_histories_homestays1_idx")
-  @@index([packageId], map: "fk_homestay_histories_packages1_idx")
+  @@index([homestayId])
+  @@index([packageId])
   @@map("homestay_histories")
 }
-
+/*
+* คำอธิบาย : เก็บ log การเข้าใช้งาน
+* Input : userId, loginTime, logoutTime, ipAddress
+* Output : ประวัติการ login/logout
+*/
 model Log {
   id          Int       @id @default(autoincrement()) @map("lg_id")
   userId      Int       @map("lg_user_id")
-  loginTime   DateTime  @db.Timestamp(0)              @map("lg_login_at")
+  loginTime   DateTime? @db.Timestamp(0)              @map("lg_login_at")
   logoutTime  DateTime? @db.Timestamp(0)              @map("lg_logout_at")
-  status      LogStatus                              @map("lg_status")
   ipAddress   String    @db.VarChar(45)              @map("lg_ip_address")
 
   // Relations
-  user  User @relation(fields: [userId], references: [id],  map: "fk_logs_users1")
+  user  User @relation(fields: [userId], references: [id])
 
-  @@index([userId], map: "fk_logs_users1_idx")
+  @@index([userId])
   @@map("logs")
 }
 
-/* ====== Explicit join tables (ตามสคีมาเดิม) ====== */
-
-model PermissionRole {
-  permissionId Int @map("psre_permission_id")
-  roleId       Int @map("psre_role_id")
-
-  // Relations
-  permission Permission @relation(fields: [permissionId], references: [id],  map: "fk_permission_roles_permissions1")
-  role       Role       @relation(fields: [roleId], references: [id],  map: "fk_permission_roles_roles1")
-
-  @@id([permissionId, roleId])
-  @@index([roleId], map: "fk_permission_roles_roles1_idx")
-  @@index([permissionId], map: "fk_permission_roles_permissions1_idx")
-  @@map("permission_roles")
-}
-
+/*
+* คำอธิบาย : ตารางเชื่อม tag กับ homestay
+*/
 model TagHomestay {
   tagId      Int @map("tght_tag_id")
   homestayId Int @map("tght_homestay_id")
 
   // Relations
-  tag      Tag      @relation(fields: [tagId], references: [id],  map: "fk_tag_homestays_tags1")
-  homestay Homestay @relation(fields: [homestayId], references: [id],  map: "fk_tag_homestays_homestays1")
+  tag      Tag      @relation(fields: [tagId], references: [id])
+  homestay Homestay @relation(fields: [homestayId], references: [id],onDelete: Cascade)
 
   @@id([tagId, homestayId])
-  @@index([homestayId], map: "fk_tag_homestays_homestays1_idx")
-  @@index([tagId], map: "fk_tag_homestays_tags1_idx")
+  @@index([homestayId])
+  @@index([tagId])
   @@map("tag_homestays")
 }
 
+/*
+* คำอธิบาย : ตารางเชื่อม tag กับ package
+*/
 model TagsPackages {
   tagId     Int @map("tgpk_tag_id")
   packageId Int @map("tgpk_package_id")
 
   // Relations
-  tag     Tag     @relation(fields: [tagId], references: [id],  map: "fk_tag_packages_tags1")
-  package Package @relation(fields: [packageId], references: [id],  map: "fk_tag_packages_packages1")
+  tag     Tag     @relation(fields: [tagId], references: [id])
+  package Package @relation(fields: [packageId], references: [id],onDelete: Cascade)
 
   @@id([tagId, packageId])
-  @@index([packageId], map: "fk_tag_packages_packages1_idx")
-  @@index([tagId], map: "fk_tag_packages_tags1_idx")
+  @@index([packageId])
+  @@index([tagId])
   @@map("tags_packages")
 }
 
+/*
+* คำอธิบาย : ตารางเชื่อม tag กับ store
+*/
 model TagStore {
   tagId   Int @map("tgst_tag_id")
   storeId Int @map("tgst_store_id")
 
   // Relations
-  tag   Tag   @relation(fields: [tagId], references: [id],  map: "fk_tag_stores_tags1")
-  store Store @relation(fields: [storeId], references: [id],  map: "fk_tag_stores_stores1")
+  tag   Tag   @relation(fields: [tagId], references: [id])
+  store Store @relation(fields: [storeId], references: [id],onDelete: Cascade)
 
   @@id([tagId, storeId])
-  @@index([storeId], map: "fk_tag_stores_stores1_idx")
-  @@index([tagId], map: "fk_tag_stores_tags1_idx")
+  @@index([storeId])
+  @@index([tagId])
   @@map("tag_stores")
 }
