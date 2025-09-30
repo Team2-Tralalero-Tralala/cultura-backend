@@ -113,6 +113,7 @@ export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (req, res) 
 export const getAllTags = async (req: Request, res: Response) => {
     try {
         const result = await TagService.getAllTags();
+
         return createResponse(res, 200, "Tags retrieved successfully", result);
     } catch (error) {
         return createErrorResponse(res, 400, (error as Error).message);

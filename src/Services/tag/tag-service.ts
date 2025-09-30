@@ -3,6 +3,7 @@
  * ประกอบด้วยการสร้าง (create), แก้ไข (edit), ลบ (delete), และดึงข้อมูล Tag ทั้งหมด(get)
  * โดยเชื่อมต่อกับฐานข้อมูลผ่าน Prisma
  */
+import { skip } from "@prisma/client/runtime/library";
 import prisma from "../database-service.js";
 import { TagDto} from "./tag-dto.js";
 
@@ -69,5 +70,9 @@ export async function editTag( tagId:number, tag:TagDto) {
  * Error : throw error ถ้าไม่สามารถดึงข้อมูลได้
  */
 export async function getAllTags() {
-  return await prisma.tag.findMany();
+  const result = await prisma.tag.findMany({
+    skip: 0,
+    take: 10,
+  });
+  return result;
 }
