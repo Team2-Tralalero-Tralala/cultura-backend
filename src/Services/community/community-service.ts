@@ -41,14 +41,17 @@ export async function checkMember(member: number[]) {
     );
   }
 }
-/*
+
+/**
  * คำอธิบาย : ฟังก์ชันสำหรับสร้างข้อมูลชุมชนใหม่ พร้อมข้อมูลที่เกี่ยวข้อง เช่น location, homestay, store, member
  * Input :
- *   - community : CommunityDto (ข้อมูลหลักของชุมชน เช่น ชื่อ เลขทะเบียน ประเภท ฯลฯ)
- *   - location : LocationDto (ข้อมูลที่อยู่ของชุมชน)
- *   - homestay : HomestayWithLocationDto หรือ Array (ข้อมูลโฮมสเตย์)
- *   - store : StoreWithLocationDto หรือ Array (ข้อมูลร้านค้า)
- *   - communityMember : CommunityMemberDto หรือ Array (ข้อมูลสมาชิกของชุมชน)
+ * - community : CommunityDto (ข้อมูลหลักของชุมชน เช่น ชื่อ เลขทะเบียน ประเภท ฯลฯ)
+ * - location : LocationDto (ข้อมูลที่อยู่ของชุมชน)
+ * - homestay : HomestayWithLocationDto หรือ Array (ข้อมูลโฮมสเตย์)
+ * - store : StoreWithLocationDto หรือ Array (ข้อมูลร้านค้า)
+ * - bankAccount : BankAccountDto (ข้อมูลบัญชีธนาคารของชุมชน)
+ * - communityImage : CommunityImageDto หรือ Array (ข้อมูลรูปภาพของชุมชน)
+ * - member : Array ของรหัสผู้ใช้ (สมาชิกของชุมชน)
  * Output : Community object ที่ถูกสร้างใหม่ พร้อม relation (location, homestays, stores, members)
  */
 export async function createCommunity(community: CommunityDto) {
@@ -254,12 +257,12 @@ export async function editCommunity(
       });
       const currentMemberIds = currentMembers.map((m) => m.id);
 
-      // 2. หาสมาชิกที่ถูกถอดออก (อยู่ใน current แต่ไม่อยู่ใน member ใหม่)
+      // หาสมาชิกที่ถูกถอดออก (อยู่ใน current แต่ไม่อยู่ใน member ใหม่)
       const removedMembers = currentMemberIds.filter(
         (id) => !member.includes(id)
       );
 
-      // 3. อัปเดตสมาชิกที่ถูกถอดออก → set communityId = null
+      // อัปเดตสมาชิกที่ถูกถอดออก → set communityId = null
       if (removedMembers.length) {
         await transaction.user.updateMany({
           where: { id: { in: removedMembers } },
