@@ -1,130 +1,68 @@
 import type { Request, Response } from "express";
 import * as CommunityService from "../Services/community-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import prisma from "~/Services/database-service.js";
 
-
-/* 
-ฟังก์ชัน : getCommunityById (Controller)
-คำอธิบาย : ดึงข้อมูลชุมชนจากฐานข้อมูลตาม id ที่ผู้ใช้ส่งมา (req.params.id)
-Input : 
-  - req (Request) : อ็อบเจกต์ request ที่มี parameter id
-  - res (Response) : อ็อบเจกต์ response สำหรับส่งข้อมูลกลับไปยัง client
-Output : 
-  - response JSON ที่มีข้อมูลชุมชน (community object) เมื่อค้นพบ
-Error : 
-  - 400 (Invalid community id) หาก id ไม่ใช่ตัวเลข
-  - 404 (Community not found) หากไม่พบชุมชนในฐานข้อมูล
-*/
+/*
+ * ฟังก์ชัน: getCommunityById (Controller)
+ * คำอธิบาย: ใช้สำหรับจัดการ request/response ในการดึงข้อมูลชุมชนตามรหัส (id) 
+ * Input:
+ *   - req.params.id (number): รหัสชุมชนจากพารามิเตอร์ของ URL
+ *   - req (Request): ออบเจกต์ request ของ Express
+ *   - res (Response): ออบเจกต์ response ของ Express
+ * Output:
+ *   - Response JSON: 
+ *       - status: 200 และข้อมูลชุมชน หากพบ
+ *       - status: 404 และข้อความ error หากไม่พบ
+ * Error:
+ *   - จัดการ error ผ่าน createErrorResponse หากเกิดข้อผิดพลาด เช่น ไม่พบชุมชน
+ */
 export const getCommunityById = async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id ?? "0", 10);
-    if (isNaN(id)) {
-        return createErrorResponse(res, 400, "Invalid community id");
-    }
     try {
-        const community = await CommunityService.getCommunityById(id);
+        const community = await CommunityService.getCommunityById(Number(req.params.id));
         return createResponse(res, 200, "Community getById successfully", community);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
 };
 
-/* 
-ฟังก์ชัน : getCommunityByRole (Controller)
-คำอธิบาย : ดึงรายการชุมชนตาม "บทบาท (role)" ของผู้ใช้ที่มี id ตรงกับพารามิเตอร์
-Input : 
-  - req.params.id (number) - id ของผู้ใช้ (users.us_id)
-Output : 
-  - JSON { status, role, data } 
-    - role = user.roleId
-    - data = รายการชุมชนที่เข้าถึงได้ตามสิทธิ์
-Error : 
-  - 400 ถ้า id ไม่ใช่ตัวเลข
-  - 404 ถ้าไม่พบผู้ใช้
-  - 500 ถ้าเกิดข้อผิดพลาดอื่น ๆ
-*/
-export const getCommunityByRole = async (req: Request, res: Response) => {
+/*
+ * ฟังก์ชัน: getCommunityByUserRole (Controller)
+ * คำอธิบาย: ใช้สำหรับดึงรายการชุมชนตามบทบาท (Role) ของผู้ใช้ ผ่าน userId
+ * Input:
+ *   - req.params.id (number): รหัสผู้ใช้ (User ID) ที่ส่งมาทาง URL
+ *   - req (Request): ออบเจกต์ request ของ Express
+ *   - res (Response): ออบเจกต์ response ของ Express
+ * Output:
+ *   - Response JSON:
+ *       - status: 200 → คืนค่าข้อมูลในรูปแบบ { I_am, role, data }
+ *       - status: 400 → ถ้า userId ไม่ใช่ตัวเลข หรือ role ไม่ถูกต้อง
+ *       - status: 404 → ถ้าไม่พบผู้ใช้
+ *       - status: 500 → ถ้ามีข้อผิดพลาดอื่น ๆ
+ * Error:
+ *   - จัดการ error ด้วย createErrorResponse ตามประเภทข้อผิดพลาด
+ */
+
+export const getCommunityByUserRole = async (req: Request, res: Response) => {
+  const userId = Number(req.params.id);
+  // console.log("userId:", userId);
+
+  if (!Number(userId)) {
+    return createErrorResponse(res, 400, "ID must be Number");
+  }
   try {
-    const { id } = req.params;
-    const userId = Number(id);
-    if (!Number.isFinite(userId)) {
-      return res.status(400).json({ status: 400, message: "ID must be Number" });
-    }
-    
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        role: true,
-        communityMembers: true, // ใช้หา communityIds ที่ผู้ใช้อยู่
-      },
+    const { roleName, roleId, communities } = await CommunityService.getCommunityByUserRole(userId);
+    return createResponse(res, 200, "Community list by role", {
+      I_am: roleName,
+      role: roleId,
+      data: communities,
     });
-
-    if (!user) {
-      return res.status(404).json({ status: 404, message: "User not found" });
-    }
-
-    let result: any[] = [];
-    let roleName: string = ""; // ข้อความบอก role
-
-    
-    switch (user.roleId) {
-      
-      case 1: {
-        // superadmin เห็นทุกชุมชน
-        result = await prisma.community.findMany();
-        roleName = "Super Admin";
-        break;
-      }
-      case 2: {
-        // admin เห็นเฉพาะชุมชนตัวเอง
-        const communityIds = (user.communityMembers ?? []).map(cm => cm.communityId);
-        if (communityIds.length === 0) {
-          result = [];
-        } else {
-          result = await prisma.community.findMany({
-            where: { id: { in: communityIds } },
-          });
-        }
-        roleName = "Admin";
-        break;
-      }
-      default: {
-        return res.status(400).json({ status: 400, message: "Invalid user role" });
-      }
-
-      case 3: {
-        // member: เห็นเฉพาะชุมชนตัวเอง
-        // ผ่านตาราง community_members
-        /*.map(cm => cm.communityId)
-            วนลูปทุกแถวใน communityMembers
-            ดึงเฉพาะค่า communityId มาเก็บใน array
-            เช่น ถ้า user สังกัด 2 ชุมชน id=5, id=7 → จะได้ communityIds = [5, 7]
-        */
-        const communityIds = (user.communityMembers ?? []).map(cm => cm.communityId);
-
-        //เช็กว่า user ไม่ได้เป็นสมาชิกชุมชนไหนเลย กำหนด result = []
-        if (communityIds.length === 0) {
-          result = [];
-        } else {
-          result = await prisma.community.findMany({
-            where: { id: { in: communityIds } }, // ใช้ field id (ct_id ถูก map แล้ว)
-          });
-        }
-        roleName = "Member";
-        break;
-      }
-      case 4: {
-        // tourist
-        result = [];
-        roleName = "Tourist";
-        break;
-      }
-    }
-
-    return res.json({ status: 200, I_am : roleName, role: user.roleId, data: result });
   } catch (error: any) {
-    return res.status(500).json({ status: 500, message: error.message });
+    if (error.message === "User not found") {
+      return createErrorResponse(res, 404, error.message);
+    }
+    if (error.message === "Invalid user role") {
+      return createErrorResponse(res, 400, error.message);
+    }
+    return createErrorResponse(res, 500, error.message);
   }
 };
-
-

@@ -133,42 +133,73 @@ export class CommunityDto {
   urlOther?: string; // ct_url_other
 }
 
-/* 
-ฟังก์ชัน : getCommunityById
-คำอธิบาย : ค้นหาชุมชนในฐานข้อมูลจาก id
-Input : id (number) - id ชุมชน
-Output : community object - ข้อมูลชุมชนที่พบ
-Error : throw error ถ้าไม่พบชุมชน
-*/
+/*
+ * ฟังก์ชัน: getCommunityById
+ * คำอธิบาย: ใช้สำหรับค้นหาชุมชนจากฐานข้อมูลด้วยรหัสชุมชน (id)
+ * Input:
+ *   - id (number): รหัสชุมชน
+ * Output:
+ *   - community object: ข้อมูลของชุมชนที่พบ
+ * Error:
+ *   - throw Error หากไม่พบข้อมูลชุมชน
+ */
 export async function getCommunityById(id: number) {
     const community = await prisma.community.findUnique({
-      where: { id },
+      where: { id : id },
     });
     if (!community) throw new Error("Community not found");
     return community;
 }
 
 
-/* 
-ฟังก์ชัน : getCommunityByRole
-คำอธิบาย : ค้นหาชุมชนในฐานข้อมูลจาก Role ของผู้ใช้
-Input : id (number) - id ชุมชน
-Output : community object - ข้อมูลชุมชนที่พบ
-Error : throw error ถ้าไม่พบชุมชน
-*/
+/*
+ * ฟังก์ชัน: getCommunityByUserRole
+ * คำอธิบาย: ใช้สำหรับดึงข้อมูลชุมชนตามบทบาท (Role) ของผู้ใช้
+ * Input:
+ *   - userId (number): รหัสผู้ใช้
+ * Output:
+ *   - object: ข้อมูลที่ได้ประกอบด้วย
+ *       - roleName (string): ชื่อบทบาทของผู้ใช้
+ *       - roleId (number): รหัสบทบาทของผู้ใช้
+ *       - communities (array): รายการชุมชนที่ผู้ใช้สามารถเข้าถึงได้
+ * Error:
+ *   - throw Error หากไม่พบผู้ใช้ หรือบทบาทไม่ถูกต้อง
+ */
 
-/* // code from JENG
-export const getCommunityByRole = async (id: number) => {
-    return await prisma.community.findMany({
-        where: { id: id }
-    })  
-}
-*/
+export async function getCommunityByUserRole(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: true,
+      memberOf: true, 
+    },
+  });
+  if (!user) throw new Error("User not found");
 
-export async function getCommunityByRole(id: number) {
-    const community = await prisma.community.findMany({
-      where: { id: id },
-    });
-    if (!community) throw new Error("Community not found");
-    return community;
+  let result: any[] = [];
+  let roleName: string = "";
+
+  switch (user.roleId) {
+    case 1:
+      result = await prisma.community.findMany({
+        take : 100,
+      }
+      );
+      roleName = "Super Admin";
+      break;
+    case 2:
+    case 3:
+      // ดึง community ที่ user เป็นสมาชิก (memberOf เป็น object หรือ null)
+      result = user.memberOf ? [user.memberOf] : [];
+      roleName = user.roleId === 2 ? "Admin" : "Member";
+      break;
+    case 4:
+      result = [];
+      roleName = "Tourist";
+      break;
+    default:
+      throw new Error("Invalid user role");
+  }
+
+  return { roleName, roleId: user.roleId, communities: result };
 }

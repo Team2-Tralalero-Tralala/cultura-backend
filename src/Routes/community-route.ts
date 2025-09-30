@@ -1,9 +1,9 @@
 
 import { Router } from "express";
 import { getCommunityById } from "../Controllers/community-controller.js";
-import { getCommunityByRole } from "../Controllers/community-controller.js";
+import { getCommunityByUserRole } from "../Controllers/community-controller.js";
 
 const communityRoutes = Router();
-communityRoutes.get("/getCommunityById/:id", getCommunityById );
-communityRoutes.get("/getCommunityByRole/:id", getCommunityByRole );
+communityRoutes.get("/communities/:id", getCommunityById );
+communityRoutes.get("/communities/role/:id", getCommunityByUserRole );
 export default communityRoutes;
