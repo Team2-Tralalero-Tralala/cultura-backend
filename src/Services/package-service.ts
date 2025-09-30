@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
 
 // TypeScript type สำหรับ Package ที่ดึงมาจากฐานข้อมูล
-interface Package {
+interface Packages {
   name: string; // ชื่อแพ็กเกจ
   statusApprove: string; // สถานะการอนุมัติ
   overseerMember: string; // ชื่อของผู้ดูเเล
@@ -20,41 +20,36 @@ interface Package {
  *   2. เลือก field name, statusApprove, overseerMemberId และ relation community.name
  *   3. map ข้อมูลให้ flatten field community.name → "ชื่อชุมชน"
  */
-export async function getPackages(
-  data: any// ข้อมูลกรองจาก client
-) { // คืนค่าเป็น array ของ FlattenedPackage
+export async function getPackages(body: any) {
   const packages = await prisma.package.findMany({
-  where: {
-    OR: [
-      { statusApprove: "Approved" },
-      { statusApprove: data.statusApprove },
-    ],
-  },
-  select: {
-    name: true,
-    statusApprove: true,
-    overseerMemberId: true,
-    community: { select: { name: true } },
-  },
-});
+    select: {
+      name: true,
+      statusApprove: true,
+      community: {
+        select: { name: true },
+      },
+      overseerMemberId: true,
+    },
+  });
 
-  // ดึงชื่อผู้ดูแลจาก overseerMemberId
-  for (const pkg of packages) {// วนลูปผ่านแต่ละแพ็กเกจที่ดึงมา
-    let overseerName = "ไม่พบข้อมูล";// กำหนดค่าเริ่มต้นของชื่อผู้ดูแล
-    // ตรวจสอบว่า overseerMemberId มีค่าไหม ถ้ามีให้ดึงชื่อผู้ดูแลจาก table users
+  const resultPackages = [];
+  for (const pkg of packages) {
+    let overseerName = "ไม่พบข้อมูล";
     if (pkg.overseerMemberId) {
-      const overseer = await prisma.user.findUnique({// ดึงข้อมูลผู้ใช้จาก table users
-        where: { id: pkg.overseerMemberId }, // ใช้ overseerMemberId เป็นเงื่อนไขการค้นหา
-        select: { username: true},// เลือกเฉพาะ field username
+      const user = await prisma.user.findUnique({
+        where: { id: pkg.overseerMemberId },
+        select: { username: true },
       });
-      // ถ้าพบผู้ดูแล ให้ตั้งค่า overseerName เป็นชื่อผู้ดูแล
-      if (overseer) {
-        overseerName = overseer.username;// ตั้งชื่อผู้ดูแลเป็น username
-      }
+      if (user) overseerName = user.username;
     }
 
-    (pkg as any).ชื่อผู้ดูแล = overseerName;// เพิ่ม field ชื่อผู้ดูแล
+    resultPackages.push({
+      name: pkg.name,    
+      community: pkg.community.name,    
+      status: pkg.statusApprove,      
+      overseer: overseerName,       
+    });
   }
 
-  return packages;// คืนค่า array ของแพ็กเกจที่แปลงแล้ว
+  return resultPackages;
 }
