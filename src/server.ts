@@ -3,7 +3,7 @@ import rootRouter from "./Routes/index-route.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { compressUploadedFile } from "./Middlewares/upload-middleware.js";
-import { upload } from "./Libs/uploadFile.js";
+import { upload, uploadPublic } from "./Libs/uploadFile.js";
 
 const app = express();
 app.use(cookieParser());
@@ -25,17 +25,17 @@ app.get("/", (req, res) => {
 app.use("/api", rootRouter);
 
 // Route สำหรับทดสอบอัปโหลดไฟล์
-// app.post("/upload", upload.single("file"), (req, res) => {
-//     if (!req.file) {
-//         return res.json({status: 400, message: 'file not found'})
-//     }
+app.post("/upload", uploadPublic.single("file"), (req, res) => {
+    if (!req.file) {
+        return res.json({status: 400, message: 'file not found'})
+    }
 
-//   res.json({
-//       originalname: req.file.originalname,
-//       compressedFile: req.file.filename,
-//       path: req.file.path,
-//     });
-// });
+  res.json({
+      originalname: req.file.originalname,
+      compressedFile: req.file.filename,
+      path: req.file.path,
+    });
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

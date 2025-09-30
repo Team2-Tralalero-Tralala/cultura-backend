@@ -9,18 +9,25 @@ import multer from 'multer';
  * - destination: กำหนด path ที่เก็บไฟล์ (uploads/)
  * - filename   : กำหนดชื่อไฟล์ใหม่ โดยใช้ timestamp + ชื่อไฟล์ต้นฉบับ
  */
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/')
-    },
-    filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + file.originalname
-        cb(null, uniqueName)
-    }
-})
+function createUploader(folder: string) {
+    const storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, folder)
+        },
+        filename: (req, file, cb) => {
+            const uniqueName = Date.now() + '-' + file.originalname
+            cb(null, uniqueName)
+        }
+    })
+
+    return multer({ storage });
+}
 
 /* 
  * Export: upload
  * Multer middleware ที่ใช้ config จาก storage
+ * upload จะอัพโหลดลง Folder "uploads"
+ * uploadPublic จะอัพโหลดลง Folder "public"
  */
-export const upload = multer({ storage })
+export const upload = createUploader("uploads/");
+export const uploadPublic = createUploader("public/");
