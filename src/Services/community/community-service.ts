@@ -24,14 +24,14 @@ const mapLocation = (loc: LocationDto) => ({
  * Input : Array ของ member (รหัสผู้ใช้)
  * Output : ถ้าผู้ใช้ทั้งหมดถูกต้อง จะไม่มีการคืนค่าอะไร แต่ถ้ามีผู้ใช้ที่ไม่ถูกต้อง จะโยน Error ออกมา
  */
-export async function checkMember(member: number[]) {
+export async function checkMember(member: number[], communityId: number) {
   const checkMember = await prisma.user.findMany({
     where: {
       id: { in: member },
       role: {
         name: "member",
       },
-      memberOfCommunity: null,
+      OR: [{ memberOfCommunity: null }, { memberOfCommunity: communityId }],
     },
   });
 
@@ -161,7 +161,7 @@ export async function createCommunity(community: CommunityDto) {
     });
 
     if (member?.length) {
-      await checkMember(member);
+      await checkMember(member, newCommunity.id);
       await transaction.user.updateMany({
         where: {
           id: { in: member },
@@ -247,7 +247,7 @@ export async function editCommunity(
       },
     });
     if (member?.length) {
-      await checkMember(member);
+      await checkMember(member, updateCommunity.id);
       const currentMembers = await transaction.user.findMany({
         where: {
           memberOfCommunity: updateCommunity.id,
@@ -257,7 +257,7 @@ export async function editCommunity(
       });
       const currentMemberIds = currentMembers.map((m) => m.id);
 
-      // หาสมาชิกที่ถูกถอดออก (อยู่ใน current แต่ไม่อยู่ใน member ใหม่)
+      // 2. หาสมาชิกที่ถูกถอดออก (อยู่ใน current แต่ไม่อยู่ใน member ใหม่)
       const removedMembers = currentMemberIds.filter(
         (id) => !member.includes(id)
       );
@@ -269,11 +269,15 @@ export async function editCommunity(
           data: { memberOfCommunity: null },
         });
       }
+
       await transaction.user.updateMany({
         where: {
           id: { in: member },
           role: { name: "member" },
-          memberOfCommunity: null,
+          OR: [
+            { memberOfCommunity: null },
+            { memberOfCommunity: updateCommunity.id },
+          ],
         },
         data: { memberOfCommunity: updateCommunity.id },
       });
