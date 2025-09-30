@@ -52,7 +52,7 @@ export async function getPackages(
         overseerName = overseer.username;// ตั้งชื่อผู้ดูแลเป็น username
       }
     }
-// เพิ่มข้อมูลที่แปลงแล้วลงใน array flattened
+
     (pkg as any).ชื่อผู้ดูแล = overseerName;// เพิ่ม field ชื่อผู้ดูแล
   }
 
