@@ -63,7 +63,7 @@ export const editCommunity: TypedHandlerFromDto<
   try {
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.editCommunity(communityId, req.body);
-    return createResponse(res, 201, "Update community successfully", result);
+    return createResponse(res, 200, "Update community successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -89,7 +89,7 @@ export const deleteCommunityById: TypedHandlerFromDto<
   try {
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.deleteCommunityById(communityId);
-    return createResponse(res, 201, "Deleted community successfully", result);
+    return createResponse(res, 200, "Deleted community successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
