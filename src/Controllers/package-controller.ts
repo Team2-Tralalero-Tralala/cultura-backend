@@ -22,9 +22,9 @@ export const createPackageDto = {
 export const createPackage = async (req: Request, res: Response) => {
     try {
         const result = await PackageService.createPackage(req.body);
-        return res.json({ status:200, data: result });
+        return createResponse(res, 200, "Create Packages Success", {result})
     } catch (error: any) {
-        return res.status(500).json({ status: 500, message: error.message });
+        return createErrorResponse(res, 404, (error as Error).message);
     }
 };
 

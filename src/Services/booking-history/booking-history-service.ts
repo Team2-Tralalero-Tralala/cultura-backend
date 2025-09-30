@@ -1,5 +1,20 @@
 import prisma from "../database-service.js";
 
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับสร้าง Booking History ใหม่
+ * Input  : 
+ *   - data: object {
+ *       touristId: number (รหัสผู้จอง),
+ *       packageId: number (รหัสแพ็กเกจ),
+ *       bookingAt: string (เวลาจอง),
+ *       cancelAt?: string | null (เวลายกเลิก),
+ *       refundAt?: string | null (เวลาคืนเงิน),
+ *       status?: string (สถานะการจอง, ค่าเริ่มต้น "PENDING"),
+ *       totalParticipant: number (จำนวนผู้เข้าร่วม),
+ *       rejectReason?: string | null (เหตุผลที่ถูกปฏิเสธ)
+ *   }
+ * Output : BookingHistory object ที่ถูกสร้างใหม่ในฐานข้อมูล
+ */
 export const createBooking = async(data: any) => {
     const packageId = await prisma.package.findUnique({
         where: { id: Number(data.packageId) }
