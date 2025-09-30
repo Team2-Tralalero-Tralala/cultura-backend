@@ -11,7 +11,7 @@ import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 
 /*
  * คำอธิบาย : DTO สำหรับสร้างข้อมูลชุมชนใหม่
- * Input : body (CommunityFormDto)
+ * Input : body (CommunityDto)
  * Output : ข้อมูลชุมชนที่ถูกสร้าง
  */
 export const createCommunityDto = {
@@ -20,7 +20,7 @@ export const createCommunityDto = {
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับสร้างข้อมูลชุมชนใหม่
- * Input : req.body (community, bankAccount, communityImage,location, homestay, store, member)
+ * Input : req.body (community, location, homestay, store, member)
  * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกสร้าง
  */
 export const createCommunity: TypedHandlerFromDto<
@@ -54,7 +54,7 @@ export const editCommunityDto = {
 } satisfies commonDto;
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขข้อมูลชุมชนที่มีอยู่
- * Input : req.params.communityId, req.body (community, location)
+ * Input : req.params.communityId, req.body
  * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกแก้ไข
  */
 export const editCommunity: TypedHandlerFromDto<
@@ -63,7 +63,7 @@ export const editCommunity: TypedHandlerFromDto<
   try {
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.editCommunity(communityId, req.body);
-    return createResponse(res, 200, "Update community successfully", result);
+    return createResponse(res, 201, "Update community successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -89,7 +89,7 @@ export const deleteCommunityById: TypedHandlerFromDto<
   try {
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.deleteCommunityById(communityId);
-    return createResponse(res, 200, "Deleted community successfully", result);
+    return createResponse(res, 201, "Deleted community successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
