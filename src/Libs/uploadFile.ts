@@ -1,7 +1,14 @@
+/* 
+ * คำอธิบาย: Middleware สำหรับอัปโหลดไฟล์ด้วย Multer
+ * กำหนดโฟลเดอร์ปลายทาง (uploads/) และสร้างชื่อไฟล์ใหม่แบบ unique
+ */
 import multer from 'multer';
-import fs from "fs";
-import zlib from "zlib";
 
+/* 
+ * Function: storage (multer.diskStorage)
+ * - destination: กำหนด path ที่เก็บไฟล์ (uploads/)
+ * - filename   : กำหนดชื่อไฟล์ใหม่ โดยใช้ timestamp + ชื่อไฟล์ต้นฉบับ
+ */
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/')
@@ -12,17 +19,8 @@ const storage = multer.diskStorage({
     }
 })
 
-async function compressFile(inputPath: string, outputPath: string) {
-    return new Promise((resolve, reject) => {
-        const gzip = zlib.createGzip();
-        const input = fs.createReadStream(inputPath);
-        const output = fs.createWriteStream(outputPath);
-
-    input.pipe(gzip).pipe(output)
-        .on("finish", () => resolve(true))
-        .on("error", reject);
-    });
-}
-
-export {compressFile}
+/* 
+ * Export: upload
+ * Multer middleware ที่ใช้ config จาก storage
+ */
 export const upload = multer({ storage })

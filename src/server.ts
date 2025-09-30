@@ -24,8 +24,8 @@ app.get("/", (req, res) => {
 
 app.use("/api", rootRouter);
 
-//เอาไว้เทส upload by yok
-// app.post("/upload", upload.single("file"), compressUploadedFile, (req, res) => {
+// Route สำหรับทดสอบอัปโหลดไฟล์
+// app.post("/upload", upload.single("file"), (req, res) => {
 //     if (!req.file) {
 //         return res.json({status: 400, message: 'file not found'})
 //     }
