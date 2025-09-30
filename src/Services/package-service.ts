@@ -1,27 +1,31 @@
 import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
 
-// TypeScript type สำหรับ Package ที่ดึงมาจากฐานข้อมูล
 interface Packages {
-  name: string; // ชื่อแพ็กเกจ
-  statusApprove: string; // สถานะการอนุมัติ
-  overseerMember: string; // ชื่อของผู้ดูเเล
+  name: string;
+  statusApprove: string;
+  overseerMember: string;  
   community: {
-    name: string; // ชื่อชุมชน
+    name: string;
   };
 }
 /*
  * ฟังก์ชัน : getPackages
  * คำอธิบาย : ดึงแพ็กเกจที่ถูกอนุมัติและเผยแพร่แล้ว
  * Input : data (any) - ใช้สำหรับกรอง statusApprove
- * Output : FlattenedPackage[] - คืนค่า array ของ object ที่ field เป็นภาษาไทย
+ * Output : array ของแพ็กเกจ ที่มีชื่อ overseer
  * Process :
- *   1. ใช้ Prisma ดึงข้อมูลจาก table packages
- *   2. เลือก field name, statusApprove, overseerMemberId และ relation community.name
- *   3. map ข้อมูลให้ flatten field community.name → "ชื่อชุมชน"
+ *  1. ดึงข้อมูลแพ็กเกจจากฐานข้อมูล
+ *  2. สำหรับแต่ละแพ็กเกจ ดึงชื่อ overseer จากตาราง user
+ *  3. สร้าง array ใหม่ที่มีข้อมูลแพ็กเกจพร้อมชื่อ overseer
+ *  4. ส่งกลับ array ของแพ็กเกจ
  */
 export async function getPackages(body: any) {
   const packages = await prisma.package.findMany({
+    where: {
+      OR: [ { statusApprove: "APPROVE" }, 
+            { statusApprove: body.statusApprove }
+      ]},
     select: {
       name: true,
       statusApprove: true,
@@ -46,7 +50,7 @@ export async function getPackages(body: any) {
     resultPackages.push({
       name: pkg.name,    
       community: pkg.community.name,    
-      status: pkg.statusApprove,      
+      statusAppove: pkg.statusApprove,      
       overseer: overseerName,       
     });
   }
