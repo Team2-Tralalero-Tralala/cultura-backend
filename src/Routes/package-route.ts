@@ -4,6 +4,6 @@ import { getPackagesController } from "../Controllers/package-controller.js";
 
 const packageRoutes = Router();// สร้าง router ใหม่
 
-packageRoutes.get("/", getPackagesController);// เส้นทาง GET /api/package
+packageRoutes.get("/", getPackagesController);// เส้นทาง GET /api/packages
 
 export default packageRoutes;// ส่งออก router เพื่อใช้ในที่อื่น
