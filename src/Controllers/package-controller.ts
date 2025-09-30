@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import * as PackageService from "../Services/package/package-service.js";
 import prisma from "~/Services/database-service.js";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
-import { PackageDto, updatePackageDto } from "~/Services/package/package-dto.js";
+import { PackageDto, PackageFileDto, updatePackageDto } from "~/Services/package/package-dto.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 
 /*
@@ -50,7 +50,7 @@ export const getPackageByRole = async (req: Request, res: Response) => {
  * Output : commonDto object
  */
 export const editPackageDto = {
-    body: updatePackageDto,
+    body: updatePackageDto
 } satisfies commonDto;
 
 /*
@@ -58,9 +58,12 @@ export const editPackageDto = {
  * Input  : packageId (จาก params), Request body (updatePackageDto)
  * Output : JSON response { status, message, data }
  */
-export const editPackage: TypedHandlerFromDto<typeof editPackageDto> = async (req, res) => {
+export const editPackage =  async (req: Request, res: Response) => {
     try {
-        const id = Number(req.params)
+        const id = Number(req.params.id);
+        if (isNaN(id)) {
+            return createErrorResponse(res, 400, "ID must be a number");
+        }
         const data = req.body;
         const result = await PackageService.editPackage(id, data)
         return createResponse(res, 200, "Package Updated", result)
@@ -76,7 +79,10 @@ export const editPackage: TypedHandlerFromDto<typeof editPackageDto> = async (re
  */
 export const deletePackage = async (req: Request, res: Response) => {
     try {
-        const id = Number(req.params);
+        const id = Number(req.params.id);
+        if (isNaN(id)) {
+            return createErrorResponse(res, 400, "ID must be a number");
+        }
         const result = await PackageService.deletePackage(id);
         return createResponse(res, 200, "Package Deleted", result)
     } catch (error: any) {

@@ -38,9 +38,9 @@ export const createPackage = async (data: PackageDto) => {
     },
   });
 
-  // สร้าง Package โดยผูกกับ location ที่เพิ่งสร้าง
+  // สร้าง Package โดยผูกกับ location และเพิ่ม packageFile ถ้ามี
   return await prisma.package.create({
-    data: {
+  data: {
     communityId: data.communityId,
     locationId: location.id,
     overseerMemberId: data.overseerMemberId,
@@ -55,8 +55,19 @@ export const createPackage = async (data: PackageDto) => {
     startDate: new Date(data.startDate),
     dueDate: new Date(data.dueDate),
     facility: data.facility,
+
+    // ใช้ conditional spread แทน undefined
+    ...(data.packageFile && {
+      packageFile: {
+        create: data.packageFile.map((file: any) => ({
+          filePath: file.filePath,
+          type: file.type,
+        })),
+      },
+    }),
   },
-  });
+  include: { location: true, packageFile: true },
+});
 };
 
 /*
@@ -68,7 +79,7 @@ export const editPackage = async (id: number, data: any) => {
   // ตรวจสอบว่า package มีจริง
   const pkg = await prisma.package.findUnique({
     where: { id },
-    include: { location: true },
+    include: { location: true, packageFile: true }, // include packageFile ด้วย
   });
   if (!pkg) {
     throw new Error(`Package ID ${id} ไม่พบในระบบ`);
@@ -107,23 +118,30 @@ export const editPackage = async (id: number, data: any) => {
     }
   }
 
-  // แยก location ออกมา (แก้ field ได้ แต่ห้ามเปลี่ยน locationId)
-  const { location, locationId, ...packageData } = data;
+  // แยก field ออกมา
+  const { location, locationId, packageFile, ...packageData } = data;
+
   return await prisma.package.update({
     where: { id },
     data: {
       ...packageData,
-      ...(location
-        ? {
-            location: {
-              update: { ...location }, // update fields ของ location เดิม
-            },
-          }
-        : {}),
+      ...(location && {
+        location: { update: { ...location } }, // update fields ของ location เดิม
+      }),
+      ...(packageFile && {
+        packageFile: {
+          deleteMany: {}, // ลบไฟล์เก่าทั้งหมด
+          create: packageFile.map((file: any) => ({
+            filePath: file.filePath,
+            type: file.type,
+          })),
+        },
+      }),
     },
-    include: { location: true },
+    include: { location: true, packageFile: true }, // ส่งกลับมาพร้อมไฟล์
   });
 };
+
 
 /*
  * คำอธิบาย : ดึง Package ตามหมายเลข ID
@@ -183,5 +201,8 @@ export const deletePackage = async (id: number) => {
   if (!result) {
     throw new Error(`Package ID ${id} ไม่พบในระบบ`);
   }
+  await prisma.package.delete({
+    where: { id }
+  });
   return await result;
 };

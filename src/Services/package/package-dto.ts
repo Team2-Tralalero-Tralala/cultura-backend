@@ -9,11 +9,30 @@ import {
   IsOptional,
   Matches,
   ValidateNested,
-  IsObject
+  IsObject,
+  IsArray
 } from "class-validator";
-import { PackagePublishStatus, PackageApproveStatus } from "@prisma/client";
+import { PackagePublishStatus, PackageApproveStatus, ImageType } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
 import "reflect-metadata";
+
+
+/*
+ * คำอธิบาย : Data Transfer Object (DTO) สำหรับข้อมูลไฟล์ที่แนบกับ Package
+ * Input  : filePath (string), type (ImageType)
+ * Output : ใช้สำหรับ validate ข้อมูลไฟล์ก่อนบันทึกลงฐานข้อมูล
+ */
+export class PackageFileDto {
+  @IsString()
+  @IsNotEmpty({ message: "filePath ห้ามว่าง" })
+  filePath!: string;
+
+  
+  @IsEnum(ImageType, {
+    message: "ImageType ต้องเป็น COVER | GALLERY | VIDEO | LOGO",
+  })
+  type!: ImageType; // เพิ่ม DTO สำหรับไฟล์
+}
 
 /*
  * คำอธิบาย : DTO สำหรับการสร้าง Package ใหม่
@@ -26,8 +45,8 @@ export class PackageDto {
   @IsNotEmpty({ message: "communityId ห้ามว่าง" })
   communityId: number;
 
-  @ValidateNested() // ✅ บอก class-validator ว่า validate field ข้างในด้วย
-  @Type(() => LocationDto) // ✅ ชี้ให้แปลงเป็น LocationDto
+  @ValidateNested() //  บอก class-validator ว่า validate field ข้างในด้วย
+  @Type(() => LocationDto) //  ชี้ให้แปลงเป็น LocationDto
   @IsNotEmpty({ message: "location ห้ามว่าง" })
   location: LocationDto;
 
@@ -88,11 +107,13 @@ export class PackageDto {
   @IsNotEmpty({ message: "facility ห้ามว่าง" })
   @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
   facility: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PackageFileDto)
+  packageFile?: PackageFileDto[];
 }
-
-
-
-
 
 /*
  * คำอธิบาย : DTO สำหรับการแก้ไข Package เดิม
@@ -106,9 +127,8 @@ export class updatePackageDto {
   @IsOptional()
   communityId?: number;
 
-  @ValidateNested() // ✅ บอก class-validator ว่า validate field ข้างในด้วย
-  @Type(() => LocationDto) // ✅ ชี้ให้แปลงเป็น LocationDto
-  @IsNotEmpty({ message: "location ห้ามว่าง" })
+  @ValidateNested() // บอก class-validator ว่า validate field ข้างในด้วย
+  @Type(() => LocationDto) // ชี้ให้แปลงเป็น LocationDto
   @IsOptional()
   location?: LocationDto;
 
@@ -181,4 +201,10 @@ export class updatePackageDto {
   @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
   @IsOptional()
   facility?: string;
+
+  @IsOptional()
+  @IsArray({ message: "packageFile ต้องเป็น array" })
+  @ValidateNested({ each: true })
+  @Type(() => PackageFileDto)
+  packageFile?: PackageFileDto[];
 }
