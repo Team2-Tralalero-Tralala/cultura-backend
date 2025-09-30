@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-type UserShape = {
+type userAttribute = {
   id: number;
   role: "tourist" | "member" | "admin";
   communityId?: number;
@@ -21,7 +21,7 @@ type UserShape = {
  *       - หลักฐานการโอน
  *       - เวลาในการจอง
  */
-export const getHistoriesByRole = async (user: UserShape) => {
+export const getHistoriesByRole = async (user: userAttribute) => {
   if (!["tourist", "member", "admin"].includes(user.role)) {
     throw new Error("Invalid user role: must be tourist, member, or admin");
   }
