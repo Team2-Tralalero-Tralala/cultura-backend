@@ -1,33 +1,21 @@
-import express from "express";
-import { IsObject, IsOptional } from "class-validator";
-import type { standardResponse } from "~/Libs/createResponse.js";
-export class commonDto {
-    @IsOptional()
-    @IsObject()
-    params?: object;
+import type { Request, Response } from "express";
 
-    @IsOptional()
-    @IsObject()
-    query?: object;
+type ClassType<T = any> = new (...args: any[]) => T;
 
-    @IsOptional()
-    @IsObject()
-    body?: object;
+export type commonDto = {
+  body?: ClassType;
+  query?: ClassType;
+  params?: ClassType;
+};
 
-    @IsOptional()
-    @IsObject()
-    file?: object;
-}
+type ReqFromDto<D extends commonDto> = Request<
+  D["params"] extends ClassType ? InstanceType<D["params"]> : Record<string, any>,
+  any,
+  D["body"] extends ClassType ? InstanceType<D["body"]> : any,
+  D["query"] extends ClassType ? InstanceType<D["query"]> : any
+>;
 
-type InferDto<T> = T extends new (...args: any[]) => any ? InstanceType<T> : T;
-
-export type TypedHandlerFromDto<T extends commonDto> = (
-    req: express.Request<
-        InferDto<T["params"]>,
-        any,
-        InferDto<T["body"]>,
-        InferDto<T["query"]>
-    >,
-    res: express.Response,
-    next: express.NextFunction
-) => Promise<standardResponse>;
+export type TypedHandlerFromDto<D extends commonDto> = (
+  req: ReqFromDto<D>,
+  res: Response
+) => Promise<any>;

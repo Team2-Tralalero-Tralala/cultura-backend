@@ -1,17 +1,41 @@
+// src/Routes/account-routes.ts
 import { Router } from "express";
-import { createAccount, editAccountController } from "../Controllers/account-controller.js";
-import { getCommunityMembers } from "../Controllers/admin-members.controller.js";
+import { getMemberByAdmin } from "../Controllers/admin-members-controller.js";
+import {
+  createAccount,
+  createAccountDto,
+  editAccount,
+  editAccountDto,
+} from "../Controllers/account-controller.js";
+import { validateDto } from "../Libs/validateDto.js";
+import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
 
-import { validateBody } from "../Middlewares/validate.js";
-import { CreateAccountDto, EditAccountDto } from "../Validators/account.dto.js";
 
-const router = Router();
+const accountRoutes = Router();
+// GET /api/admin/communities/:communityId/members
+accountRoutes.get(
+  "/communities/members",
+  authMiddleware,
+  allowRoles("admin"), // ปรับ role ตาม requirement ทีมได้
+  getMemberByAdmin
+);
 
-// Accounts
-router.post("/accounts", validateBody(CreateAccountDto),createAccount);
-router.patch("/accounts/:id", validateBody(EditAccountDto),editAccountController);
+// POST /api/accounts
+accountRoutes.post(
+  "/accounts",
+  validateDto(createAccountDto),
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member"), // ปรับ role ตาม requirement ทีมได้
+  createAccount
+);
 
-// Admin → community members
-router.get("/admin/communities/:communityId/members", getCommunityMembers);
+// PATCH /api/accounts/:id
+accountRoutes.patch(
+  "/accounts/:id",
+  validateDto(editAccountDto),
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member"), // ปรับได้เช่นกัน
+  editAccount
+);
 
-export default router;
+export default accountRoutes;

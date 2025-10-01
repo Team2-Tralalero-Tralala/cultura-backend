@@ -1,196 +1,128 @@
-// src/Services/account-service.ts
+/*
+ * Service: Account (สร้าง/แก้ไข)
+ * - ตรวจเงื่อนไขทั้งหมดใน service (controller ไม่ if/else)
+ * - โยน Error(message) ให้ controller แปลงเป็น response ตาม standard
+ * - ไม่จับ Prisma รายกรณีที่นี่ (ให้ middleware/global handler ของโปรเจ็กต์ทำ)
+ */
 import prisma from "./database-service.js";
-import { UserStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import type { CreateAccountDto, EditAccountDto } from "./account-dto.js";
+import type { PaginationResponse } from "./pagination-dto.js";
+/**
+ * ชุดฟิลด์ที่ “ปลอดภัย” สำหรับ select กลับไปให้ client
+ * - ป้องกันการคืน password และฟิลด์ภายในอื่น ๆ โดยไม่ตั้งใจ
+ * - ใช้ซ้ำได้ทั้ง create และ edit
+ */
+const selectSafe = {
+  id: true,
+  roleId: true,
+  username: true,
+  email: true,
+  phone: true,
+  fname: true,
+  lname: true,
+  profileImage: true,
+  status: true,
+} as const;
 
-/* ---------- Types (เฉพาะที่ใช้บนฟอร์ม) ---------- */
-export type CreateUserInput = {
-  roleId: number;            
-  fname: string;
-  lname: string;
-  username: string;
-  email: string;
-  phone: string;
-  password: string;
-  memberOfCommunity?: number; 
-};
-
-export type EditUserInput = Partial<{
-  roleId: number;
-  fname: string;
-  lname: string;
-  username: string;
-  email: string;
-  phone: string;
-  password: string;          
-  memberOfCommunity: number;
-}>;
-
-const trimOrEmpty = (v?: unknown) => (v == null ? "" : String(v).trim());
-
-/* ===================== Create ===================== */
-export async function createAccount(input: CreateUserInput) {
+/**
+ * สร้างผู้ใช้ใหม่
+ * ขั้นตอน:
+ * 1) ตรวจว่า role ที่อ้างอิงมีจริง (กัน foreign key ผิด)
+ * 2) กันข้อมูลซ้ำ (username/email/phone) เพื่อหลบ P2002 เบื้องต้น
+ * 3) hash password ก่อนบันทึก
+ * 4) คืนเฉพาะฟิลด์ที่ปลอดภัย (selectSafe)
+ * หมายเหตุ:
+ * - ถ้า race condition เกิดพร้อมกันหลายคำขอ อาจยังโดน P2002 ได้
+ *   ให้ global error handler ของโปรเจกต์ map -> 409 duplicate ตามมาตรฐานต่อไป
+ */
+export async function createAccount(body: CreateAccountDto) {
   // 1) role ต้องมี
-  const role = await prisma.role.findUnique({
-    where: { id: input.roleId },
+  const role = await prisma.role.findUnique({ where: { id: body.roleId }, select: { id: true } });
+  if (!role) throw new Error("role_not_found");
+
+  // 2) กันค่าซ้ำแบบเร็ว (username/email/phone)
+  const dup = await prisma.user.findFirst({
+    where: { OR: [{ username: (body.username) }, { email: (body.email) }, { phone: (body.phone) }] },
     select: { id: true },
   });
-  if (!role) {
-    const err: any = new Error("role_not_found");
-    err.status = 400;
-    throw err;
-  }
+  if (dup) throw new Error("duplicate");
 
-  // 2) กันซ้ำ email/username/phone
-  const email = trimOrEmpty(input.email);
-  const username = trimOrEmpty(input.username);
-  const phone = trimOrEmpty(input.phone);
-
-  const [emailDup, usernameDup, phoneDup] = await Promise.all([
-    prisma.user.findUnique({ where: { email }, select: { id: true } }),
-    prisma.user.findUnique({ where: { username }, select: { id: true } }),
-    prisma.user.findUnique({ where: { phone }, select: { id: true } }),
-  ]);
-
-  const dupFields: string[] = [];
-  if (emailDup) dupFields.push("email");
-  if (usernameDup) dupFields.push("username");
-  if (phoneDup) dupFields.push("phone");
-  if (dupFields.length) {
-    const err: any = new Error("duplicate");
-    err.status = 409;
-    err.fields = dupFields;
-    throw err;
-  }
-
-  // 3) แฮชรหัสผ่าน
-  const hashed = await bcrypt.hash(input.password, 10);
-
-  // 4) สร้าง
-  const user = await prisma.user.create({
+  // 3) บันทึก + hash password
+  const created = await prisma.user.create({
     data: {
-      roleId: input.roleId,
-      username,
-      email,
-      password: hashed,
-
-      fname: trimOrEmpty(input.fname),
-      lname: trimOrEmpty(input.lname),
-      phone,
-
-      memberOfCommunity: input.memberOfCommunity ?? null,
-      gender: null,
-      status: UserStatus.ACTIVE,
+      roleId: body.roleId,
+      fname: (body.fname),
+      lname: (body.lname),
+      username: (body.username),
+      email: (body.email),
+      phone: (body.phone),
+      password: await bcrypt.hash(body.password, 10), // hash ก่อนเก็บเสมอ
     },
-    select: {
-      id: true,
-      roleId: true,
-      username: true,
-      email: true,
-      fname: true,
-      lname: true,
-      phone: true,
-      memberOfCommunity: true,
-      status: true,
-    },
+    // 4) คืนเฉพาะฟิลด์ที่ปลอดภัย
+    select: selectSafe,
   });
-
-  return user;
+  return created;
 }
 
-/* ===================== Edit ===================== */
-export async function editAccount(id: number, input: EditUserInput) {
-  const data: Record<string, unknown> = {};
+/**
+ * แก้ไขข้อมูลผู้ใช้
+ * ขั้นตอน:
+ * 1) ตรวจความถูกต้องของ userId (เป็นจำนวนเต็มบวก)
+ * 2) ตรวจว่าผู้ใช้มีอยู่จริง
+ * 3) หากมีการส่ง username/email/phone มา ให้เช็คซ้ำเฉพาะฟิลด์ที่ส่งมา (exclude ตัวเองด้วย id != userId)
+ * 4) ประกอบ data แบบ partial เฉพาะฟิลด์ที่ส่งมาเท่านั้น (จะไม่ทับค่าที่ไม่ได้ส่ง)
+ * 5) ถ้าส่ง password มา ให้ hash ก่อน
+ * 6) update แล้วคืนเฉพาะฟิลด์ที่ปลอดภัย
+ * หมายเหตุ:
+ * - โยน Error เป็นข้อความสั้นๆ ให้ controller ไป map เป็น status/message ตาม response standard
+ */
+export async function editAccount(userId: number, body: EditAccountDto) {
+  // 1) ตรวจ id
+  if (!Number.isFinite(userId) || userId <= 0) throw new Error("invalid_user_id");
 
-  // เปลี่ยน username → เช็กไม่ซ้ำ
-  if (input.username !== undefined) {
-    const newUsername = trimOrEmpty(input.username);
+  // 2) มี user นี้จริงไหม
+  const exists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!exists) throw new Error("user_not_found");
+
+  // 3) กันค่าซ้ำเฉพาะฟิลด์ที่ส่งมา (ไม่เช็คทุกฟิลด์เพื่อประหยัดและแม่นยำ)
+  if (body.username || body.email || body.phone) {
     const dup = await prisma.user.findFirst({
-      where: { username: newUsername, NOT: { id } },
-      select: { id: true },
-    });
-    if (dup) {
-      const err: any = new Error("duplicate");
-      err.status = 409;
-      err.fields = ["username"];
-      throw err;
-    }
-    data.username = newUsername;
-  }
-
-  // เปลี่ยน email → เช็กไม่ซ้ำ
-  if (input.email !== undefined) {
-    const newEmail = trimOrEmpty(input.email);
-    const dup = await prisma.user.findFirst({
-      where: { email: newEmail, NOT: { id } },
-      select: { id: true },
-    });
-    if (dup) {
-      const err: any = new Error("duplicate");
-      err.status = 409;
-      err.fields = ["email"];
-      throw err;
-    }
-    data.email = newEmail;
-  }
-
-  // เปลี่ยน phone → เช็กไม่ซ้ำ
-  if (input.phone !== undefined) {
-    const newPhone = trimOrEmpty(input.phone);
-    const dup = await prisma.user.findFirst({
-      where: { phone: newPhone, NOT: { id } },
-      select: { id: true },
-    });
-    if (dup) {
-      const err: any = new Error("duplicate");
-      err.status = 409;
-      err.fields = ["phone"];
-      throw err;
-    }
-    data.phone = newPhone;
-  }
-
-  // เปลี่ยน password → hash ก่อน
-  if (input.password !== undefined) {
-    data.password = await bcrypt.hash(String(input.password), 10);
-  }
-
-  if (input.roleId !== undefined) data.roleId = input.roleId;
-  if (input.fname !== undefined) data.fname = trimOrEmpty(input.fname);
-  if (input.lname !== undefined) data.lname = trimOrEmpty(input.lname);
-  if (input.memberOfCommunity !== undefined) data.memberOfCommunity = input.memberOfCommunity;
-
-  try {
-    const user = await prisma.user.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        roleId: true,
-        username: true,
-        email: true,
-        fname: true,
-        lname: true,
-        phone: true,
-        memberOfCommunity: true,
-        status: true,
+      where: {
+        id: { not: userId }, // exclude ตัวเอง
+        OR: [
+          ...(body.username ? [{ username: (body.username) }] : []),
+          ...(body.email ? [{ email: (body.email) }] : []),
+          ...(body.phone ? [{ phone: (body.phone) }] : []),
+        ],
       },
+      select: { id: true },
     });
-    return user;
-  } catch (e: any) {
-    if (e?.code === "P2025") {
-      const nf: any = new Error("user_not_found");
-      nf.status = 404;
-      throw nf;
-    }
-    if (e?.code === "P2002") {
-      const err: any = new Error("duplicate");
-      err.status = 409;
-      err.fields = Array.isArray(e?.meta?.target)
-        ? e.meta.target
-        : [String(e?.meta?.target || "unique")];
-      throw err;
-    }
-    throw e;
+    if (dup) throw new Error("duplicate");
   }
+
+  // 4) ประกอบ data เฉพาะฟิลด์ที่ส่งมา (จะไม่ทับฟิลด์ที่ไม่ได้ส่ง)
+  const data: any = {
+    ...(body.fname  && { fname: (body.fname) }),
+    ...(body.lname  && { lname: (body.lname) }),
+    ...(body.username  && { username: (body.username) }),
+    ...(body.email && { email: (body.email) }),
+    ...(body.phone  && { phone: (body.phone) }),
+  };
+
+  // 5) หากส่ง password มา ให้ hash ก่อนเก็บ
+  if (body.password !== undefined) {
+    data.password = await bcrypt.hash(body.password, 10);
+  }
+
+  // 6) อัปเดตและคืนเฉพาะฟิลด์ที่ปลอดภัย
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: selectSafe,
+  });
+  return updated;
 }
+
+
+
