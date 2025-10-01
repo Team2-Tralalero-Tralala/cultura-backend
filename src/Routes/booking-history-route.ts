@@ -10,4 +10,3 @@ const detailBookingRouter = Router();
 detailBookingRouter.get("/:id", bookingController.getDetailBooking);
 
 export default detailBookingRouter;
-Router;

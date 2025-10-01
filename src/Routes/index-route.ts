@@ -7,6 +7,6 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/role", roleRoutes);
-rootRouter.use("/booking-history", bookingHistoryRoutes);
+rootRouter.use("/booking-histories", bookingHistoryRoutes);
 
 export default rootRouter;

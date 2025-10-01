@@ -12,7 +12,7 @@ import prisma from "./database-service.js";
  *   - Error จะเกิดขึ้นเมื่อกรณี id ไม่ถูกต้องหรือไม่พบข้อมูลการจอง
  */
 
-export const getDetailBooking = async (id: any) => {
+export const getDetailBookingById = async (id: number) => {
   const numberId = Number(id);
 
   if (isNaN(numberId)) {

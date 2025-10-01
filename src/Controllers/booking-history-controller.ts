@@ -8,16 +8,16 @@ import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
  * Input :
  *   - req.params.id : รหัสการจอง (BookingID) ที่ต้องการดูรายละเอียด
  * Output :
- *   - 201 Created : ส่งกลับข้อมูลรายละเอียดการจอง
+ *   - 200 Created : ส่งกลับข้อมูลรายละเอียดการจอง
  *   - 400 Bad Request : กรณีเกิด error เมื่อไม่พบข้อมูล
  */
 
 export const getDetailBooking = async (req: Request, res: Response) => {
   try {
-    const detailBooking = await bookingService.getDetailBooking(req.params.id);
+    const detailBooking = await Number(req.params.id);
     return createResponse(
       res,
-      201,
+      200,
       "get booking history created successfully",
       detailBooking
     );
