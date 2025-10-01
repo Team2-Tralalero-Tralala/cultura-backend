@@ -4,7 +4,6 @@
  * โดยใช้ TagService ในการทำงานหลัก และส่งผลลัพธ์กลับด้วย createResponse / createErrorResponse
  */
 import { IsInt, IsNumberString } from "class-validator";
-import { Type } from "class-transformer";
 import type { Request, Response } from "express";
 import * as TagService from "../Services/tag/tag-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
@@ -32,13 +31,13 @@ export const createTagDto = {
  * คำอธิบาย : Handler สำหรับสร้าง Tag ใหม่
  * Input : req.body - ข้อมูล Tag จาก client
  * Output :
- *   - 201 Created พร้อมข้อมูล Tag ที่สร้างใหม่
+ *   - 200 Created พร้อมข้อมูล Tag ที่สร้างใหม่
  *   - 400 Bad Request ถ้ามี error
  */
 export const createTag: TypedHandlerFromDto<typeof createTagDto> = async (req, res) => {
     try {
         const result = await TagService.createTag(req.body);
-        return createResponse(res, 201, "Tag created successfully", result);
+        return createResponse(res, 200, "Tag created successfully", result);
     } catch (error) {
         return createErrorResponse(res, 400, (error as Error).message);
     }
@@ -71,7 +70,7 @@ export const deleteTagByIdDto = {
 export const deleteTagById: TypedHandlerFromDto<typeof deleteTagByIdDto> = async (req, res) => {
     try {
         const result = await TagService.deleteTagById(Number(req.params.tagId));
-        return createResponse(res, 201, "Tag deleted successfully", result);
+        return createResponse(res, 200, "Tag deleted successfully", result);
     } catch (error) {
         return createErrorResponse(res, 400, (error as Error).message);
     }
@@ -97,7 +96,7 @@ export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (req, res) 
         const tagName = req.body;
         const id = Number(req.params.tagId);
         const result = await TagService.editTag(id, tagName);
-        return createResponse(res, 201, "Tag edited successfully", result);
+        return createResponse(res, 200, "Tag edited successfully", result);
     } catch (error) {
         return createErrorResponse(res, 400, (error as Error).message);
     }
@@ -107,7 +106,7 @@ export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (req, res) 
  * ฟังก์ชัน : getAllTags
  * Input : req.body - ข้อมูลผู้ใช้จาก client
  * Output :
- *   - 201 OK พร้อมข้อมูล Tag ทั้งหมด
+ *   - 200 OK พร้อมข้อมูล Tag ทั้งหมด
  *   - 400 Bad Request ถ้ามี error
  */
 export const getAllTags = async (req: Request, res: Response) => {
