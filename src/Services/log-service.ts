@@ -39,7 +39,6 @@ export type LogWithUser = {
  * Logic :
  *   - superadmin เห็นทุก log
  *   - admin เห็นเฉพาะ log ของสมาชิกในชุมชนที่ตนเป็น admin
- *   - member/tourist เห็นเฉพาะ log ของตนเอง
  */
 export async function getUserLogs(
   user: UserPayload,
@@ -55,33 +54,31 @@ export async function getUserLogs(
         // superadmin เห็นทุก log
     } else if (user.role.toLowerCase() === "admin") {
         // admin เห็นเฉพาะสมาชิกในชุมชนที่ตนเป็น admin
-        // ต้องหาชุมชนที่ admin นี้เป็นสมาชิกก่อน
-        const adminCommunities = await prisma.communityMember.findMany({
+        // ต้องหาชุมชนที่ admin นี้เป็น admin ก่อน
+        const adminCommunities = await prisma.community.findMany({
             where: {
-                memberId: user.id,
-                role: { name: "admin" },
+                adminId: user.id,
             },
-            select: { communityId: true },
+            select: { id: true },
         });
 
-        const communityIds = adminCommunities.map((cm) => cm.communityId);
+        const communityIds = adminCommunities.map((community) => community.id);
 
         if (communityIds.length === 0) {
             // ถ้าไม่เป็น admin ของชุมชนไหน ให้เห็นเฉพาะของตนเอง
             whereCondition.userId = user.id;
         } else {
             // เห็น logs ของสมาชิกในชุมชนที่เป็น admin
-            const communityMemberIds = await prisma.communityMember.findMany({
-                where: { communityId: { in: communityIds } },
-                select: { memberId: true },
+            const communityMembers = await prisma.user.findMany({
+                where: { 
+                    memberOfCommunity: { in: communityIds } 
+                },
+                select: { id: true },
             });
 
-            const memberIds = communityMemberIds.map((cm) => cm.memberId);
+            const memberIds = communityMembers.map((member) => member.id);
             whereCondition.userId = { in: memberIds };
         }
-    } else {
-        // member หรือ tourist เห็นเฉพาะของตนเอง
-        whereCondition.userId = user.id;
     }
 
     // นับจำนวนรายการทั้งหมด

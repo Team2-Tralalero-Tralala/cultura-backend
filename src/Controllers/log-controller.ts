@@ -37,7 +37,6 @@ export const getLogsDto = {
  * Logic :
  *   - superadmin เห็นทุก log
  *   - admin เห็นเฉพาะ log ของสมาชิกในชุมชนที่ตนเป็น admin
- *   - member/tourist เห็นเฉพาะ log ของตนเอง
  */
 export const getLogs: TypedHandlerFromDto<typeof getLogsDto> = async (
   req,

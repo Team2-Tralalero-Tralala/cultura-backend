@@ -16,7 +16,6 @@ const logRoutes = Router();
  * Logic :
  *   - superadmin เห็น logs ทั้งหมด
  *   - admin เห็น logs ของสมาชิกในชุมชนที่ตนเป็น admin
- *   - member/tourist เห็น logs ของตนเอง
  * Query Parameters :
  *   - page (optional) : หน้าที่ต้องการ (default: 1)
  *   - limit (optional) : จำนวนรายการต่อหน้า (default: 10, max: 100)
@@ -25,7 +24,7 @@ const logRoutes = Router();
 logRoutes.get(
   "/",
   authMiddleware,
-  allowRoles("superadmin", "admin", "member", "tourist"),
+  allowRoles("superadmin", "admin"),
   validateDto(getLogsDto),
   getLogs
 );
