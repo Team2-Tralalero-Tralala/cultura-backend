@@ -35,11 +35,12 @@ export const createBooking = async(data: any) => {
             touristId: data.touristId,
             packageId: data.packageId,
             bookingAt: data.bookingAt,
-            cancelAt: data.cancelAt ?? null,
-            refundAt: data.refundAt ?? null,
+            // cancelAt: data.cancelAt ?? null,
+            // refundAt: data.refundAt ?? null,
             status: data.status ?? "PENDING",
             totalParticipant: data.totalParticipant,
-            rejectReason: data.rejectReason ?? null,
+            transferSlip: data.transferSlip
+            // rejectReason: data.rejectReason ?? null,
         }
     });
 

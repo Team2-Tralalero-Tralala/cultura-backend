@@ -54,10 +54,8 @@ export class BookingHistoryDto {
     @MaxLength(100, { message: "rejectReason ยาวเกิน 100 ตัวอักษร" })
     rejectReason?: string;
 
-    // รอ bh_transfer_slip VARCHAR(256)
-
-    // @IsString()
-    // @IsNotEmpty({ message: "rejectReason ห้ามว่าง" })
-    // @MaxLength(100, { message: "rejectReason ยาวเกิน 100 ตัวอักษร" })
-    // rejectReason: string;
+    @IsString()
+    @IsNotEmpty({ message: "tranferSlip ห้ามว่าง" })
+    @MaxLength(100, { message: "tranferSlip ยาวเกิน 256 ตัวอักษร" })
+    tranferSlip: string;
 }

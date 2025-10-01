@@ -22,7 +22,7 @@ export const createPackageDto = {
 export const createPackage = async (req: Request, res: Response) => {
     try {
         const result = await PackageService.createPackage(req.body);
-        return createResponse(res, 200, "Create Packages Success", {result})
+        return createResponse(res, 200, "Create Packages Success", result)
     } catch (error: any) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
@@ -37,7 +37,7 @@ export const getPackageByRole = async (req: Request, res: Response) => {
     try {
         const id  = req.user.id;
         const result = await PackageService.getPackageByRole(Number(id));
-        return createResponse(res, 200, "Get Packages Success", {result})
+        return createResponse(res, 200, "Get Packages Success", result)
         /* ********************************************************** */
     } catch (error: any) {
         return createErrorResponse(res, 404, (error as Error).message)
@@ -61,7 +61,7 @@ export const editPackageDto = {
 export const editPackage =  async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
-        if (isNaN(id)) {
+        if (!(id)) {
             return createErrorResponse(res, 400, "ID must be a number");
         }
         const data = req.body;
@@ -79,11 +79,15 @@ export const editPackage =  async (req: Request, res: Response) => {
  */
 export const deletePackage = async (req: Request, res: Response) => {
     try {
-        const id = Number(req.params.id);
-        if (isNaN(id)) {
+        const userId = (req.user.id);
+        if (!(userId)) {
             return createErrorResponse(res, 400, "ID must be a number");
         }
-        const result = await PackageService.deletePackage(id);
+        const packageId = Number(req.params.id);
+        if (!(packageId)) {
+            return res.status(400).json({ status: 400, message: "Package ID ต้องเป็นตัวเลข" });
+        }
+        const result = await PackageService.deletePackage(userId, packageId);
         return createResponse(res, 200, "Package Deleted", result)
     } catch (error: any) {
         return createErrorResponse(res, 404, (error as Error).message)

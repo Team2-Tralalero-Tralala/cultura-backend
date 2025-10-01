@@ -1,5 +1,5 @@
 import prisma from "../database-service.js";
-import type { PackageDto } from "./package-dto.js";
+import type { PackageDto, PackageFileDto } from "./package-dto.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันสร้าง Package ใหม่ในระบบ
@@ -77,11 +77,11 @@ export const createPackage = async (data: PackageDto) => {
  */
 export const editPackage = async (id: number, data: any) => {
   // ตรวจสอบว่า package มีจริง
-  const pkg = await prisma.package.findUnique({
+  const packageExist = await prisma.package.findUnique({
     where: { id },
     include: { location: true, packageFile: true }, // include packageFile ด้วย
   });
-  if (!pkg) {
+  if (!packageExist) {
     throw new Error(`Package ID ${id} ไม่พบในระบบ`);
   }
 
@@ -92,19 +92,6 @@ export const editPackage = async (id: number, data: any) => {
     });
     if (!community) {
       throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
-    }
-  }
-
-  // ตรวจสอบ locationId ถ้ามีการแก้ไข
-  if (data.locationId) {
-    if (data.locationId !== pkg.locationId) {
-      throw new Error(`ไม่สามารถเปลี่ยน Location ID ของ Package ${id} ได้`);
-    }
-    const location = await prisma.location.findUnique({
-      where: { id: data.locationId },
-    });
-    if (!location) {
-      throw new Error(`Location ID ${data.locationId} ไม่พบในระบบ`);
     }
   }
 
@@ -121,25 +108,52 @@ export const editPackage = async (id: number, data: any) => {
   // แยก field ออกมา
   const { location, locationId, packageFile, ...packageData } = data;
 
-  return await prisma.package.update({
+  const result = await prisma.package.update({
     where: { id },
     data: {
-      ...packageData,
-      ...(location && {
-        location: { update: { ...location } }, // update fields ของ location เดิม
-      }),
+      community: { connect: { id: data.communityId } },
+      overseerPackage: { connect: { id: data.overseerMemberId } },
+      createPackage: { connect: { id: data.createById } },
+
+      name: data.name,
+      description: data.description,
+      capacity: data.capacity,
+      price: data.price,
+      warning: data.warning,
+      statusPackage: data.statusPackage,
+      statusApprove: data.statusApprove,
+      startDate: new Date(data.startDate),
+      dueDate: new Date(data.dueDate),
+      facility: data.facility,
+
+      location: {
+        update: {
+          houseNumber: location.houseNumber,
+          subDistrict: location.subDistrict,
+          district: location.district,
+          province: location.province,
+          postalCode: location.postalCode,
+          detail: location.detail,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        },
+      },
+
+      // อัปเดต packageFile เฉพาะกรณีที่ส่งมา
       ...(packageFile && {
         packageFile: {
-          deleteMany: {}, // ลบไฟล์เก่าทั้งหมด
-          create: packageFile.map((file: any) => ({
+          deleteMany: {},
+          create: packageFile.map((file: PackageFileDto) => ({
             filePath: file.filePath,
             type: file.type,
           })),
         },
       }),
     },
-    include: { location: true, packageFile: true }, // ส่งกลับมาพร้อมไฟล์
+    include: { location: true, packageFile: true },
   });
+
+  return result;
 };
 
 
@@ -154,7 +168,7 @@ export const getPackageByRole = async (id: number) => {
         }
         const user = await prisma.user.findUnique({
             where: { id: id },
-            include: { role: true, memberOf: true }
+            include: { role: true, memberOf: true, communitiesAdmin: true }
         });
         let result: any;
         switch (user?.role.name) {
@@ -165,11 +179,9 @@ export const getPackageByRole = async (id: number) => {
                 });
                 break;
             case "admin"://admin
-                const communityIds = user.memberOf ? [user.memberOf.id] : [];
+                const adminCommunityIds = user.communitiesAdmin.map(c => c.id);
                 result = await prisma.package.findMany({
-                  skip: 0,
-                  take: 10,
-                  where: { communityId: { in: communityIds } }
+                  where: { communityId: { in: adminCommunityIds } }
                 });
                 break;
             case "member": //member
@@ -190,7 +202,7 @@ export const getPackageByRole = async (id: number) => {
                 result = [];
         }
         /* ********************************************************** */
-  return await result;
+  return result;
 };
 
 /*
@@ -198,15 +210,46 @@ export const getPackageByRole = async (id: number) => {
  * Input  : id (หมายเลข Package)
  * Output : ข้อมูล Package ที่ถูกลบ
  */
-export const deletePackage = async (id: number) => {
-  // ตรวจสอบว่า package มีจริงก่อนลบ
-  const result = await prisma.package.findUnique({
-    where: { id:id } });
-  if (!result) {
-    throw new Error(`Package ID ${id} ไม่พบในระบบ`);
-  }
-  await prisma.package.delete({
-    where: { id }
+export const deletePackage = async (userId: number, packageId: number) => {
+  const user = await prisma.user.findUnique({
+    where: {id: userId},
+    include: { role: true, memberOf: true},
   });
-  return await result;
+
+  if(!user){
+    throw new Error(`User ID ${userId} ไม่พบในระบบ`)
+  }
+
+  const packageExist = await prisma.package.findUnique({
+    where: { id: packageId },
+    include: { community: true }
+  });
+
+  if (!packageExist) {
+    throw new Error(`Package ID ${packageId} ไม่พบในระบบ`);
+  }
+  switch (user.role.name) {
+    case "superadmin":
+      // superadmin ลบได้ทุกอย่าง
+      break;
+    case "admin":
+      // admin ต้องเป็น admin ของ community นั้นเท่านั้น
+      if (user.memberOfCommunity !== packageExist.communityId) {
+        throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
+      }
+      break;
+    case "member":
+      // member ต้องเป็น overseer ของ package เท่านั้น
+      if (packageExist.overseerMemberId !== user.id) {
+        throw new Error("คุณไม่มีสิทธิ์ลบ Package ที่คุณไม่ได้ดูแล");
+      }
+      break;
+    default:
+      throw new Error("คุณไม่มีสิทธิ์ลบ Package");
+  }
+  const deleted = await prisma.package.delete({
+    where: { id: packageId },
+  });
+
+  return deleted;
 };
