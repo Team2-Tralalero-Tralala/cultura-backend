@@ -22,10 +22,11 @@ const mapLocation = (loc: LocationDto) => ({
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับตรวจสอบว่าผู้ใช้ที่ระบุใน member ทั้งหมดเป็นสมาชิกที่ถูกต้องหรือไม่
  * Input : Array ของ member (รหัสผู้ใช้)
- * Output : ถ้าผู้ใช้ทั้งหมดถูกต้อง จะไม่มีการคืนค่าอะไร แต่ถ้ามีผู้ใช้ที่ไม่ถูกต้อง จะโยน Error ออกมา
+ * Output : ถ้าผู้ใช้ทั้งหมดถูกต้อง จะคืนค่า member ที่ตรวจสอบแล้ว
+ * Error : throw error ถ้ามีผู้ใช้ที่ไม่ถูกต้อง (ไม่พบ หรือ ไม่ใช่บทบาท member)
  */
 export async function checkMember(member: number[], communityId: number) {
-  const checkMember = await prisma.user.findMany({
+  const validMembers = await prisma.user.findMany({
     where: {
       id: { in: member },
       role: {
@@ -33,13 +34,31 @@ export async function checkMember(member: number[], communityId: number) {
       },
       OR: [{ memberOfCommunity: null }, { memberOfCommunity: communityId }],
     },
+    select: { id: true, fname: true, lname: true },
   });
 
-  if (checkMember.length !== member.length) {
-    throw new Error(
-      "Some users are not valid members or already in a community"
-    );
+  const validIds = validMembers.map((member) => member.id);
+
+  const invalidMembers = await prisma.user.findMany({
+    where: {
+      id: { in: member.filter((id) => !validIds.includes(id)) },
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+  });
+
+  if (invalidMembers.length > 0) {
+    throw {
+      status: 400,
+      message: "ไม่พบสมาชิกบางราย หรือ สมาชิกบางรายไม่ได้มีบทบาทเป็น member",
+      invalidMembers,
+    };
   }
+
+  return checkMember;
 }
 
 /**
@@ -71,7 +90,7 @@ export async function createCommunity(community: CommunityDto) {
     const checkAdmin = await transaction.user.findFirst({
       where: { id: adminId, role: { name: "admin" } },
     });
-    if (!checkAdmin) throw new Error("User is not an admin");
+    if (!checkAdmin) throw new Error("ผู้ใช้ไม่ใช่แอดมิน");
 
     // check duplicate
     const findCommunity = await transaction.community.findFirst({
@@ -82,7 +101,7 @@ export async function createCommunity(community: CommunityDto) {
         ],
       },
     });
-    if (findCommunity) throw new Error("already have community");
+    if (findCommunity) throw new Error("มีชุมชนนี้อยู่แล้ว");
 
     // create community
     const newCommunity = await transaction.community.create({
@@ -196,16 +215,19 @@ export async function editCommunity(
     member,
     ...communityData
   } = community;
+
   return prisma.$transaction(async (transaction) => {
     const checkAdmin = await transaction.user.findFirst({
       where: { id: adminId, role: { name: "admin" } },
     });
-    if (!checkAdmin) throw new Error("User is not an admin");
+    if (!checkAdmin) throw new Error("ผู้ใช้ไม่ใช่แอดมิน");
 
     const findCommunity = await transaction.community.findUnique({
       where: { id: communityId },
     });
-    if (!findCommunity) throw new Error("Community Not found");
+
+    if (!findCommunity) throw new Error("ไม่พบชุมชน");
+
     const updateCommunity = await transaction.community.update({
       where: { id: communityId },
       data: {
@@ -248,28 +270,15 @@ export async function editCommunity(
     });
     if (member?.length) {
       await checkMember(member, updateCommunity.id);
-      const currentMembers = await transaction.user.findMany({
+      // clear old member
+      await transaction.user.updateMany({
         where: {
           memberOfCommunity: updateCommunity.id,
           role: { name: "member" },
         },
-        select: { id: true },
+        data: { memberOfCommunity: null },
       });
-      const currentMemberIds = currentMembers.map((m) => m.id);
-
-      // 2. หาสมาชิกที่ถูกถอดออก (อยู่ใน current แต่ไม่อยู่ใน member ใหม่)
-      const removedMembers = currentMemberIds.filter(
-        (id) => !member.includes(id)
-      );
-
-      // อัปเดตสมาชิกที่ถูกถอดออก → set communityId = null
-      if (removedMembers.length) {
-        await transaction.user.updateMany({
-          where: { id: { in: removedMembers } },
-          data: { memberOfCommunity: null },
-        });
-      }
-
+      // set new member
       await transaction.user.updateMany({
         where: {
           id: { in: member },
@@ -297,7 +306,7 @@ export async function deleteCommunityById(communityId: number) {
   const findCommunity = await prisma.community.findUnique({
     where: { id: communityId },
   });
-  if (!findCommunity) throw new Error("Community Not found");
+  if (!findCommunity) throw new Error("ไม่พบชุมชน");
 
   return await prisma.community.delete({
     where: { id: communityId },
