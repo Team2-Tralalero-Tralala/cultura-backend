@@ -6,6 +6,7 @@ import {
   createAccountDto,
   editAccount,
   editAccountDto,
+  getAll,
 } from "../Controllers/account-controller.js";
 import { validateDto } from "../Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
@@ -37,5 +38,7 @@ accountRoutes.patch(
   allowRoles("superadmin", "admin", "member"), // ปรับได้เช่นกัน
   editAccount
 );
+
+accountRoutes.get("/users", authMiddleware, allowRoles("superadmin"),getAll);
 
 export default accountRoutes;

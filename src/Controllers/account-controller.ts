@@ -3,6 +3,7 @@ import { createResponse, createErrorResponse } from "../Libs/createResponse.js";
 import * as AccountService from "../Services/account-service.js";
 import { CreateAccountDto, EditAccountDto } from "../Services/account-dto.js";
 import type { commonDto, TypedHandlerFromDto } from "../Libs/Types/TypedHandler.js";
+import type { Request, Response } from "express";
 
 export const createAccountDto = {
   body: CreateAccountDto,
@@ -36,5 +37,12 @@ export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (re
   }
 };
 
-
-
+export const getAll = async (req: Request, res: Response) => {
+  try {
+    const { page = "1", limit = "10" } = req.query as { page?: string; limit?: string };
+    const data = await AccountService.getAllUser(Number(page), Number(limit));
+    return createResponse(res, 200, "Get users successfully", data);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

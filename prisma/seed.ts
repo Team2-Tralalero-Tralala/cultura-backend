@@ -285,18 +285,7 @@ async function main() {
       memberOfCommunity: 1,
     },
   });
-  const member4 = await prisma.user.create({
-    data: {
-      roleId: roleMember!.id,
-      username: "member4",
-      email: "member4@demo.com",
-      password: hash("hashedpw"),
-      fname: "Member",
-      lname: "Four",
-      phone: "0810000005",
-      memberOfCommunity: 2,
-    },
-  });
+
   const member2 = await prisma.user.create({
     data: {
       roleId: roleMember!.id,
