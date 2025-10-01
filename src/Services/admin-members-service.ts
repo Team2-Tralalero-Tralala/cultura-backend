@@ -58,7 +58,7 @@ export const getAccountAll = async (id: number) => {
     throw new Error("Permission denied: only superadmin can access all accounts");
   }
 
-  // ✅ ดึง user ทั้งหมด (เลือกฟิลด์ตามต้องการ)
+  // ดึง user ทั้งหมด (เลือกฟิลด์ตามต้องการ)
   const accounts = await prisma.user.findMany({
     select: {
       id: true,
@@ -80,68 +80,4 @@ export const getAccountAll = async (id: number) => {
 
   return accounts;
 };
-// export const getMemberByAdmin = async (
-//   userId: number,
-//   page: number = 1,
-//   limit: number = 10
-// ): Promise<PaginationResponse<any>> => {
-//   if (isNaN(userId)) {
-//     throw new Error(`User ID ${userId} ไม่ถูกต้อง`);
-//   }
 
-//   const skip = (page - 1) * limit;
-
-//   // 1) หา communities ที่ userId นี้เป็น admin อยู่
-//   const admin = await prisma.user.findUnique({
-//     where: { id: userId },
-//     select: {
-//       id: true,
-//       fname: true,
-//       lname: true,
-//       email: true,
-//       activityRole: true,
-//       communitiesAdmin: true,
-//     }
-//   });
-
-//   if (!admin) {
-//     throw new Error(`ไม่พบผู้ใช้ ID ${userId}`);
-//   }
-//   console.log(admin);
-//  return {
-//       data: [],
-//       pagination: {
-//         currentPage: page,
-//         totalPages: 0,
-//         totalCount: 0,
-//         limit,
-//       },
-//     };
-//   // 2) ดึง users ที่เป็น member ของ communities เหล่านี้
-//   const totalCount = await prisma.user.count({
-//     where: {
-//       memberOfCommunity: { in: communityIds }
-//     }
-//   });
-
-//   const members = await prisma.user.findMany({
-//     where: {
-//       memberOfCommunity: { in: communityIds }
-//     },
-//     include: { role: true, memberOf: true }, // เพิ่มข้อมูล role และชุมชน
-//     skip,
-//     take: limit,
-//   });
-
-//   const totalPages = Math.ceil(totalCount / limit);
-
-//   return {
-//     data: members,
-//     pagination: {
-//       currentPage: page,
-//       totalPages,
-//       totalCount,
-//       limit,
-//     },
-//   };
-// };

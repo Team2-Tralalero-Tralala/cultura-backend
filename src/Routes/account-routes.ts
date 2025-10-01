@@ -13,11 +13,11 @@ import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
 
 
 const accountRoutes = Router();
-// GET /api/admin/communities/:communityId/members
+// GET /api/communities/members
 accountRoutes.get(
   "/communities/members",
   authMiddleware,
-  allowRoles("admin"), // ปรับ role ตาม requirement ทีมได้
+  allowRoles("admin"),
   getMemberByAdmin
 );
 
@@ -26,7 +26,7 @@ accountRoutes.post(
   "/accounts",
   validateDto(createAccountDto),
   authMiddleware,
-  allowRoles("superadmin", "admin", "member"), // ปรับ role ตาม requirement ทีมได้
+  allowRoles("superadmin", "admin", "member"),
   createAccount
 );
 
@@ -35,10 +35,10 @@ accountRoutes.patch(
   "/accounts/:id",
   validateDto(editAccountDto),
   authMiddleware,
-  allowRoles("superadmin", "admin", "member"), // ปรับได้เช่นกัน
+  allowRoles("superadmin", "admin", "member"), 
   editAccount
 );
-
+// GET /api/users
 accountRoutes.get("/users", authMiddleware, allowRoles("superadmin"),getAll);
 
 export default accountRoutes;
