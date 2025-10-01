@@ -46,11 +46,21 @@ export const getHistoriesByRole = async (user: userAttribute) => {
   });
 
   return data.map((item: any) => ({
-    ชื่อผู้จอง: `${item.tourist?.fname ?? ""} ${item.tourist?.lname ?? ""}`.trim(),
-    ชื่อกิจกรรม: item.package?.name ?? "",
-    ราคา: item.package?.price ?? 0,
-    สถานะ: item.status ?? item.bh_status ?? "",
-    หลักฐาน: item.transferSlip ?? item.bh_transfer_slip ?? null,
-    เวลา: item.bookingAt ?? item.bh_booking_at ?? null,
+    touristName: `${item.tourist?.fname ?? ""} ${item.tourist?.lname ?? ""}`.trim(),
+    packageName: item.package?.name ?? "",
+    price: item.package?.price ?? 0,
+    status: item.status ?? item.bh_status ?? "",
+    slip: item.transferSlip ?? item.bh_transfer_slip ?? null,
+    bookingAt: item.bookingAt ?? item.bh_booking_at ?? null,
   }));
 };
+/*
+ touristId: data.touristId,
+            packageId: data.packageId,
+            bookingAt: data.bookingAt,
+            cancelAt: data.cancelAt ?? null,
+            refundAt: data.refundAt ?? null,
+            status: data.status ?? "PENDING",
+            totalParticipant: data.totalParticipant,
+            rejectReason: data.rejectReason ?? null,
+*/
