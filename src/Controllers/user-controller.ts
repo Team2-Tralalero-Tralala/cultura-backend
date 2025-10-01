@@ -39,7 +39,7 @@ export const getUserByIdDto = {
  * Input :
  *   - req.params.userId : รหัสผู้ใช้ (string, จะถูกแปลงเป็น number)
  * Output :
- *   - 201 Created พร้อมข้อมูลผู้ใช้
+ *   - 200 OK พร้อมข้อมูลผู้ใช้
  *   - 404 Not Found ถ้าไม่พบผู้ใช้
  */
 
@@ -47,7 +47,7 @@ export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (re
     try {
         const userId = Number(req.params.userId);
         const result = await UserService.getUserById(userId);
-        return createResponse(res, 201, "User fetched successfully", result);
+        return createResponse(res, 200, "User fetched successfully", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
@@ -132,7 +132,7 @@ export const deleteAccountByIdDto = {
  * Input :
  *   - req.params.userId : รหัสผู้ใช้ (string → number)
  * Output :
- *   - 201 Created พร้อมข้อมูลผู้ใช้ที่ถูกลบ
+ *   - 200 OK พร้อมข้อมูลผู้ใช้ที่ถูกลบ
  *   - 404 Not Found ถ้าไม่พบผู้ใช้
  */
 
@@ -140,7 +140,7 @@ export const deleteAccountById: TypedHandlerFromDto<typeof deleteAccountByIdDto>
     try {
         const userId = Number(req.params.userId);
         const result = await UserService.deleteAccount(userId);
-        return createResponse(res, 201, "Deleted user successfully", result);
+        return createResponse(res, 200, "Deleted user successfully", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
@@ -161,7 +161,7 @@ export const blockAccountByIdDto = {
  * Input :
  *   - req.params.userId : รหัสผู้ใช้ (string → number)
  * Output :
- *   - 201 Created พร้อมข้อมูลผู้ใช้ที่ถูกบล็อค
+ *   - 200 OK พร้อมข้อมูลผู้ใช้ที่ถูกบล็อค
  *   - 404 Not Found ถ้าไม่พบผู้ใช้
  */
 
@@ -170,7 +170,7 @@ export const blockAccountById: TypedHandlerFromDto<typeof blockAccountByIdDto> =
     try {
         const userId = Number(req.params.userId);
         const result = await UserService.blockAccount(userId);
-        return createResponse(res, 201, "User blocked successfully", result);
+        return createResponse(res, 200, "User blocked successfully", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
@@ -192,7 +192,7 @@ export const unblockAccountByIdDto = {
  * Input :
  *   - req.params.userId : รหัสผู้ใช้ (string → number)
  * Output :
- *   - 201 Created พร้อมข้อมูลผู้ใช้ที่ถูกปลดบล็อค
+ *   - 200 OK พร้อมข้อมูลผู้ใช้ที่ถูกปลดบล็อค
  *   - 404 Not Found ถ้าไม่พบผู้ใช้
  */
 
@@ -200,7 +200,7 @@ export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDt
     try {
         const userId = Number(req.params.userId);
         const result = await UserService.unblockAccount(userId);
-        return createResponse(res, 201, "User unblock successfully", result);
+        return createResponse(res, 200, "User unblock successfully", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }

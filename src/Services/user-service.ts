@@ -1,4 +1,4 @@
-import type { UserStatus } from "@prisma/client";
+import { Prisma, UserStatus } from "@prisma/client";
 import prisma from "./database-service.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 
@@ -8,7 +8,7 @@ import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
  * Input :
  *   - id (number) : รหัสผู้ใช้
  * Output :
- *   - Object ที่มีข้อมูลผู้ใช้ (username, email, fname, lname, phone, activityRole)
+ *   - Object ที่มีข้อมูลผู้ใช้ (profileImage, username, email, fname, lname, phone, activityRole, role(name))
  *   - Error "User not found" ถ้าไม่พบผู้ใช้
  */
 
@@ -23,6 +23,16 @@ export async function getUserById(userId: number) {
           lname: true,
           phone: true,
           activityRole: true,
+          role: {
+                select: {
+                    name: true,
+                },
+          },
+          memberOf: {
+                select: {
+                    name: true,
+                },
+          },
       },
     });
     if (!user) throw new Error("User not found");
@@ -97,9 +107,18 @@ export async function deleteAccount(userId: number) {
     })
     if (!findUser) throw new Error("User not found");
 
-    return await prisma.user.delete({
-      where: { id: userId}
-    });
+    try {
+      return await prisma.user.delete({
+        where: { id: userId}
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2003") {
+        throw new Error("Cannot delete user: user is still linked to other records");
+        }
+      }
+      throw error;
+    }
 }
 
 /*
@@ -115,7 +134,7 @@ export async function deleteAccount(userId: number) {
 export async function blockAccount(userId: number) {
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { status: "BLOCKED" },
+      data: { status: UserStatus.BLOCKED },
       select: { 
         username: true,
         status: true,
@@ -139,7 +158,7 @@ export async function blockAccount(userId: number) {
 export async function unblockAccount(userId: number) {
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { status: "ACTIVE" },
+      data: { status: UserStatus.ACTIVE },
       select: { 
         username: true,
         status: true,
