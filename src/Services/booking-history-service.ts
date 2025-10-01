@@ -1,17 +1,12 @@
 import { PrismaClient } from "@prisma/client";
+import type { UserPayload } from "~/Libs/Types/index.js";
 const prisma = new PrismaClient();
-
-type userAttribute = {
-  id: number;
-  role: "tourist" | "member" | "admin";
-  communityId?: number;
-};
 
 /*
  * ฟังก์ชัน : getHistoriesByRole
  * คำอธิบาย : ดึงประวัติการจอง (bookingHistory) ตามสิทธิ์ของผู้ใช้งาน
  * Input :
- *   - user : UserShape (id, role, communityId)
+ *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
  * Output :
  *   - Array ของ object ที่ประกอบด้วย:
  *       - ชื่อผู้จอง
@@ -21,10 +16,8 @@ type userAttribute = {
  *       - หลักฐานการโอน
  *       - เวลาในการจอง
  */
-export const getHistoriesByRole = async (user: userAttribute) => {
-  if (!["tourist", "member", "admin"].includes(user.role)) {
-    throw new Error("Invalid user role: must be tourist, member, or admin");
-  }
+export const getHistoriesByRole = async (user: UserPayload, page: number = 1,
+  limit: number = 10) => {
   let where: any = {};
   if (user.role === "tourist") {
     where = { touristId: user.id };
@@ -35,32 +28,25 @@ export const getHistoriesByRole = async (user: userAttribute) => {
   }
 
   const data = await prisma.bookingHistory.findMany({
-    skip: 0,
-    take: 10,
+    skip: (page - 1) * limit,
+    take: limit,
     where,
-    include: {
-      tourist: { select: { fname: true, lname: true } },
-      package: { select: { name: true, price: true } },
+    select: {
+      tourist: {
+        select: { fname: true, lname: true },
+      },
+      package: {
+        select: { name: true, price: true },
+      },
+      status: true,
+      transferSlip: true,
+      bookingAt: true,
     },
     orderBy: { bookingAt: "desc" },
   });
 
-  return data.map((item: any) => ({
-    touristName: `${item.tourist?.fname ?? ""} ${item.tourist?.lname ?? ""}`.trim(),
-    packageName: item.package?.name ?? "",
-    price: item.package?.price ?? 0,
-    status: item.status ?? item.bh_status ?? "",
-    slip: item.transferSlip ?? item.bh_transfer_slip ?? null,
-    bookingAt: item.bookingAt ?? item.bh_booking_at ?? null,
-  }));
+  return data;
+  
 };
-/*
- touristId: data.touristId,
-            packageId: data.packageId,
-            bookingAt: data.bookingAt,
-            cancelAt: data.cancelAt ?? null,
-            refundAt: data.refundAt ?? null,
-            status: data.status ?? "PENDING",
-            totalParticipant: data.totalParticipant,
-            rejectReason: data.rejectReason ?? null,
-*/
+
+

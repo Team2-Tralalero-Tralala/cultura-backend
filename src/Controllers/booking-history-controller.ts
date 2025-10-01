@@ -14,7 +14,8 @@ import { getHistoriesByRole } from "../Services/booking-history-service.js";
  */
 export const getByRole = async (req: Request, res: Response) => {
   try {
-    const data = await getHistoriesByRole((req as any).user);
+    const {page = 1, limit = 10} = req.query;
+    const data = await getHistoriesByRole(req.user, Number(page), Number(limit));
     return createResponse(res, 200, "Get booking histories by role successfully", data);
   } catch (e: any) {
     return createErrorResponse(res, 400, e.message);
