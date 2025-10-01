@@ -1,4 +1,5 @@
 import prisma from "../database-service.js";
+import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
 
 /*
@@ -162,48 +163,79 @@ export const editPackage = async (id: number, data: any) => {
  * Input  : id (หมายเลข Package)
  * Output : รายการ Package ที่พบ (อาจเป็น array)
  */
-export const getPackageByRole = async (id: number) => {
-        if (!Number(id)){
-          throw new Error(`Member ID ${id} ไม่พบในระบบ`);
-        }
-        const user = await prisma.user.findUnique({
-            where: { id: id },
-            include: { role: true, memberOf: true, communitiesAdmin: true }
-        });
-        let result: any;
-        switch (user?.role.name) {
-            case "superadmin": //superadmin
-                result = await prisma.package.findMany({
-                  skip: 0,
-                  take: 10,
-                });
-                break;
-            case "admin"://admin
-                const adminCommunityIds = user.communitiesAdmin.map(c => c.id);
-                result = await prisma.package.findMany({
-                  where: { communityId: { in: adminCommunityIds } }
-                });
-                break;
-            case "member": //member
-                result = await prisma.package.findMany({
-                  skip: 0,
-                  take: 10,
-                  where: { overseerMemberId: user.id }
-                });
-                break;
-            case "tourist": //tourist
-                result = await prisma.package.findMany({
-                  skip: 0,
-                  take: 10,
-                  where: { statusApprove: "APPROVE", statusPackage: "PUBLISH" }
-                });
-                break;
-            default:
-                result = [];
-        }
-        /* ********************************************************** */
-  return result;
+export const getPackageByRole = async (
+  id: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (isNaN(id)) {
+    throw new Error(`Member ID ${id} ไม่ถูกต้อง`);
+  }
+
+  const skip = (page - 1) * limit;
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { role: true, memberOf: true, communitiesAdmin: true }
+  });
+
+  let whereCondition: any = {};
+
+  switch (user?.role.name) {
+    case "superadmin":
+      // superadmin เห็นทั้งหมด
+      break;
+
+    case "admin":
+      const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
+      whereCondition.communityId = { in: adminCommunityIds };
+      break;
+
+    case "member":
+      whereCondition.overseerMemberId = user.id;
+      break;
+
+    case "tourist":
+      whereCondition = {
+        statusApprove: "APPROVE",
+        statusPackage: "PUBLISH",
+      };
+      break;
+
+    default:
+      return {
+        data: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 0,
+          totalCount: 0,
+          limit,
+        },
+      };
+  }
+
+  const totalCount = await prisma.package.count({ where: whereCondition });
+
+  const packages = await prisma.package.findMany({
+    where: whereCondition,
+    include: { community: true, location: true },
+    skip,
+    take: limit,
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: packages,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
 };
+
 
 /*
  * คำอธิบาย : ลบ Package ออกจากระบบ
