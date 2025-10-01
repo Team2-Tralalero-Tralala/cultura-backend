@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import * as CommunityService from "../Services/community-service.js";
+import * as CommunityService from "../Services/community/community-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 
 /*
@@ -26,43 +26,41 @@ export const getCommunityById = async (req: Request, res: Response) => {
 };
 
 /*
- * ฟังก์ชัน: getCommunityByUserRole (Controller)
- * คำอธิบาย: ใช้สำหรับดึงรายการชุมชนตามบทบาท (Role) ของผู้ใช้ ผ่าน userId
- * Input:
- *   - req.params.id (number): รหัสผู้ใช้ (User ID) ที่ส่งมาทาง URL
- *   - req (Request): ออบเจกต์ request ของ Express
- *   - res (Response): ออบเจกต์ response ของ Express
- * Output:
- *   - Response JSON:
- *       - status: 200 → คืนค่าข้อมูลในรูปแบบ { I_am, role, data }
- *       - status: 400 → ถ้า userId ไม่ใช่ตัวเลข หรือ role ไม่ถูกต้อง
- *       - status: 404 → ถ้าไม่พบผู้ใช้
- *       - status: 500 → ถ้ามีข้อผิดพลาดอื่น ๆ
- * Error:
- *   - จัดการ error ด้วย createErrorResponse ตามประเภทข้อผิดพลาด
+ * ฟังก์ชัน : getCommunityByMe
+ * Input : req.user.id - ข้อมูล userId ที่ middleware auth ใส่มาให้
+ * Output :
+ *   - 200 OK พร้อมข้อมูล community ที่ผู้ใช้มีสิทธิ์เข้าถึง (admin/member)
+ *   - 400 Bad Request ถ้ามี error ที่สามารถคาดเดาได้
  */
-
-export const getCommunityByUserRole = async (req: Request, res: Response) => {
-  const userId = Number(req.params.id);
-  // console.log("userId:", userId);
-
-  if (!Number(userId)) {
-    return createErrorResponse(res, 400, "ID must be Number");
-  }
+export const getCommunityByMe = async (req: Request, res: Response) => { 
   try {
-    const { roleName, roleId, communities } = await CommunityService.getCommunityByUserRole(userId);
-    return createResponse(res, 200, "Community list by role", {
-      I_am: roleName,
-      role: roleId,
-      data: communities,
-    });
-  } catch (error: any) {
-    if (error.message === "User not found") {
-      return createErrorResponse(res, 404, error.message);
-    }
-    if (error.message === "Invalid user role") {
-      return createErrorResponse(res, 400, error.message);
-    }
-    return createErrorResponse(res, 500, error.message);
+    const userId = Number(req.user.id);
+      const { page = 1, limit = 10 } = req.query;
+
+    const result = await CommunityService.getCommunityByMe(userId, Number(page), Number(limit));
+    return createResponse(res, 200, "Community list by role", result);
+
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+
+/*
+ * ฟังก์ชัน : getCommunityAll
+ * Input : req.user.id - ข้อมูล userId ที่ middleware auth ใส่มาให้
+ * Output :
+ *   - 200 OK พร้อมข้อมูล community ทั้งหมด (สำหรับ superadmin)
+ *   - 400 Bad Request ถ้ามี error ที่ตรวจสอบได้
+ */
+export const getCommunityAll = async (req: Request, res: Response) => { 
+  try {
+    const userId = Number(req.user.id);
+    const { page = 1, limit = 10 } = req.query;
+    const result = await CommunityService.getCommunityAll(userId, Number(page), Number(limit));
+    return createResponse(res, 200, "All communities list", result);
+    
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
   }
 };
