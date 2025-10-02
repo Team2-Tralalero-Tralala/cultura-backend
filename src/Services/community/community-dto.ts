@@ -17,13 +17,15 @@ import {
 } from "class-validator";
 import { CommunityStatus } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
-import {
-  HomestayDto,
-  HomestayWithLocationDto,
-} from "../homestay/homestay-dto.js";
-import { StoreDto, StoreWithLocationDto } from "../store/store-dto.js";
+import { HomestayDto } from "../homestay/homestay-dto.js";
+import { StoreDto } from "../store/store-dto.js";
+import { BankAccountDto } from "../bank/bank-account-dto.js";
+import { ImageType } from "@prisma/client";
 
 export class CommunityDto {
+  @IsNotEmpty({ message: "adminId ห้ามว่าง" })
+  adminId: number;
+
   @IsString({ message: "name ต้องเป็น string" })
   @IsNotEmpty({ message: "name ห้ามว่าง" })
   @MaxLength(150, { message: "name ยาวเกิน 150 ตัวอักษร" })
@@ -32,7 +34,8 @@ export class CommunityDto {
   @IsString()
   @IsOptional()
   @MaxLength(100, { message: "alias ยาวเกิน 100 ตัวอักษร" })
-  alias?: string | null; // ct_alias
+  alias?: string; // ct_alias
+
 
   @IsString()
   @IsNotEmpty({ message: "type ห้ามว่าง" })
@@ -90,31 +93,17 @@ export class CommunityDto {
   email: string; // ct_email
 
   @IsString()
-  @IsNotEmpty({ message: "bank ห้ามว่าง" })
-  @MaxLength(100, { message: "bank ยาวเกิน 100 ตัวอักษร" })
-  bank: string; // ct_bank
-
-  @IsString()
-  @IsNotEmpty({ message: "bankAccountName ห้ามว่าง" })
-  @MaxLength(70, { message: "bankAccountName ยาวเกิน 70 ตัวอักษร" })
-  bankAccountName: string; // ct_bank_account_name
-
-  @IsString()
-  @IsNotEmpty({ message: "bankAccountNumber ห้ามว่าง" })
-  @Matches(/^[0-9]+$/, { message: "bankAccountNumber ต้องเป็นตัวเลขเท่านั้น" })
-  @Length(10, 20, { message: "bankAccountNumber ต้องมี 10-20 หลัก" })
-  bankAccountNumber: string; // ct_bank_account_number
-
-  @IsString()
   @IsOptional()
   @MaxLength(100, { message: "mainAdmin ยาวเกิน 100 ตัวอักษร" })
-  mainAdmin?: string; // ct_main_admin
+  mainAdmin: string; // ct_main_admin
+
 
   @IsString()
   @IsOptional()
   @Length(9, 10, { message: "mainAdminPhone ต้องมี 9-10 หลัก" })
   @Matches(/^[0-9]+$/, { message: "mainAdminPhone ต้องเป็นตัวเลขเท่านั้น" })
-  mainAdminPhone?: string; // ct_main_admin_phone
+  mainAdminPhone: string; // ct_main_admin_phone
+
 
   @IsString()
   @IsOptional()
@@ -151,18 +140,37 @@ export class CommunityDto {
   @IsOptional()
   @MaxLength(2048)
   urlOther?: string; // ct_url_other
-}
 
-export class CommunityFormDto extends CommunityDto {
   @ValidateNested()
   @Type(() => LocationDto)
   location: LocationDto;
 
   @ValidateNested({ each: true })
   @Type(() => HomestayDto)
-  homestay: HomestayWithLocationDto[];
+  homestay?: HomestayDto[];
 
   @ValidateNested({ each: true })
   @Type(() => StoreDto)
-  store: StoreWithLocationDto[];
+  store?: StoreDto[];
+
+  @ValidateNested()
+  @Type(() => BankAccountDto)
+  bankAccount: BankAccountDto;
+
+  @IsOptional()
+  member?: number[];
+
+  @ValidateNested({ each: true })
+  @Type(() => CommunityImageDto)
+  @IsOptional()
+  communityImage?: CommunityImageDto[];
+}
+
+export class CommunityImageDto {
+  @IsString()
+  @MaxLength(256, { message: "image ต้องไม่เกิน 256 ตัวอักษร" })
+  image: string;
+
+  @IsEnum(ImageType)
+  type: ImageType;
 }

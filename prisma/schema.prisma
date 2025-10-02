@@ -124,7 +124,8 @@ model Store {
   community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
   location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
   tagStores   TagStore[]
-  storeImgae  StoreImage[]
+
+  storeImage  StoreImage[]
 
   @@index([communityId])
   @@index([locationId])
@@ -158,7 +159,8 @@ model Homestay {
   name         String   @db.VarChar(60)                 @map("ht_name")
   roomType     String   @db.VarChar(45)                 @map("ht_room_type")
   capacity     Int                                      @map("ht_capacity")
-  detail       String   @db.VarChar(200)                @map("ht_detail")
+
+  facility       String   @db.VarChar(200)                @map("ht_detail")
 
   // Relations
   community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
@@ -393,6 +395,7 @@ model Location {
   latitude      Float   @db.Double                    @map("lt_latitude")
   longitude     Float   @db.Double                    @map("lt_longitude")
 
+
   // Relations
   communities Community[]
   packages    Package[]
@@ -400,9 +403,6 @@ model Location {
   homestays   Homestay[]
 
   @@map("locations")
-
-  // ✅ Unique composite index
-  @@unique([houseNumber, villageNumber, alley, subDistrict, district, province, postalCode, detail, latitude, longitude])
 }
 /*
 * คำอธิบาย : เก็บประวัติการจอง
