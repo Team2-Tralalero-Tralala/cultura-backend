@@ -124,7 +124,7 @@ model Store {
   community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
   location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
   tagStores   TagStore[]
-  storeImage  StoreImage[]
+  storeImgae  StoreImage[]
 
   @@index([communityId])
   @@index([locationId])
@@ -158,7 +158,7 @@ model Homestay {
   name         String   @db.VarChar(60)                 @map("ht_name")
   roomType     String   @db.VarChar(45)                 @map("ht_room_type")
   capacity     Int                                      @map("ht_capacity")
-  facility       String   @db.VarChar(200)                @map("ht_detail")
+  detail       String   @db.VarChar(200)                @map("ht_detail")
 
   // Relations
   community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
@@ -382,7 +382,6 @@ model FeedbackImage {
 */
 model Location {
   id            Int       @id @default(autoincrement()) @map("lt_id")
-  detail        String?   @db.VarChar(100)              @map("lt_detail")
   houseNumber   String  @db.VarChar(10)               @map("lt_houseNumber")
   villageNumber Int?                                  @map("lt_village_number")
   alley         String? @db.VarChar(60)               @map("lt_alley")
@@ -390,6 +389,7 @@ model Location {
   district      String  @db.VarChar(60)               @map("lt_district")
   province      String  @db.VarChar(60)               @map("lt_province")
   postalCode    String  @db.VarChar(5)                @map("lt_postal_code")
+  detail        String?  @db.VarChar(100)              @map("lt_detail")
   latitude      Float   @db.Double                    @map("lt_latitude")
   longitude     Float   @db.Double                    @map("lt_longitude")
 
@@ -400,6 +400,9 @@ model Location {
   homestays   Homestay[]
 
   @@map("locations")
+
+  // ✅ Unique composite index
+  @@unique([houseNumber, villageNumber, alley, subDistrict, district, province, postalCode, detail, latitude, longitude])
 }
 /*
 * คำอธิบาย : เก็บประวัติการจอง

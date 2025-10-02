@@ -16,38 +16,38 @@ import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export class PaginationDto {
-  @Expose()
-  @IsOptional()
-  @Transform(({ value }) => {
+    @Expose()
+    @IsOptional()
+    @Transform(({ value }) => {
     const num = parseInt(value);
     return !isNaN(num) && num > 0 ? num : 1;
-  })
-  @IsInt({ message: "Page must be a number" })
-  @Min(1, { message: "Page must be greater than 0" })
-  page?: number = 1;
+    })
+    @IsInt({ message: "Page must be a number" })
+    @Min(1, { message: "Page must be greater than 0" })
+    page?: number = 1;
 
-  @Expose()
-  @IsOptional()
-  @Transform(({ value }) => {
+    @Expose()
+    @IsOptional()
+    @Transform(({ value }) => {
     const num = parseInt(value);
     return !isNaN(num) && num > 0 && num <= 100 ? num : 10;
-  })
-  @IsInt({ message: "Limit must be a number" })
-  @Min(1, { message: "Limit must be at least 1" })
-  @Max(100, { message: "Limit cannot exceed 100" })
-  limit?: number = 10;
+    })
+    @IsInt({ message: "Limit must be a number" })
+    @Min(1, { message: "Limit must be at least 1" })
+    @Max(100, { message: "Limit cannot exceed 100" })
+    limit?: number = 10;
 }
 
 /*
  * Type : PaginationResponse
- * คำอธิบาย : Type สำหรับ response ที่มี pagination metadata
+ * คำอธิบาย : Type สำหรับ response ที่มี pagination metadatavv
  */
 export type PaginationResponse<T> = {
-  data: T[];
-  pagination: {
+    data: T[];
+    pagination: {
     currentPage: number;
     totalPages: number;
     totalCount: number;
     limit: number;
-  };
+    };
 };

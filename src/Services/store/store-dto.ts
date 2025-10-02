@@ -3,13 +3,9 @@ import {
   IsNotEmpty,
   MaxLength,
   ValidateNested,
-  IsEnum,
-  IsOptional,
 } from "class-validator";
-import { LocationDto } from "../location/location-dto.js";
-import { ImageType } from "@prisma/client";
 import { Type } from "class-transformer";
-
+import { LocationDto } from "../location/location-dto.js";
 
 export class StoreDto {
   @IsString({ message: "ชื่อร้านต้องเป็นข้อความ" })
@@ -21,23 +17,10 @@ export class StoreDto {
   @IsNotEmpty({ message: "รายละเอียดห้ามว่าง" })
   @MaxLength(200, { message: "รายละเอียดต้องไม่เกิน 200 ตัวอักษร" })
   detail: string;
+}
 
+export class StoreWithLocationDto extends StoreDto {
   @ValidateNested()
   @Type(() => LocationDto)
   location: LocationDto;
-
-  @ValidateNested()
-  @Type(() => StoreImageDto)
-  @IsOptional()
-  storeImage?: StoreImageDto[];
-}
-
-export class StoreImageDto {
-  @IsString()
-  @MaxLength(256, { message: "image ต้องไม่เกิน 256 ตัวอักษร" })
-  image: string;
-
-  @IsEnum(ImageType)
-  type: ImageType;
-
 }
