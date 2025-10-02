@@ -55,6 +55,7 @@ export const editCommunityDto = {
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขข้อมูลชุมชนที่มีอยู่
  * Input : req.params.communityId, req.body
+ 
  * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกแก้ไข
  */
 export const editCommunity: TypedHandlerFromDto<
@@ -90,6 +91,7 @@ export const deleteCommunityById: TypedHandlerFromDto<
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.deleteCommunityById(communityId);
     return createResponse(res, 200, "Deleted community successfully", result);
+
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

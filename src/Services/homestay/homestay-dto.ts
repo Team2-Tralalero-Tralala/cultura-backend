@@ -12,6 +12,7 @@ import {
 } from "class-validator";
 import { LocationDto } from "../location/location-dto.js";
 import { ImageType } from "@prisma/client";
+
 import { Type } from "class-transformer";
 
 export class HomestayDto {
@@ -53,4 +54,5 @@ export class HomestayImageDto {
 
   @IsEnum(ImageType)
   type: ImageType;
+
 }

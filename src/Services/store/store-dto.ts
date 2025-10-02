@@ -10,6 +10,7 @@ import { LocationDto } from "../location/location-dto.js";
 import { ImageType } from "@prisma/client";
 import { Type } from "class-transformer";
 
+
 export class StoreDto {
   @IsString({ message: "ชื่อร้านต้องเป็นข้อความ" })
   @IsNotEmpty({ message: "ชื่อร้านห้ามว่าง" })
@@ -38,4 +39,5 @@ export class StoreImageDto {
 
   @IsEnum(ImageType)
   type: ImageType;
+
 }

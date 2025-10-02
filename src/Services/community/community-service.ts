@@ -2,6 +2,7 @@ import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
 
+
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้อยู่ในรูปแบบที่สามารถใช้กับ Prisma ได้
  * Input : LocationDto (ข้อมูลที่อยู่ เช่น บ้านเลขที่ หมู่ที่ ซอย ตำบล อำเภอ จังหวัด รหัสไปรษณีย์ ละติจูด ลองจิจูด)
@@ -192,6 +193,7 @@ export async function createCommunity(community: CommunityDto) {
     }
 
     return newCommunity;
+
   });
 }
 
@@ -307,6 +309,7 @@ export async function deleteCommunityById(communityId: number) {
     where: { id: communityId },
   });
   if (!findCommunity) throw new Error("ไม่พบชุมชน");
+
 
   return await prisma.community.delete({
     where: { id: communityId },

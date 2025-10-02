@@ -36,6 +36,7 @@ export class CommunityDto {
   @MaxLength(100, { message: "alias ยาวเกิน 100 ตัวอักษร" })
   alias?: string; // ct_alias
 
+
   @IsString()
   @IsNotEmpty({ message: "type ห้ามว่าง" })
   @MaxLength(90, { message: "type ยาวเกิน 90 ตัวอักษร" })
@@ -96,11 +97,13 @@ export class CommunityDto {
   @MaxLength(100, { message: "mainAdmin ยาวเกิน 100 ตัวอักษร" })
   mainAdmin: string; // ct_main_admin
 
+
   @IsString()
   @IsOptional()
   @Length(9, 10, { message: "mainAdminPhone ต้องมี 9-10 หลัก" })
   @Matches(/^[0-9]+$/, { message: "mainAdminPhone ต้องเป็นตัวเลขเท่านั้น" })
   mainAdminPhone: string; // ct_main_admin_phone
+
 
   @IsString()
   @IsOptional()
