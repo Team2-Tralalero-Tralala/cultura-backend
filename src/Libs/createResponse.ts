@@ -6,7 +6,6 @@
 
 import type { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-
 /**
  * HTTP Status Code enumeration
  * กำหนด HTTP status codes ที่ใช้ในระบบ
@@ -43,6 +42,7 @@ export type errorResponse = {
     status: HttpStatusCode;      // HTTP status code
     error: true;                 // บ่งบอกว่าเป็น error
     message: string;             // ข้อความอธิบาย error
+    data?: any;                  // ข้อมูลที่ส่งกลับ (optional)
     errorId: string;             // ID สำหรับติดตาม error
     errors?: any;                // รายละเอียด error เพิ่มเติม (optional)
 };
@@ -52,7 +52,6 @@ export type errorResponse = {
  * รวม validResponse และ errorResponse
  */
 export type standardResponse = validResponse | errorResponse;
-
 /**
  * สร้าง success response
  * Input : res (Express Response object), status (HTTP status code), message (ข้อความ), data (ข้อมูล)
@@ -80,6 +79,7 @@ export const createErrorResponse = (res: Response, status: HttpStatusCode, messa
         status,
         error: true,
         message,
+        ...(data ? { data } : {}),
         errorId,
         ...(errors ? { errors } : {}),  // เพิ่ม errors ถ้ามี
     };

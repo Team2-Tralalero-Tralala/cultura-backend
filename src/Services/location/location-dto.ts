@@ -3,8 +3,6 @@ import {
   IsNotEmpty,
   MaxLength,
   IsOptional,
-  IsNumber,
-  IsInt,
   IsPositive,
   Matches,
   IsLatitude,
@@ -25,8 +23,8 @@ export class LocationDto {
   @IsPositive({ message: "เลขหมู่บ้านต้องมากกว่า 0" })
   villageNumber?: number;
 
-  @IsOptional()
   @IsString({ message: "ซอยต้องเป็นข้อความ" })
+  @IsOptional()
   @MaxLength(60, { message: "ชื่อซอยต้องไม่เกิน 60 ตัวอักษร" })
   alley?: string;
 
@@ -90,33 +88,30 @@ export class updateLocationDto {
   @MaxLength(60, { message: "ตำบล/แขวงต้องไม่เกิน 60 ตัวอักษร" })
   subDistrict: string;
 
-  @IsOptional()
+
   @IsString()
   @IsNotEmpty({ message: "อำเภอ/เขตห้ามว่าง" })
   @MaxLength(60, { message: "อำเภอ/เขตต้องไม่เกิน 60 ตัวอักษร" })
   district: string;
 
-  @IsOptional()
+
   @IsString()
   @IsNotEmpty({ message: "จังหวัดห้ามว่าง" })
   @MaxLength(60, { message: "จังหวัดต้องไม่เกิน 60 ตัวอักษร" })
   province: string;
 
-  @IsOptional()
+
   @IsString()
   @IsNotEmpty({ message: "รหัสไปรษณีย์ห้ามว่าง" })
   @Matches(/^[0-9]{5}$/, { message: "รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก" })
   postalCode: string;
 
-  @IsOptional()
   @IsLatitude({ message: "ละติจูดไม่ถูกต้อง" })
   latitude: number;
 
-  @IsOptional()
   @IsLongitude({ message: "ลองจิจูดไม่ถูกต้อง" })
   longitude: number;
 
-  @IsOptional()
   @IsString()
   @MaxLength(100, { message: "รายละเอียดที่อยู่ต้องไม่เกิน 60 ตัวอักษร" })
   detail: string;

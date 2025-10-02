@@ -1,11 +1,7 @@
-import { IsInt } from "class-validator";
-import { Type } from "class-transformer";
+import { IsNumberString } from "class-validator";
 
 import * as CommunityService from "~/Services/community/community-service.js";
-import {
-  CommunityFormDto,
-  updateCommunityFormDto,
-} from "~/Services/community/community-dto.js";
+import { CommunityDto } from "~/Services/community/community-dto.js";
 
 import {
   commonDto,
@@ -15,11 +11,11 @@ import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 
 /*
  * คำอธิบาย : DTO สำหรับสร้างข้อมูลชุมชนใหม่
- * Input : body (CommunityFormDto)
+ * Input : body (CommunityDto)
  * Output : ข้อมูลชุมชนที่ถูกสร้าง
  */
 export const createCommunityDto = {
-  body: CommunityFormDto,
+  body: CommunityDto,
 } satisfies commonDto;
 
 /*
@@ -31,14 +27,7 @@ export const createCommunity: TypedHandlerFromDto<
   typeof createCommunityDto
 > = async (req, res) => {
   try {
-    const { location, homestay, store, member, ...community } = req.body;
-    const result = await CommunityService.createCommunity(
-      community,
-      location,
-      homestay,
-      store,
-      member
-    );
+    const result = await CommunityService.createCommunity(req.body);
     return createResponse(res, 201, "Community created successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -51,24 +40,22 @@ export const createCommunity: TypedHandlerFromDto<
  * Output : communityId ที่ถูกตรวจสอบแล้ว
  */
 export class IdParamDto {
-  @Type(() => Number)
-  @IsInt()
-  communityId: number;
+  @IsNumberString()
+  communityId?: string;
 }
-
 /*
  * คำอธิบาย : DTO สำหรับแก้ไขข้อมูลชุมชน
- * Input : body (updateCommunityFormDto), params (IdParamDto)
+ * Input : body (editCommunityDto), params (IdParamDto)
  * Output : ข้อมูลชุมชนที่ถูกแก้ไข
  */
 export const editCommunityDto = {
-  body: updateCommunityFormDto,
+  body: CommunityDto,
   params: IdParamDto,
 } satisfies commonDto;
-
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขข้อมูลชุมชนที่มีอยู่
- * Input : req.params.communityId, req.body (community, location)
+ * Input : req.params.communityId, req.body
+ 
  * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกแก้ไข
  */
 export const editCommunity: TypedHandlerFromDto<
@@ -76,15 +63,10 @@ export const editCommunity: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const communityId = Number(req.params.communityId);
-    const { location, ...community } = req.body;
-    const result = await CommunityService.editCommunity(
-      communityId,
-      community,
-      location
-    );
-    return createResponse(res, 201, "Update community successfully", result);
-  } catch (error) {
-    return createErrorResponse(res, 400, (error as Error).message);
+    const result = await CommunityService.editCommunity(communityId, req.body);
+    return createResponse(res, 200, "Update community successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message, error.invalidMembers);
   }
 };
 
@@ -108,7 +90,8 @@ export const deleteCommunityById: TypedHandlerFromDto<
   try {
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.deleteCommunityById(communityId);
-    return createResponse(res, 201, "Deleted community successfully", result);
+    return createResponse(res, 200, "Deleted community successfully", result);
+
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

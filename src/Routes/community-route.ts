@@ -13,24 +13,24 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const communityRoutes = Router();
 
 communityRoutes.post(
-  "/",
+  "/communities/",
   validateDto(createCommunityDto),
   authMiddleware,
   allowRoles("superadmin"),
   createCommunity
 );
 communityRoutes.put(
-  "/:communityId",
+  "/communities/:communityId",
   validateDto(editCommunityDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  editCommunity as any
+  editCommunity
 );
 communityRoutes.delete(
-  "/:communityId",
+  "/communities/:communityId",
   validateDto(deleteCommunityByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  deleteCommunityById as any
+  deleteCommunityById
 );
 export default communityRoutes;
