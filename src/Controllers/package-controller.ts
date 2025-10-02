@@ -38,7 +38,7 @@ export const getPackageByRole = async (req: Request, res: Response) => {
         if (!req.user) {
             return createErrorResponse(res, 401, "Unauthorized");
         }
-        const userId = req.user.id;
+        const id = req.user.id;
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
         const result = await PackageService.getPackageByRole(Number(id), page, limit);
