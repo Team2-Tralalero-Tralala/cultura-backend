@@ -22,7 +22,7 @@ packageRoutes.put("/:id",
     allowRoles("superadmin", "admin", "member"),
     editPackage
 );
-packageRoutes.delete("/packages/:id", 
+packageRoutes.delete("/:id", 
     authMiddleware, 
     allowRoles("superadmin", "admin", "member"),
     deletePackage
