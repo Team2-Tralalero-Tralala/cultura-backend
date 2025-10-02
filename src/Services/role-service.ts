@@ -1,8 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
 
-
-async function findRoleIdByName(name: string) {
+export async function findRoleIdByName(name: string) {
   const role = await prisma.role.findUnique({ where: { name } });
   if (!role) throw new Error("Role not found");
   return role.id;
