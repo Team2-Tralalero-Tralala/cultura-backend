@@ -29,8 +29,8 @@ export const createCommunity: TypedHandlerFromDto<
   try {
     const result = await CommunityService.createCommunity(req.body);
     return createResponse(res, 201, "Community created successfully", result);
-  } catch (error) {
-    return createErrorResponse(res, 400, (error as Error).message);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message, error.invalidMembers);
   }
 };
 
@@ -91,7 +91,6 @@ export const deleteCommunityById: TypedHandlerFromDto<
     const communityId = Number(req.params.communityId);
     const result = await CommunityService.deleteCommunityById(communityId);
     return createResponse(res, 200, "Deleted community successfully", result);
-
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
