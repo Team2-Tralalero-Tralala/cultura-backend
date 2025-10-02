@@ -1,12 +1,11 @@
 import { Router } from "express";
-import * as bookingController from "../Controllers/booking-history-controller.js";
+import { authMiddleware } from "~/Middlewares/auth-middleware.js";
+import { getByRole } from "../Controllers/booking-history-controller.js";
 
-/*
- * คำอธิบาย : Routing สำหรับการดึงข้อมูลรายละเอียดการจอง (BookingDetail)
- * Endpoint : GET/:id
- */
+const router = Router();
 
-const detailBookingRouter = Router();
-detailBookingRouter.get("/:id", bookingController.getDetailBooking);
+router.get("/role", authMiddleware, getByRole);
 
-export default detailBookingRouter;
+export default router;
+
+
