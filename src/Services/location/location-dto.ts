@@ -7,6 +7,7 @@ import {
   Matches,
   IsLatitude,
   IsLongitude,
+  IsInt,
 } from "class-validator";
 
 export class LocationDto {
@@ -88,18 +89,15 @@ export class updateLocationDto {
   @MaxLength(60, { message: "ตำบล/แขวงต้องไม่เกิน 60 ตัวอักษร" })
   subDistrict: string;
 
-
   @IsString()
   @IsNotEmpty({ message: "อำเภอ/เขตห้ามว่าง" })
   @MaxLength(60, { message: "อำเภอ/เขตต้องไม่เกิน 60 ตัวอักษร" })
   district: string;
 
-
   @IsString()
   @IsNotEmpty({ message: "จังหวัดห้ามว่าง" })
   @MaxLength(60, { message: "จังหวัดต้องไม่เกิน 60 ตัวอักษร" })
   province: string;
-
 
   @IsString()
   @IsNotEmpty({ message: "รหัสไปรษณีย์ห้ามว่าง" })
