@@ -22,9 +22,9 @@ export class PaginationDto {
     const num = parseInt(value);
     return !isNaN(num) && num > 0 ? num : 1;
   })
-  @IsInt({ message: "Page must be a number" })
-  @Min(1, { message: "Page must be greater than 0" })
-  page?: number = 1;
+  @IsInt()
+  @Min(1)
+  page: number = 1;
 
   @Expose()
   @IsOptional()
@@ -32,16 +32,17 @@ export class PaginationDto {
     const num = parseInt(value);
     return !isNaN(num) && num > 0 && num <= 100 ? num : 10;
   })
-  @IsInt({ message: "Limit must be a number" })
-  @Min(1, { message: "Limit must be at least 1" })
-  @Max(100, { message: "Limit cannot exceed 100" })
-  limit?: number = 10;
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit: number = 10;
+
+  @Expose()
+  @IsOptional()
+  @IsString()
+  search?: string; // ✅ เพิ่มตรงนี้ให้ match docstring
 }
 
-/*
- * Type : PaginationResponse
- * คำอธิบาย : Type สำหรับ response ที่มี pagination metadata
- */
 export type PaginationResponse<T> = {
   data: T[];
   pagination: {
@@ -51,3 +52,4 @@ export type PaginationResponse<T> = {
     limit: number;
   };
 };
+

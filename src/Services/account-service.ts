@@ -8,7 +8,7 @@ import prisma from "./database-service.js";
 import bcrypt from "bcryptjs";
 import type { CreateAccountDto, EditAccountDto } from "./account-dto.js";
 import type { PaginationResponse } from "./pagination-dto.js";
-import type { UserPayload } from "~/Libs/Types/index.js";
+
 
 /**
  * ชุดฟิลด์ที่ “ปลอดภัย” สำหรับ select กลับไปให้ client
@@ -126,27 +126,42 @@ export async function editAccount(userId: number, body: EditAccountDto) {
   return updated;
 }
 
-export const getAllUser = async (page: number = 1, limit: number = 10) => {
-const where: any = {}; // ดึงทั้งหมด ไม่กรอง
+export const getAllUser = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  const skip = (page - 1) * limit;
 
-const data = await prisma.user.findMany({
-  skip: (page - 1) * limit,
-  take: limit,
-  where,   //  ตอนนี้คือ {} = ดึงทั้งหมด
-  select: {
-    id: true,
-    fname: true,
-    lname: true,
-    username: true,
-    email: true,
-    phone: true,
-    profileImage: true,
-  }
-});
+  const [data, totalCount] = await Promise.all([
+    prisma.user.findMany({
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        username: true,
+        email: true,
+        phone: true,
+        profileImage: true,
+      },
+    }),
+    prisma.user.count(),
+  ]);
 
-  return data;
-  
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
 };
+
 /**
  * ดึงสมาชิกของ community ตาม adminId
  * ใช้สำหรับ role: admin
