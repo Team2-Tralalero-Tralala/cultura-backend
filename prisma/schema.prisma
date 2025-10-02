@@ -400,9 +400,6 @@ model Location {
   homestays   Homestay[]
 
   @@map("locations")
-
-  // ✅ Unique composite index
-  @@unique([houseNumber, villageNumber, alley, subDistrict, district, province, postalCode, detail, latitude, longitude])
 }
 /*
 * คำอธิบาย : เก็บประวัติการจอง
