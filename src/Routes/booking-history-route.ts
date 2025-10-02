@@ -8,3 +8,4 @@ router.get("/role", authMiddleware, getByRole);
 
 export default router;
 
+

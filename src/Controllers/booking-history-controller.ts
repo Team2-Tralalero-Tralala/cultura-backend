@@ -21,4 +21,3 @@ export const getByRole = async (req: Request, res: Response) => {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
