@@ -5,6 +5,7 @@ import { CreateAccountDto, EditAccountDto } from "../Services/account-dto.js";
 import type { commonDto, TypedHandlerFromDto } from "../Libs/Types/TypedHandler.js";
 import type { Request, Response } from "express";
 
+
 export const createAccountDto = {
   body: CreateAccountDto,
 } satisfies commonDto;
@@ -42,6 +43,23 @@ export const getAll = async (req: Request, res: Response) => {
     const { page = "1", limit = "10" } = req.query as { page?: string; limit?: string };
     const data = await AccountService.getAllUser(Number(page), Number(limit));
     return createResponse(res, 200, "Get users successfully", data);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+export const getMemberByAdmin = async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.user.id);
+
+    const result = await AccountService.getMemberByAdmin(userId);
+
+    return createResponse(
+      res,
+      200,
+      "Community members retrieved successfully",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

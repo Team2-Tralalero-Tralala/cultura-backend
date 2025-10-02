@@ -1,77 +1,82 @@
-// src/Libs/validateDto.ts
-import "reflect-metadata";
+/*
+ * คำอธิบาย : Utility functions สำหรับ validation ของ DTO (Data Transfer Object)
+ * ใช้สำหรับตรวจสอบและแปลงข้อมูลที่ส่งมาจาก client ให้ตรงตาม DTO schema
+ * รองรับการ validation แบบ nested objects และการแสดง error messages
+ */
+
 import { plainToInstance } from "class-transformer";
 import { validate, ValidationError } from "class-validator";
-import type { Request, Response, NextFunction } from "express";
-import type { commonDto } from "./Types/TypedHandler.js";
+import type { NextFunction, Request, Response } from "express";
+import type { commonDto } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse } from "./createResponse.js";
 
-/** แปลง ValidationError[] เป็น { "path.to.field": ["msg1","msg2"] } */
+/**
+ * แปลง validation errors เป็นรูปแบบที่เหมาะสมสำหรับ API response
+ * Input : errors (ValidationError[])
+ * Output : Record<string, string[]> (object ที่มี key เป็น field path และ value เป็น array ของ error messages)
+ */
 export function formatValidationErrorsForApiResponse(
-  errors: ValidationError[]
+    errors: ValidationError[]
 ): Record<string, string[]> {
-  const formatted: Record<string, string[]> = {};
+    const formattedErrors: Record<string, string[]> = {};
 
-  const traverse = (err: ValidationError, path: string) => {
-    const key = path ? `${path}.${err.property}` : err.property;
+    /**
+     * ฟังก์ชัน recursive สำหรับ traverse validation errors
+     * Input : error (ValidationError), path (string path ของ field)
+     * Output : void (แต่จะเติมค่าใน formattedErrors)
+     */
+    function traverse(error: ValidationError, path: string) {
+        const newPath = path ? `${path}.${error.property}` : error.property;
 
-    if (err.constraints) {
-      formatted[key] = Object.values(err.constraints);
-    }
-    if (err.children?.length) {
-      err.children.forEach((child) => traverse(child, key));
-    }
-  };
-
-  errors.forEach((e) => traverse(e, ""));
-  return formatted;
-}
-
-/** middleware สำหรับ validate body/query/params ตาม DTO ที่ระบุ */
-export function validateDto<D extends commonDto>(dto: D) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      // กำหนดแหล่งข้อมูลที่จะตรวจ
-      const containers: Array<["body" | "query" | "params", any]> = [
-        ["body", dto.body],
-        ["query", dto.query],
-        ["params", dto.params],
-      ];
-
-      for (const [sourceName, DtoClass] of containers) {
-        if (!DtoClass) continue;
-
-        const raw = (req as any)[sourceName];
-
-        // sanitize + transform
-        const instance = plainToInstance(DtoClass as any, raw, {
-          enableImplicitConversion: true,
-        });
-
-        const errors = await validate(instance, {
-          whitelist: true,
-          forbidNonWhitelisted: true,
-        });
-
-        // ถ้า validate ไม่ผ่าน ส่งรายละเอียดออกไป (ไม่ใช้ createErrorResponse เพื่อแนบ details ได้)
-        if (errors.length) {
-          const details = formatValidationErrorsForApiResponse(errors);
-          return res.status(400).json({
-            ok: false,
-            error: "validation_error",
-            source: sourceName, // "body" | "query" | "params"
-            details,            // Record<string, string[]>
-          });
+        // เก็บ constraints (ข้อความ error) ถ้ามี
+        if (error.constraints) {
+            formattedErrors[newPath] = Object.values(error.constraints);
         }
 
-        // เขียนค่าที่ sanitize แล้วกลับเข้า req
-        (req as any)[sourceName] = instance;
-      }
-
-      return next();
-    } catch (err) {
-      // กรณี exception อื่น ๆ
-      return createErrorResponse(res, 400, (err as Error).message);
+        // ตรวจสอบ children ต่อไป (รองรับ nested objects)
+        error.children?.forEach((child) => traverse(child, newPath));
     }
-  };
+
+    errors.forEach((error) => traverse(error, ""));
+    return formattedErrors;
+}
+
+/**
+ * Middleware สำหรับ validation ของ DTO
+ * Input : dto (object ที่ implements commonDto โดยมี params/query/body/file DTO classes)
+ * Output : Express middleware function
+ */
+export function validateDto(dto: commonDto) {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        // วนลูปผ่าน DTO objects ที่ส่งเข้ามา (เช่น body, params, query, file)
+        for (const [dtoKey, DtoClass] of Object.entries(dto)) {
+            const rawData = (req as any)[dtoKey] || {};
+
+            // แปลง plain object -> DTO instance
+            const instance = plainToInstance(DtoClass as any, rawData, {
+                enableImplicitConversion: true, // เปิด implicit type conversion เช่น string -> number
+            });
+
+            // ตรวจสอบ validation rules
+            const errors = await validate(instance, {
+                whitelist: true,      // กรอง fields ที่ไม่อยู่ใน DTO class ออก
+                forbidNonWhitelisted: false, // (optional) จะ reject ถ้ามี field แปลกเข้ามา
+            });
+
+            if (errors.length > 0) {
+                const formatted = formatValidationErrorsForApiResponse(errors);
+                return createErrorResponse(res, 400, "Validation Error!", undefined, formatted);
+            }
+
+            // ถ้า validate ผ่าน → override data กลับเข้า req
+            Object.defineProperty(req, dtoKey, {
+                value: instance,
+                writable: true,
+                enumerable: true,
+                configurable: true,
+            });
+        }
+
+        next();
+    };
 }
