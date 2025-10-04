@@ -131,10 +131,10 @@ model Store {
   deleteAt    DateTime? @map("st_delete_at") @db.Timestamp(0)
 
   // Relations
-  community  Community    @relation(fields: [communityId], references: [id])
-  location   Location     @relation(fields: [locationId], references: [id])
-  tagStores  TagStore[]
-  storeImgae StoreImage[]
+  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
+  tagStores   TagStore[]
+  storeImage  StoreImage[]
 
   @@index([communityId])
   @@index([locationId])
