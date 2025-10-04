@@ -4,7 +4,7 @@ import { createResponse } from "~/Libs/createResponse.js";
 import { createErrorResponse } from "~/Libs/createResponse.js";
 /*
  * Controller : getPackagesController
- * คำอธิบาย : ดึงแพ็กเกจที่ถูกอนุมัติและเผยแพร่แล้ว
+ * คำอธิบาย : ดึงแพ็กเกจที่เป็นแบับร่าง (DRAFT เท่านั้น)
  * Input : req (Request) - คำขอจาก client, res (Response) - คำตอบที่จะส่งกลับไปยัง client
  * Output : ส่งผลลัพธ์กลับไปยัง client ผ่าน res
  * Process :
