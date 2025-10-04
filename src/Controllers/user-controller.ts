@@ -1,7 +1,13 @@
-import { IsNumberString, IsEnum } from "class-validator";
+import { IsNumberString, IsEnum,  IsNumber, 
+    IsOptional, 
+    IsString, 
+    IsNotEmpty, 
+    MaxLength, 
+    IsEmail, 
+    IsDateString  } from "class-validator";
 
 import * as UserService from "../Services/user-service.js";
-import { UserStatus } from "@prisma/client";
+import { Gender, UserStatus } from "@prisma/client";
 
 import { PaginationDto } from "~/Libs/Types/pagination-dto.js";
 
@@ -11,6 +17,7 @@ import type {
 } from "~/Libs/Types/TypedHandler.js";
 
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { Type } from "class-transformer";
 
 /*
  * DTO : IdParamDto
@@ -201,6 +208,111 @@ export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDt
         const userId = Number(req.params.userId);
         const result = await UserService.unblockAccount(userId);
         return createResponse(res, 200, "User unblock successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 404, (error as Error).message);
+    }
+};
+
+export class CreateAccountDto {
+    @IsNumber()
+    @Type(() => Number)
+    roleId!: number;
+  
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    memberOfCommunity?: number;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(256)
+    profileImage?: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(50)
+    username!: string;
+  
+    @IsEmail()
+    @MaxLength(65)
+    email!: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(255)
+    password!: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(100)
+    fname!: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(100)
+    lname!: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(10)
+    phone?: string;
+  
+    @IsOptional()
+    @IsEnum(Gender)
+    gender?: Gender;
+  
+    @IsOptional()
+    @IsDateString()
+    birthDate?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    subDistrict?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    district?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    province?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(5)
+    postalCode?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    activityRole?: string;
+  
+    @IsOptional()
+    @IsEnum(UserStatus)
+    status?: UserStatus;
+  }
+
+  export const createAccountDto = {
+    body: CreateAccountDto,
+  } satisfies commonDto;
+
+export class fileDto {
+    @IsNumberString()
+    userId?: string;
+}
+
+export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async (req:any, res:any) => {
+    try {
+        const payload = req.body;
+        if (!req.file) {
+            return res.json({status: 400, message: 'file not found'})
+        }
+        const pathImage = req.file.path
+        const result = await UserService.createAccount(payload, pathImage)
+        return createResponse(res, 200, "Create User Successful", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }

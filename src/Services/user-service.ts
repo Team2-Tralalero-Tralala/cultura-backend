@@ -168,3 +168,22 @@ export async function unblockAccount(userId: number) {
 
     return user;
 }
+
+export async function createAccount(payload: any, pathFile: string) {
+  const user = await prisma.user.create({
+    data: {
+      ...payload,
+      // roleId: Number(payload.roleId),
+      // memberOfCommunity: Number(payload.memberOfCommunity),
+      profileImage: pathFile
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      status: true,
+    },
+  });
+
+  return user;
+}
