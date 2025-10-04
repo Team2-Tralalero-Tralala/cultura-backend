@@ -1,6 +1,8 @@
 import { Prisma, UserStatus } from "@prisma/client";
 import prisma from "./database-service.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
+import type { ChangePasswordDto } from "~/Controllers/user-controller.js";
+import bcrypt from 'bcrypt';
 
 /*
  * ฟังก์ชัน : getUserById
@@ -167,4 +169,47 @@ export async function unblockAccount(userId: number) {
     if (!user) throw new Error("User not found");
 
     return user;
+}
+
+/* 
+ * คำอธิบาย: Service สำหรับเปลี่ยนรหัสผ่านของผู้ใช้งาน
+ * ตรวจสอบรหัสผ่านปัจจุบัน เปรียบเทียบรหัสใหม่ และอัปเดตข้อมูลในฐานข้อมูล
+ */
+/* 
+ * Function: changePassword
+ * Input : userId (number) → รหัสผู้ใช้ที่ต้องการเปลี่ยนรหัสผ่าน
+ *         payload (ChangePasswordDto) → ข้อมูลรหัสผ่านปัจจุบันและรหัสใหม่
+ * Output: ข้อมูลผู้ใช้ที่อัปเดตแล้ว (เฉพาะ username)
+ */
+
+export async function changePassword(userId: number, payload: ChangePasswordDto) {
+  const { currentPassword, newPassword, confirmNewPassword} = payload
+
+  if (!currentPassword || !newPassword || !confirmNewPassword) throw new Error("Bad payload");
+  if (newPassword !== confirmNewPassword) throw new Error("Password mismatch");
+
+  const dataInDb = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { 
+      password: true,
+    },
+  });
+
+  if (!dataInDb) throw new Error("User not found");
+
+  const isPasswordCorrect = await bcrypt.compare(currentPassword, dataInDb.password)
+  if (!isPasswordCorrect) throw new Error("Invalid current password");
+
+  if (await bcrypt.compare(newPassword, dataInDb.password))
+    throw new Error("New password must be different");
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { password: newHash, },
+    select: { username: true },
+  });
+
+  return user;
 }

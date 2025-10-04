@@ -10,6 +10,8 @@ import {
     blockAccountByIdDto,
     unblockAccountById,
     unblockAccountByIdDto,
+    changePassword,
+    changePasswordDto,
 } from "../Controllers/user-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
@@ -49,6 +51,13 @@ userRoutes.put(
     validateDto(unblockAccountByIdDto),
     authMiddleware, allowRoles("superadmin", "admin"),
     unblockAccountById
+); 
+
+userRoutes.post(
+    "/change-password",
+    validateDto(changePasswordDto),
+    authMiddleware, allowRoles("superadmin", "admin", "member", "tourist"),
+    changePassword
 ); 
 
 export default userRoutes;

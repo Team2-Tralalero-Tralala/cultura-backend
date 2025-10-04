@@ -1,4 +1,4 @@
-import { IsNumberString, IsEnum } from "class-validator";
+import { IsNumberString, IsEnum, IsString } from "class-validator";
 
 import * as UserService from "../Services/user-service.js";
 import { UserStatus } from "@prisma/client";
@@ -201,6 +201,48 @@ export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDt
         const userId = Number(req.params.userId);
         const result = await UserService.unblockAccount(userId);
         return createResponse(res, 200, "User unblock successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 404, (error as Error).message);
+    }
+};
+
+/* 
+ * คำอธิบาย: Controller สำหรับเปลี่ยนรหัสผ่านของผู้ใช้งาน
+ * ตรวจสอบข้อมูลจาก DTO และส่งต่อให้ UserService.changePassword ดำเนินการ
+ */
+export class ChangePasswordDto {
+    @IsString()
+    currentPassword?: string;
+    
+    @IsString()
+    newPassword?: string;
+    
+    @IsString()
+    confirmNewPassword?: string;
+}
+
+
+/* 
+ * DTO: ChangePasswordDto
+ * Input : currentPassword, newPassword, confirmNewPassword (string)
+ * ใช้ตรวจสอบและ validate ค่าที่รับจาก body ของ request
+ */
+export const changePasswordDto = {
+    body: ChangePasswordDto,
+} satisfies commonDto;
+
+/* 
+ * Function: changePassword
+ * Input : req (Request) → รับ body จาก changePasswordDto
+ *         res (Response)
+ * Output: Response JSON (200 เมื่อเปลี่ยนรหัสสำเร็จ / 404 เมื่อผิดพลาด)
+ */
+export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = async (req, res) => {
+    try {
+        const userId = Number(req?.user?.id);
+        const payload = req?.body
+        const result = await UserService.changePassword(userId, payload);
+        return createResponse(res, 200, "Change password successfully", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
