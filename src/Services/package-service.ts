@@ -1,59 +1,59 @@
 import bcrypt from "bcrypt";
 import prisma from "./database-service.js";
+import { z } from "zod";
+/*
+ * ฟังก์ชัน : getPackagesSchema
+ * คำอธิบาย : สแกนข้อมูลแพ็กเกจที่ถูกอนุมัติแล้ว
+ * Input : body (any) - ข้อมูลจาก client
+ * Output : คืนค่า schema ที่ตรวจสอบแล้ว
+ * Process :
+ * 1. ใช้ Zod ในการตรวจสอบความถูกต้องของข้อมูล
+ * 2. กำหนดให้ statusApprove ต้องเป็น "APPROVE" เท่านั้น
+ * 3. คืนค่า schema ที่ตรวจสอบแล้ว
+ */
+const getPackagesSchema = z.object({
+  statusApprove: z.literal("APPROVE").optional(),
+});
 
 interface Packages {
   name: string;
   statusApprove: string;
-  overseerMember: string;  
+  overseerMember: string;
   community: {
     name: string;
   };
 }
+
 /*
  * ฟังก์ชัน : getPackages
- * คำอธิบาย : ดึงแพ็กเกจที่ถูกอนุมัติและเผยแพร่แล้ว
- * Input : data (any) - ใช้สำหรับกรอง statusApprove
- * Output : array ของแพ็กเกจ ที่มีชื่อ overseer
+ * คำอธิบาย : ดึงแพ็กเกจที่ถูกอนุมัติแล้ว (APPROVE เท่านั้น)
+ * Input : body (any) - ข้อมูลจาก client
+ * Output : คืนค่าเป็นอาร์เรย์ของแพ็กเกจที่ถูกอนุมัติ
  * Process :
- *  1. ดึงข้อมูลแพ็กเกจจากฐานข้อมูล
- *  2. สำหรับแต่ละแพ็กเกจ ดึงชื่อ overseer จากตาราง user
- *  3. สร้าง array ใหม่ที่มีข้อมูลแพ็กเกจพร้อมชื่อ overseer
- *  4. ส่งกลับ array ของแพ็กเกจ
+ * 1. ตรวจสอบความถูกต้องของ body ด้วย Zod 
+ * 2. ดึงเฉพาะแพ็กเกจที่มี statusApprove = "APPROVE"
+ * 3. รวมชื่อ overseer จากตาราง User
+ * 4. คืนค่าอาร์เรย์ของแพ็กเกจที่ถูกอนุมัติ
  */
 export async function getPackages(body: any) {
+  const parsed = getPackagesSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new Error("Invalid request body. Allowed statusApprove only 'APPROVE'");
+  }
   const packages = await prisma.package.findMany({
     where: {
-      OR: [ { statusApprove: "APPROVE" }, 
-            { statusApprove: body.statusApprove }
-      ]},
+      ...(body.statusApprove ? { statusApprove: body.statusApprove } : { statusApprove: "APPROVE" }),
+    },
     select: {
       name: true,
       statusApprove: true,
       community: {
         select: { name: true },
       },
-      overseerMemberId: true,
-    },
-  });
-
-  const resultPackages = [];
-  for (const pkg of packages) {
-    let overseerName = "ไม่พบข้อมูล";
-    if (pkg.overseerMemberId) {
-      const user = await prisma.user.findUnique({
-        where: { id: pkg.overseerMemberId },
+      overseerPackage: {
         select: { username: true },
-      });
-      if (user) overseerName = user.username;
+      }
     }
-
-    resultPackages.push({
-      name: pkg.name,    
-      community: pkg.community.name,    
-      statusAppove: pkg.statusApprove,      
-      overseer: overseerName,       
-    });
-  }
-
-  return resultPackages;
+  })
+  return packages;
 }
