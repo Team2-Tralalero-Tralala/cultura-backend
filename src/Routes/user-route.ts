@@ -20,7 +20,7 @@ import { upload } from "../Libs/uploadFile.js";
 
 const userRoutes = Router();
 
-
+//เทส API ใช้ฟังก์ชันบีบไฟล์
 userRoutes.post(
     "/",
     upload.single("profileImage"),

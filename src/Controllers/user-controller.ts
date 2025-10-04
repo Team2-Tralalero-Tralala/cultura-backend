@@ -213,6 +213,12 @@ export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDt
     }
 };
 
+/* 
+ * คำอธิบาย: Controller และ DTO สำหรับสร้างบัญชีผู้ใช้ใหม่ (Create Account)
+ * ตรวจสอบข้อมูลผู้ใช้ที่ส่งมาผ่าน body และไฟล์รูปโปรไฟล์จาก Multer
+ * จากนั้นเรียก UserService.createAccount เพื่อบันทึกข้อมูลลงฐานข้อมูล
+ */
+
 export class CreateAccountDto {
     @IsNumber()
     @Type(() => Number)
@@ -295,15 +301,36 @@ export class CreateAccountDto {
     status?: UserStatus;
   }
 
+  /* 
+ * DTO: CreateAccountDto
+ * ใช้สำหรับตรวจสอบ (Validate) ข้อมูลการสมัครผู้ใช้ใหม่ เช่น
+ * roleId, username, email, password, ข้อมูลส่วนตัว และที่อยู่
+ * โดยใช้ class-validator และ class-transformer
+ */
   export const createAccountDto = {
     body: CreateAccountDto,
   } satisfies commonDto;
 
+/* 
+ * DTO: fileDto
+ * ใช้สำหรับตรวจสอบข้อมูลไฟล์แนบ (กรณีส่ง userId มาพร้อมไฟล์)
+ */
 export class fileDto {
     @IsNumberString()
     userId?: string;
 }
 
+/* 
+ * Function: createAccount
+ * Input : req (Request) → body: CreateAccountDto + file: รูปโปรไฟล์
+ *         res (Response)
+ * Output: Response JSON ที่มีข้อมูลผู้ใช้ที่สร้างใหม่
+ * Process: 
+ *   1. ตรวจสอบว่ามีไฟล์แนบหรือไม่
+ *   2. ดึง path ของไฟล์จาก req.file.path
+ *   3. เรียกใช้ UserService.createAccount เพื่อบันทึกข้อมูล
+ *   4. ส่ง Response กลับพร้อมข้อความ "Create User Successful"
+ */
 export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async (req:any, res:any) => {
     try {
         const payload = req.body;
