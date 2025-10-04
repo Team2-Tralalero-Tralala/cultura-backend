@@ -3,6 +3,23 @@
  * กำหนดโฟลเดอร์ปลายทาง (uploads/) และสร้างชื่อไฟล์ใหม่แบบ unique
  */
 import multer from 'multer';
+import path from "path";
+
+function decodeName(name: string) {
+    // busboy/multer ให้มาเป็น latin1 ในบางเคส -> แปลงเป็น utf8
+    return Buffer.from(name, "latin1").toString("utf8");
+  }
+  
+  function cleanOriginal(name: string) {
+    const base = path.basename(decodeName(name))
+      .normalize("NFC")                         // เก็บอักขระไทยให้ตรง
+      .replace(/[/\\?%*:|"<>]/g, "-")          // กันอักขระต้องห้าม
+      .replace(/[\x00-\x1f\x80-\x9f]/g, "")    // ลบ control chars
+      .replace(/\s+/g, " ")
+      .replace(/\.+$/, "")
+      .trim();
+    return base || "file";
+  }
 
 /* 
  * Function: storage (multer.diskStorage)
@@ -15,7 +32,7 @@ function createUploader(folder: string) {
             cb(null, folder)
         },
         filename: (req, file, cb) => {
-            const uniqueName = Date.now() + '-' + file.originalname
+            const uniqueName = `${Date.now()}-${cleanOriginal(file.originalname)}`;
             cb(null, uniqueName)
         }
     })
