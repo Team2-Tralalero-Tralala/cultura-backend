@@ -131,10 +131,10 @@ model Store {
   deleteAt    DateTime? @map("st_delete_at") @db.Timestamp(0)
 
   // Relations
-  community   Community @relation(fields: [communityId], references: [id],onDelete: Cascade)
-  location    Location  @relation(fields: [locationId], references: [id],onDelete: Cascade)
-  tagStores   TagStore[]
-  storeImage  StoreImage[]
+  community  Community    @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  location   Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  tagStores  TagStore[]
+  storeImage StoreImage[]
 
   @@index([communityId])
   @@index([locationId])
@@ -213,7 +213,6 @@ model Community {
   id                      Int              @id @default(autoincrement()) @map("ct_id")
   locationId              Int              @map("ct_location_id")
   adminId                 Int              @unique @map("ct_admin_id")
-  bankAccountId           Int              @unique @map("ct_bank_account_id")
   name                    String           @unique @map("ct_name") @db.VarChar(150)
   alias                   String?          @map("ct_alias") @db.VarChar(100)
   type                    String           @map("ct_type") @db.VarChar(90)
@@ -252,7 +251,6 @@ model Community {
 
   @@index([locationId])
   @@index([adminId])
-  @@index([bankAccountId])
   @@map("communities")
 }
 
