@@ -2,7 +2,6 @@ import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
 
-
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้อยู่ในรูปแบบที่สามารถใช้กับ Prisma ได้
  * Input : LocationDto (ข้อมูลที่อยู่ เช่น บ้านเลขที่ หมู่ที่ ซอย ตำบล อำเภอ จังหวัด รหัสไปรษณีย์ ละติจูด ลองจิจูด)
@@ -54,7 +53,8 @@ export async function checkMember(member: number[], communityId: number) {
   if (invalidMembers.length > 0) {
     throw {
       status: 400,
-      message: "ไม่พบสมาชิกบางราย หรือ สมาชิกบางรายไม่ได้มีบทบาทเป็น member",
+      message:
+        "ไม่พบสมาชิกบางราย หรือ สมาชิกบางรายไม่ได้มีบทบาทเป็น member หรือสมาชิกนั้นมีชุมชนอยู่แล้ว",
       invalidMembers,
     };
   }
@@ -79,7 +79,6 @@ export async function createCommunity(community: CommunityDto) {
     location,
     homestay,
     store,
-    bankAccount,
     adminId,
     communityImage,
     member,
@@ -109,13 +108,6 @@ export async function createCommunity(community: CommunityDto) {
       data: {
         ...communityData,
         admin: { connect: { id: adminId } },
-        bankAccount: {
-          create: {
-            bankName: bankAccount.bankName,
-            accountName: bankAccount.accountName,
-            accountNumber: bankAccount.accountNumber,
-          },
-        },
         ...(communityImage?.length
           ? {
               communityImage: {
@@ -134,8 +126,9 @@ export async function createCommunity(community: CommunityDto) {
                   .filter((hs) => hs?.name && hs?.location)
                   .map((homestay) => ({
                     name: homestay.name,
-                    roomType: homestay.roomType,
-                    capacity: homestay.capacity,
+                    type: homestay.type,
+                    guestPerRoom: homestay.guestPerRoom,
+                    totalRoom: homestay.totalRoom,
                     facility: homestay.facility,
                     location: { create: mapLocation(homestay.location) },
                     homestayImage: {
@@ -176,7 +169,6 @@ export async function createCommunity(community: CommunityDto) {
         communityImage: true,
         stores: true,
         admin: true,
-        bankAccount: true,
       },
     });
 
@@ -193,7 +185,6 @@ export async function createCommunity(community: CommunityDto) {
     }
 
     return newCommunity;
-
   });
 }
 
@@ -212,7 +203,6 @@ export async function editCommunity(
   const {
     location: loc,
     adminId,
-    bankAccount,
     communityImage,
     member,
     ...communityData
@@ -238,17 +228,6 @@ export async function editCommunity(
 
         admin: { connect: { id: adminId } },
 
-        ...(bankAccount
-          ? {
-              bankAccount: {
-                update: {
-                  bankName: bankAccount.bankName,
-                  accountName: bankAccount.accountName,
-                  accountNumber: bankAccount.accountNumber,
-                },
-              },
-            }
-          : {}),
         ...(communityImage && communityImage.length > 0
           ? {
               communityImage: {
@@ -267,7 +246,6 @@ export async function editCommunity(
         communityImage: true,
         stores: true,
         admin: true,
-        bankAccount: true,
       },
     });
     if (member?.length) {
@@ -306,12 +284,12 @@ export async function editCommunity(
 
 export async function deleteCommunityById(communityId: number) {
   const findCommunity = await prisma.community.findUnique({
-    where: { id: communityId },
+    where: { id: communityId, isDeleted: false },
   });
   if (!findCommunity) throw new Error("ไม่พบชุมชน");
 
-
-  return await prisma.community.delete({
+  return await prisma.community.update({
     where: { id: communityId },
+    data: { isDeleted: true, deleteAt: new Date() },
   });
 }
