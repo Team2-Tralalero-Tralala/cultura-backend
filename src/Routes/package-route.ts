@@ -4,27 +4,26 @@ import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const packageRoutes = Router();
-// กำหนด endpoint ตามที่คุณออกแบบ
-packageRoutes.post("/", 
+packageRoutes.post("/admin/package", 
     authMiddleware, 
     validateDto(createPackageDto), 
-    allowRoles("admin", "member"),
+    allowRoles("admin"),
     createPackage
 );
-packageRoutes.get("/", 
+packageRoutes.get("/admin/packages", 
     authMiddleware, 
-    allowRoles("superadmin", "admin", "member", "tourist"),
+    allowRoles("admin"),
     getPackageByRole
 );
-packageRoutes.put("/:id", 
+packageRoutes.put("/admin/package/:id", 
     authMiddleware, 
     validateDto(editPackageDto),
-    allowRoles("superadmin", "admin", "member"),
+    allowRoles("admin"),
     editPackage
 );
-packageRoutes.delete("/:id", 
+packageRoutes.patch("/admin/package/:id", 
     authMiddleware, 
-    allowRoles("superadmin", "admin", "member"),
+    allowRoles("admin"),
     deletePackage
 );
 export default packageRoutes;

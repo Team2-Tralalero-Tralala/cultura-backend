@@ -245,7 +245,7 @@ export const getPackageByRole = async (
 export const deletePackage = async (userId: number, packageId: number) => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { role: true, memberOf: true },
+        include: { role: true, memberOf: true, communitiesAdmin: true},
     });
 
     if (!user) {
@@ -266,9 +266,13 @@ export const deletePackage = async (userId: number, packageId: number) => {
             break;
         case "admin":
             // admin ต้องเป็น admin ของ community นั้นเท่านั้น
-            if (user.memberOfCommunity !== packageExist.communityId) {
+            const adminCommunityIds = user.communitiesAdmin.map(c => c.id);
+
+            if (!adminCommunityIds.includes(packageExist.communityId)) {
                 throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
             }
+            console.log("adminCommunityIds", adminCommunityIds);
+            
             break;
         case "member":
             // member ต้องเป็น overseer ของ package เท่านั้น
@@ -279,9 +283,12 @@ export const deletePackage = async (userId: number, packageId: number) => {
         default:
             throw new Error("คุณไม่มีสิทธิ์ลบ Package");
     }
-    const deleted = await prisma.package.delete({
-        where: { id: packageId },
+    const deleted = await prisma.package.update({
+    where: { id: packageId },
+    data: {
+        isDeleted: true,
+        deleteAt: new Date(),
+    },
     });
-
     return deleted;
 };
