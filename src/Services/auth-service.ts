@@ -19,9 +19,9 @@ import type { UserPayload } from "~/Libs/Types/index.js";
  * Error : throw error ถ้าไม่พบ role
  */
 async function findRoleIdByName(name: string) {
-    const role = await prisma.role.findUnique({ where: { name } });
-    if (!role) throw new Error("Role not found");
-    return role.id;
+  const role = await prisma.role.findUnique({ where: { name } });
+  if (!role) throw new Error("Role not found");
+  return role.id;
 }
 
 /*
@@ -37,21 +37,21 @@ async function findRoleIdByName(name: string) {
  *   - role (string) : บทบาทผู้ใช้ เช่น "admin", "tourist"
  */
 export class signupDto {
-    @IsString()
-    username: string;
-    @IsString()
-    password: string;
-    @IsString()
-    @IsEmail()
-    email: string;
-    @IsString()
-    fname: string;
-    @IsString()
-    lname: string;
-    @IsString()
-    phone: string;
-    @IsString()
-    role: string;
+  @IsString()
+  username: string;
+  @IsString()
+  password: string;
+  @IsString()
+  @IsEmail()
+  email: string;
+  @IsString()
+  fname: string;
+  @IsString()
+  lname: string;
+  @IsString()
+  phone: string;
+  @IsString()
+  role: string;
 }
 
 /*
@@ -64,37 +64,37 @@ export class signupDto {
  *   - ถ้า role ไม่พบในฐานข้อมูล
  */
 export async function signup(data: signupDto) {
-    const account = await prisma.user.findFirst({
-        where: {
-            OR: [
-                { username: data.username },
-                { email: data.email },
-                { phone: data.phone },
-            ],
-        },
-    });
+  const account = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { username: data.username },
+        { email: data.email },
+        { phone: data.phone },
+      ],
+    },
+  });
 
   if (account) throw new Error("ชื่อผู้ใช้, อีเมล หรือเบอร์โทรศัพท์ถูกใช้แล้ว");
 
-    const [roleId, hashedPassword] = await Promise.all([
-        findRoleIdByName(data.role),
-        bcrypt.hash(data.password, 10),
-    ]);
+  const [roleId, hashedPassword] = await Promise.all([
+    findRoleIdByName(data.role),
+    bcrypt.hash(data.password, 10),
+  ]);
 
-    const user = await prisma.user.create({
-        data: {
-            username: data.username,
-            email: data.email,
-            password: hashedPassword,
-            fname: data.fname,
-            lname: data.lname,
-            phone: data.phone,
-            roleId,
-        },
-        include: { role: true },
-    });
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  const user = await prisma.user.create({
+    data: {
+      username: data.username,
+      email: data.email,
+      password: hashedPassword,
+      fname: data.fname,
+      lname: data.lname,
+      phone: data.phone,
+      roleId,
+    },
+    include: { role: true },
+  });
+  const { password: _, ...userWithoutPassword } = user;
+  return userWithoutPassword;
 }
 /*
  * DTO : loginDto
@@ -104,10 +104,10 @@ export async function signup(data: signupDto) {
  *   - password (string) : รหัสผ่าน
  */
 export class loginDto {
-    @IsString()
-    username: string;
-    @IsString()
-    password: string;
+  @IsString()
+  username: string;
+  @IsString()
+  password: string;
 }
 /*
  * ฟังก์ชัน : login
@@ -122,7 +122,7 @@ export class loginDto {
  *   - ถ้าผู้ใช้ถูก block
  *   - ถ้ารหัสผ่านไม่ถูกต้อง
  */
-export async function login(data: loginDto) {
+export async function login(data: loginDto, ipAddress: string) {
   const user = await prisma.user.findFirst({
     where: {
       OR: [{ username: data.username }, { email: data.username }],
@@ -137,26 +137,26 @@ export async function login(data: loginDto) {
   if (user.status === UserStatus.BLOCKED)
     throw new Error(`${user.role.name} ถูกบล็อก`);
 
-    const payload = {
-        id: user.id,
-        username: user.username,
-        role: user.role?.name,
-    };
+  const payload = {
+    id: user.id,
+    username: user.username,
+    role: user.role?.name,
+  };
 
-    const token = generateToken(payload);
+  const token = generateToken(payload);
 
-    // Log login attempt
-    await prisma.log.create({
-        data: {
-            user: {
-                connect: { id: user.id },
-            },
-            ipAddress: ipAddress,
-            loginTime: new Date(),
-        },
-    });
+  // Log login attempt
+  await prisma.log.create({
+    data: {
+      user: {
+        connect: { id: user.id },
+      },
+      ipAddress: ipAddress,
+      loginTime: new Date(),
+    },
+  });
 
-    return { user: payload, token };
+  return { user: payload, token };
 }
 
 /*
@@ -169,18 +169,18 @@ export async function login(data: loginDto) {
  *   - ไม่มี
  */
 export async function logout(user: UserPayload | undefined, ipAddress: string) {
-    if (user) {
-        // Log logout attempt
-        await prisma.log.create({
-            data: {
-                user: {
-                    connect: { id: user.id },
-                },
-                ipAddress: ipAddress,
-                logoutTime: new Date(),
-            },
-        });
-    }
+  if (user) {
+    // Log logout attempt
+    await prisma.log.create({
+      data: {
+        user: {
+          connect: { id: user.id },
+        },
+        ipAddress: ipAddress,
+        logoutTime: new Date(),
+      },
+    });
+  }
 
-    return;
+  return;
 }
