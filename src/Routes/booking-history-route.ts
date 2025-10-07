@@ -12,7 +12,7 @@ import { validateDto } from "~/Libs/validateDto.js";
 const detailBookingRouter = Router();
 detailBookingRouter.get("/:id", bookingController.getDetailBooking);
 
-detailBookingRouter.post("/booking", 
+detailBookingRouter.post("/tourist/booking", 
     validateDto(createBookingHistoryDto), 
     authMiddleware, 
     allowRoles("tourist"),
