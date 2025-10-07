@@ -188,17 +188,24 @@ export const getPackageByRole = async (
 
         case "admin":
             const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
-            whereCondition.communityId = { in: adminCommunityIds };
+            whereCondition = {
+                communityId: { in: adminCommunityIds },
+                isDeleted: false,
+            };
             break;
 
         case "member":
-            whereCondition.overseerMemberId = user.id;
+            whereCondition = {
+                overseerMemberId: user.id,
+                isDeleted: false,
+            };
             break;
 
         case "tourist":
             whereCondition = {
                 statusApprove: "APPROVE",
                 statusPackage: "PUBLISH",
+                isDeleted: false,
             };
             break;
 
@@ -271,7 +278,6 @@ export const deletePackage = async (userId: number, packageId: number) => {
             if (!adminCommunityIds.includes(packageExist.communityId)) {
                 throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
             }
-            console.log("adminCommunityIds", adminCommunityIds);
             
             break;
         case "member":
