@@ -50,4 +50,28 @@ packageRoutes.patch("/member/package/:id",
     allowRoles("member"),
     deletePackage
 );
+
+
+packageRoutes.post("/super/package", 
+    authMiddleware, 
+    validateDto(createPackageDto), 
+    allowRoles("admin", "member"),
+    createPackage
+);
+packageRoutes.get("/super/packages", 
+    authMiddleware, 
+    allowRoles("superadmin"),
+    getPackageByRole
+);
+packageRoutes.put("/super/package/:id", 
+    authMiddleware, 
+    validateDto(editPackageDto),
+    allowRoles("superadmin"),
+    editPackage
+);
+packageRoutes.patch("/super/package/:id", 
+    authMiddleware, 
+    allowRoles("superadmin"),
+    deletePackage
+);
 export default packageRoutes;

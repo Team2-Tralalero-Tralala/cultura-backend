@@ -184,6 +184,9 @@ export const getPackageByRole = async (
     switch (user?.role.name) {
         case "superadmin":
             // superadmin เห็นทั้งหมด
+            whereCondition = {
+                isDeleted: false,
+            };
             break;
 
         case "admin":
