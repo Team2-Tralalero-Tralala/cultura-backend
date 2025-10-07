@@ -74,7 +74,7 @@ export async function signup(data: signupDto) {
         },
     });
 
-    if (account) throw new Error("Username, email or phone already exists");
+  if (account) throw new Error("ชื่อผู้ใช้, อีเมล หรือเบอร์โทรศัพท์ถูกใช้แล้ว");
 
     const [roleId, hashedPassword] = await Promise.all([
         findRoleIdByName(data.role),
@@ -122,20 +122,20 @@ export class loginDto {
  *   - ถ้าผู้ใช้ถูก block
  *   - ถ้ารหัสผ่านไม่ถูกต้อง
  */
-export async function login(data: loginDto, ipAddress: string) {
-    const user = await prisma.user.findFirst({
-        where: {
-            OR: [{ username: data.username }, { email: data.username }],
-        },
-        include: { role: true },
-    });
-    if (!user) throw new Error("User not found");
+export async function login(data: loginDto) {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [{ username: data.username }, { email: data.username }],
+    },
+    include: { role: true },
+  });
+  if (!user) throw new Error("ไม่พบผู้ใช้งาน");
 
-    const match = await bcrypt.compare(data.password, user.password);
-    if (!match) throw new Error("Invalid password");
+  const match = await bcrypt.compare(data.password, user.password);
+  if (!match) throw new Error("รหัสผ่านไม่ถูกต้อง");
 
-    if (user.status === UserStatus.BLOCKED)
-        throw new Error(`${user.role.name} is blocked`);
+  if (user.status === UserStatus.BLOCKED)
+    throw new Error(`${user.role.name} ถูกบล็อก`);
 
     const payload = {
         id: user.id,
