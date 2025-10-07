@@ -26,4 +26,28 @@ packageRoutes.patch("/admin/package/:id",
     allowRoles("admin"),
     deletePackage
 );
+
+
+packageRoutes.post("/member/package", 
+    authMiddleware, 
+    validateDto(createPackageDto), 
+    allowRoles("member"),
+    createPackage
+);
+packageRoutes.get("/member/packages", 
+    authMiddleware, 
+    allowRoles("member"),
+    getPackageByRole
+);
+packageRoutes.put("/member/package/:id", 
+    authMiddleware, 
+    validateDto(editPackageDto),
+    allowRoles("member"),
+    editPackage
+);
+packageRoutes.patch("/member/package/:id", 
+    authMiddleware, 
+    allowRoles("member"),
+    deletePackage
+);
 export default packageRoutes;
