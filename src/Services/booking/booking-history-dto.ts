@@ -9,7 +9,7 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { BookingStatus } from "@prisma/client";
-import { LocationDto } from "./location/location-dto.js";
+import { LocationDto } from "../location/location-dto.js";
 import "reflect-metadata";
 
 export class BookingHistoryDto {
@@ -55,7 +55,7 @@ export class BookingHistoryDto {
     rejectReason?: string;
 
     @IsString()
-    @IsNotEmpty({ message: "tranferSlip ห้ามว่าง" })
-    @MaxLength(100, { message: "tranferSlip ยาวเกิน 256 ตัวอักษร" })
-    tranferSlip: string;
+    @IsNotEmpty({ message: "transferSlip ห้ามว่าง" })
+    @MaxLength(100, { message: "transferSlip ยาวเกิน 256 ตัวอักษร" })
+    transferSlip: string;
 }

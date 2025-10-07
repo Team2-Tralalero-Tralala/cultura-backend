@@ -1,4 +1,4 @@
-import prisma from "./database-service.js";
+import prisma from "../database-service.js";
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
  * Input :

@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
-import * as bookingService from "../Services/booking-history-services.js";
+import * as bookingService from "../Services/booking/booking-history-services.js";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
-import { BookingHistoryDto } from "~/Services/booking-history-dto.js";
+import { BookingHistoryDto } from "~/Services/booking/booking-history-dto.js";
 /*
  * ฟังก์ชัน : getDetailBooking
  * คำอธิบาย : สำหรับดึงข้อมูลรายละเอียดการจอง
