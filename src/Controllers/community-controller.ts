@@ -8,6 +8,7 @@ import {
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 
 /*
  * คำอธิบาย : DTO สำหรับสร้างข้อมูลชุมชนใหม่
@@ -93,5 +94,37 @@ export const deleteCommunityById: TypedHandlerFromDto<
     return createResponse(res, 200, "Deleted community successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูลชุมชนทั้งหมด (รองรับ pagination)
+ * Input : query (page, limit)
+ * Output : รายการข้อมูลชุมชนทั้งหมด + pagination metadata
+ */
+export const getCommunityAllDto = {
+  query: PaginationDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getCommunityAll
+ * อธิบาย : ดึง community ทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input : req.user.id (จาก middleware auth) และ req.query.page, req.query.limit
+ * Output :
+ *   - ถ้าเป็น superadmin → ได้ community ทั้งหมดพร้อม pagination
+ *   - ถ้าไม่ใช่ superadmin → ได้ []
+ */
+export const getCommunityAll: TypedHandlerFromDto<
+  typeof getCommunityAllDto
+> = async (req, res) => {
+  try {
+    // ใช้ non-null assertion เพราะมั่นใจว่า middleware ใส่ req.user แน่ ๆ
+    const userId = Number(req.user!.id);
+    const { page = 1, limit = 10 } = req.query;
+
+    const result = await CommunityService.getCommunityAll(userId, page, limit);
+    return createResponse(res, 200, "All communities list", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
   }
 };

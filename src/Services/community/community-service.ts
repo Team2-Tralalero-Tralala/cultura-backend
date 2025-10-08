@@ -1,6 +1,7 @@
 import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
+import type { PaginationResponse } from "../pagination-dto.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้อยู่ในรูปแบบที่สามารถใช้กับ Prisma ได้
@@ -293,3 +294,59 @@ export async function deleteCommunityById(communityId: number) {
     data: { isDeleted: true, deleteAt: new Date() },
   });
 }
+
+
+/*
+ * ฟังก์ชัน : getCommunityAll
+ * อธิบาย : ดึง community ทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input : id (หมายเลข userId)
+ * Output : 
+ *   - ถ้าเป็น superadmin → ได้ community ทั้งหมด
+ *   - ถ้าไม่ใช่ superadmin → ได้ []
+ */
+export const getCommunityAll = async (
+  id: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(id)) throw new Error("ID must be Number");
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  if (user.role?.name !== "superadmin") {
+    return {
+      data: [],
+      pagination: {
+        currentPage: page,
+        totalPages: 0,
+        totalCount: 0,
+        limit,
+      },
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.community.count();
+  const communities = await prisma.community.findMany({
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: communities,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+};
