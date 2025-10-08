@@ -55,8 +55,9 @@ userRoutes.put(
 
 userRoutes.post(
     "/change-password",
+    authMiddleware,
+    allowRoles("superadmin", "admin", "member", "tourist"),
     validateDto(changePasswordDto),
-    authMiddleware, allowRoles("superadmin", "admin", "member", "tourist"),
     changePassword
 ); 
 
