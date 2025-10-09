@@ -331,11 +331,30 @@ export const getCommunityAll = async (
 
   const skip = (page - 1) * limit;
 
-  const totalCount = await prisma.community.count();
+  const totalCount = await prisma.community.count({
+    where: { isDeleted: false },
+  });
+
   const communities = await prisma.community.findMany({
+    where: { isDeleted: false },
     orderBy: { id: "asc" },
     skip,
     take: limit,
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      location: {
+        select: { province: true },
+      },
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+    },
   });
 
   const totalPages = Math.ceil(totalCount / limit);
