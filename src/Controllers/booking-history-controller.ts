@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { getHistoriesByRole } from "../Services/booking-history-service.js";
 
+import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
+import { BookingHistoryDto } from "~/Services/booking-history-dto.js";
 /*
  * ฟังก์ชัน : getByRole
  * คำอธิบาย : Handler สำหรับดึงประวัติการจองตามสิทธิ์ของผู้ใช้งาน
@@ -20,4 +22,27 @@ export const getByRole = async (req: Request, res: Response) => {
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
+};
+
+/*
+ * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอนสร้าง Booking History
+ * Input  : body (BookingHistoryDto)
+ * Output : commonDto object
+ */
+export const createBookingHistoryDto = {
+    body: BookingHistoryDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : Controller สำหรับสร้าง Booking History ใหม่
+ * Input  : Request body (BookingHistoryDto)
+ * Output : JSON response { status, message, data }
+ */
+export const createBookingHistory: TypedHandlerFromDto<typeof createBookingHistoryDto> = async (req, res) => {
+    try {
+        const result = await bookingService.createBooking(req.body);
+        return createResponse(res, 200, "Create Booking History Success", result)
+    } catch (error: any) {
+        return createErrorResponse(res, 404, (error as Error).message)
+    }
 };

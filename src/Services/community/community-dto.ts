@@ -19,7 +19,6 @@ import { CommunityStatus } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
 import { HomestayDto } from "../homestay/homestay-dto.js";
 import { StoreDto } from "../store/store-dto.js";
-import { BankAccountDto } from "../bank/bank-account-dto.js";
 import { ImageType } from "@prisma/client";
 
 export class CommunityDto {
@@ -35,7 +34,6 @@ export class CommunityDto {
   @IsOptional()
   @MaxLength(100, { message: "alias ยาวเกิน 100 ตัวอักษร" })
   alias?: string; // ct_alias
-
 
   @IsString()
   @IsNotEmpty({ message: "type ห้ามว่าง" })
@@ -56,6 +54,21 @@ export class CommunityDto {
   @IsNotEmpty({ message: "description ห้ามว่าง" })
   @MaxLength(200, { message: "description ยาวเกิน 200 ตัวอักษร" })
   description: string; // ct_description
+
+  @IsString()
+  @IsNotEmpty({ message: "ชื่อธนาคารห้ามว่าง" })
+  @MaxLength(45, { message: "ชื่อธนาคารต้องไม่เกิน 45 ตัวอักษร" })
+  bankName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "ชื่อบัญชีห้ามว่าง" })
+  @MaxLength(45, { message: "ชื่อบัญชีห้องพักต้องไม่เกิน 45 ตัวอักษร" })
+  accountName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "หมายเลขบัญชีห้ามว่าง" })
+  @MaxLength(45, { message: "หมายเลขบัญช่ีห้องพักต้องไม่เกิน 45 ตัวอักษร" })
+  accountNumber: string;
 
   @IsString()
   @IsNotEmpty()
@@ -97,13 +110,11 @@ export class CommunityDto {
   @MaxLength(100, { message: "mainAdmin ยาวเกิน 100 ตัวอักษร" })
   mainAdmin: string; // ct_main_admin
 
-
   @IsString()
   @IsOptional()
   @Length(9, 10, { message: "mainAdminPhone ต้องมี 9-10 หลัก" })
   @Matches(/^[0-9]+$/, { message: "mainAdminPhone ต้องเป็นตัวเลขเท่านั้น" })
   mainAdminPhone: string; // ct_main_admin_phone
-
 
   @IsString()
   @IsOptional()
@@ -152,10 +163,6 @@ export class CommunityDto {
   @ValidateNested({ each: true })
   @Type(() => StoreDto)
   store?: StoreDto[];
-
-  @ValidateNested()
-  @Type(() => BankAccountDto)
-  bankAccount: BankAccountDto;
 
   @IsOptional()
   member?: number[];

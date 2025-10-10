@@ -1,36 +1,29 @@
 import { Router } from "express";
-import {
-  createCommunity,
-  createCommunityDto,
-  deleteCommunityById,
-  editCommunity,
-  editCommunityDto,
-  deleteCommunityByIdDto,
-} from "~/Controllers/community-controller.js";
+import * as CommunityControler from "~/Controllers/community-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const communityRoutes = Router();
 
 communityRoutes.post(
-  "/communities/",
-  validateDto(createCommunityDto),
+  "/super/community",
+  validateDto(CommunityControler.createCommunityDto),
   authMiddleware,
   allowRoles("superadmin"),
-  createCommunity
+  CommunityControler.createCommunity
 );
 communityRoutes.put(
-  "/communities/:communityId",
-  validateDto(editCommunityDto),
+  "/super/community/:communityId",
+  validateDto(CommunityControler.editCommunityDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  editCommunity
+  CommunityControler.editCommunity
 );
-communityRoutes.delete(
-  "/communities/:communityId",
-  validateDto(deleteCommunityByIdDto),
+communityRoutes.patch(
+  "/super/community/:communityId",
+  validateDto(CommunityControler.deleteCommunityByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  deleteCommunityById
+  CommunityControler.deleteCommunityById
 );
 export default communityRoutes;
