@@ -95,3 +95,29 @@ export const deleteCommunityById: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนของแอดมิน (ไม่ต้องมี params/query)
+ * Input : ไม่มี (ใช้ req.user.id)
+ * Output : รายละเอียดชุมชนของแอดมินคนนั้น
+ */
+export const getCommunityDetailByAdminDto = {} satisfies commonDto;
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดชุมชนของแอดมินปัจจุบัน
+ * Route : GET /admin/community
+ * Input : req.user.id
+ * Output : JSON response พร้อมรายละเอียดชุมชน
+ */
+export const getCommunityDetailByAdmin: TypedHandlerFromDto<
+  typeof getCommunityDetailByAdminDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user!.id);
+    const result = await CommunityService.getCommunityDetailByAdmin(userId);
+    return createResponse(res, 200, "Community detail (admin) retrieved successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

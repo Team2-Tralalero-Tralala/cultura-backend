@@ -293,3 +293,57 @@ export async function deleteCommunityById(communityId: number) {
     data: { isDeleted: true, deleteAt: new Date() },
   });
 }
+/*
+ * ฟังก์ชัน: getCommunityDetailByAdmin
+ * คำอธิบาย: ดึงรายละเอียดชุมชนของ "แอดมินคนปัจจุบัน" (admin ของชุมชนนั้น)
+ * Input:
+ *   - userId (number): ผู้ใช้ที่เรียก (ต้องเป็น role=admin)
+ * Output:
+ *   - community + relations ของชุมชนที่ adminId = userId
+ * Error:
+ *   - "ID must be Number"
+ *   - "User not found"
+ *   - "Forbidden"
+ *   - "Community not found"
+ */
+export async function getCommunityDetailByAdmin(userId: number) {
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new Error("ID must be Number");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "admin") {
+    throw new Error("Forbidden");
+  }
+
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+     include: {
+    communityImage: true,
+    location: true,
+    packages: true,
+    homestays: true,
+    stores: true,
+    member: {
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        email: true,
+        roleId: true,
+        memberOfCommunity: true,
+      }
+    }
+  },
+});
+
+  if (!community) throw new Error("Community not found");
+  return community;
+}
+
+
+
