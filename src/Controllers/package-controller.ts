@@ -12,10 +12,10 @@ import { createErrorResponse } from "~/Libs/createResponse.js";
  *   2. ถ้าสำเร็จ ส่งผลลัพธ์กลับไปยัง client พร้อมสถานะ 200 และข้อมูลแพ็กเกจ
  *   3. ถ้ามีข้อผิดพลาด เก็บข้อผิดพลาดและส่งกลับไปยัง client พร้อมสถานะ 500 และข้อความข้อผิดพลาด
  */
-export async function getPackagesController(req: Request, res: Response) {
+export async function getDraftPackagesController(req: Request, res: Response) {
   try {
-    const packages = await getPackages(req.query);
-    return createResponse(res, 200, "Get packages successfully", packages);
+    const packages = await getPackages({ statusPublish: "DRAFT" });
+    return createResponse(res, 200, "Get draft packages successfully", packages);
   } catch (error) {
     return createErrorResponse(res, 500, (error as Error).message);
   }

@@ -8,6 +8,6 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/role", roleRoutes);
-rootRouter.use("/packages", packagesRoutes);
+rootRouter.use("/admin", packagesRoutes);
 
 export default rootRouter;
