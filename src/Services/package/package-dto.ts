@@ -42,8 +42,8 @@ export class PackageFileDto {
  */
 export class PackageDto {
     @IsNumber()
-    @IsNotEmpty({ message: "communityId ห้ามว่าง" })
-    communityId: number;
+    @IsOptional() 
+    communityId: number;  
 
     @ValidateNested() //  บอก class-validator ว่า validate field ข้างในด้วย
     @Type(() => LocationDto) //  ชี้ให้แปลงเป็น LocationDto
@@ -55,7 +55,7 @@ export class PackageDto {
     overseerMemberId: number;
 
     @IsNumber()
-    @IsNotEmpty({ message: "createById ห้ามว่าง" })
+    @IsOptional() 
     createById: number;
 
     @IsString()
@@ -133,10 +133,6 @@ export class updatePackageDto {
     @IsNumber()
     @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
     overseerMemberId?: number;
-
-    @IsNumber()
-    @IsNotEmpty({ message: "createById ห้ามว่าง" })
-    createById?: number;
 
     @IsString()
     @IsNotEmpty({ message: "name ห้ามว่าง" })

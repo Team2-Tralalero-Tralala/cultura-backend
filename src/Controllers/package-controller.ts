@@ -21,7 +21,11 @@ export const createPackageDto = {
  */
 export const createPackage = async (req: Request, res: Response) => {
     try {
-        const result = await PackageService.createPackage(req.body);
+        if (!req.user) {
+            return createErrorResponse(res, 401, "Unauthorized");
+        }
+        const payload = { ...req.body, createById: Number(req.user.id) };
+        const result = await PackageService.createPackage(payload, Number(req.user.id));
         return createResponse(res, 200, "Create Packages Success", result)
     } catch (error: any) {
         return createErrorResponse(res, 404, (error as Error).message);
@@ -63,7 +67,7 @@ export const editPackageDto = {
  * Input  : packageId (จาก params), Request body (updatePackageDto)
  * Output : JSON response { status, message, data }
  */
-export const editPackage =  async (req: Request, res: Response) => {
+export const editPackage = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
         if (!(id)) {
@@ -98,3 +102,19 @@ export const deletePackage = async (req: Request, res: Response) => {
         return createErrorResponse(res, 404, (error as Error).message)
     }
 }
+
+export const getPackageById = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) {
+            return createErrorResponse(res, 401, "Unauthorized");
+        }
+        const id = Number(req.params.id);
+        if (isNaN(id)) {
+            return createErrorResponse(res, 400, "Package ID ต้องเป็นตัวเลข");
+        } 
+        const result = await PackageService.getPackageById(id, Number(req.user.id));
+        return createResponse(res, 200, "Get Package Success", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 404, (error as Error).message);
+    }
+};

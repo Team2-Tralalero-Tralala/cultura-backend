@@ -7,25 +7,45 @@ import type { PackageDto, PackageFileDto } from "./package-dto.js";
  * Input  : ข้อมูล PackageDto (communityId, overseerMemberId, location, name, ฯลฯ)
  * Output : ข้อมูล Package ที่ถูกสร้างใหม่
  */
-export const createPackage = async (data: PackageDto) => {
-    // ตรวจสอบว่า community มีจริง
-    const community = await prisma.community.findUnique({
-        where: { id: data.communityId }
-    });
+// Services/package/package-service.ts
+export const createPackage = async (data: PackageDto, currentUserId?: number) => {
+    // --- sanitize communityId ที่เข้ามา (ตัดทิ้งถ้าเป็น "", 0, null) ---
+    const raw = (data as any).communityId;
+    const incomingCommunityId =
+        raw === undefined || raw === null || raw === "" || Number(raw) <= 0
+            ? undefined
+            : Number(raw);
 
-    if (!community) {
-        throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
+    // ใช้ overseerMemberId เป็นหลัก (ถ้าไม่มาก็ใช้ currentUserId)
+    const refUserId = data.overseerMemberId ?? currentUserId;
+    if (!refUserId) throw new Error("ไม่พบรหัสผู้ดูแล (overseerMemberId)");
+
+    // ดึงชุมชนของผู้ใช้ (1 user ต่อ 1 ชุมชน -> memberOf)
+    const user = await prisma.user.findUnique({
+        where: { id: Number(refUserId) },
+        include: { memberOf: true },
+    });
+    if (!user) throw new Error(`User ID ${refUserId} ไม่พบในระบบ`);
+
+    const resolvedCommunityId = user.memberOf?.id;
+    if (!resolvedCommunityId) {
+        throw new Error("ผู้ใช้นี้ไม่ได้สังกัดชุมชนใด จึงไม่สามารถสร้างแพ็กเกจได้");
     }
 
-    // ตรวจสอบว่า overseerMemberId มีจริง
+    // ถ้า FE ส่ง communityId มาด้วยและเป็นเลขบวก → ต้องตรงกับของผู้ใช้เท่านั้น
+    if (incomingCommunityId !== undefined && incomingCommunityId !== resolvedCommunityId) {
+        throw new Error(
+            `communityId ที่ส่งมา (${incomingCommunityId}) ไม่ตรงกับชุมชนของผู้ใช้ (${resolvedCommunityId})`
+        );
+    }
+
+    // ตรวจสอบ overseer ว่ามีจริง
     const overseer = await prisma.user.findUnique({
-        where: { id: data.overseerMemberId }
+        where: { id: Number(data.overseerMemberId) },
     });
-    if (!overseer) {
-        throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
-    }
+    if (!overseer) throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
 
-    // สร้าง location ใหม่
+    // สร้าง location
     const location = await prisma.location.create({
         data: {
             houseNumber: data.location.houseNumber,
@@ -33,43 +53,44 @@ export const createPackage = async (data: PackageDto) => {
             district: data.location.district,
             province: data.location.province,
             postalCode: data.location.postalCode,
-            detail: data.location.detail,
+            detail: data.location.detail ?? null,
             latitude: data.location.latitude,
             longitude: data.location.longitude,
         },
     });
 
-    // สร้าง Package โดยผูกกับ location และเพิ่ม packageFile ถ้ามี
-    return await prisma.package.create({
+    // สร้าง package (ใช้ communityId ที่ resolve แล้วเสมอ)
+    return prisma.package.create({
         data: {
-            communityId: data.communityId,
+            communityId: resolvedCommunityId,
             locationId: location.id,
-            overseerMemberId: data.overseerMemberId,
-            createById: data.createById,
+            overseerMemberId: Number(data.overseerMemberId),
+            createById: data.createById ?? currentUserId ?? Number(data.overseerMemberId),
             name: data.name,
             description: data.description,
             capacity: data.capacity,
             price: data.price,
-            warning: data.warning,
+            warning: data.warning ?? null,
             statusPackage: data.statusPackage,
             statusApprove: data.statusApprove,
             startDate: new Date(data.startDate),
             dueDate: new Date(data.dueDate),
-            facility: data.facility,
-
-            // ใช้ conditional spread แทน undefined
-            ...(data.packageFile && {
-                packageFile: {
-                    create: data.packageFile.map((file: any) => ({
-                        filePath: file.filePath,
-                        type: file.type,
-                    })),
-                },
-            }),
+            facility: data.facility ?? null,
+            ...(Array.isArray(data.packageFile) && data.packageFile.length > 0
+                ? {
+                    packageFile: {
+                        create: data.packageFile.map((f) => ({
+                            filePath: f.filePath,
+                            type: f.type,
+                        })),
+                    },
+                }
+                : {}),
         },
         include: { location: true, packageFile: true },
     });
 };
+
 
 /*
  * คำอธิบาย : ฟังก์ชันแก้ไขข้อมูล Package ที่มีอยู่
@@ -114,8 +135,6 @@ export const editPackage = async (id: number, data: any) => {
         data: {
             community: { connect: { id: data.communityId } },
             overseerPackage: { connect: { id: data.overseerMemberId } },
-            createPackage: { connect: { id: data.createById } },
-
             name: data.name,
             description: data.description,
             capacity: data.capacity,
@@ -228,7 +247,11 @@ export const getPackageByRole = async (
 
     const packages = await prisma.package.findMany({
         where: whereCondition,
-        include: { community: true, location: true },
+        include: {
+            community: true, location: true, overseerPackage: {
+                select: { id: true, username: true, fname: true, lname: true, email: true },
+            },
+        },
         skip,
         take: limit,
     });
@@ -255,7 +278,7 @@ export const getPackageByRole = async (
 export const deletePackage = async (userId: number, packageId: number) => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { role: true, memberOf: true, communitiesAdmin: true},
+        include: { role: true, memberOf: true, communitiesAdmin: true },
     });
 
     if (!user) {
@@ -281,7 +304,7 @@ export const deletePackage = async (userId: number, packageId: number) => {
             if (!adminCommunityIds.includes(packageExist.communityId)) {
                 throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
             }
-            
+
             break;
         case "member":
             // member ต้องเป็น overseer ของ package เท่านั้น
@@ -293,11 +316,58 @@ export const deletePackage = async (userId: number, packageId: number) => {
             throw new Error("คุณไม่มีสิทธิ์ลบ Package");
     }
     const deleted = await prisma.package.update({
-    where: { id: packageId },
-    data: {
-        isDeleted: true,
-        deleteAt: new Date(),
-    },
+        where: { id: packageId },
+        data: {
+            isDeleted: true,
+            deleteAt: new Date(),
+        },
     });
     return deleted;
+};
+
+export const getPackageById = async (packageId: number, userId: number) => {
+    if (isNaN(packageId)) throw new Error("Package ID ไม่ถูกต้อง");
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true, communitiesAdmin: true },
+    });
+    if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
+
+    const pkg = await prisma.package.findUnique({
+        where: { id: packageId },
+        include: {
+            community: true,
+            location: true,
+            overseerPackage: {
+                select: { id: true, username: true, fname: true, lname: true, email: true },
+            },
+            packageFile: true,
+        },
+    });
+    if (!pkg || pkg.isDeleted) throw new Error(`Package ID ${packageId} ไม่พบในระบบ`);
+
+    const role = user.role?.name;
+
+    // superadmin: ดูได้ทั้งหมด
+    if (role === "superadmin") return pkg;
+
+    // admin: ต้องเป็น admin ของ community นั้นเท่านั้น
+    if (role === "admin") {
+        const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
+        if (!adminCommunityIds.includes(pkg.communityId)) {
+            throw new Error("คุณไม่มีสิทธิ์เข้าถึง Package ของชุมชนนี้");
+        }
+        return pkg;
+    }
+
+    // member: ต้องเป็น overseer ของ package นี้
+    if (role === "member") {
+        if (pkg.overseerMemberId !== user.id) {
+            throw new Error("คุณไม่มีสิทธิ์เข้าถึง Package นี้");
+        }
+        return pkg;
+    }
+
+    throw new Error("คุณไม่มีสิทธิ์เข้าถึง Package");
 };
