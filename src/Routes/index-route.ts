@@ -9,7 +9,7 @@ import logRoutes from "./log-route.js";
 const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
-rootRouter.use("/users", userRoutes);
+rootRouter.use(userRoutes);
 rootRouter.use("/booking-histories", bookingHistoryRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);

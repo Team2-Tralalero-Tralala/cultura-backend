@@ -17,35 +17,35 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const userRoutes = Router();
 
 userRoutes.get(
-    "/:userId",
+    "/super/users/:userId",
     validateDto(getUserByIdDto),
     authMiddleware, allowRoles("superadmin", "admin", "member"),
     getUserById
 );
 
 userRoutes.get(
-    "/status/:status",
+    "/super/users/status/:status",
     validateDto(getUserByStatusDto),
     authMiddleware, allowRoles("superadmin", "admin"),
     getUserByStatus
 );
 
 userRoutes.delete(
-    "/:userId",
+    "/super/users/:userId",
     validateDto(deleteAccountByIdDto),
     authMiddleware, allowRoles("superadmin", "admin"),
     deleteAccountById
 );
 
 userRoutes.put(
-    "/block/:userId", 
+    "/super/users/block/:userId", 
     validateDto(blockAccountByIdDto),
     authMiddleware, allowRoles("superadmin", "admin"),
     blockAccountById
 );
 
 userRoutes.put(
-    "/unblock/:userId",
+    "/super/users/unblock/:userId",
     validateDto(unblockAccountByIdDto),
     authMiddleware, allowRoles("superadmin", "admin"),
     unblockAccountById
