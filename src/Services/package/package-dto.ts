@@ -42,8 +42,8 @@ export class PackageFileDto {
  */
 export class PackageDto {
     @IsNumber()
-    @IsOptional() 
-    communityId: number;  
+    @IsOptional()
+    communityId: number;
 
     @ValidateNested() //  บอก class-validator ว่า validate field ข้างในด้วย
     @Type(() => LocationDto) //  ชี้ให้แปลงเป็น LocationDto
@@ -55,7 +55,7 @@ export class PackageDto {
     overseerMemberId: number;
 
     @IsNumber()
-    @IsOptional() 
+    @IsOptional()
     createById: number;
 
     @IsString()
@@ -102,6 +102,16 @@ export class PackageDto {
     @IsNotEmpty({ message: "dueDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
     dueDate: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "startTime ต้องเป็นรูปแบบ HH:mm" })
+    startTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็นรูปแบบ HH:mm" })
+    endTime?: string;
 
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })
@@ -169,13 +179,25 @@ export class updatePackageDto {
     })
     statusApprove?: PackageApproveStatus;
 
+    @IsString()
     @IsNotEmpty({ message: "startDate ห้ามว่าง" })
-    @Type(() => Date) // ให้ class-transformer แปลงเป็น Date อัตโนมัติ
-    startDate: Date;
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    startDate!: string;
 
+    @IsString()
     @IsNotEmpty({ message: "dueDate ห้ามว่าง" })
-    @Type(() => Date)
-    dueDate: Date;
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    dueDate!: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "startTime ต้องเป็น HH:mm" })
+    startTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็น HH:mm" })
+    endTime?: string;
 
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })

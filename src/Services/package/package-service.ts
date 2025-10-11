@@ -1,6 +1,7 @@
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
+import { composeDateTimeIso } from "../../Libs/Types/package.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันสร้าง Package ใหม่ในระบบ
@@ -49,6 +50,7 @@ export const createPackage = async (data: PackageDto, currentUserId?: number) =>
     const location = await prisma.location.create({
         data: {
             houseNumber: data.location.houseNumber,
+            villageNumber: data.location.villageNumber ?? null,
             subDistrict: data.location.subDistrict,
             district: data.location.district,
             province: data.location.province,
@@ -59,6 +61,8 @@ export const createPackage = async (data: PackageDto, currentUserId?: number) =>
         },
     });
 
+    const startAt = composeDateTimeIso(data.startDate, (data as any).startTime);
+    const dueAt = composeDateTimeIso(data.dueDate, (data as any).endTime, true);
     // สร้าง package (ใช้ communityId ที่ resolve แล้วเสมอ)
     return prisma.package.create({
         data: {
@@ -73,8 +77,8 @@ export const createPackage = async (data: PackageDto, currentUserId?: number) =>
             warning: data.warning ?? null,
             statusPackage: data.statusPackage,
             statusApprove: data.statusApprove,
-            startDate: new Date(data.startDate),
-            dueDate: new Date(data.dueDate),
+            startDate: startAt,
+            dueDate: dueAt,
             facility: data.facility ?? null,
             ...(Array.isArray(data.packageFile) && data.packageFile.length > 0
                 ? {
@@ -129,6 +133,8 @@ export const editPackage = async (id: number, data: any) => {
 
     // แยก field ออกมา
     const { location, locationId, packageFile, ...packageData } = data;
+    const startAt = composeDateTimeIso(data.startDate, data.startTime);
+    const dueAt   = composeDateTimeIso(data.dueDate,   data.endTime, true);
 
     const result = await prisma.package.update({
         where: { id },
@@ -140,15 +146,14 @@ export const editPackage = async (id: number, data: any) => {
             capacity: data.capacity,
             price: data.price,
             warning: data.warning,
-            statusPackage: data.statusPackage,
-            statusApprove: data.statusApprove,
-            startDate: new Date(data.startDate),
-            dueDate: new Date(data.dueDate),
+            startDate: startAt, 
+            dueDate: dueAt,
             facility: data.facility,
 
             location: {
                 update: {
                     houseNumber: location.houseNumber,
+                    villageNumber: location.villageNumber ?? null,
                     subDistrict: location.subDistrict,
                     district: location.district,
                     province: location.province,
