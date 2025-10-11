@@ -1,7 +1,7 @@
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
-import { composeDateTimeIso } from "../../Libs/Types/package.js";
+import { composeDateTimeIso } from "../../Libs/Types/package-type.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันสร้าง Package ใหม่ในระบบ
