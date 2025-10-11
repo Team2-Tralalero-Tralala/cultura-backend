@@ -369,3 +369,57 @@ export const getCommunityAll = async (
     },
   };
 };
+
+
+
+/*
+ * ฟังก์ชัน: getCommunityById (superadmin only)
+ * Input :
+ *   - userId        : ผู้เรียกใช้งาน (ต้องเป็น superadmin)
+ *   - communityId   : รหัสชุมชน
+ * Output:
+ *   - community + relations ตาม schema จริง
+ * Error:
+ *   - "ID must be Number"
+ *   - "User not found"
+ *   - "Forbidden"
+ *   - "Community not found"
+ */
+export async function getCommunityById(userId: number, communityId: number) {
+  if (!Number.isInteger(userId) || !Number.isInteger(communityId) || userId <= 0 || communityId <= 0) {
+    throw new Error("ID must be Number");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "superadmin") throw new Error("Forbidden");
+
+  // ใช้ findFirst เพื่อกัน soft-delete (findUnique ใส่เงื่อนไขอื่นไม่ได้)
+ const community = await prisma.community.findFirst({
+  where: { id: communityId, isDeleted: false },
+  include: {
+    communityImage: true,
+    location: true,
+    packages: true,
+    homestays: true,
+    stores: true,
+    member: {
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        email: true,
+        roleId: true,
+        memberOfCommunity: true,
+      }
+    }
+  },
+});
+
+
+  if (!community) throw new Error("Community not found");
+  return community;
+}
