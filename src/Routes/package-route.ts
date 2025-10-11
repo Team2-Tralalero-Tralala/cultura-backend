@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import * as PackageController from '../Controllers/package-controller.js';
+import { authMiddleware } from '~/Middlewares/auth-middleware.js';
+import { getPackageById } from '../Controllers/package-controller.js';
 
 const router = Router();
 
-router.get('/:id', PackageController.getPackageById);
+router.get('/:id', authMiddleware, getPackageById);
 
 export default router;
