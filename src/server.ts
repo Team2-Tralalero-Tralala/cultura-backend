@@ -7,7 +7,7 @@ const app = express();
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:4000", // origin ของ front-end
+    origin:  ["http://localhost:4000", "http://localhost:5173"], // origin ของ front-end
     credentials: true, // อนุญาตให้ส่ง cookie/header credentials
   })
 );
@@ -18,7 +18,7 @@ const port = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
   return res.send("Hello World from cultura.com");
-});
+}); 
 
 app.use("/api", rootRouter);
 

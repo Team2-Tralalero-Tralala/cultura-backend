@@ -1,3 +1,11 @@
+/*
+ * Controller: Account
+ * Description:
+ *  - จัดการบัญชีผู้ใช้ทั้งหมด (Create / Edit / Get / Filter)
+ *  - ใช้ร่วมกับ role-based access (SuperAdmin, Admin, Member)
+ *  - รองรับการ validate ด้วย DTO
+ */
+
 import { IsNumberString } from "class-validator";
 import { createResponse, createErrorResponse } from "../Libs/createResponse.js";
 import * as AccountService from "../Services/account-service.js";
@@ -5,11 +13,14 @@ import { CreateAccountDto, EditAccountDto } from "../Services/account-dto.js";
 import type { commonDto, TypedHandlerFromDto } from "../Libs/Types/TypedHandler.js";
 import type { Request, Response } from "express";
 
+/** ----------------------------- DTOs ----------------------------- **/
 
+// ใช้กับการสร้างบัญชี
 export const createAccountDto = {
   body: CreateAccountDto,
 } satisfies commonDto;
 
+// ใช้กับการแก้ไขบัญชี
 export class AccountIdParamDto {
   @IsNumberString()
   id?: number;
@@ -20,15 +31,42 @@ export const editAccountDto = {
   params: AccountIdParamDto,
 } satisfies commonDto;
 
+/** ----------------------------- Controller: Create Account ----------------------------- **/
+
+/*
+ * Controller: Account
+ * คำอธิบาย : จัดการคำขอสร้างบัญชีผู้ใช้ (เฉพาะ superadmin สร้าง admin)
+ * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
+ */
+
 export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async (req, res) => {
   try {
     const result = await AccountService.createAccount(req.body);
     return createResponse(res, 201, "Account created successfully", result);
   } catch (error) {
-    return createErrorResponse(res, 400, (error as Error).message);
+    const message = (error as Error).message;
+
+    // Map error messages to standard response
+    switch (message) {
+      case "role_not_found":
+        return createErrorResponse(res, 404, "Role not found");
+      case "role_not_allowed":
+        return createErrorResponse(res, 403, "You are not allowed to create this account type");
+      case "duplicate":
+        return createErrorResponse(res, 409, "Duplicate data (username, email, or phone)");
+      default:
+        return createErrorResponse(res, 400, "Failed to create account");
+    }
   }
 };
 
+/** ----------------------------- Controller: Edit Account ----------------------------- **/
+
+/**
+ * Controller: Edit Account
+ * Description: ใช้แก้ไขข้อมูลบัญชีผู้ใช้ตาม id
+ */
 export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (req, res) => {
   try {
     const result = await AccountService.editAccount(Number(req.params.id), req.body);
@@ -38,6 +76,13 @@ export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (re
   }
 };
 
+/** ----------------------------- Controller: Get All Accounts ----------------------------- **/
+
+/**
+ * Controller: Get All Users
+ * Role Access: SuperAdmin
+ * Description: ดึงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า (pagination)
+ */
 export const getAll = async (req: Request, res: Response) => {
   try {
     const { page = "1", limit = "10" } = req.query as { page?: string; limit?: string };
@@ -48,10 +93,16 @@ export const getAll = async (req: Request, res: Response) => {
   }
 };
 
+/** ----------------------------- Controller: Get Members by Admin ----------------------------- **/
+
+/**
+ * Controller: Get Member by Admin
+ * Role Access: Admin
+ * Description: ดึงข้อมูลสมาชิกในชุมชนที่ admin นั้นดูแลอยู่
+ */
 export const getMemberByAdmin = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.user.id);
-
     const result = await AccountService.getMemberByAdmin(userId);
 
     return createResponse(

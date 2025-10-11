@@ -38,35 +38,61 @@ const selectSafe = {
  * - ถ้า race condition เกิดพร้อมกันหลายคำขอ อาจยังโดน P2002 ได้
  *   ให้ global error handler ของโปรเจกต์ map -> 409 duplicate ตามมาตรฐานต่อไป
  */
+/**
+ * สร้างผู้ใช้ใหม่
+ * ขั้นตอน:
+ * 1) ตรวจว่า role ที่อ้างอิงมีจริง (กัน foreign key ผิด)
+ * 2) จำกัดให้ superadmin สร้างได้เฉพาะ role "admin" (ชั่วคราว)
+ * 3) กันข้อมูลซ้ำ (username/email/phone) เพื่อหลบ P2002 เบื้องต้น
+ * 4) hash password ก่อนบันทึก
+ * 5) คืนเฉพาะฟิลด์ที่ปลอดภัย (selectSafe)
+ * หมายเหตุ:
+ * - ภายหลังสามารถขยาย allowedRoles ได้ เช่น ["admin", "member", "tourist"]
+ */
 export async function createAccount(body: CreateAccountDto) {
-  // 1) role ต้องมี
-  const role = await prisma.role.findUnique({ where: { id: body.roleId }, select: { id: true } });
+  // 1) ตรวจว่า role ที่อ้างอิงมีจริง
+  const role = await prisma.role.findUnique({
+    where: { id: body.roleId },
+    select: { id: true, name: true },
+  });
   if (!role) throw new Error("role_not_found");
 
-  // 2) กันค่าซ้ำแบบเร็ว (username/email/phone)
+  // 2) จำกัดเฉพาะ role ที่อนุญาตให้สร้างได้ (ตอนนี้คือ admin)
+  const allowedRoles = ["admin"]; // ตอนนี้ให้ superadmin สร้างได้เฉพาะ admin
+  if (!allowedRoles.includes(role.name)) {
+    throw new Error("role_not_allowed");
+  }
+
+  // 3) ตรวจข้อมูลซ้ำ
   const dup = await prisma.user.findFirst({
-    where: { OR: [{ username: (body.username) }, { email: (body.email) }, { phone: (body.phone) }] },
+    where: {
+      OR: [
+        { username: body.username },
+        { email: body.email },
+        { phone: body.phone },
+      ],
+    },
     select: { id: true },
   });
   if (dup) throw new Error("duplicate");
 
-  // 3) บันทึก + hash password
+  // 4) hash password ก่อนเก็บ
   const created = await prisma.user.create({
     data: {
-      roleId: body.roleId,
-      fname: (body.fname),
-      lname: (body.lname),
-      username: (body.username),
-      email: (body.email),
-      phone: (body.phone),
-      password: await bcrypt.hash(body.password, 10), // hash ก่อนเก็บเสมอ
+      roleId: role.id,
+      fname: body.fname,
+      lname: body.lname,
+      username: body.username,
+      email: body.email,
+      phone: body.phone,
+      password: await bcrypt.hash(body.password, 10),
     },
-    // 4) คืนเฉพาะฟิลด์ที่ปลอดภัย
+    // 5) คืนเฉพาะฟิลด์ที่ปลอดภัย
     select: selectSafe,
   });
+
   return created;
 }
-
 /**
  * แก้ไขข้อมูลผู้ใช้
  * ขั้นตอน:
