@@ -7,6 +7,6 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/communities", communityRoutes);
-rootRouter.use("/logs", logRoutes);
+rootRouter.use("/shared/logs", logRoutes);
 
 export default rootRouter;
