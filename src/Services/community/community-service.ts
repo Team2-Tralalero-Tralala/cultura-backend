@@ -17,7 +17,7 @@ const mapLocation = (loc: LocationDto) => ({
   postalCode: loc.postalCode,
   latitude: loc.latitude,
   longitude: loc.longitude,
-  detail: loc.detail,
+  detail: loc.detail ?? null,
 });
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับตรวจสอบว่าผู้ใช้ที่ระบุใน member ทั้งหมดเป็นสมาชิกที่ถูกต้องหรือไม่
@@ -119,55 +119,10 @@ export async function createCommunity(community: CommunityDto) {
             }
           : {}),
         location: { create: mapLocation(location) },
-        ...(homestay?.length
-          ? {
-              homestays: {
-                create: homestay
-                  .filter((hs) => hs?.name && hs?.location)
-                  .map((homestay) => ({
-                    name: homestay.name,
-                    type: homestay.type,
-                    guestPerRoom: homestay.guestPerRoom,
-                    totalRoom: homestay.totalRoom,
-                    facility: homestay.facility,
-                    location: { create: mapLocation(homestay.location) },
-                    homestayImage: {
-                      create:
-                        homestay.homestayImage?.map((img) => ({
-                          image: img.image,
-                          type: img.type,
-                        })) ?? [],
-                    },
-                  })),
-              },
-            }
-          : {}),
-        ...(store?.length
-          ? {
-              stores: {
-                create: store
-                  .filter((st) => st?.name && st?.location)
-                  .map((store) => ({
-                    name: store.name,
-                    detail: store.detail,
-                    location: { create: mapLocation(store.location) },
-                    storeImage: {
-                      create:
-                        store.storeImage?.map((img) => ({
-                          image: img.image,
-                          type: img.type,
-                        })) ?? [],
-                    },
-                  })),
-              },
-            }
-          : {}),
       },
       include: {
         location: true,
-        homestays: true,
         communityImage: true,
-        stores: true,
         admin: true,
       },
     });
@@ -242,9 +197,7 @@ export async function editCommunity(
       },
       include: {
         location: true,
-        homestays: true,
         communityImage: true,
-        stores: true,
         admin: true,
       },
     });
@@ -292,4 +245,19 @@ export async function deleteCommunityById(communityId: number) {
     where: { id: communityId },
     data: { isDeleted: true, deleteAt: new Date() },
   });
+}
+
+export async function getCommunityById(communityId: number) {
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: true,
+    },
+  });
+
+  if (!community) throw new Error("ไม่พบชุมชน");
+
+  return community;
 }

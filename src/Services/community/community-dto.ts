@@ -45,10 +45,9 @@ export class CommunityDto {
   @MaxLength(45, { message: "registerNumber ยาวเกิน 45 ตัวอักษร" })
   registerNumber: string; // ct_register_number
 
-  @IsDate({ message: "registerDate ต้องเป็นวันที่" })
-  @IsNotEmpty({ message: "registerDate ห้ามว่าง" })
   @Type(() => Date)
-  registerDate: Date; // ct_register_date
+  @IsDate({ message: "registerDate ต้องเป็นวันที่" })
+  registerDate: Date;
 
   @IsString()
   @IsNotEmpty({ message: "description ห้ามว่าง" })
@@ -62,12 +61,12 @@ export class CommunityDto {
 
   @IsString()
   @IsNotEmpty({ message: "ชื่อบัญชีห้ามว่าง" })
-  @MaxLength(45, { message: "ชื่อบัญชีห้องพักต้องไม่เกิน 45 ตัวอักษร" })
+  @MaxLength(45, { message: "ชื่อบัญชีต้องไม่เกิน 45 ตัวอักษร" })
   accountName: string;
 
   @IsString()
   @IsNotEmpty({ message: "หมายเลขบัญชีห้ามว่าง" })
-  @MaxLength(45, { message: "หมายเลขบัญช่ีห้องพักต้องไม่เกิน 45 ตัวอักษร" })
+  @MaxLength(45, { message: "หมายเลขบัญชีต้องไม่เกิน 45 ตัวอักษร" })
   accountNumber: string;
 
   @IsString()
