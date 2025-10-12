@@ -26,4 +26,13 @@ communityRoutes.patch(
   allowRoles("superadmin"),
   CommunityControler.deleteCommunityById
 );
+
+communityRoutes.get(
+  "/admin/community",
+  validateDto(CommunityControler.getCommunityDetailByAdminDto),
+  authMiddleware,
+  allowRoles("admin"),
+  CommunityControler.getCommunityDetailByAdmin
+);
+
 export default communityRoutes;
