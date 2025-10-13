@@ -261,3 +261,49 @@ export async function getCommunityById(communityId: number) {
 
   return community;
 }
+
+export async function getUnassignedAdmins() {
+  const assignedAdmins = await prisma.community.findMany({
+    select: {
+      adminId: true,
+    },
+  });
+
+  const assignedIds = assignedAdmins.map((c) => c.adminId);
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: {
+        name: "admin",
+      },
+      id: { notIn: assignedIds },
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+    orderBy: { fname: "asc" },
+  });
+  return admins;
+}
+
+export async function getUnassignedMembers() {
+  const members = await prisma.user.findMany({
+    where: {
+      role: {
+        name: "member",
+      },
+      memberOf: null,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+    orderBy: { fname: "asc" },
+  });
+  return members;
+}

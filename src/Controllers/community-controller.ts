@@ -95,3 +95,29 @@ export const deleteCommunityById: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+export const unassignedAdminsDto = {} satisfies commonDto;
+
+export const getUnassignedAdmins: TypedHandlerFromDto<
+  typeof unassignedAdminsDto
+> = async (req, res) => {
+  try {
+    const result = await CommunityService.getUnassignedAdmins();
+    return createResponse(res, 200, "fetch admin successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+export const unassignedMemberDto = {} satisfies commonDto;
+
+export const getUnassignedMembers: TypedHandlerFromDto<
+  typeof unassignedMemberDto
+> = async (req, res) => {
+  try {
+    const result = await CommunityService.getUnassignedMembers();
+    return createResponse(res, 200, "fetch member successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
