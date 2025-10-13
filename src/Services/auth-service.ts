@@ -152,8 +152,6 @@ export async function login(data: loginDto, ipAddress: string) {
       loginTime: new Date(),
     },
   });
-  console.log(test);
-
   return { user: payload, token };
 }
 
