@@ -143,7 +143,7 @@ export async function login(data: loginDto, ipAddress: string) {
   };
 
   const token = generateToken(payload);
-  const test = await prisma.log.create({
+  await prisma.log.create({
     data: {
       user: {
         connect: { id: user.id },
