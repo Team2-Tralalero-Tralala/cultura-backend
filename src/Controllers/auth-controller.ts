@@ -62,7 +62,7 @@ export const loginDto = {
  */
 export const login: TypedHandlerFromDto<typeof loginDto> = async (req, res) => {
   try {
-    const result = await AuthService.login(req.body);
+    const result = await AuthService.login(req.body, req.ip ?? "");
     res.cookie("accessToken", result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production" || false, // ใช้ secure cookie ใน production
@@ -89,6 +89,7 @@ export const logout: TypedHandlerFromDto<typeof loginDto> = async (
 ) => {
   try {
     res.clearCookie("accessToken");
+    await AuthService.logout(req.user, req.ip ?? "");
     return createResponse(res, 201, "logout successful");
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
