@@ -373,7 +373,7 @@ export const getCommunityAll = async (
 
 
 /*
- * ฟังก์ชัน: getCommunityById (superadmin only)
+ * ฟังก์ชัน: getCommunityDetailById (superadmin only)
  * Input :
  *   - userId        : ผู้เรียกใช้งาน (ต้องเป็น superadmin)
  *   - communityId   : รหัสชุมชน
@@ -385,7 +385,7 @@ export const getCommunityAll = async (
  *   - "Forbidden"
  *   - "Community not found"
  */
-export async function getCommunityById(userId: number, communityId: number) {
+export async function getCommunityDetailById(userId: number, communityId: number) {
   if (!Number.isInteger(userId) || !Number.isInteger(communityId) || userId <= 0 || communityId <= 0) {
     throw new Error("ID must be Number");
   }

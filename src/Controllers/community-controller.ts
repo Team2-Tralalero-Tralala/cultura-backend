@@ -136,7 +136,7 @@ export const getCommunityAll: TypedHandlerFromDto<
  * Input : params (IdParamDto)
  * Output : ข้อมูลชุมชนที่พบ
  */
-export const getCommunityByIdDto = {
+export const getCommunityDetailByIdDto = {
   params: IdParamDto,
 } satisfies commonDto;
 
@@ -145,13 +145,13 @@ export const getCommunityByIdDto = {
  * Input : req.user.id (userId จาก middleware auth), req.params.communityId
  * Output : JSON response พร้อมข้อมูลชุมชนที่พบ (เฉพาะ superadmin)
  */
-export const getCommunityById: TypedHandlerFromDto<
-  typeof getCommunityByIdDto
+export const getCommunityDetailById: TypedHandlerFromDto<
+  typeof getCommunityDetailByIdDto
 > = async (req, res) => {
   try {
     const userId = Number(req.user!.id);
     const communityId = Number(req.params.communityId);
-    const result = await CommunityService.getCommunityById(userId, communityId);
+    const result = await CommunityService.getCommunityDetailById(userId, communityId);
     return createResponse(res, 200, "Community detail retrieved successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);

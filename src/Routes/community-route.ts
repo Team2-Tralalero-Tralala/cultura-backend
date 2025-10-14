@@ -36,11 +36,11 @@ communityRoutes.get(
 );
 
 communityRoutes.get(
-  "/super/community/:communityId",
-  validateDto(CommunityControler.getCommunityByIdDto),
+  "/super/community/detail/:communityId",
+  validateDto(CommunityControler.getCommunityDetailByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityControler.getCommunityById
+  CommunityControler.getCommunityDetailById
 );
 
 export default communityRoutes;
