@@ -1,92 +1,113 @@
+// Routes/package-routes.ts
 import { Router } from "express";
-import { createPackage, editPackage, deletePackage, getPackageByRole, getPackageById, createPackageDto, editPackageDto } from "../Controllers/package-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
+import {
+    createPackageDto,
+    editPackageDto,
+    createPackageSuperAdmin,
+    createPackageAdmin,
+    createPackageMember,
+    listPackagesSuperAdmin,
+    listPackagesAdmin,
+    listPackagesMember,
+    listPackagesTourist,
+    editPackageSuperAdmin,
+    editPackageAdmin,
+    editPackageMember,
+    deletePackageSuperAdmin,
+    deletePackageAdmin,
+    deletePackageMember,
+} from "../Controllers/package-controller.js";
 
 const packageRoutes = Router();
-packageRoutes.post("/admin/package",
+
+packageRoutes.post(
+    "/member/package",
     authMiddleware,
+    allowRoles("member"),
     validateDto(createPackageDto),
-    allowRoles("admin"),
-    createPackage
+    createPackageMember
 );
-packageRoutes.get("/admin/packages",
+packageRoutes.get(
+    "/member/packages",
     authMiddleware,
-    allowRoles("admin"),
-    getPackageByRole
+    allowRoles("member"),
+    listPackagesMember
 );
-packageRoutes.get("/admin/package/:id",
+packageRoutes.put(
+    "/member/package/:id",
     authMiddleware,
-    allowRoles("admin"),
-    getPackageById
-);
-packageRoutes.put("/admin/package/:id",
-    authMiddleware,
+    allowRoles("member"),
     validateDto(editPackageDto),
-    allowRoles("admin"),
-    editPackage
+    editPackageMember
 );
-packageRoutes.patch("/admin/package/:id",
+packageRoutes.patch(
+    "/member/package/:id",
     authMiddleware,
-    allowRoles("admin"),
-    deletePackage
+    allowRoles("member"),
+    deletePackageMember
 );
 
-
-packageRoutes.post("/member/package",
+packageRoutes.post(
+    "/admin/package",
     authMiddleware,
+    allowRoles("admin"),
     validateDto(createPackageDto),
-    allowRoles("member"),
-    createPackage
+    createPackageAdmin
 );
-packageRoutes.get("/member/packages",
+packageRoutes.get(
+    "/admin/packages",
     authMiddleware,
-    allowRoles("member"),
-    getPackageByRole
+    allowRoles("admin"),
+    listPackagesAdmin
 );
-packageRoutes.get("/member/package/:id",
+packageRoutes.put(
+    "/admin/package/:id",
     authMiddleware,
-    allowRoles("member"),
-    getPackageById
-);
-packageRoutes.put("/member/package/:id",
-    authMiddleware,
+    allowRoles("admin"),
     validateDto(editPackageDto),
-    allowRoles("member"),
-    editPackage
+    editPackageAdmin
 );
-packageRoutes.patch("/member/package/:id",
+packageRoutes.patch(
+    "/admin/package/:id",
     authMiddleware,
-    allowRoles("member"),
-    deletePackage
+    allowRoles("admin"),
+    deletePackageAdmin
 );
 
-
-packageRoutes.post("/super/package",
+packageRoutes.post(
+    "/super/package",
     authMiddleware,
+    allowRoles("superadmin"),
     validateDto(createPackageDto),
-    allowRoles("admin", "member"),
-    createPackage
+    createPackageSuperAdmin
 );
-packageRoutes.get("/super/packages",
+packageRoutes.get(
+    "/super/packages",
     authMiddleware,
     allowRoles("superadmin"),
-    getPackageByRole
+    listPackagesSuperAdmin
 );
-packageRoutes.get("/super/package/:id",
+packageRoutes.put(
+    "/super/package/:id",
     authMiddleware,
     allowRoles("superadmin"),
-    getPackageById
-);
-packageRoutes.put("/super/package/:id",
-    authMiddleware,
     validateDto(editPackageDto),
-    allowRoles("superadmin"),
-    editPackage
+    editPackageSuperAdmin
 );
-packageRoutes.patch("/super/package/:id",
+packageRoutes.patch(
+    "/super/package/:id",
     authMiddleware,
     allowRoles("superadmin"),
-    deletePackage
+    deletePackageSuperAdmin
 );
+
+packageRoutes.get(
+    "/tourist/packages",
+    authMiddleware,
+    allowRoles("tourist"),
+    listPackagesTourist
+);
+
 export default packageRoutes;
