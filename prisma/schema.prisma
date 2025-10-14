@@ -71,10 +71,11 @@ enum PackageApproveStatus {
  */
 enum BookingStatus {
   PENDING
+  BOOKED
+  REJECTED
   REFUND_PENDING
   REFUNDED
-  BOOKED
-  CANCELLED
+  REFUND_REJECTED
 }
 
 /**
