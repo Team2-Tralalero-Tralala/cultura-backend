@@ -445,3 +445,94 @@ export async function getPackagesByTourist(
     const user = await getUserOrFail(currentUserId);
     return getPackagesCore(buildWhereForRole({ ...user, role: { name: "tourist" } }), page, limit);
 }
+
+export const getPackageDetailById = async (id: number) => {
+    return await prisma.package.findUnique({
+        //ดึงแพ็กเกจโดย id
+        where: { id },
+        include: {
+            //ผู้สร้างแพ็กเกจ
+            createPackage: {
+                select: {
+                    id: true,
+                    fname: true,
+                    lname: true,
+                },
+            },
+            //ผู้ดูแลแพ็กเกจ
+            overseerPackage: {
+                select: {
+                    id: true,
+                    fname: true,
+                    lname: true,
+                },
+            },
+            //Community (เอาแค่ id)
+            //community: {
+            //  select: {
+            //    id: true,
+            //  },
+            //},
+            //Tag
+            tagPackages: {
+                include: {
+                    tag: {
+                        select: { id: true, name: true },
+                    },
+                },
+            },
+            //File
+            packageFile: {
+                select: {
+                    id: true,
+                    filePath: true,
+                    type: true,
+                },
+            },
+            //Location
+            location: {
+                select: {
+                    id: true,
+                    detail: true,
+                    houseNumber: true,
+                    villageNumber: true,
+                    alley: true,
+                    subDistrict: true,
+                    district: true,
+                    province: true,
+                    postalCode: true,
+                    latitude: true,
+                    longitude: true,
+                },
+            },
+            //Homestay histories
+            homestayHistories: {
+                include: {
+                    homestay: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,            // เดิม roomType
+                            guestPerRoom: true,    // เดิม capacity
+                            totalRoom: true,
+                            facility: true,        // เดิม detail
+                            homestayImage: {
+                                select: { id: true, image: true, type: true },
+                            },
+                            location: {
+                                select: {
+                                    detail: true,
+                                    subDistrict: true,
+                                    district: true,
+                                    province: true,
+                                    latitude: true,
+                                    longitude: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+};

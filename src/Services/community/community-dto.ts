@@ -14,6 +14,7 @@ import {
   ValidateNested,
   Min,
   Max,
+  IsInt,
 } from "class-validator";
 import { CommunityStatus } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
@@ -179,4 +180,30 @@ export class CommunityImageDto {
 
   @IsEnum(ImageType)
   type: ImageType;
+}
+
+export class QueryListMembersDto {
+  @IsOptional()
+  @IsString()
+  q?: string;               // พิมคำค้นได้/ไม่ใส่ก็ได้
+
+  @IsOptional()
+  @Type(() => Number)       // แปลง "10" -> 10
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number = 10;
+}
+
+export class QueryListHomestaysDto {
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number = 8;
 }

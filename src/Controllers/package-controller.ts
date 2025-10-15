@@ -166,3 +166,20 @@ export async function deletePackageMember(req: Request, res: Response) {
         return createErrorResponse(res, 400, (error as Error).message);
     }
 }
+
+// + เพิ่มตรงนี้
+export async function getPackageDetail(req: Request, res: Response) {
+    try {
+        const id = Number(req.params.id);
+        if (!Number.isFinite(id)) {
+            return createErrorResponse(res, 400, "Invalid package id");
+        }
+        const result = await PackageService.getPackageDetailById(id);
+        if (!result) {
+            return createErrorResponse(res, 404, "Package not found");
+        }
+        return createResponse(res, 200, "Get Package Detail Success", result);
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
+    }
+}

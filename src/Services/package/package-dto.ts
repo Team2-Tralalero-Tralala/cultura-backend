@@ -133,7 +133,7 @@ export class PackageDto {
  */
 export class updatePackageDto {
     @IsNumber()
-    @IsNotEmpty({ message: "communityId ห้ามว่าง" })
+    @IsOptional()
     communityId?: number;
 
     @ValidateNested() // บอก class-validator ว่า validate field ข้างในด้วย
@@ -172,11 +172,13 @@ export class updatePackageDto {
     @IsEnum(PackagePublishStatus, {
         message: "statusPackage ต้องเป็น PUBLISH | UNPUBLISH | DRAFT",
     })
+    @IsOptional()
     statusPackage?: PackagePublishStatus;
 
     @IsEnum(PackageApproveStatus, {
         message: "statusApprove ต้องเป็น WAIT หรือ APPROVE",
     })
+    @IsOptional()
     statusApprove?: PackageApproveStatus;
 
     @IsString()

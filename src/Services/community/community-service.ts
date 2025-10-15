@@ -361,3 +361,80 @@ export async function getUnassignedMembers() {
   });
   return members;
 }
+
+type ListMembersInput = { userId: number; q?: string; limit?: number };
+
+export async function listCommunityMembers({ userId, q = "", limit = 10 }: ListMembersInput) {
+  if (!Number.isInteger(userId) || userId <= 0) throw new Error("Invalid user");
+
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: { select: { name: true } }, memberOfCommunity: true },
+  });
+  if (!me) throw new Error("User not found");
+  if (!me.memberOfCommunity) throw new Error("User has no community");
+
+  const or: any[] = [];
+  const qTrim = q.trim();
+  if (qTrim) {
+    or.push({ fname: { contains: qTrim } });
+    or.push({ lname: { contains: qTrim } });
+  }
+
+  const members = await prisma.user.findMany({
+    where: {
+      role: { is: { name: "member" } },
+      memberOfCommunity: me.memberOfCommunity,
+      isDeleted: false,
+      ...(or.length ? { OR: or } : {}),
+    },
+    select: { id: true, fname: true, lname: true },
+    orderBy: [{ fname: "asc" }, { lname: "asc" }],
+    take: Math.max(1, Math.min(50, Number(limit) || 10)),
+  });
+
+
+  return members;
+}
+
+type ListHomestaysInput = { userId: number; q?: string; limit?: number };
+
+export async function listCommunityHomestays({
+  userId,
+  q = "",
+  limit = 8,
+}: ListHomestaysInput) {
+  if (!Number.isInteger(userId) || userId <= 0) throw new Error("Invalid user");
+
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: { select: { name: true } }, memberOfCommunity: true },
+  });
+  if (!me) throw new Error("User not found");
+  if (!me.memberOfCommunity) throw new Error("User has no community");
+
+  const qTrim = q.trim();
+  const or: any[] = [];
+  if (qTrim) {
+    // MySQL ไม่ต้องใส่ mode: 'insensitive'
+    or.push({ name: { contains: qTrim } });
+  }
+
+  const homestays = await prisma.homestay.findMany({
+    where: {
+      communityId: me.memberOfCommunity,
+      isDeleted: false,
+      ...(or.length ? { OR: or } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      facility: true,
+      homestayImage: { select: { image: true } }, // FE รองรับได้
+    },
+    orderBy: [{ name: "asc" }],
+    take: Math.max(1, Math.min(50, Number(limit) || 8)),
+  });
+
+  return homestays;
+}

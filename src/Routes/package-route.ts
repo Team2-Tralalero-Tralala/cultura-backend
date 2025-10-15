@@ -18,6 +18,7 @@ import {
     deletePackageSuperAdmin,
     deletePackageAdmin,
     deletePackageMember,
+    getPackageDetail,
 } from "../Controllers/package-controller.js";
 
 const packageRoutes = Router();
@@ -108,6 +109,38 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("tourist"),
     listPackagesTourist
+);
+
+// MEMBER
+packageRoutes.get(
+    "/member/package/:id",
+    authMiddleware,
+    allowRoles("member"),
+    getPackageDetail
+);
+
+// ADMIN
+packageRoutes.get(
+    "/admin/package/:id",
+    authMiddleware,
+    allowRoles("admin"),
+    getPackageDetail
+);
+
+// SUPERADMIN
+packageRoutes.get(
+    "/super/package/:id",
+    authMiddleware,
+    allowRoles("superadmin"),
+    getPackageDetail
+);
+
+// TOURIST
+packageRoutes.get(
+    "/tourist/package/:id",
+    authMiddleware,
+    allowRoles("tourist"),
+    getPackageDetail
 );
 
 export default packageRoutes;

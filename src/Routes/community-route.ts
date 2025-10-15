@@ -50,4 +50,20 @@ communityRoutes.get(
   allowRoles("superadmin"),
   CommunityController.getUnassignedMembers
 );
+
+communityRoutes.get(
+  "/member/community/members",
+  validateDto(CommunityController.listCommunityMembersDto),
+  authMiddleware,
+  allowRoles("member", "admin", "superadmin"),
+  CommunityController.listCommunityMembers
+);
+
+communityRoutes.get(
+  "/member/community/homestays",
+  validateDto(CommunityController.listCommunityHomestaysDto),
+  authMiddleware,
+  allowRoles("member", "admin", "superadmin"),
+  CommunityController.listCommunityHomestays
+);
 export default communityRoutes;

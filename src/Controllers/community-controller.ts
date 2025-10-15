@@ -1,7 +1,7 @@
 import { IsNumberString } from "class-validator";
 
 import * as CommunityService from "~/Services/community/community-service.js";
-import { CommunityDto } from "~/Services/community/community-dto.js";
+import { CommunityDto, QueryListHomestaysDto, QueryListMembersDto } from "~/Services/community/community-dto.js";
 
 import {
   commonDto,
@@ -133,5 +133,53 @@ export const getUnassignedMembers: TypedHandlerFromDto<
     return createResponse(res, 200, "fetch member successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+
+export const listCommunityMembersDto = {
+  query: QueryListMembersDto,
+} satisfies commonDto;
+
+export const listCommunityMembers: TypedHandlerFromDto<
+  typeof listCommunityMembersDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    const { q = "", limit = 10 } = req.query;
+
+    const data = await CommunityService.listCommunityMembers({
+      userId,
+      q,
+      limit: Number(limit),
+    });
+
+    return createResponse(res, 200, "fetch members successfully", data);
+  } catch (err) {
+    return createErrorResponse(res, 400, (err as Error).message);
+  }
+};
+
+export const listCommunityHomestaysDto = {
+  query: QueryListHomestaysDto,
+} satisfies commonDto;
+
+// Handler
+export const listCommunityHomestays: TypedHandlerFromDto<
+  typeof listCommunityHomestaysDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    const { q = "", limit = 8 } = req.query;
+
+    const data = await CommunityService.listCommunityHomestays({
+      userId,
+      q,
+      limit: Number(limit),
+    });
+
+    return createResponse(res, 200, "fetch homestays successfully", data);
+  } catch (err) {
+    return createErrorResponse(res, 400, (err as Error).message);
   }
 };
