@@ -96,7 +96,6 @@ export const deleteCommunityById: TypedHandlerFromDto<
   }
 };
 
-
 /*
  * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนของแอดมิน (ไม่ต้องมี params/query)
  * Input : ไม่มี (ใช้ req.user.id)
@@ -116,7 +115,66 @@ export const getCommunityDetailByAdmin: TypedHandlerFromDto<
   try {
     const userId = Number(req.user!.id);
     const result = await CommunityService.getCommunityDetailByAdmin(userId);
-    return createResponse(res, 200, "Community detail (admin) retrieved successfully", result);
+    return createResponse(
+      res,
+      200,
+      "Community detail (admin) retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/*
+ * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ */
+export const getCommunityByIdDto = { params: IdParamDto } satisfies commonDto;
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ */
+export const getCommunityById: TypedHandlerFromDto<
+  typeof getCommunityByIdDto
+> = async (req, res) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const result = await CommunityService.getCommunityById(communityId);
+    return createResponse(res, 200, "get community successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/*
+ * DTO สำหรับ "ดึงแอดมินที่ยังไม่ถูกผูกกับชุมชน"
+ */
+export const unassignedAdminsDto = {} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงรายชื่อแอดมินที่ยังไม่ได้เป็นเจ้าของชุมชน"
+ */
+export const getUnassignedAdmins: TypedHandlerFromDto<
+  typeof unassignedAdminsDto
+> = async (req, res) => {
+  try {
+    const result = await CommunityService.getUnassignedAdmins();
+    return createResponse(res, 200, "fetch admin successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/*
+ * DTO สำหรับ "ดึงสมาชิกที่ยังไม่สังกัดชุมชน"
+ */
+export const unassignedMemberDto = {} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงรายชื่อสมาชิกที่ยังไม่สังกัดชุมชน"
+ */
+export const getUnassignedMembers: TypedHandlerFromDto<
+  typeof unassignedMemberDto
+> = async (req, res) => {
+  try {
+    const result = await CommunityService.getUnassignedMembers();
+    return createResponse(res, 200, "fetch member successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

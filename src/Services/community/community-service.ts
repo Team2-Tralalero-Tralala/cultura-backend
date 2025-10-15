@@ -17,7 +17,7 @@ const mapLocation = (loc: LocationDto) => ({
   postalCode: loc.postalCode,
   latitude: loc.latitude,
   longitude: loc.longitude,
-  detail: loc.detail,
+  detail: loc.detail ?? null,
 });
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับตรวจสอบว่าผู้ใช้ที่ระบุใน member ทั้งหมดเป็นสมาชิกที่ถูกต้องหรือไม่
@@ -119,56 +119,29 @@ export async function createCommunity(community: CommunityDto) {
             }
           : {}),
         location: { create: mapLocation(location) },
-        ...(homestay?.length
-          ? {
-              homestays: {
-                create: homestay
-                  .filter((hs) => hs?.name && hs?.location)
-                  .map((homestay) => ({
-                    name: homestay.name,
-                    type: homestay.type,
-                    guestPerRoom: homestay.guestPerRoom,
-                    totalRoom: homestay.totalRoom,
-                    facility: homestay.facility,
-                    location: { create: mapLocation(homestay.location) },
-                    homestayImage: {
-                      create:
-                        homestay.homestayImage?.map((img) => ({
-                          image: img.image,
-                          type: img.type,
-                        })) ?? [],
-                    },
-                  })),
-              },
-            }
-          : {}),
-        ...(store?.length
-          ? {
-              stores: {
-                create: store
-                  .filter((st) => st?.name && st?.location)
-                  .map((store) => ({
-                    name: store.name,
-                    detail: store.detail,
-                    location: { create: mapLocation(store.location) },
-                    storeImage: {
-                      create:
-                        store.storeImage?.map((img) => ({
-                          image: img.image,
-                          type: img.type,
-                        })) ?? [],
-                    },
-                  })),
-              },
-            }
-          : {}),
       },
       include: {
         location: true,
-        homestays: true,
         communityImage: true,
-        stores: true,
-        admin: true,
+        admin: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+          },
+        },
+        member: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+            memberOf: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -242,10 +215,26 @@ export async function editCommunity(
       },
       include: {
         location: true,
-        homestays: true,
         communityImage: true,
-        stores: true,
-        admin: true,
+        admin: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+          },
+        },
+        member: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+            memberOf: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
     if (member?.length) {
@@ -322,28 +311,110 @@ export async function getCommunityDetailByAdmin(userId: number) {
 
   const community = await prisma.community.findFirst({
     where: { adminId: userId, isDeleted: false },
-     include: {
-    communityImage: true,
-    location: true,
-    packages: true,
-    homestays: true,
-    stores: true,
-    member: {
-      select: {
-        id: true,
-        fname: true,
-        lname: true,
-        email: true,
-        roleId: true,
-        memberOfCommunity: true,
-      }
-    }
-  },
-});
+    include: {
+      communityImage: true,
+      location: true,
+      packages: true,
+      homestays: true,
+      stores: true,
+      member: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          roleId: true,
+          memberOfCommunity: true,
+        },
+      },
+    },
+  });
 
   if (!community) throw new Error("Community not found");
   return community;
 }
+/*
+ * คำอธิบาย : ดึงข้อมูลชุมชนตามรหัส (communityId)
+ */
+export async function getCommunityById(communityId: number) {
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+      member: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          memberOf: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
+  if (!community) throw new Error("ไม่พบชุมชน");
 
+  return community;
+}
+/*
+ * คำอธิบาย :  ดึงรายการแอดมินที่ยังไม่ถูกผูกกับชุมชนใด
+ */
+export async function getUnassignedAdmins() {
+  const assignedAdmins = await prisma.community.findMany({
+    select: {
+      adminId: true,
+    },
+  });
 
+  const assignedIds = assignedAdmins.map((c) => c.adminId);
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: {
+        name: "admin",
+      },
+      id: { notIn: assignedIds },
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+    orderBy: { fname: "asc" },
+  });
+  return admins;
+}
+/*
+ * คำอธิบาย : ดึงรายการสมาชิกที่ยังไม่ถูกผูกกับชุมชนใด
+ */
+export async function getUnassignedMembers() {
+  const members = await prisma.user.findMany({
+    where: {
+      role: {
+        name: "member",
+      },
+      memberOf: null,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+    orderBy: { fname: "asc" },
+  });
+  return members;
+}
