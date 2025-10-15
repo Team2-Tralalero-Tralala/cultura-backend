@@ -27,13 +27,13 @@ communityRoutes.patch(
   CommunityController.deleteCommunityById
 );
 
-communityRoutes.get(
-  "/super/community/:communityId",
-  validateDto(CommunityController.getCommunityByIdDto),
-  authMiddleware,
-  allowRoles("superadmin"),
-  CommunityController.getCommunityById
-);
+// communityRoutes.get(
+//   "/super/community/:communityId",
+//   validateDto(CommunityController.getCommunityByIdDto),
+//   authMiddleware,
+//   allowRoles("superadmin"),
+//   CommunityController.getCommunityById
+// );
 
 communityRoutes.get(
   "/super/admins/unassigned",
@@ -69,10 +69,10 @@ communityRoutes.get(
 
 communityRoutes.get(
   "/admin/community",
-  validateDto(CommunityControler.getCommunityDetailByAdminDto),
+  validateDto(CommunityController.getCommunityDetailByAdminDto),
   authMiddleware,
   allowRoles("admin"),
-  CommunityControler.getCommunityDetailByAdmin
+  CommunityController.getCommunityDetailByAdmin
 );
 
 export default communityRoutes;
