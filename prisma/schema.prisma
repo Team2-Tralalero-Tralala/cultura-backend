@@ -273,28 +273,32 @@ model PackageFile {
 * Output : package ท่องเที่ยว
 */
 model Package {
-  id               Int                     @id @default(autoincrement()) @map("pk_id")
-  communityId      Int                     @map("pk_community_id")
-  locationId       Int                     @map("pk_location_id")
-  overseerMemberId Int                     @map("pk_overseer_member_id")
-  createById       Int                     @map("pk_create_by")
-  name             String                  @db.VarChar(100)              @map("pk_name")
-  description      String                  @db.VarChar(500)              @map("pk_description")
-  capacity         Int                                                   @map("pk_capacity")
-  price            Float                   @db.Double                    @map("pk_price")
-  warning          String                  @db.VarChar(200)              @map("pk_warning")
-  statusPackage    PackagePublishStatus                                  @map("pk_status_package")
-  statusApprove    PackageApproveStatus?                                 @map("pk_status_approve")
-  startDate        DateTime                @db.DateTime                  @map("pk_start_date")
-  dueDate          DateTime                @db.DateTime                  @map("pk_due_date")
-  facility         String                  @db.VarChar(200)              @map("pk_facility")
-  rejectReason     String?                 @db.VarChar(100)              @map("pk_reject_reason")
+  id               Int                   @id @default(autoincrement()) @map("pk_id")
+  communityId      Int                   @map("pk_community_id")
+  locationId       Int                   @map("pk_location_id")
+  overseerMemberId Int                   @map("pk_overseer_member_id")
+  createById       Int                   @map("pk_create_by")
+  name             String                @map("pk_name") @db.VarChar(100)
+  description      String                @map("pk_description") @db.VarChar(500)
+  capacity         Int                   @map("pk_capacity")
+  price            Float                 @map("pk_price") @db.Double
+  warning          String                @map("pk_warning") @db.VarChar(200)
+  statusPackage    PackagePublishStatus  @map("pk_status_package")
+  statusApprove    PackageApproveStatus? @map("pk_status_approve")
+  startDate        DateTime              @map("pk_start_date") @db.DateTime
+  dueDate          DateTime              @map("pk_due_date") @db.DateTime
+  openBookingAt    DateTime              @map("pk_open_booking") @db.DateTime
+  closeBookingAt   DateTime              @map("pk_close_booking") @db.DateTime
+  facility         String                @map("pk_facility") @db.VarChar(200)
+  rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
+  isDeleted        Boolean               @default(false) @map("pk_is_deleted")
+  deleteAt         DateTime?             @map("pk_delete_at") @db.Timestamp(0)
 
   // Relations
-  community        Community       @relation(fields: [communityId], references: [id],onDelete: Cascade)
-  location         Location        @relation(fields: [locationId], references: [id],onDelete: Cascade)
-  createPackage    User            @relation("createPackage",fields: [createById], references: [id],onDelete: Cascade)
-  overseerPackage  User            @relation("OverseerMember", fields: [overseerMemberId], references: [id])
+  community       Community @relation(fields: [communityId], references: [id])
+  location        Location  @relation(fields: [locationId], references: [id])
+  createPackage   User      @relation("createPackage", fields: [createById], references: [id])
+  overseerPackage User      @relation("OverseerMember", fields: [overseerMemberId], references: [id])
 
   bookingHistories  BookingHistory[]
   homestayHistories HomestayHistory[]

@@ -433,8 +433,10 @@ async function main() {
       price: 500,
       warning: "Bring boots",
       statusPackage: "PUBLISH",
-      startDate: new Date("2025-01-01"),
-      dueDate: new Date("2025-01-05"),
+      startDate: new Date("2025-01-01T00:00:00.000Z"),
+      dueDate: new Date("2025-01-05T00:00:00.000Z"),
+      openBookingAt: new Date("2024-11-01T00:00:00.000Z"),
+      closeBookingAt: new Date("2024-12-31T00:00:00.000Z"),
       facility: "Meals",
     },
   });
@@ -450,9 +452,12 @@ async function main() {
       price: 800,
       warning: "No flash photos",
       statusPackage: "DRAFT",
-      startDate: new Date("2025-02-01"),
-      dueDate: new Date("2025-02-05"),
+      startDate: new Date("2025-02-01T00:00:00.000Z"),
+      dueDate: new Date("2025-02-05T00:00:00.000Z"),
+      openBookingAt: new Date("2024-12-01T00:00:00.000Z"),
+      closeBookingAt: new Date("2024-01-31T00:00:00.000Z"),
       facility: "Guide",
+      
     },
   });
   const pkg3 = await prisma.package.create({
@@ -467,8 +472,10 @@ async function main() {
       price: 1500,
       warning: "Physical checkup required",
       statusPackage: "UNPUBLISH",
-      startDate: new Date("2025-03-01"),
-      dueDate: new Date("2025-03-10"),
+      startDate: new Date("2025-03-01T00:00:00.000Z"),
+      dueDate: new Date("2025-03-10T00:00:00.000Z"),
+      openBookingAt: new Date("2025-01-31T00:00:00.000Z"),
+      closeBookingAt: new Date("2025-02-28T00:00:00.000Z"),
       facility: "Gear",
     },
   });
