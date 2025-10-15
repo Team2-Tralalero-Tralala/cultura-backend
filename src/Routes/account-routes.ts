@@ -8,7 +8,6 @@ import { Router } from "express";
 import {
   createAccount,
   createAccountDto,
-  createMemberBySuperAdmin,
   editAccount,
   editAccountDto,
   getAccountById,
@@ -39,17 +38,6 @@ accountRoutes.post(
   authMiddleware,
   allowRoles("superadmin"),
   createAccount
-);
-
-/** ----------------------------------------
- * 🔹 SuperAdmin สร้าง Member
- * ---------------------------------------- */
-accountRoutes.post(
-  "/accounts/member",
-  validateDto(createAccountDto),
-  authMiddleware,
-  allowRoles("superadmin"),
-  createMemberBySuperAdmin
 );
 
 /** ----------------------------------------

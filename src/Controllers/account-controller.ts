@@ -66,28 +66,7 @@
    * Controller: สร้างบัญชี Member (เฉพาะ SuperAdmin)
    * Role Access: SuperAdmin
    */
-  export const createMemberBySuperAdmin = async (req: Request, res: Response) => {
-    try {
-      //  บังคับ role = member
-      const body = { ...req.body, roleId: 3 };
 
-      // เรียก service เดิมได้เลย (เพราะมันรองรับ member อยู่แล้ว)
-      const result = await AccountService.createAccount(body);
-
-      return createResponse(res, 201, "Member account created successfully", result);
-    } catch (error) {
-      const message = (error as Error).message;
-
-      switch (message) {
-        case "role_not_found":
-          return createErrorResponse(res, 404, "Role not found");
-        case "duplicate":
-          return createErrorResponse(res, 409, "Duplicate data (username, email, or phone)");
-        default:
-          return createErrorResponse(res, 400, "Failed to create member account");
-      }
-    }
-  };
 
   /** ----------------------------- Controller: Edit Account ----------------------------- **/
 
@@ -163,4 +142,3 @@
     }
   };
 
-  

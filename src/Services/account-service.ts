@@ -160,12 +160,43 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     ...(body.district && { district: body.district }),
     ...(body.subDistrict && { subDistrict: body.subDistrict }),
     ...(body.postalCode && { postalCode: body.postalCode }),
+    ...(body.roleId && { roleId: body.roleId }),
   };
 
   // 5) หากส่ง password มา ให้ hash ก่อนเก็บ
   if (body.password !== undefined && body.password.trim() !== "") {
     data.password = await bcrypt.hash(body.password, 10);
   }
+  // 5.5) ถ้ามีการเปลี่ยน role → ล้างข้อมูลฟิลด์ที่ไม่เกี่ยว
+if (body.roleId) {
+  // 🔹 หา role name จาก roleId
+  const role = await prisma.role.findUnique({
+    where: { id: body.roleId },
+    select: { name: true },
+  });
+
+  if (role?.name?.toLowerCase() === "admin") {
+    // ถ้าเปลี่ยนเป็น Admin → ล้างข้อมูล tourist/member ออก
+    data.gender = null;
+    data.birthDate = null;
+    data.province = null;
+    data.district = null;
+    data.subDistrict = null;
+    data.postalCode = null;
+    data.memberOfCommunity = null;
+  } else if (role?.name?.toLowerCase() === "member") {
+    // ถ้าเป็น Member → ล้างฟิลด์ tourist ออก
+    data.gender = null;
+    data.birthDate = null;
+    data.province = null;
+    data.district = null;
+    data.subDistrict = null;
+    data.postalCode = null;
+  } else if (role?.name?.toLowerCase() === "tourist") {
+    // ถ้าเป็น Tourist → ล้างฟิลด์ member ออก
+    data.memberOfCommunity = null;
+  }
+}
 
   // 6) อัปเดตและคืนเฉพาะฟิลด์ที่ปลอดภัย
   const updated = await prisma.user.update({
