@@ -8,17 +8,21 @@ import { Router } from "express";
 import {
   createAccount,
   createAccountDto,
+  createMemberBySuperAdmin,
   editAccount,
   editAccountDto,
+  getAccountById,
   getAll,
   getMemberByAdmin,
 } from "../Controllers/account-controller.js";
 import { validateDto } from "../Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
 
-
 const accountRoutes = Router();
-// GET /api/super/communities/members - ดึงข้อมูลสมาชิกทั้งหมดในชุมชน (เฉพาะ admin)
+
+/** ----------------------------------------
+ * 🔹 Admin ดึงสมาชิกในชุมชนของตัวเอง
+ * ---------------------------------------- */
 accountRoutes.get(
   "/super/communities/members",
   authMiddleware,
@@ -26,16 +30,31 @@ accountRoutes.get(
   getMemberByAdmin
 );
 
-// POST /api/accounts
+/** ----------------------------------------
+ * 🔹 สร้างบัญชี (SuperAdmin เท่านั้น)
+ * ---------------------------------------- */
 accountRoutes.post(
   "/accounts",
   validateDto(createAccountDto),
   authMiddleware,
-  allowRoles("superadmin"), //  superadmin เท่านั้นที่สร้าง account ได้
+  allowRoles("superadmin"),
   createAccount
 );
 
-// PATCH /api/accounts/:id
+/** ----------------------------------------
+ * 🔹 SuperAdmin สร้าง Member
+ * ---------------------------------------- */
+accountRoutes.post(
+  "/accounts/member",
+  validateDto(createAccountDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  createMemberBySuperAdmin
+);
+
+/** ----------------------------------------
+ * 🔹 แก้ไขบัญชี (ใช้กับ path /accounts/:id)
+ * ---------------------------------------- */
 accountRoutes.patch(
   "/accounts/:id",
   validateDto(editAccountDto),
@@ -43,7 +62,62 @@ accountRoutes.patch(
   allowRoles("superadmin"),
   editAccount
 );
-// GET /api/users
-accountRoutes.get("/users", authMiddleware, allowRoles("superadmin"),getAll);
+
+/** ----------------------------------------
+ * 🔹 ดึง user ทั้งหมด (SuperAdmin)
+ * ---------------------------------------- */
+accountRoutes.get(
+  "/users",
+  authMiddleware,
+  allowRoles("superadmin"),
+  getAll
+);
+
+/** ----------------------------------------
+ * 🔹 ดึงข้อมูลผู้ใช้ตาม role
+ * ---------------------------------------- */
+accountRoutes.get(
+  "/super/account/admin/:id",
+  authMiddleware,
+  allowRoles("superadmin"),
+  getAccountById
+);
+accountRoutes.get(
+  "/super/account/member/:id",
+  authMiddleware,
+  allowRoles("superadmin"),
+  getAccountById
+);
+accountRoutes.get(
+  "/super/account/tourist/:id",
+  authMiddleware,
+  allowRoles("superadmin"),
+  getAccountById
+);
+
+/** ----------------------------------------
+ * 🔹 อัปเดตข้อมูลผู้ใช้ตาม role (SuperAdmin เท่านั้น)
+ * ---------------------------------------- */
+accountRoutes.patch(
+  "/super/account/admin/:id",
+  validateDto(editAccountDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  editAccount
+);
+accountRoutes.patch(
+  "/super/account/member/:id",
+  validateDto(editAccountDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  editAccount
+);
+accountRoutes.patch(
+  "/super/account/tourist/:id",
+  validateDto(editAccountDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  editAccount
+);
 
 export default accountRoutes;

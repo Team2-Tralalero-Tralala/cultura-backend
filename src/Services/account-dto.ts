@@ -21,6 +21,39 @@ export class CreateAccountDto {
 
   @IsString() @MinLength(6)
   password!: string;
+
+  /** ===== ฟิลด์เพิ่มเติมเฉพาะ Role ===== */
+
+  // Member
+  @IsOptional()
+  @IsInt()
+  memberOfCommunity?: number;
+
+  // Tourist
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
+  @IsString()
+  subDistrict?: string;
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
 }
 
 export class EditAccountDto {
@@ -41,4 +74,41 @@ export class EditAccountDto {
 
   @IsOptional() @IsString() @MinLength(6)
   password?: string;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  roleId?: number;
+
+  /** ===== ฟิลด์เพิ่มเติมเฉพาะ Role ===== */
+
+  // Member
+  @IsOptional()
+  @IsInt()
+  memberOfCommunity?: number;
+
+  // Tourist
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
+  @IsString()
+  subDistrict?: string; 
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
 }

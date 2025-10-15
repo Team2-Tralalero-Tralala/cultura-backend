@@ -21,7 +21,13 @@ export function authMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.cookies.accessToken;
+  // const token = req.cookies.accessToken;
+  const cookieToken = req.cookies?.accessToken;
+  const headerToken = req.headers.authorization?.startsWith("Bearer ")
+    ? req.headers.authorization.split(" ")[1]
+    : undefined;
+
+  const token = cookieToken || headerToken;
 
   if (!token) return createErrorResponse(res, 401, "Missing token");
 

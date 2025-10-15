@@ -58,7 +58,7 @@ export async function createAccount(body: CreateAccountDto) {
   if (!role) throw new Error("role_not_found");
 
   // 2) จำกัดเฉพาะ role ที่อนุญาตให้สร้างได้ (ตอนนี้คือ admin)
-  const allowedRoles = ["admin"]; // ตอนนี้ให้ superadmin สร้างได้เฉพาะ admin
+  const allowedRoles = ["admin", "member", "tourist"]; 
   if (!allowedRoles.includes(role.name)) {
     throw new Error("role_not_allowed");
   }
@@ -77,19 +77,28 @@ export async function createAccount(body: CreateAccountDto) {
   if (dup) throw new Error("duplicate");
 
   // 4) hash password ก่อนเก็บ
-  const created = await prisma.user.create({
-    data: {
-      roleId: role.id,
-      fname: body.fname,
-      lname: body.lname,
-      username: body.username,
-      email: body.email,
-      phone: body.phone,
-      password: await bcrypt.hash(body.password, 10),
-    },
-    // 5) คืนเฉพาะฟิลด์ที่ปลอดภัย
-    select: selectSafe,
-  });
+ const created = await prisma.user.create({
+  data: {
+    roleId: role.id,
+    fname: body.fname,
+    lname: body.lname,
+    username: body.username,
+    email: body.email,
+    phone: body.phone,
+    password: await bcrypt.hash(body.password, 10),
+
+    // ฟิลด์เพิ่มเติมตาม Role
+    ...(body.memberOfCommunity && { memberOfCommunity: body.memberOfCommunity }),
+    ...(body.gender && { gender: body.gender as any }), // Prisma enum Gender
+    ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
+    ...(body.province && { province: body.province }),
+    ...(body.district && { district: body.district }),
+    ...(body.subDistrict && { subDistrict: body.subDistrict }),
+    ...(body.postalCode && { postalCode: body.postalCode }),
+  },
+  select: selectSafe,
+});
+
 
   return created;
 }
@@ -107,21 +116,25 @@ export async function createAccount(body: CreateAccountDto) {
  */
 export async function editAccount(userId: number, body: EditAccountDto) {
   // 1) ตรวจ id
-  if (!Number.isFinite(userId) || userId <= 0) throw new Error("invalid_user_id");
+  if (!Number.isFinite(userId) || userId <= 0)
+    throw new Error("invalid_user_id");
 
   // 2) มี user นี้จริงไหม
-  const exists = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  const exists = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
   if (!exists) throw new Error("user_not_found");
 
-  // 3) กันค่าซ้ำเฉพาะฟิลด์ที่ส่งมา (ไม่เช็คทุกฟิลด์เพื่อประหยัดและแม่นยำ)
+  // 3) กันค่าซ้ำเฉพาะฟิลด์ที่ส่งมา
   if (body.username || body.email || body.phone) {
     const dup = await prisma.user.findFirst({
       where: {
-        id: { not: userId }, // exclude ตัวเอง
+        id: { not: userId },
         OR: [
-          ...(body.username ? [{ username: (body.username) }] : []),
-          ...(body.email ? [{ email: (body.email) }] : []),
-          ...(body.phone ? [{ phone: (body.phone) }] : []),
+          ...(body.username ? [{ username: body.username }] : []),
+          ...(body.email ? [{ email: body.email }] : []),
+          ...(body.phone ? [{ phone: body.phone }] : []),
         ],
       },
       select: { id: true },
@@ -129,17 +142,28 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     if (dup) throw new Error("duplicate");
   }
 
-  // 4) ประกอบ data เฉพาะฟิลด์ที่ส่งมา (จะไม่ทับฟิลด์ที่ไม่ได้ส่ง)
+  // 4) ประกอบ data เฉพาะฟิลด์ที่ส่งมา
   const data: any = {
-    ...(body.fname  && { fname: (body.fname) }),
-    ...(body.lname  && { lname: (body.lname) }),
-    ...(body.username  && { username: (body.username) }),
-    ...(body.email && { email: (body.email) }),
-    ...(body.phone  && { phone: (body.phone) }),
+    ...(body.fname && { fname: body.fname }),
+    ...(body.lname && { lname: body.lname }),
+    ...(body.username && { username: body.username }),
+    ...(body.email && { email: body.email }),
+    ...(body.phone && { phone: body.phone }),
+
+    //  เพิ่มฟิลด์สำหรับ Tourist / Member
+    ...(body.memberOfCommunity !== undefined && {
+      memberOfCommunity: body.memberOfCommunity,
+    }),
+    ...(body.gender && { gender: body.gender as any }),
+    ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
+    ...(body.province && { province: body.province }),
+    ...(body.district && { district: body.district }),
+    ...(body.subDistrict && { subDistrict: body.subDistrict }),
+    ...(body.postalCode && { postalCode: body.postalCode }),
   };
 
   // 5) หากส่ง password มา ให้ hash ก่อนเก็บ
-  if (body.password !== undefined) {
+  if (body.password !== undefined && body.password.trim() !== "") {
     data.password = await bcrypt.hash(body.password, 10);
   }
 
@@ -147,11 +171,62 @@ export async function editAccount(userId: number, body: EditAccountDto) {
   const updated = await prisma.user.update({
     where: { id: userId },
     data,
-    select: selectSafe,
+    select: {
+      id: true,
+      roleId: true,
+      username: true,
+      email: true,
+      phone: true,
+      fname: true,
+      lname: true,
+      profileImage: true,
+      status: true,
+      gender: true,
+      birthDate: true,
+      province: true,
+      district: true,
+      subDistrict: true,
+      postalCode: true,
+      memberOfCommunity: true,
+    },
   });
+
   return updated;
 }
 
+/**
+ * ดึงข้อมูลผู้ใช้ตาม id (ใช้ในหน้าแก้ไขบัญชี)
+ */
+export async function getAccountById(userId: number) {
+  if (!Number.isFinite(userId) || userId <= 0)
+    throw new Error("invalid_user_id");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      roleId: true,
+      username: true,
+      email: true,
+      phone: true,
+      fname: true,
+      lname: true,
+      profileImage: true,
+      status: true,
+      gender: true,
+      birthDate: true,
+      province: true,
+      district: true,
+      subDistrict: true,
+      postalCode: true,
+      memberOfCommunity: true,
+      role: { select: { name: true } },
+    },
+  });
+
+  if (!user) throw new Error("user_not_found");
+  return user;
+}
 export const getAllUser = async (
   page: number = 1,
   limit: number = 10
@@ -246,3 +321,8 @@ export const getAccountAll = async (id: number) => {
 
   return accounts;
 };
+
+/**
+ * ดึงข้อมูลผู้ใช้ตาม id
+ * ใช้สำหรับหน้าแก้ไขบัญชี
+ */
