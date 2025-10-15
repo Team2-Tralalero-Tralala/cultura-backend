@@ -53,10 +53,10 @@ communityRoutes.get(
 
 communityRoutes.get(
   "/admin/community",
-  validateDto(CommunityControler.getCommunityDetailByAdminDto),
+  validateDto(CommunityController.getCommunityDetailByAdminDto),
   authMiddleware,
   allowRoles("admin"),
-  CommunityControler.getCommunityDetailByAdmin
+  CommunityController.getCommunityDetailByAdmin
 );
 
 export default communityRoutes;
