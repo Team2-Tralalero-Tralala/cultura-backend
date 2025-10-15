@@ -66,4 +66,13 @@ communityRoutes.get(
   allowRoles("member", "admin", "superadmin"),
   CommunityController.listCommunityHomestays
 );
+
+communityRoutes.get(
+  "/admin/community",
+  validateDto(CommunityControler.getCommunityDetailByAdminDto),
+  authMiddleware,
+  allowRoles("admin"),
+  CommunityControler.getCommunityDetailByAdmin
+);
+
 export default communityRoutes;
