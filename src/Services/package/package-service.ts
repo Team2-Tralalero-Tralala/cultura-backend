@@ -168,8 +168,21 @@ async function createPackageCore(data: PackageDto, currentUserId?: number) {
         },
     });
 
+    // ========= NEW: compose booking window & event window =========
     const startAt = composeDateTimeIso(data.startDate, (data as any).startTime);
     const dueAt = composeDateTimeIso(data.dueDate, (data as any).endTime, true);
+
+    const openAt = composeDateTimeIso((data as any).openBookingAt, (data as any).openTime);
+    const closeAt = composeDateTimeIso((data as any).closeBookingAt, (data as any).closeTime, true);
+
+    // กฎเวลาเบื้องต้นให้ชัดเคสพลาด
+    if (openAt > closeAt) {
+        throw new Error("ช่วงเปิดจองไม่ถูกต้อง: openBookingAt ต้องไม่ช้ากว่า closeBookingAt");
+    }
+    if (closeAt > dueAt) {
+        // ปกติควรปิดจองก่อนหรือพร้อมวันสิ้นสุดกิจกรรม
+        throw new Error("closeBookingAt ต้องไม่ช้ากว่า dueDate ของแพ็กเกจ");
+    }
 
     return prisma.package.create({
         data: {
@@ -181,16 +194,19 @@ async function createPackageCore(data: PackageDto, currentUserId?: number) {
             description: data.description,
             capacity: data.capacity,
             price: data.price,
-            warning: data.warning ?? null,
+            warning: (data as any).warning ?? null,
             statusPackage: data.statusPackage,
             statusApprove: data.statusApprove,
             startDate: startAt,
             dueDate: dueAt,
-            facility: data.facility ?? null,
-            ...(Array.isArray(data.packageFile) && data.packageFile.length > 0
+            openBookingAt: openAt,
+            closeBookingAt: closeAt,
+
+            facility: (data as any).facility ?? null,
+            ...(Array.isArray((data as any).packageFile) && (data as any).packageFile.length > 0
                 ? {
                     packageFile: {
-                        create: data.packageFile.map((f) => ({
+                        create: (data as any).packageFile.map((f: PackageFileDto) => ({
                             filePath: f.filePath,
                             type: f.type,
                         })),
@@ -202,6 +218,7 @@ async function createPackageCore(data: PackageDto, currentUserId?: number) {
     });
 }
 
+
 async function editPackageCore(id: number, data: PackageDto) {
     const packageExist = await prisma.package.findUnique({
         where: { id },
@@ -210,21 +227,39 @@ async function editPackageCore(id: number, data: PackageDto) {
     if (!packageExist) throw new Error(`Package ID ${id} ไม่พบในระบบ`);
 
     if (data.communityId) {
-        const community = await prisma.community.findUnique({
-            where: { id: data.communityId },
-        });
+        const community = await prisma.community.findUnique({ where: { id: data.communityId } });
         if (!community) throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
     }
 
     if (data.overseerMemberId) {
-        const overseer = await prisma.user.findUnique({
-            where: { id: data.overseerMemberId },
-        });
+        const overseer = await prisma.user.findUnique({ where: { id: data.overseerMemberId } });
         if (!overseer) throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
     }
 
-    const startAt = composeDateTimeIso(data.startDate, data.startTime);
-    const dueAt = composeDateTimeIso(data.dueDate, data.endTime, true);
+    // ========= NEW: recompute windows from incoming payload =========
+    const startAt = composeDateTimeIso((data as any).startDate, (data as any).startTime);
+    const dueAt = composeDateTimeIso((data as any).dueDate, (data as any).endTime, true);
+
+    const hasOpenClose =
+        (data as any).openBookingAt !== undefined || (data as any).closeBookingAt !== undefined;
+
+    // ใช้ค่าจาก payload ถ้ามี ไม่งั้นคงค่าของเดิม
+    const openAt = (data as any).openBookingAt
+        ? composeDateTimeIso((data as any).openBookingAt, (data as any).openTime)
+        : packageExist.openBookingAt;
+
+    const closeAt = (data as any).closeBookingAt
+        ? composeDateTimeIso((data as any).closeBookingAt, (data as any).closeTime, true)
+        : packageExist.closeBookingAt;
+
+    if (hasOpenClose) {
+        if (openAt > closeAt) {
+            throw new Error("ช่วงเปิดจองไม่ถูกต้อง: openBookingAt ต้องไม่ช้ากว่า closeBookingAt");
+        }
+        if (closeAt > dueAt) {
+            throw new Error("closeBookingAt ต้องไม่ช้ากว่า dueDate ของแพ็กเกจ");
+        }
+    }
 
     const { location, packageFile } = data as any;
 
@@ -232,17 +267,20 @@ async function editPackageCore(id: number, data: PackageDto) {
         where: { id },
         data: {
             ...(data.communityId && { community: { connect: { id: data.communityId } } }),
-            ...(data.overseerMemberId && {
-                overseerPackage: { connect: { id: data.overseerMemberId } },
-            }),
-            name: data.name,
-            description: data.description,
-            capacity: data.capacity,
-            price: data.price,
-            warning: data.warning,
+            ...(data.overseerMemberId && { overseerPackage: { connect: { id: data.overseerMemberId } } }),
+            name: (data as any).name,
+            description: (data as any).description,
+            capacity: (data as any).capacity,
+            price: (data as any).price,
+            warning: (data as any).warning,
             startDate: startAt,
             dueDate: dueAt,
-            facility: data.facility,
+
+            // ========= NEW: update booking window (คงค่าเดิมถ้าไม่ได้ส่งมา) =========
+            openBookingAt: openAt,
+            closeBookingAt: closeAt,
+
+            facility: (data as any).facility,
             ...(location && {
                 location: {
                     update: {
@@ -273,6 +311,7 @@ async function editPackageCore(id: number, data: PackageDto) {
 
     return result;
 }
+
 
 function buildWhereForRole(user: any): any {
     switch (user?.role?.name) {

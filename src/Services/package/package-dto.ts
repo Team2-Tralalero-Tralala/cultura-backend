@@ -199,6 +199,26 @@ export class updatePackageDto {
     @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็น HH:mm" })
     endTime?: string;
 
+        @IsString()
+    @IsNotEmpty({ message: "openBookingAt ห้ามว่าง" })
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "openBookingAt ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    openBookingAt!: string;
+
+    @IsString()
+    @IsNotEmpty({ message: "closeBookingAt ห้ามว่าง" })
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "closeBookingAt ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    closeBookingAt!: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "openTime ต้องเป็น HH:mm" })
+    openTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "closeTime ต้องเป็น HH:mm" })
+    closeTime?: string;
+
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })
     @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
