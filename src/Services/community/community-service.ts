@@ -315,7 +315,10 @@ export async function getCommunityById(communityId: number) {
 
   return community;
 }
-
+/*
+ * คำอธิบาย : ดึงข้อมูลชุมชนตามรหัส (communityId)
+ * English: Retrieve a community and its related data by ID.
+ */
 export async function getUnassignedAdmins() {
   const assignedAdmins = await prisma.community.findMany({
     select: {
@@ -342,7 +345,10 @@ export async function getUnassignedAdmins() {
   });
   return admins;
 }
-
+/*
+ * คำอธิบาย : ดึงรายการแอดมินที่ยังไม่ถูกผูกกับชุมชนใด
+ * English: Get all admin users who are not assigned to any community.
+ */
 export async function getUnassignedMembers() {
   const members = await prisma.user.findMany({
     where: {

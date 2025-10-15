@@ -96,8 +96,13 @@ export const deleteCommunityById: TypedHandlerFromDto<
   }
 };
 
+/*
+ * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ */
 export const getCommunityByIdDto = { params: IdParamDto } satisfies commonDto;
-
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ */
 export const getCommunityById: TypedHandlerFromDto<
   typeof getCommunityByIdDto
 > = async (req, res) => {
@@ -109,9 +114,14 @@ export const getCommunityById: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
+/*
+ * DTO สำหรับ "ดึงแอดมินที่ยังไม่ถูกผูกกับชุมชน"
+ */
 export const unassignedAdminsDto = {} satisfies commonDto;
 
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงรายชื่อแอดมินที่ยังไม่ได้เป็นเจ้าของชุมชน"
+ */
 export const getUnassignedAdmins: TypedHandlerFromDto<
   typeof unassignedAdminsDto
 > = async (req, res) => {
@@ -122,9 +132,14 @@ export const getUnassignedAdmins: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
+/*
+ * DTO สำหรับ "ดึงสมาชิกที่ยังไม่สังกัดชุมชน"
+ */
 export const unassignedMemberDto = {} satisfies commonDto;
 
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงรายชื่อสมาชิกที่ยังไม่สังกัดชุมชน"
+ */
 export const getUnassignedMembers: TypedHandlerFromDto<
   typeof unassignedMemberDto
 > = async (req, res) => {
