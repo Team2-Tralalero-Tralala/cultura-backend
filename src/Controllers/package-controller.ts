@@ -1,22 +1,26 @@
-import type { Request, Response } from "express";
-import { getPackages } from "../Services/package-service.js";
+import { TypedHandlerFromDto } from "../Types/TypedHandler.ts";
+import { commonDto } from "../Types/dto/common-dto.js";
+import { getDraftPackage } from "../Services/package-service.js";
 import { createResponse } from "~/Libs/createResponse.js";
 import { createErrorResponse } from "~/Libs/createResponse.js";
-/*
- * Controller : getPackagesController
- * คำอธิบาย : ดึงแพ็กเกจที่เป็นแบับร่าง (DRAFT เท่านั้น)
- * Input : req (Request) - คำขอจาก client, res (Response) - คำตอบที่จะส่งกลับไปยัง client
- * Output : ส่งผลลัพธ์กลับไปยัง client ผ่าน res
- * Process :
- *   1. เรียกใช้ฟังก์ชัน getPackages จาก Services เพื่อดึงข้อมูลแพ็กเกจ
- *   2. ถ้าสำเร็จ ส่งผลลัพธ์กลับไปยัง client พร้อมสถานะ 200 และข้อมูลแพ็กเกจ
- *   3. ถ้ามีข้อผิดพลาด เก็บข้อผิดพลาดและส่งกลับไปยัง client พร้อมสถานะ 500 และข้อความข้อผิดพลาด
- */
-export async function getDraftPackagesController(req: Request, res: Response) {
-  try {
-    const packages = await getPackages({ statusPublish: "DRAFT" });
-    return createResponse(res, 200, "Get draft packages successfully", packages);
-  } catch (error) {
-    return createErrorResponse(res, 500, (error as Error).message);
-  }
+import * as CommunityService from "../Services/package-service.js";   
+
+export const packageDto = {} satisfies commonDto;
+
+export const getDraftPackage: TypedHandlerFromDto = async (
+req,
+res
+) => {
+try {
+const myId = req.user?.id;
+const result = await CommunityService.getDraftPackage(Number(myId));
+return createResponse(
+res,
+200,
+"Fetched draft package successfully",
+result
+);
+} catch (error) {
+return createErrorResponse(res, 400, (error as Error).message);
 }
+}; 
