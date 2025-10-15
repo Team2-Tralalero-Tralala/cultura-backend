@@ -393,19 +393,6 @@ model FeedbackImage {
  * Output : พิกัดและที่อยู่สำหรับ community/store/homestay/package
  */
 model Location {
-<<<<<<< HEAD
-  id            Int       @id @default(autoincrement()) @map("lt_id")
-  detail        String?   @db.VarChar(100)              @map("lt_detail")
-  houseNumber   String  @db.VarChar(10)               @map("lt_houseNumber")
-  villageNumber Int?                                  @map("lt_village_number")
-  alley         String? @db.VarChar(60)               @map("lt_alley")
-  subDistrict   String  @db.VarChar(60)               @map("lt_sub_district")
-  district      String  @db.VarChar(60)               @map("lt_district")
-  province      String  @db.VarChar(60)               @map("lt_province")
-  postalCode    String  @db.VarChar(5)                @map("lt_postal_code")
-  latitude      Float   @db.Double                    @map("lt_latitude")
-  longitude     Float   @db.Double                    @map("lt_longitude")
-=======
   id            Int     @id @default(autoincrement()) @map("lt_id")
   detail        String? @map("lt_detail") @db.VarChar(100)
   houseNumber   String  @map("lt_houseNumber") @db.VarChar(10)
@@ -417,7 +404,6 @@ model Location {
   postalCode    String  @map("lt_postal_code") @db.VarChar(5)
   latitude      Float   @map("lt_latitude") @db.Double
   longitude     Float   @map("lt_longitude") @db.Double
->>>>>>> feature/community
 
   // Relations
   communities Community[]
