@@ -1,6 +1,7 @@
 import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
+import type { PaginationResponse } from "../pagination-dto.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้อยู่ในรูปแบบที่สามารถใช้กับ Prisma ได้
@@ -282,21 +283,104 @@ export async function deleteCommunityById(communityId: number) {
     data: { isDeleted: true, deleteAt: new Date() },
   });
 }
+
 /*
- * ฟังก์ชัน: getCommunityDetailByAdmin
- * คำอธิบาย: ดึงรายละเอียดชุมชนของ "แอดมินคนปัจจุบัน" (admin ของชุมชนนั้น)
- * Input:
- *   - userId (number): ผู้ใช้ที่เรียก (ต้องเป็น role=admin)
+ * ฟังก์ชัน : getCommunityAll
+ * อธิบาย : ดึง community ทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input : id (หมายเลข userId)
+ * Output :
+ *   - ถ้าเป็น superadmin → ได้ community ทั้งหมด
+ *   - ถ้าไม่ใช่ superadmin → ได้ []
+ */
+export const getCommunityAll = async (
+  id: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(id)) throw new Error("ID must be Number");
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  if (user.role?.name !== "superadmin") {
+    return {
+      data: [],
+      pagination: {
+        currentPage: page,
+        totalPages: 0,
+        totalCount: 0,
+        limit,
+      },
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.community.count({
+    where: { isDeleted: false },
+  });
+
+  const communities = await prisma.community.findMany({
+    where: { isDeleted: false },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      location: {
+        select: { province: true },
+      },
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: communities,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+};
+
+/*
+ * ฟังก์ชัน: getCommunityDetailById (superadmin only)
+ * Input :
+ *   - userId        : ผู้เรียกใช้งาน (ต้องเป็น superadmin)
+ *   - communityId   : รหัสชุมชน
  * Output:
- *   - community + relations ของชุมชนที่ adminId = userId
+ *   - community + relations ตาม schema จริง
  * Error:
  *   - "ID must be Number"
  *   - "User not found"
  *   - "Forbidden"
  *   - "Community not found"
  */
-export async function getCommunityDetailByAdmin(userId: number) {
-  if (!Number.isInteger(userId) || userId <= 0) {
+export async function getCommunityDetailById(
+  userId: number,
+  communityId: number
+) {
+  if (
+    !Number.isInteger(userId) ||
+    !Number.isInteger(communityId) ||
+    userId <= 0 ||
+    communityId <= 0
+  ) {
     throw new Error("ID must be Number");
   }
 
@@ -305,12 +389,12 @@ export async function getCommunityDetailByAdmin(userId: number) {
     include: { role: true },
   });
   if (!user) throw new Error("User not found");
-  if (user.role?.name?.toLowerCase() !== "admin") {
+  if (user.role?.name?.toLowerCase() !== "superadmin")
     throw new Error("Forbidden");
-  }
 
+  // ใช้ findFirst เพื่อกัน soft-delete (findUnique ใส่เงื่อนไขอื่นไม่ได้)
   const community = await prisma.community.findFirst({
-    where: { adminId: userId, isDeleted: false },
+    where: { id: communityId, isDeleted: false },
     include: {
       communityImage: true,
       location: true,

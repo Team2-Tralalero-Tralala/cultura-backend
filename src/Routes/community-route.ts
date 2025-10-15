@@ -59,4 +59,20 @@ communityRoutes.get(
   CommunityController.getCommunityDetailByAdmin
 );
 
+communityRoutes.get(
+  "/super/communities",
+  validateDto(CommunityController.getCommunityAllDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getCommunityAll
+);
+
+communityRoutes.get(
+  "/super/community/detail/:communityId",
+  validateDto(CommunityController.getCommunityDetailByIdDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getCommunityDetailById
+);
+
 export default communityRoutes;
