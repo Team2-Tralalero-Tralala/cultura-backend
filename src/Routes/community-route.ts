@@ -16,7 +16,7 @@ communityRoutes.put(
   "/super/community/:communityId",
   validateDto(CommunityController.editCommunityDto),
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   CommunityController.editCommunity
 );
 communityRoutes.patch(
@@ -26,6 +26,15 @@ communityRoutes.patch(
   allowRoles("superadmin"),
   CommunityController.deleteCommunityById
 );
+
+communityRoutes.get(
+  "/super/community/:communityId",
+  validateDto(CommunityController.getCommunityByIdDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getCommunityById
+);
+
 communityRoutes.get(
   "/super/admins/unassigned",
   validateDto(CommunityController.unassignedAdminsDto),

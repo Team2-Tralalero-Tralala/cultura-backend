@@ -96,6 +96,20 @@ export const deleteCommunityById: TypedHandlerFromDto<
   }
 };
 
+export const getCommunityByIdDto = { params: IdParamDto } satisfies commonDto;
+
+export const getCommunityById: TypedHandlerFromDto<
+  typeof getCommunityByIdDto
+> = async (req, res) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const result = await CommunityService.getCommunityById(communityId);
+    return createResponse(res, 200, "get community successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
 export const unassignedAdminsDto = {} satisfies commonDto;
 
 export const getUnassignedAdmins: TypedHandlerFromDto<

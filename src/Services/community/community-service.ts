@@ -123,7 +123,25 @@ export async function createCommunity(community: CommunityDto) {
       include: {
         location: true,
         communityImage: true,
-        admin: true,
+        admin: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+          },
+        },
+        member: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+            memberOf: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -198,7 +216,25 @@ export async function editCommunity(
       include: {
         location: true,
         communityImage: true,
-        admin: true,
+        admin: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+          },
+        },
+        member: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+            memberOf: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
     if (member?.length) {
@@ -253,7 +289,25 @@ export async function getCommunityById(communityId: number) {
     include: {
       location: true,
       communityImage: true,
-      admin: true,
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+      member: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          memberOf: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
     },
   });
 
