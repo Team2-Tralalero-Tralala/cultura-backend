@@ -96,15 +96,15 @@ export const logout: TypedHandlerFromDto<typeof loginDto> = async (
   }
 };
 /*
- * DTO : loginDto
+ * DTO : checkLoginDto
  * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /login
- * Input : body (AuthService.loginDto) - ข้อมูลผู้ใช้ เช่น username, password
+ * Input : body (AuthService.checkLoginDto) - ข้อมูลผู้ใช้ เช่น username, password
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export const checkLoginDto = {} satisfies commonDto;
 
 /*
- * ฟังก์ชัน : logout
+ * ฟังก์ชัน : me
  * คำอธิบาย : Handler เช็คว่ายังเข้าสู่ระบบอยู่มั้ย
  * Input : -
  * Output :
