@@ -16,15 +16,15 @@ import {
   Max,
 } from "class-validator";
 import { CommunityStatus } from "@prisma/client";
-import { LocationDto, updateLocationDto } from "../location/location-dto.js";
-import {
-  HomestayDto,
-  HomestayWithLocationDto,
-} from "../homestay/homestay-dto.js";
-import { StoreDto, StoreWithLocationDto } from "../store/store-dto.js";
-import { CommunityMemberDto } from "../community-member/community-member-dto.js";
+import { LocationDto } from "../location/location-dto.js";
+import { HomestayDto } from "../homestay/homestay-dto.js";
+import { StoreDto } from "../store/store-dto.js";
+import { ImageType } from "@prisma/client";
 
 export class CommunityDto {
+  @IsNotEmpty({ message: "adminId ห้ามว่าง" })
+  adminId: number;
+
   @IsString({ message: "name ต้องเป็น string" })
   @IsNotEmpty({ message: "name ห้ามว่าง" })
   @MaxLength(150, { message: "name ยาวเกิน 150 ตัวอักษร" })
@@ -33,7 +33,7 @@ export class CommunityDto {
   @IsString()
   @IsOptional()
   @MaxLength(100, { message: "alias ยาวเกิน 100 ตัวอักษร" })
-  alias?: string | null; // ct_alias
+  alias?: string; // ct_alias
 
   @IsString()
   @IsNotEmpty({ message: "type ห้ามว่าง" })
@@ -45,15 +45,29 @@ export class CommunityDto {
   @MaxLength(45, { message: "registerNumber ยาวเกิน 45 ตัวอักษร" })
   registerNumber: string; // ct_register_number
 
-  @IsDate({ message: "registerDate ต้องเป็นวันที่" })
-  @IsNotEmpty({ message: "registerDate ห้ามว่าง" })
   @Type(() => Date)
-  registerDate: Date; // ct_register_date
+  @IsDate({ message: "registerDate ต้องเป็นวันที่" })
+  registerDate: Date;
 
   @IsString()
   @IsNotEmpty({ message: "description ห้ามว่าง" })
   @MaxLength(200, { message: "description ยาวเกิน 200 ตัวอักษร" })
   description: string; // ct_description
+
+  @IsString()
+  @IsNotEmpty({ message: "ชื่อธนาคารห้ามว่าง" })
+  @MaxLength(45, { message: "ชื่อธนาคารต้องไม่เกิน 45 ตัวอักษร" })
+  bankName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "ชื่อบัญชีห้ามว่าง" })
+  @MaxLength(45, { message: "ชื่อบัญชีต้องไม่เกิน 45 ตัวอักษร" })
+  accountName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "หมายเลขบัญชีห้ามว่าง" })
+  @MaxLength(45, { message: "หมายเลขบัญชีต้องไม่เกิน 45 ตัวอักษร" })
+  accountNumber: string;
 
   @IsString()
   @IsNotEmpty()
@@ -91,31 +105,15 @@ export class CommunityDto {
   email: string; // ct_email
 
   @IsString()
-  @IsNotEmpty({ message: "bank ห้ามว่าง" })
-  @MaxLength(100, { message: "bank ยาวเกิน 100 ตัวอักษร" })
-  bank: string; // ct_bank
-
-  @IsString()
-  @IsNotEmpty({ message: "bankAccountName ห้ามว่าง" })
-  @MaxLength(70, { message: "bankAccountName ยาวเกิน 70 ตัวอักษร" })
-  bankAccountName: string; // ct_bank_account_name
-
-  @IsString()
-  @IsNotEmpty({ message: "bankAccountNumber ห้ามว่าง" })
-  @Matches(/^[0-9]+$/, { message: "bankAccountNumber ต้องเป็นตัวเลขเท่านั้น" })
-  @Length(10, 20, { message: "bankAccountNumber ต้องมี 10-20 หลัก" })
-  bankAccountNumber: string; // ct_bank_account_number
-
-  @IsString()
   @IsOptional()
   @MaxLength(100, { message: "mainAdmin ยาวเกิน 100 ตัวอักษร" })
-  mainAdmin?: string; // ct_main_admin
+  mainAdmin: string; // ct_main_admin
 
   @IsString()
   @IsOptional()
   @Length(9, 10, { message: "mainAdminPhone ต้องมี 9-10 หลัก" })
   @Matches(/^[0-9]+$/, { message: "mainAdminPhone ต้องเป็นตัวเลขเท่านั้น" })
-  mainAdminPhone?: string; // ct_main_admin_phone
+  mainAdminPhone: string; // ct_main_admin_phone
 
   @IsString()
   @IsOptional()
@@ -152,173 +150,33 @@ export class CommunityDto {
   @IsOptional()
   @MaxLength(2048)
   urlOther?: string; // ct_url_other
-}
 
-export class CommunityFormDto extends CommunityDto {
   @ValidateNested()
   @Type(() => LocationDto)
   location: LocationDto;
 
   @ValidateNested({ each: true })
   @Type(() => HomestayDto)
-  homestay: HomestayWithLocationDto[];
+  homestay?: HomestayDto[];
 
   @ValidateNested({ each: true })
   @Type(() => StoreDto)
-  store: StoreWithLocationDto[];
+  store?: StoreDto[];
+
+  @IsOptional()
+  member?: number[];
 
   @ValidateNested({ each: true })
-  @Type(() => CommunityMemberDto)
-  member: CommunityMemberDto[];
+  @Type(() => CommunityImageDto)
+  @IsOptional()
+  communityImage?: CommunityImageDto[];
 }
 
-export class updateCommunityDto {
-  @IsOptional()
-  @IsString({ message: "name ต้องเป็น string" })
-  @IsNotEmpty({ message: "name ห้ามว่าง" })
-  @MaxLength(150, { message: "name ยาวเกิน 150 ตัวอักษร" })
-  name: string; // ct_name
-
+export class CommunityImageDto {
   @IsString()
-  @IsOptional()
-  @MaxLength(100, { message: "alias ยาวเกิน 100 ตัวอักษร" })
-  alias?: string | null; // ct_alias
+  @MaxLength(256, { message: "image ต้องไม่เกิน 256 ตัวอักษร" })
+  image: string;
 
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "type ห้ามว่าง" })
-  @MaxLength(90, { message: "type ยาวเกิน 90 ตัวอักษร" })
-  type: string; // ct_type
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "registerNumber ห้ามว่าง" })
-  @MaxLength(45, { message: "registerNumber ยาวเกิน 45 ตัวอักษร" })
-  registerNumber: string; // ct_register_number
-
-  @IsOptional()
-  @IsDate({ message: "registerDate ต้องเป็นวันที่" })
-  @IsNotEmpty({ message: "registerDate ห้ามว่าง" })
-  @Type(() => Date)
-  registerDate: Date; // ct_register_date
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "description ห้ามว่าง" })
-  @MaxLength(200, { message: "description ยาวเกิน 200 ตัวอักษร" })
-  description: string; // ct_description
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(80, { message: "mainActivityName ยาวเกิน 80 ตัวอักษร" })
-  mainActivityName: string; // ct_main_activity_name
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(150, { message: "mainActivityDescription ยาวเกิน 150 ตัวอักษร" })
-  mainActivityDescription: string; // ct_main_activity_description
-
-  @IsOptional()
-  @IsEnum(CommunityStatus, {
-    message: "status ต้องเป็นค่า CommunityStatus เท่านั้น",
-  })
-  status: CommunityStatus; // ct_status
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "phone ห้ามว่าง" })
-  @Length(9, 10, { message: "phone ต้องมี 9-10 หลัก" })
-  @Matches(/^[0-9]+$/, { message: "phone ต้องเป็นตัวเลขเท่านั้น" })
-  phone: string; // ct_phone
-
-  @IsOptional()
-  @IsNumber(
-    { allowInfinity: false, allowNaN: false },
-    { message: "rating ต้องเป็นตัวเลข" }
-  )
-  @IsOptional()
-  @IsNotEmpty({ message: "rating ห้ามว่าง" })
-  @Min(0, { message: "rating ต้องไม่น้อยกว่า 0" })
-  @Max(5, { message: "rating ต้องไม่เกิน 5" })
-  rating: number; // ✅ 0–5
-
-  @IsOptional()
-  @IsEmail({}, { message: "email ไม่ถูกต้อง" })
-  @IsNotEmpty({ message: "email ห้ามว่าง" })
-  @MaxLength(65, { message: "email ยาวเกิน 65 ตัวอักษร" })
-  email: string; // ct_email
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "bank ห้ามว่าง" })
-  @MaxLength(100, { message: "bank ยาวเกิน 100 ตัวอักษร" })
-  bank: string; // ct_bank
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "bankAccountName ห้ามว่าง" })
-  @MaxLength(70, { message: "bankAccountName ยาวเกิน 70 ตัวอักษร" })
-  bankAccountName: string; // ct_bank_account_name
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty({ message: "bankAccountNumber ห้ามว่าง" })
-  @Matches(/^[0-9]+$/, { message: "bankAccountNumber ต้องเป็นตัวเลขเท่านั้น" })
-  @Length(10, 20, { message: "bankAccountNumber ต้องมี 10-20 หลัก" })
-  bankAccountNumber: string; // ct_bank_account_number
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100, { message: "mainAdmin ยาวเกิน 100 ตัวอักษร" })
-  mainAdmin?: string | null; // ct_main_admin
-
-  @IsOptional()
-  @IsString()
-  @Length(9, 10, { message: "mainAdminPhone ต้องมี 9-10 หลัก" })
-  @Matches(/^[0-9]+$/, { message: "mainAdminPhone ต้องเป็นตัวเลขเท่านั้น" })
-  mainAdminPhone?: string | null; // ct_main_admin_phone
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(150, { message: "coordinatorName ยาวเกิน 150 ตัวอักษร" })
-  coordinatorName?: string | null; // ct_coordinator_name
-
-  @IsOptional()
-  @IsString()
-  @Length(9, 10, { message: "coordinatorPhone ต้องมี 9-10 หลัก" })
-  @Matches(/^[0-9]+$/, { message: "coordinatorPhone ต้องเป็นตัวเลขเท่านั้น" })
-  coordinatorPhone?: string | null; // ct_coordinator_phone
-
-  @IsOptional()
-  @IsUrl({}, { message: "urlWebsite ต้องเป็น URL ที่ถูกต้อง" })
-  @MaxLength(2048)
-  urlWebsite?: string | null; // ct_url_website
-
-  @IsOptional()
-  @IsUrl({}, { message: "urlFacebook ต้องเป็น URL ที่ถูกต้อง" })
-  @MaxLength(2048)
-  urlFacebook?: string | null; // ct_url_facebook
-
-  @IsOptional()
-  @IsUrl({}, { message: "urlLine ต้องเป็น URL ที่ถูกต้อง" })
-  @MaxLength(2048)
-  urlLine?: string | null; // ct_url_line
-
-  @IsOptional()
-  @IsUrl({}, { message: "urlTiktok ต้องเป็น URL ที่ถูกต้อง" })
-  @MaxLength(2048)
-  urlTiktok?: string | null; // ct_url_tiktok
-
-  @IsUrl({}, { message: "urlOther ต้องเป็น URL ที่ถูกต้อง" })
-  @IsOptional()
-  @MaxLength(2048)
-  urlOther?: string | null; // ct_url_other
-}
-export class updateCommunityFormDto extends updateCommunityDto {
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => updateLocationDto)
-  location?: updateLocationDto;
+  @IsEnum(ImageType)
+  type: ImageType;
 }
