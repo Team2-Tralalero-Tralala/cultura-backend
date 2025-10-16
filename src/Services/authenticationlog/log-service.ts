@@ -1,13 +1,14 @@
 /*
  * คำอธิบาย : Service สำหรับจัดการ Log ของผู้ใช้
- * ประกอบด้วยการดึงข้อมูล logs ตาม role และ pagination
+ * ประกอบด้วยการดึงข้อมูล logs ตาม role, pagination, และการค้นหา/กรองข้อมูล
  * - superadmin เห็น logs ทั้งหมด
  * - admin เห็น logs ของสมาชิกในชุมชนของตนเองเท่านั้น
+ * - รองรับการค้นหาตามชื่อผู้ใช้และกรองตาม role
  */
 
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "~/Services/pagination-dto.js";
-import prisma from "./database-service.js";
+import prisma from "../database-service.js";
 
 /*
  * Type : LogWithUser
@@ -35,15 +36,21 @@ export type LogWithUser = {
  *   - user (UserPayload) - ข้อมูลผู้ใช้จาก token
  *   - page (number) - หน้าที่ต้องการ
  *   - limit (number) - จำนวนรายการต่อหน้า
+ *   - searchName (string | undefined) - ค้นหาตามชื่อผู้ใช้
+ *   - filterRole (string | undefined) - กรองตาม role ("all" = ทั้งหมด, อื่นๆ = กรองตาม role)
  * Output : PaginationResponse<LogWithUser>
  * Logic :
  *   - superadmin เห็นทุก log
  *   - admin เห็นเฉพาะ log ของสมาชิกในชุมชนที่ตนเป็น admin
+ *   - รองรับการค้นหาและกรองข้อมูล
+ *   - filterRole = "all" จะไม่กรอง role, อื่นๆจะกรองตาม role ที่ระบุ
  */
 export async function getUserLogs(
   user: UserPayload,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  searchName?: string,
+  filterRole?: string
 ): Promise<PaginationResponse<LogWithUser>> {
     const skip = (page - 1) * limit;
 
@@ -79,6 +86,26 @@ export async function getUserLogs(
             const memberIds = communityMembers.map((member) => member.id);
             whereCondition.userId = { in: memberIds };
         }
+    }
+
+    // เพิ่ม filter สำหรับค้นหาชื่อผู้ใช้
+    if (searchName) {
+        whereCondition.user = {
+            ...whereCondition.user,
+            username: {
+                contains: searchName,
+            },
+        };
+    }
+
+    // เพิ่ม filter สำหรับกรองตาม role (ถ้าไม่ใช่ "all")
+    if (filterRole && filterRole.toLowerCase() !== "all") {
+        whereCondition.user = {
+            ...whereCondition.user,
+            role: {
+                name: filterRole,
+            },
+        };
     }
 
     // นับจำนวนรายการทั้งหมด
