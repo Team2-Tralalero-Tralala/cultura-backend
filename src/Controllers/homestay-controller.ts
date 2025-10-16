@@ -116,10 +116,10 @@ export const getHomestayDetail = async (req: Request, res: Response) => {
     try {
         if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
 
-        const id = Number(req.params.id);
-        if (!id) return createErrorResponse(res, 400, "ID must be a number");
+        const homestayId = Number(req.params.homestayId);
+        if (!homestayId) return createErrorResponse(res, 400, "ID must be a number");
 
-        const result = await HomestayService.getHomestayDetailById(id);
+        const result = await HomestayService.getHomestayDetailById(homestayId);
         if (!result) return createErrorResponse(res, 404, "ไม่พบ Homestay ที่ต้องการ");
 
         return createResponse(res, 200, "Get Homestay Detail Success", result);
@@ -137,7 +137,7 @@ export const editHomestay = async (req: Request, res: Response) => {
         if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
 
         const currentUserId = Number(req.user.id);
-        const id = Number(req.params.id);
+        const id = Number(req.params.homestayId);
         if (!id) return createErrorResponse(res, 400, "ID must be a number");
 
         const result = await HomestayService.editHomestayBySuperAdmin(

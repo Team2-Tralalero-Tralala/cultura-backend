@@ -24,7 +24,7 @@ const homestayRoutes = Router();
  */
 
 homestayRoutes.post(
-    "/super/homestays/:communityId",
+    "/super/community/:communityId/homestay",
     authMiddleware,
     allowRoles("superadmin"),
     validateDto(createHomestayDto),
@@ -32,10 +32,9 @@ homestayRoutes.post(
 );
 
 homestayRoutes.post(
-    "/super/homestays/:communityId/bulk",
+    "/super/community/:communityId/homestay/bulk",
     authMiddleware,
     allowRoles("superadmin"),
-    validateDto(bulkCreateHomestayDto),
     createHomestaysBulk
 );
 
@@ -47,14 +46,14 @@ homestayRoutes.get(
 );
 
 homestayRoutes.get(
-    "/super/homestays/:id",
+    "/super/homestays/:homestayId",
     authMiddleware,
     allowRoles("superadmin"),
     getHomestayDetail
 );
 
-homestayRoutes.patch(
-    "/super/homestays/:id",
+homestayRoutes.put(
+    "/super/homestay/:homestayId",
     authMiddleware,
     allowRoles("superadmin"),
     validateDto(editHomestayDto),
