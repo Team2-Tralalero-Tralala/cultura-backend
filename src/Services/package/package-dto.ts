@@ -10,7 +10,9 @@ import {
     Matches,
     ValidateNested,
     IsObject,
-    IsArray
+    IsArray,
+    ArrayUnique,
+    IsInt
 } from "class-validator";
 import { PackagePublishStatus, PackageApproveStatus, ImageType } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
@@ -123,6 +125,28 @@ export class PackageDto {
     @ValidateNested({ each: true })
     @Type(() => PackageFileDto)
     packageFile?: PackageFileDto[];
+
+    @IsOptional()
+    @IsArray({ message: "tagIds ต้องเป็น array ของตัวเลข" })
+    @ArrayUnique()
+    @IsInt({ each: true, message: "tagIds ทุกตัวต้องเป็นตัวเลขจำนวนเต็ม" })
+    tagIds?: number[];
+
+    /** ---------- NEW: ที่พัก (ไม่บังคับ) ---------- */
+    @IsOptional() @IsInt()
+    homestayId?: number;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "homestayCheckInDate ต้องเป็น yyyy-mm-dd" })
+    homestayCheckInDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/, { message: "homestayCheckInTime ต้องเป็น HH:mm" })
+    homestayCheckInTime?: string;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "homestayCheckOutDate ต้องเป็น yyyy-mm-dd" })
+    homestayCheckOutDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/, { message: "homestayCheckOutTime ต้องเป็น HH:mm" })
+    homestayCheckOutTime?: string;
 }
 
 /*
@@ -201,7 +225,7 @@ export class updatePackageDto {
     @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็น HH:mm" })
     endTime?: string;
 
-        @IsString()
+    @IsString()
     @IsNotEmpty({ message: "openBookingAt ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "openBookingAt ต้องเป็นรูปแบบ yyyy-mm-dd" })
     openBookingAt!: string;
@@ -231,4 +255,26 @@ export class updatePackageDto {
     @Type(() => PackageFileDto)
     @IsOptional()
     packageFile?: PackageFileDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ArrayUnique()
+    @IsInt({ each: true })
+    tagIds?: number[];
+
+    /** ---------- NEW: homestay ---------- */
+    @IsOptional() @IsInt()
+    homestayId?: number;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/)
+    homestayCheckInDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/)
+    homestayCheckInTime?: string;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/)
+    homestayCheckOutDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/)
+    homestayCheckOutTime?: string;
 }

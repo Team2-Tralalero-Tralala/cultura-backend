@@ -60,11 +60,17 @@ async function assertCreatePermission(role: string, currentUserId: number, data:
             return;
         }
         case "member": {
-            if (!user.memberOf?.id || user.memberOf.id !== resolvedCommunityId) {
-                throw new Error("คุณไม่มีสิทธิ์สร้าง Package นอกชุมชนของตน");
-            }
+            if (!user.memberOf?.id) throw new Error("คุณไม่ได้อยู่ในชุมชนใด");
+            // ถ้าระบุ overseer เป็นคนอื่น: ตรวจว่าอยู่ชุมชนเดียวกัน
             if (data.overseerMemberId && data.overseerMemberId !== user.id) {
-                throw new Error("member ต้องเป็น overseer ของแพ็กเกจตนเอง");
+                const overseer = await prisma.user.findUnique({
+                where: { id: Number(data.overseerMemberId) },
+                include: { memberOf: true },
+                });
+                if (!overseer) throw new Error("ไม่พบผู้ดูแลที่เลือก");
+                if (overseer.memberOf?.id !== user.memberOf.id) {
+                throw new Error("อนุญาตให้เลือกผู้ดูแลเฉพาะสมาชิกในชุมชนเดียวกัน");
+                }
             }
             return;
         }
@@ -183,6 +189,23 @@ async function createPackageCore(data: PackageDto, currentUserId?: number) {
         // ปกติควรปิดจองก่อนหรือพร้อมวันสิ้นสุดกิจกรรม
         throw new Error("closeBookingAt ต้องไม่ช้ากว่า dueDate ของแพ็กเกจ");
     }
+    const tagIds: number[] = Array.isArray((data as any).tagIds) ? (data as any).tagIds : [];
+
+    const hasHomestay =
+    (data as any).homestayId &&
+    (data as any).homestayCheckInDate &&
+    (data as any).homestayCheckInTime &&
+    (data as any).homestayCheckOutDate &&
+    (data as any).homestayCheckOutTime;
+
+    const checkInAt  = hasHomestay ? composeDateTimeIso((data as any).homestayCheckInDate,  (data as any).homestayCheckInTime) : undefined;
+    const checkOutAt = hasHomestay ? composeDateTimeIso((data as any).homestayCheckOutDate, (data as any).homestayCheckOutTime, true) : undefined;
+
+    // (แนะนำ) ตรวจ homestay อยู่ในชุมชนเดียวกัน
+    if (hasHomestay) {
+    const hs = await prisma.homestay.findUnique({ where: { id: Number((data as any).homestayId) } });
+    if (!hs || hs.communityId !== resolvedCommunityId) throw new Error("ที่พักไม่ได้อยู่ในชุมชนนี้");
+    }
 
     return prisma.package.create({
         data: {
@@ -203,6 +226,11 @@ async function createPackageCore(data: PackageDto, currentUserId?: number) {
             closeBookingAt: closeAt,
 
             facility: (data as any).facility ?? null,
+            ...(tagIds.length > 0 && {
+                tagPackages: {
+                    create: tagIds.map((id) => ({ tag: { connect: { id } } })),
+                },
+            }),
             ...(Array.isArray((data as any).packageFile) && (data as any).packageFile.length > 0
                 ? {
                     packageFile: {
@@ -213,6 +241,16 @@ async function createPackageCore(data: PackageDto, currentUserId?: number) {
                     },
                 }
                 : {}),
+                ...(hasHomestay && {
+                homestayHistories: {
+                    create: [{
+                    homestay: { connect: { id: Number((data as any).homestayId) } },
+                    bookedRoom: 0,
+                    checkInTime:  checkInAt as Date,
+                    checkOutTime: checkOutAt as Date,
+                    }],
+                },
+                }),
         },
         include: { location: true, packageFile: true },
     });
@@ -262,6 +300,18 @@ async function editPackageCore(id: number, data: PackageDto) {
     }
 
     const { location, packageFile } = data as any;
+    const tagIds: number[] = Array.isArray((data as any).tagIds) ? (data as any).tagIds : [];
+
+    const hasHomestay =
+    (data as any).homestayId &&
+    (data as any).homestayCheckInDate &&
+    (data as any).homestayCheckInTime &&
+    (data as any).homestayCheckOutDate &&
+    (data as any).homestayCheckOutTime;
+
+    const checkInAt  = hasHomestay ? composeDateTimeIso((data as any).homestayCheckInDate,  (data as any).homestayCheckInTime) : undefined;
+    const checkOutAt = hasHomestay ? composeDateTimeIso((data as any).homestayCheckOutDate, (data as any).homestayCheckOutTime, true) : undefined;
+
 
     const result = await prisma.package.update({
         where: { id },
@@ -281,6 +331,12 @@ async function editPackageCore(id: number, data: PackageDto) {
             closeBookingAt: closeAt,
 
             facility: (data as any).facility,
+            ...(Array.isArray(tagIds) && {
+            tagPackages: {
+                deleteMany: {},
+                create: tagIds.map((tagId) => ({ tag: { connect: { id: tagId } } })),
+            },
+            }),
             ...(location && {
                 location: {
                     update: {
@@ -304,6 +360,17 @@ async function editPackageCore(id: number, data: PackageDto) {
                         type: file.type,
                     })),
                 },
+            }),
+            ...(hasHomestay && {
+            homestayHistories: {
+                deleteMany: {},
+                create: [{
+                homestay:   { connect: { id: Number((data as any).homestayId) } },
+                bookedRoom: 0,
+                checkInTime:  checkInAt as Date,
+                checkOutTime: checkOutAt as Date,
+                }],
+            },
             }),
         },
         include: { location: true, packageFile: true },
