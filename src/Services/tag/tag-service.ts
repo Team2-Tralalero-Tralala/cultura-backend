@@ -34,13 +34,13 @@ export async function createTag(tag : TagDto) {
  */
 export async function deleteTagById(tagId:number) {
   const findTag = await prisma.tag.findUnique({
-    where: { id: tagId },
+    where: { id: tagId, isDeleted: false },
   });
-
   if (!findTag) throw new Error("Tag not found");
 
-  return await prisma.tag.delete({
+  return await prisma.tag.update({
     where: { id: tagId },
+    data: {isDeleted: true, deleteAt: new Date()},
   });
 }
 
@@ -74,6 +74,8 @@ export async function getAllTags(
   const result = await prisma.tag.findMany({
     skip: (page - 1) * limit,
     take: limit,
+    where: { isDeleted: false },
+    orderBy: { id: "asc" },
   });
   return result;
 }
