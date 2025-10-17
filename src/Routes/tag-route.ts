@@ -35,7 +35,7 @@ tagRoutes.put(
     editTag
 );
 tagRoutes.get(
-    "/",
+    "/shared/tags",
     getAllTags
 );
 
