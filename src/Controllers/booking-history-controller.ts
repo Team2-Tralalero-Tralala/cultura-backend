@@ -14,10 +14,14 @@ import { getHistoriesByRole } from "../Services/booking-history-service.js";
  */
 export const getByRole = async (req: Request, res: Response) => {
   try {
-    const {page = 1, limit = 10} = req.query;
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const { page = 1, limit = 10 } = req.query;
     const data = await getHistoriesByRole(req.user, Number(page), Number(limit));
     return createResponse(res, 200, "Get booking histories by role successfully", data);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+

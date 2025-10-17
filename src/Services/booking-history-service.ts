@@ -27,6 +27,10 @@ export const getHistoriesByRole = async (user: UserPayload, page: number = 1,
     where = { package: { community: { adminId: user.id } } };
   }
 
+  where.status = {
+    in: ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"],
+  };
+
   const data = await prisma.bookingHistory.findMany({
     skip: (page - 1) * limit,
     take: limit,

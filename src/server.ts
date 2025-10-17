@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import express from "express";
-import rootRouter from "./Routes/index-route.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { compressUploadedFile } from "./Middlewares/upload-middleware.js";
 import { upload, uploadPublic } from "./Libs/uploadFile.js";
+import rootRouter from "./Routes/index-route.js";
 
 const app = express();
 app.use(cookieParser());

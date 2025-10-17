@@ -4,8 +4,10 @@ import { getByRole } from "../Controllers/booking-history-controller.js";
 
 const router = Router();
 
-router.get("/role", authMiddleware, getByRole);
+router.get("/histories", authMiddleware, getByRole);
 
 export default router;
+
+
 
 

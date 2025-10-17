@@ -1,7 +1,7 @@
 import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
-
+import type { PaginationResponse } from "../pagination-dto.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้อยู่ในรูปแบบที่สามารถใช้กับ Prisma ได้
@@ -18,7 +18,7 @@ const mapLocation = (loc: LocationDto) => ({
   postalCode: loc.postalCode,
   latitude: loc.latitude,
   longitude: loc.longitude,
-  detail: loc.detail,
+  detail: loc.detail ?? null,
 });
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับตรวจสอบว่าผู้ใช้ที่ระบุใน member ทั้งหมดเป็นสมาชิกที่ถูกต้องหรือไม่
@@ -54,7 +54,8 @@ export async function checkMember(member: number[], communityId: number) {
   if (invalidMembers.length > 0) {
     throw {
       status: 400,
-      message: "ไม่พบสมาชิกบางราย หรือ สมาชิกบางรายไม่ได้มีบทบาทเป็น member",
+      message:
+        "ไม่พบสมาชิกบางราย หรือ สมาชิกบางรายไม่ได้มีบทบาทเป็น member หรือสมาชิกนั้นมีชุมชนอยู่แล้ว",
       invalidMembers,
     };
   }
@@ -79,7 +80,6 @@ export async function createCommunity(community: CommunityDto) {
     location,
     homestay,
     store,
-    bankAccount,
     adminId,
     communityImage,
     member,
@@ -109,13 +109,6 @@ export async function createCommunity(community: CommunityDto) {
       data: {
         ...communityData,
         admin: { connect: { id: adminId } },
-        bankAccount: {
-          create: {
-            bankName: bankAccount.bankName,
-            accountName: bankAccount.accountName,
-            accountNumber: bankAccount.accountNumber,
-          },
-        },
         ...(communityImage?.length
           ? {
               communityImage: {
@@ -127,56 +120,29 @@ export async function createCommunity(community: CommunityDto) {
             }
           : {}),
         location: { create: mapLocation(location) },
-        ...(homestay?.length
-          ? {
-              homestays: {
-                create: homestay
-                  .filter((hs) => hs?.name && hs?.location)
-                  .map((homestay) => ({
-                    name: homestay.name,
-                    roomType: homestay.roomType,
-                    capacity: homestay.capacity,
-                    facility: homestay.facility,
-                    location: { create: mapLocation(homestay.location) },
-                    homestayImage: {
-                      create:
-                        homestay.homestayImage?.map((img) => ({
-                          image: img.image,
-                          type: img.type,
-                        })) ?? [],
-                    },
-                  })),
-              },
-            }
-          : {}),
-        ...(store?.length
-          ? {
-              stores: {
-                create: store
-                  .filter((st) => st?.name && st?.location)
-                  .map((store) => ({
-                    name: store.name,
-                    detail: store.detail,
-                    location: { create: mapLocation(store.location) },
-                    storeImage: {
-                      create:
-                        store.storeImage?.map((img) => ({
-                          image: img.image,
-                          type: img.type,
-                        })) ?? [],
-                    },
-                  })),
-              },
-            }
-          : {}),
       },
       include: {
         location: true,
-        homestays: true,
         communityImage: true,
-        stores: true,
-        admin: true,
-        bankAccount: true,
+        admin: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+          },
+        },
+        member: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+            memberOf: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -193,7 +159,6 @@ export async function createCommunity(community: CommunityDto) {
     }
 
     return newCommunity;
-
   });
 }
 
@@ -212,7 +177,6 @@ export async function editCommunity(
   const {
     location: loc,
     adminId,
-    bankAccount,
     communityImage,
     member,
     ...communityData
@@ -238,17 +202,6 @@ export async function editCommunity(
 
         admin: { connect: { id: adminId } },
 
-        ...(bankAccount
-          ? {
-              bankAccount: {
-                update: {
-                  bankName: bankAccount.bankName,
-                  accountName: bankAccount.accountName,
-                  accountNumber: bankAccount.accountNumber,
-                },
-              },
-            }
-          : {}),
         ...(communityImage && communityImage.length > 0
           ? {
               communityImage: {
@@ -263,11 +216,26 @@ export async function editCommunity(
       },
       include: {
         location: true,
-        homestays: true,
         communityImage: true,
-        stores: true,
-        admin: true,
-        bankAccount: true,
+        admin: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+          },
+        },
+        member: {
+          select: {
+            id: true,
+            fname: true,
+            lname: true,
+            memberOf: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
     if (member?.length) {
@@ -306,12 +274,231 @@ export async function editCommunity(
 
 export async function deleteCommunityById(communityId: number) {
   const findCommunity = await prisma.community.findUnique({
-    where: { id: communityId },
+    where: { id: communityId, isDeleted: false },
   });
   if (!findCommunity) throw new Error("ไม่พบชุมชน");
 
-
-  return await prisma.community.delete({
+  return await prisma.community.update({
     where: { id: communityId },
+    data: { isDeleted: true, deleteAt: new Date() },
   });
+}
+
+/*
+ * ฟังก์ชัน : getCommunityAll
+ * อธิบาย : ดึง community ทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input : id (หมายเลข userId)
+ * Output :
+ *   - ถ้าเป็น superadmin → ได้ community ทั้งหมด
+ *   - ถ้าไม่ใช่ superadmin → ได้ []
+ */
+export const getCommunityAll = async (
+  id: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(id)) throw new Error("ID must be Number");
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  if (user.role?.name !== "superadmin") {
+    return {
+      data: [],
+      pagination: {
+        currentPage: page,
+        totalPages: 0,
+        totalCount: 0,
+        limit,
+      },
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.community.count({
+    where: { isDeleted: false },
+  });
+
+  const communities = await prisma.community.findMany({
+    where: { isDeleted: false },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      location: {
+        select: { province: true },
+      },
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: communities,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+};
+
+/*
+ * ฟังก์ชัน: getCommunityDetailById (superadmin only)
+ * Input :
+ *   - userId        : ผู้เรียกใช้งาน (ต้องเป็น superadmin)
+ *   - communityId   : รหัสชุมชน
+ * Output:
+ *   - community + relations ตาม schema จริง
+ * Error:
+ *   - "ID must be Number"
+ *   - "User not found"
+ *   - "Forbidden"
+ *   - "Community not found"
+ */
+export async function getCommunityDetailById(
+  userId: number,
+  communityId: number
+) {
+  if (
+    !Number.isInteger(userId) ||
+    !Number.isInteger(communityId) ||
+    userId <= 0 ||
+    communityId <= 0
+  ) {
+    throw new Error("ID must be Number");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "superadmin")
+    throw new Error("Forbidden");
+
+  // ใช้ findFirst เพื่อกัน soft-delete (findUnique ใส่เงื่อนไขอื่นไม่ได้)
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+    include: {
+      communityImage: true,
+      location: true,
+      packages: true,
+      homestays: true,
+      stores: true,
+      member: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          roleId: true,
+          memberOfCommunity: true,
+        },
+      },
+    },
+  });
+
+  if (!community) throw new Error("Community not found");
+  return community;
+}
+/*
+ * คำอธิบาย : ดึงข้อมูลชุมชนตามรหัส (communityId)
+ */
+export async function getCommunityById(communityId: number) {
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+      member: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          memberOf: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!community) throw new Error("ไม่พบชุมชน");
+
+  return community;
+}
+/*
+ * คำอธิบาย :  ดึงรายการแอดมินที่ยังไม่ถูกผูกกับชุมชนใด
+ */
+export async function getUnassignedAdmins() {
+  const assignedAdmins = await prisma.community.findMany({
+    select: {
+      adminId: true,
+    },
+  });
+
+  const assignedIds = assignedAdmins.map((c) => c.adminId);
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: {
+        name: "admin",
+      },
+      id: { notIn: assignedIds },
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+    orderBy: { fname: "asc" },
+  });
+  return admins;
+}
+/*
+ * คำอธิบาย : ดึงรายการสมาชิกที่ยังไม่ถูกผูกกับชุมชนใด
+ */
+export async function getUnassignedMembers() {
+  const members = await prisma.user.findMany({
+    where: {
+      role: {
+        name: "member",
+      },
+      memberOf: null,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+    },
+    orderBy: { fname: "asc" },
+  });
+  return members;
 }
