@@ -1,7 +1,13 @@
-import { IsNumberString, IsEnum } from "class-validator";
+import { IsNumberString, IsEnum,  IsNumber, 
+    IsOptional, 
+    IsString, 
+    IsNotEmpty, 
+    MaxLength, 
+    IsEmail, 
+    IsDateString  } from "class-validator";
 
 import * as UserService from "../Services/user-service.js";
-import { UserStatus } from "@prisma/client";
+import { Gender, UserStatus } from "@prisma/client";
 
 import { PaginationDto } from "~/Libs/Types/pagination-dto.js";
 
@@ -11,6 +17,7 @@ import type {
 } from "~/Libs/Types/TypedHandler.js";
 
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { Type } from "class-transformer";
 
 /*
  * DTO : IdParamDto
@@ -201,6 +208,138 @@ export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDt
         const userId = Number(req.params.userId);
         const result = await UserService.unblockAccount(userId);
         return createResponse(res, 200, "User unblock successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 404, (error as Error).message);
+    }
+};
+
+/* 
+ * คำอธิบาย: Controller และ DTO สำหรับสร้างบัญชีผู้ใช้ใหม่ (Create Account)
+ * ตรวจสอบข้อมูลผู้ใช้ที่ส่งมาผ่าน body และไฟล์รูปโปรไฟล์จาก Multer
+ * จากนั้นเรียก UserService.createAccount เพื่อบันทึกข้อมูลลงฐานข้อมูล
+ */
+
+export class CreateAccountDto {
+    @IsNumber()
+    @Type(() => Number)
+    roleId!: number;
+  
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    memberOfCommunity?: number;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(256)
+    profileImage?: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(50)
+    username!: string;
+  
+    @IsEmail()
+    @MaxLength(65)
+    email!: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(255)
+    password!: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(100)
+    fname!: string;
+  
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(100)
+    lname!: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(10)
+    phone?: string;
+  
+    @IsOptional()
+    @IsEnum(Gender)
+    gender?: Gender;
+  
+    @IsOptional()
+    @IsDateString()
+    birthDate?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    subDistrict?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    district?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(60)
+    province?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(5)
+    postalCode?: string;
+  
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    activityRole?: string;
+  
+    @IsOptional()
+    @IsEnum(UserStatus)
+    status?: UserStatus;
+  }
+
+  /* 
+ * DTO: CreateAccountDto
+ * ใช้สำหรับตรวจสอบ (Validate) ข้อมูลการสมัครผู้ใช้ใหม่ เช่น
+ * roleId, username, email, password, ข้อมูลส่วนตัว และที่อยู่
+ * โดยใช้ class-validator และ class-transformer
+ */
+  export const createAccountDto = {
+    body: CreateAccountDto,
+  } satisfies commonDto;
+
+/* 
+ * DTO: fileDto
+ * ใช้สำหรับตรวจสอบข้อมูลไฟล์แนบ (กรณีส่ง userId มาพร้อมไฟล์)
+ */
+export class fileDto {
+    @IsNumberString()
+    userId?: string;
+}
+
+/* 
+ * Function: createAccount
+ * Input : req (Request) → body: CreateAccountDto + file: รูปโปรไฟล์
+ *         res (Response)
+ * Output: Response JSON ที่มีข้อมูลผู้ใช้ที่สร้างใหม่
+ * Process: 
+ *   1. ตรวจสอบว่ามีไฟล์แนบหรือไม่
+ *   2. ดึง path ของไฟล์จาก req.file.path
+ *   3. เรียกใช้ UserService.createAccount เพื่อบันทึกข้อมูล
+ *   4. ส่ง Response กลับพร้อมข้อความ "Create User Successful"
+ */
+export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async (req:any, res:any) => {
+    try {
+        const payload = req.body;
+        if (!req.file) {
+            return res.json({status: 400, message: 'file not found'})
+        }
+        const pathImage = req.file.path
+        const result = await UserService.createAccount(payload, pathImage)
+        return createResponse(res, 200, "Create User Successful", result);
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
