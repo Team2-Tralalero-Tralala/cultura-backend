@@ -19,7 +19,6 @@ export const getDetailRequestById = async (packageId: number) => {
     return prisma.package.findUnique({
         where: { id: packageId, statusApprove: PackageApproveStatus.PENDING_SUPER },
         select: {
-            id: true,
             name: true,
             description: true,
             capacity: true,
