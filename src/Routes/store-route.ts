@@ -6,11 +6,10 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const storeRoute = Router();
 
 storeRoute.get(
-    "/super/community/:communityId/store",
-    validateDto(StoreController.getAllStoreDto),
+    "/admin/community/stores",
+    validateDto(StoreController.getAllStoreForAdminDto),
     authMiddleware,
-    allowRoles("superadmin"),
-    StoreController.getAllStore
+    allowRoles("admin"),
+    StoreController.getAllStoreForAdmin
 );
-
 export default storeRoute;
