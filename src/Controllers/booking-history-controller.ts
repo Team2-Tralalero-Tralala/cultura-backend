@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getHistoriesByRole } from "../Services/booking-history-service.js";
+import { getHistoriesByRole } from "../Services/booking-history-services.js";
 
 /*
  * ฟังก์ชัน : getByRole
