@@ -10,6 +10,7 @@ import type {
   TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { verifyToken } from "~/Libs/token.js";
 
 /*
  * DTO : signupDto
@@ -61,7 +62,7 @@ export const loginDto = {
  */
 export const login: TypedHandlerFromDto<typeof loginDto> = async (req, res) => {
   try {
-    const result = await AuthService.login(req.body);
+    const result = await AuthService.login(req.body, req.ip ?? "");
     res.cookie("accessToken", result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production" || false, // ใช้ secure cookie ใน production
@@ -88,7 +89,37 @@ export const logout: TypedHandlerFromDto<typeof loginDto> = async (
 ) => {
   try {
     res.clearCookie("accessToken");
+    await AuthService.logout(req.user, req.ip ?? "");
     return createResponse(res, 201, "logout successful");
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/*
+ * DTO : checkLoginDto
+ * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /login
+ * Input : body (AuthService.checkLoginDto) - ข้อมูลผู้ใช้ เช่น username, password
+ * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
+ */
+export const checkLoginDto = {} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : me
+ * คำอธิบาย : Handler เช็คว่ายังเข้าสู่ระบบอยู่มั้ย
+ * Input : -
+ * Output :
+ *   - เช็ค cookie "accessToken"
+ *   - 200 Created เมื่อมีเข้าสู่ระบบอยู่
+ *   - 400 Bad Request ถ้ามี error
+ */
+export const me: TypedHandlerFromDto<typeof checkLoginDto> = async (
+  req,
+  res
+) => {
+  try {
+    const token = req.cookies.accessToken;
+    const user = await verifyToken(token);
+    return createResponse(res, 200, "check successful", user);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
