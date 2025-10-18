@@ -4,7 +4,7 @@ import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const storeRoutes = Router();
 // กำหนด endpoint ตามที่คุณออกแบบ
-storeRoutes.get("/:id", 
+storeRoutes.get("/:storeId", 
     authMiddleware, 
     validateDto(storeDto), 
     allowRoles("superadmin"),
