@@ -1,20 +1,21 @@
 import { Router } from "express";
 import authRoutes from "./auth-route.js";
 import userRoutes from "./user-route.js";
-import bookingHistoryRoutes from "./booking-history-route.js";
 import tagRoutes from "./tag-route.js";
 import communityRoutes from "./community-route.js";
 import packageRoutes from "./package-route.js";
 import logRoutes from "./log-route.js";
+import homestayRoutes from "./homestay-delete-routes.js";
 
 const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/users", userRoutes);
-rootRouter.use("/booking-histories", bookingHistoryRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
+rootRouter.use("/homestaydata", homestayRoutes)
 
 export default rootRouter;
+
