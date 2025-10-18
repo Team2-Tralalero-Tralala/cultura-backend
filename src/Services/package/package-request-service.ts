@@ -28,6 +28,8 @@ export const getDetailRequestById = async (packageId: number) => {
             createById: true,
             startDate: true,
             dueDate: true,
+            bookingOpenDate: true,
+            bookingCloseDate: true,
             facility: true,
             tagPackages: {
                 select: {
