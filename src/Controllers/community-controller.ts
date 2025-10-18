@@ -246,3 +246,5 @@ export const getCommunityDetailById: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+
