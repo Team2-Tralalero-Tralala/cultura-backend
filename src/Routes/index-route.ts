@@ -6,6 +6,7 @@ import tagRoutes from "./tag-route.js";
 import communityRoutes from "./community-route.js";
 import packageRoutes from "./package-route.js";
 import logRoutes from "./log-route.js";
+import packageRequestsRoutes from "./package-request-route.js"
 
 const rootRouter: Router = Router();
 
@@ -16,5 +17,7 @@ rootRouter.use("/packages", packageRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
+rootRouter.use("/package-requests", packageRequestsRoutes)
+
 
 export default rootRouter;

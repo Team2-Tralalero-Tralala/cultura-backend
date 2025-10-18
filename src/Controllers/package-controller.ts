@@ -98,3 +98,4 @@ export const deletePackage = async (req: Request, res: Response) => {
         return createErrorResponse(res, 404, (error as Error).message)
     }
 }
+

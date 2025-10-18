@@ -27,4 +27,6 @@ packageRoutes.delete("/:id",
     allowRoles("superadmin", "admin", "member"),
     deletePackage
 );
+
+
 export default packageRoutes;

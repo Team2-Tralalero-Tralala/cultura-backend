@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getHistoriesByRole } from "../Services/booking-history-services.js";
+import { getHistoriesByRole } from "../Services/booking-history-service.js";
 
 /*
  * ฟังก์ชัน : getByRole
@@ -24,4 +24,6 @@ export const getByRole = async (req: Request, res: Response) => {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+
 
