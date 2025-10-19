@@ -22,22 +22,9 @@ export async function createStore(
   user: UserPayload,
   communityId: number
 ) {
-  const { location, tagStores, storeImage, ...storeData } = store;
+  const { location, storeImage, tagStores, ...storeData } = store;
 
   return prisma.$transaction(async (transaction) => {
-    if (user.role.toLowerCase() === "admin") {
-      const adminCommunity = await transaction.community.findFirst({
-        where: { adminId: user.id },
-        select: { id: true },
-      });
-      if (!adminCommunity) {
-        throw new Error("ไม่พบชุมชนที่คุณดูแลอยู่");
-      }
-
-      if (adminCommunity.id !== communityId) {
-        throw new Error("คุณไม่สามารถสร้างร้านค้าในชุมชนอื่นได้");
-      }
-    }
     const newStore = await transaction.store.create({
       data: {
         ...storeData,
@@ -50,13 +37,21 @@ export async function createStore(
           })),
         },
       },
+      include: {
+        storeImage: true,
+        location: true,
+      },
     });
-    await transaction.tagStore.createMany({
-      data: tagStores.map((tagId) => ({
-        tagId,
-        storeId: newStore.id,
-      })),
-    });
+
+    if (tagStores?.length) {
+      await transaction.tagStore.createMany({
+        data: tagStores.map((tagId: number) => ({
+          tagId,
+          storeId: newStore.id,
+        })),
+      });
+    }
+
     return newStore;
   });
 }
@@ -107,6 +102,11 @@ export async function editStore(
           })),
         },
       },
+      include: {
+        storeImage: true,
+        tagStores: true,
+        location: true,
+      },
     });
     await transaction.tagStore.deleteMany({
       where: { storeId },
@@ -119,5 +119,31 @@ export async function editStore(
       })),
     });
     return newStore;
+  });
+}
+
+export async function getStoreById(storeId: number) {
+  return prisma.store.findFirst({
+    where: {
+      id: storeId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+    select: {
+      name: true,
+      detail: true,
+      storeImage: true,
+      tagStores: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      location: true,
+    },
   });
 }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as StoreController from "~/Controllers/store-controller.js";
+import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
@@ -13,7 +14,11 @@ const storeRoute = Router();
  */
 storeRoute.post(
   "/shared/community/:communityId/store",
-  validateDto(StoreController.createStoreDto),
+  // validateDto(StoreController.createStoreDto),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+  ]),
   authMiddleware,
   allowRoles("superadmin", "admin"),
   StoreController.createStore
@@ -33,9 +38,21 @@ storeRoute.post(
  */
 storeRoute.put(
   "/shared/store/:storeId",
-  validateDto(StoreController.editStoreDto),
+  // validateDto(StoreController.editStoreDto),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+  ]),
   authMiddleware,
   allowRoles("superadmin", "admin"),
   StoreController.editStore
+);
+
+storeRoute.get(
+  "/shared/store/:storeId",
+  validateDto(StoreController.getStoreByIdDto),
+  authMiddleware,
+  allowRoles("superadmin", "admin"),
+  StoreController.getStoreById
 );
 export default storeRoute;

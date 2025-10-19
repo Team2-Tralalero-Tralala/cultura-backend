@@ -51,15 +51,33 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
   res
 ) => {
   try {
-    if (!req.user) {
+    if (!req.user)
       return createErrorResponse(res, 401, "User not authenticated");
-    }
+
     const communityId = Number(req.params.communityId);
+
+    // รับไฟล์จาก multer
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+    };
+
+    // แปลง body JSON ที่แนบมาใน "data"
+    const parsed = JSON.parse(req.body.data);
+
+    // รวมไฟล์พร้อม type
+    const storeImage = [
+      ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
+    ];
+
     const result = await StoreService.createStore(
-      req.body,
+      { ...parsed, storeImage },
       req.user,
       communityId
     );
+
     return createResponse(res, 201, "Store created successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
@@ -111,8 +129,48 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
     }
+    // รับไฟล์จาก multer
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+    };
+
+    // แปลง body JSON ที่แนบมาใน "data"
+    const parsed = JSON.parse(req.body.data);
+
+    // รวมไฟล์พร้อม type
+    const storeImage = [
+      ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
+    ];
+    console.log(files);
     const storeId = Number(req.params.storeId);
-    const result = await StoreService.editStore(storeId, req.body, req.user);
+    const result = await StoreService.editStore(
+      storeId,
+      { ...parsed, storeImage },
+      req.user
+    );
+    return createResponse(res, 201, "Store update successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+export const getStoreByIdDto = {
+  params: IdParamDto,
+} satisfies commonDto;
+
+export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
+  req,
+  res
+) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
+    const storeId = Number(req.params.storeId);
+    const result = await StoreService.getStoreById(storeId);
     return createResponse(res, 201, "Store update successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
