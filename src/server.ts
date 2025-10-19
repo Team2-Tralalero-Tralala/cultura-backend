@@ -26,5 +26,3 @@ app.use("/api", rootRouter);
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
-
-app.use("/api/users", userRouter)
