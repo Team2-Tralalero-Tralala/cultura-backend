@@ -34,13 +34,13 @@ export async function createTag(tag : TagDto) {
  */
 export async function deleteTagById(tagId:number) {
   const findTag = await prisma.tag.findUnique({
-    where: { id: tagId },
+    where: { id: tagId, isDeleted: false },
   });
-
   if (!findTag) throw new Error("Tag not found");
 
-  return await prisma.tag.delete({
+  return await prisma.tag.update({
     where: { id: tagId },
+    data: {isDeleted: true, deleteAt: new Date()},
   });
 }
 
@@ -68,12 +68,30 @@ export async function editTag( tagId:number, tag:TagDto) {
  * Output : tags (Array) - รายการ Tag ทั้งหมด
  * Error : throw error ถ้าไม่สามารถดึงข้อมูลได้
  */
-export async function getAllTags(
-  page: number = 1,
-  limit: number = 10) {
-  const result = await prisma.tag.findMany({
-    skip: (page - 1) * limit,
-    take: limit,
-  });
-  return result;
+
+export async function getAllTags(page: number = 1, limit: number = 10) {
+  const [tags, totalCount] = await Promise.all([
+    prisma.tag.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      where: { isDeleted: false },
+      orderBy: { id: "asc" },
+    }),
+    prisma.tag.count({
+      where: { isDeleted: false },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: tags,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
 }
+
