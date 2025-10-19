@@ -9,7 +9,6 @@ import {
     editHomestayDto,
     createHomestay,
     createHomestaysBulk,
-    getHomestays,
     getHomestayDetail,
     editHomestay,
 } from "../Controllers/homestay-controller.js";
@@ -36,13 +35,6 @@ homestayRoutes.post(
     authMiddleware,
     allowRoles("superadmin"),
     createHomestaysBulk
-);
-
-homestayRoutes.get(
-    "/super/homestays",
-    authMiddleware,
-    allowRoles("superadmin"),
-    getHomestays
 );
 
 homestayRoutes.get(

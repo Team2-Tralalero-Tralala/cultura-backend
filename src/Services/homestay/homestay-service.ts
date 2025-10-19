@@ -1,11 +1,11 @@
-// Services/homestay/homestay-service.ts
 import prisma from "../database-service.js";
-import type { PaginationResponse } from "../pagination-dto.js";
 import type { HomestayDto, HomestayImageDto } from "./homestay-dto.js";
 
-/* ============================================================================================
- * UTIL HELPERS
- * ============================================================================================ */
+/*
+ * คำอธิบาย : ดึงผู้ใช้ตาม userId; ไม่พบให้ throw
+ * Input  : userId:number
+ * Output : user (พร้อม role) หรือ throw Error
+ */
 async function getUserOrFail(userId: number) {
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -15,12 +15,22 @@ async function getUserOrFail(userId: number) {
     return user;
 }
 
+/*
+ * คำอธิบาย : ดึง community ตาม communityId; ไม่พบให้ throw
+ * Input  : communityId:number
+ * Output : community หรือ throw Error
+ */
 async function getCommunityOrFail(communityId: number) {
     const community = await prisma.community.findUnique({ where: { id: communityId } });
     if (!community) throw new Error(`Community ID ${communityId} ไม่พบในระบบ`);
     return community;
 }
 
+/*
+ * คำอธิบาย : ดึง homestay ตาม homestayId (รวม location, homestayImage, community); ไม่พบให้ throw
+ * Input  : homestayId:number
+ * Output : homestay (include ความสัมพันธ์) หรือ throw Error
+ */
 async function getHomestayOrFail(homestayId: number) {
     const hs = await prisma.homestay.findUnique({
         where: { id: homestayId },
@@ -30,20 +40,24 @@ async function getHomestayOrFail(homestayId: number) {
     return hs;
 }
 
+/*
+ * คำอธิบาย : ตรวจสิทธิ์ว่า role เป็น SuperAdmin; ไม่ใช่ให้ throw
+ * Input  : roleName?:string|null
+ * Output : void (throw เมื่อไม่ผ่าน)
+ */
 function ensureSuperAdmin(roleName?: string | null) {
     if (roleName?.toLowerCase() !== "superadmin") {
         throw new Error("คุณไม่มีสิทธิ์ดำเนินการ (ต้องเป็น SuperAdmin เท่านั้น)");
     }
 }
 
-/* ============================================================================================
- * CORE CUD (Create / Update / Delete)
- * ============================================================================================ */
+/*
+ * คำอธิบาย : สร้าง Homestay พร้อม location (บันทึก location ก่อนแล้วอ้างอิงด้วย locationId)
+ * Input  : communityId:number, data:HomestayDto
+ * Output : homestay ที่ถูกสร้าง (include location, homestayImage)
+ */
 async function createHomestayCore(communityId: number, data: HomestayDto) {
-    // 1) ตรวจ community
     await getCommunityOrFail(communityId);
-
-    // ก่อน: createHomestayCore (มี location: { create: ... })
     const location = await prisma.location.create({
         data: {
             houseNumber: data.location.houseNumber,
@@ -61,8 +75,7 @@ async function createHomestayCore(communityId: number, data: HomestayDto) {
     const result = await prisma.homestay.create({
         data: {
             communityId,
-            // ❌ เอาอันนี้ออก: location: { create: { ... } }
-            locationId: location.id, // ✅ ใส่อันนี้แทน
+            locationId: location.id,
             name: data.name,
             type: data.type,
             guestPerRoom: data.guestPerRoom,
@@ -86,6 +99,11 @@ async function createHomestayCore(communityId: number, data: HomestayDto) {
     return result;
 }
 
+/*
+ * คำอธิบาย : แก้ไข Homestay แบบ partial (รองรับเปลี่ยน community, อัปเดต location, แทนที่ homestayImage ทั้งชุด)
+ * Input  : homestayId:number, data: Partial<HomestayDto> & { communityId?: number }
+ * Output : homestay ที่อัปเดตแล้ว (include location, homestayImage)
+ */
 async function editHomestayCore(homestayId: number, data: Partial<HomestayDto> & { communityId?: number }) {
     const exist = await getHomestayOrFail(homestayId);
 
@@ -139,9 +157,11 @@ async function editHomestayCore(homestayId: number, data: Partial<HomestayDto> &
     return result;
 }
 
-/* ============================================================================================
- * PUBLIC APIS (เฉพาะ SuperAdmin)
- * ============================================================================================ */
+/*
+ * คำอธิบาย : ตรวจสิทธิ์ SuperAdmin แล้วเรียกสร้าง Homestay (เดี่ยว)
+ * Input  : currentUserId:number, communityId:number, data:HomestayDto
+ * Output : homestay ที่ถูกสร้าง
+ */
 export async function createHomestayBySuperAdmin(
     currentUserId: number,
     communityId: number,
@@ -152,10 +172,11 @@ export async function createHomestayBySuperAdmin(
     return createHomestayCore(Number(communityId), data);
 }
 
-
-// รองรับสร้างหลายรายการ (สอดคล้องกับฝั่ง UI ที่เพิ่มหลายการ์ด)
-// ก่อน: ใช้ $transaction([...homestay.create(...), ...]) ที่มี nested location
-// หลัง: ใช้ interactive transaction + locationId
+/*
+ * คำอธิบาย : ตรวจสิทธิ์ SuperAdmin แล้วสร้าง Homestay “หลายรายการ” ภายใต้ทรานแซคชัน
+ * Input  : currentUserId:number, communityId:number, dataList:HomestayDto[]
+ * Output : homestay[] ที่ถูกสร้างทั้งหมด
+ */
 export async function createHomestaysBulkBySuperAdmin(
     currentUserId: number,
     communityId: number,
@@ -181,11 +202,10 @@ export async function createHomestaysBulkBySuperAdmin(
                     longitude: d.location.longitude,
                 },
             });
-
             const hs = await tx.homestay.create({
                 data: {
                     communityId: Number(communityId),
-                    locationId: loc.id, // ✅ ใช้ locationId
+                    locationId: loc.id,
                     name: d.name,
                     type: d.type,
                     guestPerRoom: d.guestPerRoom,
@@ -204,16 +224,18 @@ export async function createHomestaysBulkBySuperAdmin(
                 },
                 include: { location: true, homestayImage: true },
             });
-
             created.push(hs);
         }
         return created;
     });
-
     return results;
 }
 
-
+/*
+ * คำอธิบาย : ตรวจสิทธิ์ SuperAdmin แล้วแก้ไข Homestay ตาม id
+ * Input  : currentUserId:number, homestayId:number, data:Partial<HomestayDto> & { communityId?: number }
+ * Output : homestay ที่อัปเดตแล้ว
+ */
 export async function editHomestayBySuperAdmin(
     currentUserId: number,
     homestayId: number,
@@ -224,47 +246,11 @@ export async function editHomestayBySuperAdmin(
     return editHomestayCore(Number(homestayId), data);
 }
 
-
-export async function getHomestaysBySuperAdmin(
-    currentUserId: number,
-    page = 1,
-    limit = 10,
-    opts?: { communityId?: number; q?: string }
-): Promise<PaginationResponse<any>> {
-    const me = await getUserOrFail(currentUserId);
-    ensureSuperAdmin(me.role?.name);
-
-    const where: any = { isDeleted: false };
-    if (opts?.communityId) where.communityId = Number(opts.communityId);
-    if (opts?.q) {
-        // ค้นหาจากชื่อ/ประเภท
-        where.OR = [
-            { name: { contains: opts.q, mode: "insensitive" } },
-            { type: { contains: opts.q, mode: "insensitive" } },
-        ];
-    }
-
-    const skip = (page - 1) * limit;
-    const totalCount = await prisma.homestay.count({ where });
-
-    const homestays = await prisma.homestay.findMany({
-        where,
-        include: {
-            community: { select: { id: true, name: true } },
-            location: true,
-            homestayImage: true,
-        },
-        orderBy: { id: "desc" },
-        skip,
-        take: limit,
-    });
-
-    return {
-        data: homestays,
-        pagination: { currentPage: page, totalPages: Math.ceil(totalCount / limit), totalCount, limit },
-    };
-}
-
+/*
+ * คำอธิบาย : ตรวจสิทธิ์ SuperAdmin แล้วดึงรายละเอียด Homestay ตาม id
+ * Input  : currentUserId:number, homestayId:number
+ * Output : homestay (รวมความสัมพันธ์) หรือ null
+ */
 export async function getHomestayDetailByIdBySuperAdmin(currentUserId: number, homestayId: number) {
     const me = await getUserOrFail(currentUserId);
     ensureSuperAdmin(me.role?.name);
@@ -296,6 +282,11 @@ export async function getHomestayDetailByIdBySuperAdmin(currentUserId: number, h
     });
 }
 
+/* *************************************** ทำไว้ชั่วคราวรอใช้ของเพื่อน กรณีเพื่อน pr มาแล้เ้ว ค่อยลบ
+ * คำอธิบาย : ดึงรายละเอียด Homestay ตาม id (แบบไม่ตรวจ role — ใช้ภายในระบบ)
+ * Input  : id:number
+ * Output : homestay (รวมความสัมพันธ์) หรือ null
+ */
 export async function getHomestayDetailById(id: number) {
     return prisma.homestay.findUnique({
         where: { id },
@@ -321,7 +312,6 @@ export async function getHomestayDetailById(id: number) {
             homestayImage: {
                 select: { id: true, image: true, type: true },
             },
-            // ถ้าใช้แท็กอยู่ ให้คงไว้ได้ (ไม่ใช้ก็ลบส่วนนี้ออกได้)
             tagHomestays: {
                 include: {
                     tag: { select: { id: true, name: true } },
