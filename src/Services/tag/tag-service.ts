@@ -69,14 +69,29 @@ export async function editTag( tagId:number, tag:TagDto) {
  * Error : throw error ถ้าไม่สามารถดึงข้อมูลได้
  */
 
-export async function getAllTags(
-  page: number = 1,
-  limit: number = 10) {
-  const result = await prisma.tag.findMany({
-    skip: (page - 1) * limit,
-    take: limit,
-    where: { isDeleted: false },
-    orderBy: { id: "asc" },
-  });
-  return result;
+export async function getAllTags(page: number = 1, limit: number = 10) {
+  const [tags, totalCount] = await Promise.all([
+    prisma.tag.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      where: { isDeleted: false },
+      orderBy: { id: "asc" },
+    }),
+    prisma.tag.count({
+      where: { isDeleted: false },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: tags,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
 }
+
