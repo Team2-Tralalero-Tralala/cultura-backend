@@ -52,9 +52,20 @@ function ensureSuperAdmin(roleName?: string | null) {
 }
 
 /*
+ * Helper : แปลง input ที่คาดว่าเป็นอาเรย์ของ tagIds ให้เป็น number[] ที่สะอาด
+ */
+function normalizeTagIdArray(input: unknown): number[] {
+    if (!Array.isArray(input)) return [];
+    const nums = input
+        .map((v) => Number(v))
+        .filter((n) => Number.isFinite(n) && n > 0) as number[];
+    return Array.from(new Set(nums));
+}
+
+/*
  * คำอธิบาย : สร้าง Homestay พร้อม location (บันทึก location ก่อนแล้วอ้างอิงด้วย locationId)
  * Input  : communityId:number, data:HomestayDto
- * Output : homestay ที่ถูกสร้าง (include location, homestayImage)
+ * Output : homestay ที่ถูกสร้าง (include location, homestayImage, tagHomestays)
  */
 async function createHomestayCore(communityId: number, data: HomestayDto) {
     await getCommunityOrFail(communityId);
@@ -71,6 +82,8 @@ async function createHomestayCore(communityId: number, data: HomestayDto) {
             longitude: data.location.longitude,
         },
     });
+
+    const tagIds = normalizeTagIdArray((data as any).tagHomestays);
 
     const result = await prisma.homestay.create({
         data: {
@@ -91,28 +104,41 @@ async function createHomestayCore(communityId: number, data: HomestayDto) {
                     },
                 }
                 : {}),
+            ...(tagIds.length > 0
+                ? {
+                    tagHomestays: {
+                        create: tagIds.map((tagId) => ({ tagId })),
+                    },
+                }
+                : {}),
         },
-        include: { location: true, homestayImage: true },
+        include: {
+            location: true,
+            homestayImage: true,
+            tagHomestays: { include: { tag: true } },
+        },
     });
-
 
     return result;
 }
 
 /*
- * คำอธิบาย : แก้ไข Homestay แบบ partial (รองรับเปลี่ยน community, อัปเดต location, แทนที่ homestayImage ทั้งชุด)
+ * คำอธิบาย : แก้ไข Homestay แบบ partial (รองรับเปลี่ยน community, อัปเดต location, แทนที่ homestayImage ทั้งชุด, อัปเดตแท็ก)
  * Input  : homestayId:number, data: Partial<HomestayDto> & { communityId?: number }
- * Output : homestay ที่อัปเดตแล้ว (include location, homestayImage)
+ * Output : homestay ที่อัปเดตแล้ว (include location, homestayImage, tagHomestays)
  */
-async function editHomestayCore(homestayId: number, data: Partial<HomestayDto> & { communityId?: number }) {
-    const exist = await getHomestayOrFail(homestayId);
+async function editHomestayCore(
+    homestayId: number,
+    data: Partial<HomestayDto> & { communityId?: number }
+) {
+    await getHomestayOrFail(homestayId);
 
-    // (option) ย้ายชุมชนได้ หากระบุมาและมีอยู่จริง
     if (data.communityId) {
         await getCommunityOrFail(Number(data.communityId));
     }
 
     const loc = (data as any).location;
+    const tagIds = normalizeTagIdArray((data as any).tagHomestays);
 
     const result = await prisma.homestay.update({
         where: { id: homestayId },
@@ -140,7 +166,6 @@ async function editHomestayCore(homestayId: number, data: Partial<HomestayDto> &
                 },
             }),
 
-            // ถ้าส่ง homestayImage มา ให้แทนที่ทั้งหมด
             ...(Array.isArray((data as any).homestayImage) && {
                 homestayImage: {
                     deleteMany: {},
@@ -150,8 +175,19 @@ async function editHomestayCore(homestayId: number, data: Partial<HomestayDto> &
                     })),
                 },
             }),
+
+            ...(Array.isArray((data as any).tagHomestays) && {
+                tagHomestays: {
+                    deleteMany: {},
+                    create: tagIds.map((tagId) => ({ tagId })),
+                },
+            }),
         },
-        include: { location: true, homestayImage: true },
+        include: {
+            location: true,
+            homestayImage: true,
+            tagHomestays: { include: { tag: true } },
+        },
     });
 
     return result;
@@ -202,6 +238,9 @@ export async function createHomestaysBulkBySuperAdmin(
                     longitude: d.location.longitude,
                 },
             });
+
+            const tagIds = normalizeTagIdArray((d as any).tagHomestays);
+
             const hs = await tx.homestay.create({
                 data: {
                     communityId: Number(communityId),
@@ -221,8 +260,15 @@ export async function createHomestaysBulkBySuperAdmin(
                             },
                         }
                         : {}),
+                    ...(tagIds.length > 0
+                        ? {
+                            tagHomestays: {
+                                create: tagIds.map((tagId) => ({ tagId })),
+                            },
+                        }
+                        : {}),
                 },
-                include: { location: true, homestayImage: true },
+                include: { location: true, homestayImage: true, tagHomestays: { include: { tag: true } } },
             });
             created.push(hs);
         }

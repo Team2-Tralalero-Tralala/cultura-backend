@@ -45,7 +45,7 @@ homestayRoutes.get(
 );
 
 homestayRoutes.put(
-    "/super/homestay/:homestayId",
+    "/super/homestay/edit/:homestayId",
     authMiddleware,
     allowRoles("superadmin"),
     validateDto(editHomestayDto),
