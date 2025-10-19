@@ -112,11 +112,10 @@ export class loginDto {
 /*
  * ฟังก์ชัน : login
  * คำอธิบาย : เข้าสู่ระบบด้วย username/email และ password
- * Input : data (loginDto) - ข้อมูลการเข้าสู่ระบบ, ipAddress (string) - ที่อยู่ IP ของผู้ใช้
+ * Input : data (loginDto) - ข้อมูลการเข้าสู่ระบบ
  * Output :
  *   - user (object) : ข้อมูลผู้ใช้ที่เข้าสู่ระบบ (id, username, role)
  *   - token (string) : JWT token สำหรับยืนยันตัวตน
- *   - บันทึก log การเข้าสู่ระบบในฐานข้อมูล
  * Error :
  *   - ถ้าไม่พบผู้ใช้
  *   - ถ้าผู้ใช้ถูก block
@@ -144,8 +143,6 @@ export async function login(data: loginDto, ipAddress: string) {
   };
 
   const token = generateToken(payload);
-
-  // Log login attempt
   await prisma.log.create({
     data: {
       user: {
@@ -155,7 +152,6 @@ export async function login(data: loginDto, ipAddress: string) {
       loginTime: new Date(),
     },
   });
-
   return { user: payload, token };
 }
 

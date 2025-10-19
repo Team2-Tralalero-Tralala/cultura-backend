@@ -19,5 +19,6 @@ rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
 rootRouter.use("/package-requests", packageRequestsRoutes)
 
+rootRouter.use("/shared/logs", logRoutes);
 
 export default rootRouter;

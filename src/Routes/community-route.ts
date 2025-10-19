@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as CommunityControler from "~/Controllers/community-controller.js";
+import * as CommunityController from "~/Controllers/community-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
@@ -7,23 +7,72 @@ const communityRoutes = Router();
 
 communityRoutes.post(
   "/super/community",
-  validateDto(CommunityControler.createCommunityDto),
+  validateDto(CommunityController.createCommunityDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityControler.createCommunity
+  CommunityController.createCommunity
 );
 communityRoutes.put(
   "/super/community/:communityId",
-  validateDto(CommunityControler.editCommunityDto),
+  validateDto(CommunityController.editCommunityDto),
   authMiddleware,
-  allowRoles("superadmin", "admin"),
-  CommunityControler.editCommunity
+  allowRoles("superadmin"),
+  CommunityController.editCommunity
 );
 communityRoutes.patch(
   "/super/community/:communityId",
-  validateDto(CommunityControler.deleteCommunityByIdDto),
+  validateDto(CommunityController.deleteCommunityByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityControler.deleteCommunityById
+  CommunityController.deleteCommunityById
 );
+
+communityRoutes.get(
+  "/super/community/:communityId",
+  validateDto(CommunityController.getCommunityByIdDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getCommunityById
+);
+
+communityRoutes.get(
+  "/super/admins/unassigned",
+  validateDto(CommunityController.unassignedAdminsDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getUnassignedAdmins
+);
+
+communityRoutes.get(
+  "/super/members/unassigned",
+  validateDto(CommunityController.unassignedMemberDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getUnassignedMembers
+);
+
+communityRoutes.get(
+  "/admin/community",
+  validateDto(CommunityController.getCommunityDetailByAdminDto),
+  authMiddleware,
+  allowRoles("admin"),
+  CommunityController.getCommunityDetailByAdmin
+);
+
+communityRoutes.get(
+  "/super/communities",
+  validateDto(CommunityController.getCommunityAllDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getCommunityAll
+);
+
+communityRoutes.get(
+  "/super/community/detail/:communityId",
+  validateDto(CommunityController.getCommunityDetailByIdDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  CommunityController.getCommunityDetailById
+);
+
 export default communityRoutes;
