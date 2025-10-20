@@ -13,29 +13,44 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const tagRoutes = Router();
 
+/**
+ * คำอธิบาย : route สำหรับสร้างประเภทหรือแท็ก
+ */
 tagRoutes.post(
-    "/",
+    "/tag",
     validateDto(createTagDto),
     authMiddleware,
     allowRoles("superadmin"),
     createTag
 );
-tagRoutes.delete(
-    "/:tagId",
+
+/**
+ * คำอธิบาย : route สำหรับลบประเภทหรือแท็ก
+ */
+tagRoutes.patch(
+    "/tag/:tagId",
     validateDto(deleteTagByIdDto),
     authMiddleware,
     allowRoles("superadmin"),
     deleteTagById
 );
+
+/**
+ * คำอธิบาย : route สำหรับแก้ไขประเภทหรือแท็ก
+ */
 tagRoutes.put(
-    "/:tagId",
+    "/tag/:tagId",
     validateDto(editTagDto),
     authMiddleware,
     allowRoles("superadmin"),
     editTag
 );
+
+/**
+ * คำอธิบาย : route สำหรับดึงข้อมูลประเภทหรือแท็กมาแสดงทั้งหมด
+ */
 tagRoutes.get(
-    "/",
+    "/shared/tags",
     getAllTags
 );
 

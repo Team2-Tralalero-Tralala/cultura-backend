@@ -50,7 +50,7 @@ export const createTag: TypedHandlerFromDto<typeof createTagDto> = async (req, r
  */
 export class IdParamDto {
     @IsNumberString()
-    tagId?: number;
+    tagId?: string;
 }
 
 /*
