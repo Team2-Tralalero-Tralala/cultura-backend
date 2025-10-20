@@ -19,7 +19,6 @@ export const homestayDataByID = async (id: number) => {
   if (!homestay) {
     throw new Error("Homestay not found");
   }
-
   return await prisma.homestay.update({
     where: { id: numberId },
     data: {

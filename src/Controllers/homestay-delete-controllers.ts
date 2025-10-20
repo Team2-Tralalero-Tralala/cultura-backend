@@ -23,7 +23,6 @@ export const homestayDataByID = async (req: Request, res: Response) => {
     if (!homestayDataByID) {
       return createErrorResponse(res, 400, "Homestay not found");
     }
-
     return createResponse(
       res,
       200,
@@ -34,3 +33,4 @@ export const homestayDataByID = async (req: Request, res: Response) => {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
