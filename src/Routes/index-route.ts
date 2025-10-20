@@ -7,6 +7,7 @@ import communityRoutes from "./community-route.js";
 import packageRoutes from "./package-route.js";
 import logRoutes from "./log-route.js";
 import homestayRoutes from "./homestay-route.js";
+import storeRoute from "./store-route.js";
 
 const rootRouter: Router = Router();
 
@@ -18,5 +19,6 @@ rootRouter.use(communityRoutes);
 rootRouter.use(homestayRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/shared/logs", logRoutes);
+rootRouter.use(storeRoute);
 
 export default rootRouter;

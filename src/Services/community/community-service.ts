@@ -8,7 +8,7 @@ import type { PaginationResponse } from "../pagination-dto.js";
  * Input : LocationDto (ข้อมูลที่อยู่ เช่น บ้านเลขที่ หมู่ที่ ซอย ตำบล อำเภอ จังหวัด รหัสไปรษณีย์ ละติจูด ลองจิจูด)
  * Output : Object ของ location ที่พร้อมนำไปใช้ใน Prisma create/update
  */
-const mapLocation = (loc: LocationDto) => ({
+export const mapLocation = (loc: LocationDto) => ({
   houseNumber: loc.houseNumber,
   villageNumber: loc.villageNumber ?? null,
   alley: loc.alley ?? null,
@@ -76,15 +76,8 @@ export async function checkMember(member: number[], communityId: number) {
  * Output : Community object ที่ถูกสร้างใหม่ พร้อม relation (location, homestays, stores, members)
  */
 export async function createCommunity(community: CommunityDto) {
-  const {
-    location,
-    homestay,
-    store,
-    adminId,
-    communityImage,
-    member,
-    ...communityData
-  } = community;
+  const { location, adminId, communityImage, member, ...communityData } =
+    community;
 
   return prisma.$transaction(async (transaction) => {
     // check admin
