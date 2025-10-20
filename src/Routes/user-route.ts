@@ -54,11 +54,11 @@ userRoutes.put(
 ); 
 
 userRoutes.post(
-    "/change-password",
+    "/account/change-password/me",
     authMiddleware,
     allowRoles("superadmin", "admin", "member", "tourist"),
     validateDto(changePasswordDto),
     changePassword
-); 
+  );
 
 export default userRoutes;
