@@ -147,3 +147,50 @@ export async function getStoreById(storeId: number) {
     },
   });
 }
+
+
+/*
+ * ฟังก์ชัน : deleteStore
+ * รายละเอียด :
+ *   ทำการ Soft Delete ร้านค้า (ไม่ลบจริง) โดยตั้งค่า isDeleted = true และเก็บเวลาที่ลบใน deleteAt
+ * Input :
+ *   - storeId : รหัสร้านค้า
+ *   - user : ข้อมูลผู้ใช้ (ใช้ตรวจสอบสิทธิ์)
+ * Output :
+ *   - ร้านค้าที่ถูกลบ
+ */
+export async function deleteStore(storeId: number, user: UserPayload) {
+  //ตรวจสอบสิทธิ์
+  if (user.role.toLowerCase() !== "superadmin" && user.role.toLowerCase() !== "admin") {
+    throw new Error("คุณไม่มีสิทธิ์ลบร้านค้า");
+  }
+
+  //ตรวจสอบว่าร้านค้านี้มีอยู่หรือไม่
+  const findStore = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: { community: true },
+  });
+
+  if (!findStore) {
+    throw new Error("ไม่พบร้านค้าที่ต้องการลบ");
+  }
+
+  //ถ้าเป็น admin ต้องเป็นเจ้าของชุมชนนั้นเท่านั้นถึงจะลบได้
+  if (
+    user.role.toLowerCase() === "admin" &&
+    findStore.community.adminId !== user.id
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์ลบร้านค้าของชุมชนอื่น");
+  }
+
+  //Soft delete โดยตั้ง isDeleted = true และบันทึกเวลา deleteAt
+  const deleted = await prisma.store.update({
+    where: { id: storeId },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+
+  return deleted;
+}

@@ -63,7 +63,9 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = JSON.parse(req.body.data);
+    const body = req.body as Record<string, any>;
+    const parsed = JSON.parse(body.data);
+
 
     // รวมไฟล์พร้อม type
     const storeImage = [
@@ -136,7 +138,9 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = JSON.parse(req.body.data);
+    const body = req.body as Record<string, any>;
+    const parsed = JSON.parse(body.data);
+
 
     // รวมไฟล์พร้อม type
     const storeImage = [
@@ -176,3 +180,44 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
     return createErrorResponse(res, 400, error.message);
   }
 };
+
+
+/*
+ * ฟังก์ชัน : deleteStoreDto
+ * รายละเอียด :
+ *   ใช้ตรวจสอบพารามิเตอร์ storeId จาก URL
+ */
+export const deleteStoreDto = {
+  params: IdParamDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : deleteStore
+ * รายละเอียด :
+ *   ลบร้านค้าแบบ Soft Delete (ตั้งค่า isDeleted = true และบันทึกเวลา deleteAt)
+ * Input :
+ *   - req.params.storeId : string (รหัสร้านค้า)
+ * Output :
+ *   - 200 : ลบร้านค้าสำเร็จ
+ *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ */
+export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
+
+    const storeId = Number(req.params.storeId);
+    const result = await StoreService.deleteStore(storeId, req.user);
+
+    return createResponse(res, 200, "Store deleted successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+
