@@ -1,7 +1,7 @@
 /*
- * คำอธิบาย : Routes สำหรับ “คำขอแพ็กเกจ”
- * Base path : /api/super/package-requests
- * Access     : superadmin, admin
+ * คำอธิบาย : Routes สำหรับดึงรายการคำขอแพ็กเกจ (เฉพาะฟิลด์ที่จำเป็น)
+ * Path : /api/super/package-requests
+ * Access : superadmin, admin
  */
 
 import { Router } from "express";
@@ -12,24 +12,18 @@ import {
     getPackageRequestAllDto,
     patchApprovePackageRequest,
     patchRejectPackageRequest,
-    patchRejectPackageRequestDto,
 } from "~/Controllers/package-request-controller.js";
 
 const packageRequestRoutes = Router();
-
-/** DTO ภายในไฟล์สำหรับ approve (ตรวจ params ตาม CS) */
-const patchApprovePackageRequestDto = {
-    params: { packageId: "number" },
-};
 
 /**
  * ดึงรายการคำขอ (list)
  */
 packageRequestRoutes.get(
-    "/",
-    validateDto(getPackageRequestAllDto),
+    "/super/package-requests",
     authMiddleware,
     allowRoles("superadmin", "admin"),
+    validateDto(getPackageRequestAllDto),
     getPackageRequestAll
 );
 
@@ -37,8 +31,7 @@ packageRequestRoutes.get(
  * อนุมัติคำขอ
  */
 packageRequestRoutes.patch(
-    "/:packageId/approve",
-    validateDto(patchApprovePackageRequestDto),
+    "/super/package-requests/:packageId/approve",
     authMiddleware,
     allowRoles("superadmin", "admin"),
     patchApprovePackageRequest
@@ -48,11 +41,9 @@ packageRequestRoutes.patch(
  * ปฏิเสธคำขอ
  */
 packageRequestRoutes.patch(
-    "/:packageId/reject",
-    validateDto(patchRejectPackageRequestDto),
+    "/super/package-requests/:packageId/reject",
     authMiddleware,
     allowRoles("superadmin", "admin"),
     patchRejectPackageRequest
 );
-
 export default packageRequestRoutes;
