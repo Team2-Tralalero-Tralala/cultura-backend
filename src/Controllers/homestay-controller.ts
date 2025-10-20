@@ -1,41 +1,23 @@
+import * as HomestayService from "~/Services/homestay/homestay-service.js";
 import { IsNumberString } from "class-validator";
-import prisma from "~/Services/database-service.js"; // ✅ เพิ่มบรรทัดนี้
-import * as HomestayService from "~/Services/homestay/homstay-service.js"
+import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import {
   commonDto,
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
-import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import { PaginationDto } from "~/Services/pagination-dto.js";
 
 /*
- * คำอธิบาย : DTO สำหรับตรวจสอบค่า communityId ที่รับมาจาก params
- * Input : communityId (number)
- * Output : communityId ที่ถูกตรวจสอบแล้ว
+ * DTO สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
  */
 export class IdParamDto {
-  @IsNumberString()
-  communityId?: string;
+  @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลข" })
+  communityId?: string; // แก้เป็น optional
 }
 
-/*
- * คำอธิบาย : DTO สำหรับดึง homestay ทั้งหมดในชุมชน (เฉพาะ superadmin)
- * Input : params (communityId), query (page, limit)
- * Output : รายการ homestay ทั้งหมดในชุมชนนั้น
- */
-export const getHomestaysAllDto = {
-  params: IdParamDto,
-  query: PaginationDto,
-} satisfies commonDto;
+export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getHomestaysAll
- * อธิบาย : ดึง homestay ทั้งหมดในชุมชน (เฉพาะ superadmin)
- * Input :
- *   - req.user.id (จาก middleware auth)
- *   - req.params.communityId
- *   - req.query.page, req.query.limit
- * Output : JSON response พร้อม homestay ทั้งหมดในชุมชนนั้น
+ * ฟังก์ชัน Controller สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
  */
 export const getHomestaysAll: TypedHandlerFromDto<
   typeof getHomestaysAllDto
@@ -43,31 +25,8 @@ export const getHomestaysAll: TypedHandlerFromDto<
   try {
     const userId = Number(req.user!.id);
     const communityId = Number(req.params.communityId);
-    const { page = 1, limit = 10 } = req.query;
-
-    const result = await HomestayService.getHomestaysAll(
-      userId,
-      communityId,
-      Number(page),
-      Number(limit)
-    );
-
-    // ✅ ดึงชื่อชุมชนจากฐานข้อมูล
-    const community = await prisma.community.findUnique({
-      where: { id: communityId },
-      select: { name: true },
-    });
-
-    const communityName = community
-      ? `${community.name} (ID: ${communityId})`
-      : `ID: ${communityId}`;
-
-    return createResponse(
-      res,
-      200,
-      `Homestays list in community ${communityName} retrieved successfully`,
-      result
-    );
+    const result = await HomestayService.getHomestaysAll(userId, communityId);
+    return createResponse(res, 200, "get homestay successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

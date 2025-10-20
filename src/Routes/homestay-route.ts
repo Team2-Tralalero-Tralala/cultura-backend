@@ -6,12 +6,12 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const homestayRoutes = Router();
 
 /*
- * คำอธิบาย : Route สำหรับดึง homestay ทั้งหมดในชุมชน (เฉพาะ superadmin)
+ * Route : ดึง homestay ทั้งหมดในชุมชน (เฉพาะ superadmin)
  * Method : GET
- * Path   : /super/community/:communityId/homestays/all
+ * Path   : /super/community/:communityId/homestays
  */
 homestayRoutes.get(
-  "/super/community/:communityId/homestays/all",
+  "/super/community/:communityId/homestays",
   validateDto(HomestayController.getHomestaysAllDto),
   authMiddleware,
   allowRoles("superadmin"),
