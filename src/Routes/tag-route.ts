@@ -14,21 +14,21 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const tagRoutes = Router();
 
 tagRoutes.post(
-    "/tags",
+    "/tag",
     validateDto(createTagDto),
     authMiddleware,
     allowRoles("superadmin"),
     createTag
 );
-tagRoutes.delete(
-    "/tags/:tagId",
+tagRoutes.patch(
+    "/tag/:tagId",
     validateDto(deleteTagByIdDto),
     authMiddleware,
     allowRoles("superadmin"),
     deleteTagById
 );
 tagRoutes.put(
-    "/tags/:tagId",
+    "/tag/:tagId",
     validateDto(editTagDto),
     authMiddleware,
     allowRoles("superadmin"),
