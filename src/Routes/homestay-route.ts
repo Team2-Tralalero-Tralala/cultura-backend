@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { validateDto } from "~/Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
+import { upload } from "~/Libs/uploadFile.js";
 
 import {
     createHomestayDto,
@@ -26,7 +27,8 @@ homestayRoutes.post(
     "/super/community/:communityId/homestay",
     authMiddleware,
     allowRoles("superadmin"),
-    validateDto(createHomestayDto),
+    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 10 },]),
+    // validateDto(createHomestayDto),
     createHomestay
 );
 
@@ -34,6 +36,7 @@ homestayRoutes.post(
     "/super/community/:communityId/homestay/bulk",
     authMiddleware,
     allowRoles("superadmin"),
+    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 10 },]),
     createHomestaysBulk
 );
 
@@ -48,7 +51,8 @@ homestayRoutes.put(
     "/super/homestay/edit/:homestayId",
     authMiddleware,
     allowRoles("superadmin"),
-    validateDto(editHomestayDto),
+    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 10 },]),
+    // validateDto(editHomestayDto),
     editHomestay
 );
 

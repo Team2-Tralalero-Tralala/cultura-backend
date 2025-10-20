@@ -25,17 +25,34 @@ export const createHomestayDto = {
 export const createHomestay = async (req: Request, res: Response) => {
     try {
         if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
-        const currentUserId = Number(req.user.id);
+
         const communityId = Number(req.params.communityId);
         if (!communityId) return createErrorResponse(res, 400, "communityId ต้องเป็นตัวเลข");
+
+        // ① รับไฟล์
+        const files = req.files as {
+            cover?: Express.Multer.File[];
+            gallery?: Express.Multer.File[];
+        };
+
+        // ② แปลง body จาก key "data"
+        const parsed = JSON.parse(req.body.data);
+
+        // ③ รวมไฟล์เป็น homestayImage (เหมือน createStore)
+        const homestayImage = [
+            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+        ];
+
         const result = await HomestayService.createHomestayBySuperAdmin(
-            currentUserId,
+            Number(req.user.id),
             communityId,
-            req.body as HomestayDto
+            { ...parsed, homestayImage } as HomestayDto
         );
-        return createResponse(res, 200, "Create Homestay Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 404, (error as Error).message);
+
+        return createResponse(res, 201, "Create Homestay Success", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
     }
 };
 
@@ -118,16 +135,30 @@ export const editHomestayDto = {
 export const editHomestay = async (req: Request, res: Response) => {
     try {
         if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
-        const currentUserId = Number(req.user.id);
+
         const id = Number(req.params.homestayId);
         if (!id) return createErrorResponse(res, 400, "ID must be a number");
+
+        const files = req.files as {
+            cover?: Express.Multer.File[];
+            gallery?: Express.Multer.File[];
+        };
+
+        const parsed = JSON.parse(req.body.data);
+
+        const homestayImage = [
+            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+        ];
+
         const result = await HomestayService.editHomestayBySuperAdmin(
-            currentUserId,
+            Number(req.user.id),
             id,
-            req.body as HomestayDto
+            { ...parsed, homestayImage } // service ฝั่งคุณจะลบรูปเก่า+สร้างใหม่ให้แล้ว
         );
+
         return createResponse(res, 200, "Homestay Updated", result);
-    } catch (error) {
-        return createErrorResponse(res, 404, (error as Error).message);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
     }
 };
