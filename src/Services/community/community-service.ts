@@ -4,7 +4,11 @@ import { LocationDto } from "../location/location-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 
 /*
- * ฟังก์ชันช่วยแปลง LocationDto → Prisma object
+ * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
+ * Input :
+ *   - loc (LocationDto) : ข้อมูลที่อยู่ของชุมชน
+ * Output :
+ *   - Object ที่พร้อมสำหรับสร้างหรืออัปเดตข้อมูลใน Prisma
  */
 export const mapLocation = (loc: LocationDto) => ({
   houseNumber: loc.houseNumber,
@@ -20,7 +24,13 @@ export const mapLocation = (loc: LocationDto) => ({
 });
 
 /*
- * ตรวจสอบว่า member ที่ส่งมามีอยู่จริงและมี role = member
+ * คำอธิบาย : ตรวจสอบว่า member ที่ส่งมามีอยู่จริงและมี role = member
+ * Input :
+ *   - memberIds (number[]) : รายการ id ของสมาชิกที่ต้องการตรวจสอบ
+ * Output :
+ *   - รายชื่อสมาชิกที่ตรวจสอบแล้วถูกต้อง (id, fname, lname)
+ * Exception :
+ *   - หากพบ id ที่ไม่ตรงหรือไม่ใช่ role:member จะโยน error พร้อม invalidIds กลับไป
  */
 export async function checkMember(memberIds: number[]) {
   const members = await prisma.user.findMany({
@@ -33,11 +43,11 @@ export async function checkMember(memberIds: number[]) {
   });
 
   if (members.length !== memberIds.length) {
-    const foundIds = members.map((m) => m.id);
+    const foundIds = members.map((member) => member.id);
     const invalidIds = memberIds.filter((id) => !foundIds.includes(id));
     throw {
       status: 400,
-      message: "มีสมาชิกบางรายไม่ถูกต้อง หรือไม่ใช่ role: member",
+      message: "มีสมาชิกบางรายไม่ถูกต้อง หรือไม่ใช่สมาชิก",
       invalidIds,
     };
   }
@@ -46,7 +56,15 @@ export async function checkMember(memberIds: number[]) {
 }
 
 /*
- * ฟังก์ชันสร้างชุมชนใหม่
+ * คำอธิบาย : ฟังก์ชันสำหรับสร้างข้อมูลชุมชนใหม่
+ * Input :
+ *   - community (CommunityDto) : ข้อมูลชุมชนที่รับมาจาก Controller
+ * Output :
+ *   - Object ของชุมชนที่ถูกสร้างพร้อมความสัมพันธ์ (location, admin, image)
+ * หมายเหตุ :
+ *   - ตรวจสอบ admin ว่ามีสิทธิ์ถูกต้อง (role = admin)
+ *   - ตรวจสอบชื่อและเลขทะเบียนซ้ำก่อนสร้าง
+ *   - รองรับการแนบไฟล์รูปภาพ (logo, cover, gallery)
  */
 export async function createCommunity(community: CommunityDto) {
   const {
@@ -113,13 +131,20 @@ export async function createCommunity(community: CommunityDto) {
       });
     }
 
-    console.log(communityMembers);
     return newCommunity;
   });
 }
 
 /*
- * ฟังก์ชันแก้ไขชุมชน
+ * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขข้อมูลของชุมชนที่มีอยู่
+ * Input :
+ *   - communityId (number) : รหัสชุมชนที่ต้องการแก้ไข
+ *   - community (CommunityDto) : ข้อมูลใหม่ของชุมชน
+ * Output :
+ *   - Object ของชุมชนที่อัปเดตแล้ว พร้อมความสัมพันธ์ทั้งหมด
+ * หมายเหตุ :
+ *   - ลบรูปภาพเก่าทั้งหมดแล้วสร้างใหม่ (deleteMany + create)
+ *   - ลบสมาชิกเดิมแล้วเพิ่มใหม่จาก communityMembers
  */
 export async function editCommunity(
   communityId: number,
@@ -154,10 +179,11 @@ export async function editCommunity(
         location: { update: mapLocation(location) },
         communityImage: {
           deleteMany: {},
-          create: communityImage?.map((img) => ({
-            image: img.image,
-            type: img.type,
-          })),
+          create:
+            communityImage?.map((img) => ({
+              image: img.image,
+              type: img.type,
+            })) ?? [],
         },
       },
       include: {
@@ -189,7 +215,13 @@ export async function editCommunity(
 }
 
 /*
- * ฟังก์ชันลบชุมชน (soft delete)
+ * คำอธิบาย : ฟังก์ชันสำหรับลบชุมชน (Soft Delete)
+ * Input :
+ *   - communityId (number) : รหัสของชุมชนที่ต้องการลบ
+ * Output :
+ *   - Object ของชุมชนที่ถูกเปลี่ยนสถานะ isDeleted = true
+ * หมายเหตุ :
+ *   - ไม่ลบข้อมูลจริงจากฐานข้อมูล แต่ตั้งค่าว่า "ลบแล้ว"
  */
 export async function deleteCommunityById(communityId: number) {
   const findCommunity = await prisma.community.findUnique({
@@ -204,7 +236,13 @@ export async function deleteCommunityById(communityId: number) {
 }
 
 /*
- * ฟังก์ชันดึงรายการชุมชนทั้งหมด (เฉพาะ superadmin)
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการชุมชนทั้งหมด (เฉพาะ SuperAdmin)
+ * Input :
+ *   - id (number) : รหัสผู้ใช้ที่ร้องขอ (ต้องเป็น SuperAdmin)
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการชุมชนพร้อม pagination
  */
 export const getCommunityAll = async (
   id: number,
@@ -256,7 +294,14 @@ export const getCommunityAll = async (
 };
 
 /*
- * ดึงรายละเอียดชุมชนแบบเต็ม (เฉพาะ superadmin)
+ * คำอธิบาย : ดึงรายละเอียดของชุมชนแบบเต็ม (เฉพาะ SuperAdmin)
+ * Input :
+ *   - userId (number) : รหัสผู้ใช้
+ *   - communityId (number) : รหัสชุมชนที่ต้องการดูรายละเอียด
+ * Output :
+ *   - Object ข้อมูลชุมชนพร้อมความสัมพันธ์ (location, member, image, store, homestay)
+ * หมายเหตุ :
+ *   - ตรวจสอบสิทธิ์ว่า user เป็น SuperAdmin เท่านั้น
  */
 export async function getCommunityDetailById(
   userId: number,
@@ -307,7 +352,11 @@ export async function getCommunityDetailById(
 }
 
 /*
- * ดึงข้อมูลชุมชนตามรหัส
+ * คำอธิบาย : ดึงข้อมูลชุมชนตามรหัส (ใช้ในหน้าแก้ไขข้อมูล)
+ * Input :
+ *   - communityId (number) : รหัสของชุมชน
+ * Output :
+ *   - Object ข้อมูลชุมชนพร้อม location, image, admin, members
  */
 export async function getCommunityById(communityId: number) {
   const community = await prisma.community.findFirst({
@@ -326,14 +375,16 @@ export async function getCommunityById(communityId: number) {
 }
 
 /*
- * ดึงรายการแอดมินที่ยังไม่ถูกผูกกับชุมชน
+ * คำอธิบาย : ดึงรายชื่อแอดมินที่ยังไม่ถูกผูกกับชุมชนใด
+ * Output :
+ *   - รายชื่อ admin (id, fname, lname)
  */
 export async function getUnassignedAdmins() {
   const assignedAdmins = await prisma.community.findMany({
     where: { isDeleted: false },
     select: { adminId: true },
   });
-  const assignedIds = assignedAdmins.map((c) => c.adminId);
+  const assignedIds = assignedAdmins.map((community) => community.adminId);
 
   return await prisma.user.findMany({
     where: {
@@ -347,8 +398,11 @@ export async function getUnassignedAdmins() {
 }
 
 /*
- * ดึงสมาชิกที่ยังไม่ถูกผูกกับชุมชนใด (ไม่นับชุมชนที่ถูกลบ)
+ * คำอธิบาย : ดึงรายชื่อสมาชิกที่ยังไม่ถูกผูกกับชุมชน (ไม่นับชุมชนที่ถูกลบ)
+ * Output :
+ *   - รายชื่อ member (id, fname, lname)
  */
+
 export async function getUnassignedMembers() {
   const deletedCommunityIds = (
     await prisma.community.findMany({
@@ -361,7 +415,7 @@ export async function getUnassignedMembers() {
     where: { communityId: { notIn: deletedCommunityIds } },
     select: { memberId: true },
   });
-  const assignedIds = memberIds.map((m) => m.memberId);
+  const assignedIds = memberIds.map((member) => member.memberId);
 
   return await prisma.user.findMany({
     where: {

@@ -20,9 +20,15 @@ export const createCommunityDto = {
 } satisfies commonDto;
 
 /*
- * คำอธิบาย : ฟังก์ชันสำหรับสร้างข้อมูลชุมชนใหม่
- * Input : req.body (community, location, homestay, store, member)
- * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกสร้าง
+ * คำอธิบาย : Controller สำหรับสร้างข้อมูลชุมชนใหม่
+ * Input :
+ *   - req.body.data (JSON string) : ข้อมูลฟอร์มของชุมชน
+ *   - req.files : ไฟล์แนบ (logo, cover, gallery, video)
+ * Output :
+ *   - JSON response พร้อมข้อมูลของชุมชนที่ถูกสร้างสำเร็จ
+ * หมายเหตุ :
+ *   - ใช้ multipart/form-data ในการส่งข้อมูล
+ *   - แนบไฟล์จาก Multer ไปสร้าง communityImage[]
  */
 export const createCommunity: TypedHandlerFromDto<
   typeof createCommunityDto
@@ -66,10 +72,15 @@ export class IdParamDto {
   @IsNumberString()
   communityId?: string;
 }
+
 /*
- * คำอธิบาย : DTO สำหรับแก้ไขข้อมูลชุมชน
- * Input : body (editCommunityDto), params (IdParamDto)
- * Output : ข้อมูลชุมชนที่ถูกแก้ไข
+ * คำอธิบาย : Controller สำหรับแก้ไขข้อมูลของชุมชนที่มีอยู่
+ * Input :
+ *   - req.params.communityId : รหัสชุมชนที่ต้องการแก้ไข
+ *   - req.body.data : ข้อมูลใหม่ของชุมชน
+ *   - req.files : ไฟล์แนบ (logo, cover, gallery, video)
+ * Output :
+ *   - JSON response พร้อมข้อมูลชุมชนที่ถูกอัปเดตสำเร็จ
  */
 export const editCommunityDto = {
   body: CommunityDto,
