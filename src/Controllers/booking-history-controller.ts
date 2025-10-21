@@ -12,9 +12,11 @@ import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
  *   - 400 Bad Request : กรณีเกิด error เมื่อไม่พบข้อมูล
  */
 
+
 export const getDetailBooking = async (req: Request, res: Response) => {
   try {
     const bookingId = Number(req.params.id);
+    // ฟังก์ชัน getDetailBookingById จาก bookingService เพื่อดึงข้อมูลการจอง
     const detailBooking = await bookingService.getDetailBookingById(bookingId);
     return createResponse(
       res,

@@ -21,13 +21,12 @@ import prisma from "./database-service.js";
  */
 
 export const getDetailBookingById = async (id: number) => {
-  // ✅ แปลงและตรวจสอบ ID
+  // แปลงและตรวจสอบ ID
   const numberId = Number(id);
   if (isNaN(numberId)) {
     throw new Error("Incorrect ID");
   }
 
-  // ✅ ค้นหาข้อมูลการจองจากฐานข้อมูล
   const booking = await prisma.bookingHistory.findUnique({
     where: { id: numberId, status: BookingStatus.PENDING },
     include: {
@@ -51,11 +50,9 @@ export const getDetailBookingById = async (id: number) => {
     },
   });
 
-  // ✅ ตรวจสอบว่าพบข้อมูลหรือไม่
   if (!booking) {
     throw new Error("Booking not found");
   }
 
-  // ✅ ส่งข้อมูลกลับ
   return booking;
 };
