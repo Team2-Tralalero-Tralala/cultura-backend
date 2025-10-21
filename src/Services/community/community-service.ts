@@ -328,9 +328,23 @@ export async function getCommunityDetailById(
     include: {
       communityImage: true,
       location: true,
-      packages: true,
-      homestays: true,
-      stores: true,
+
+      packages: {
+        include: {
+          packageFile: true,
+        },
+      },
+      homestays: {
+        include: {
+          homestayImage: true,
+        },
+      },
+
+      stores: {
+        include: {
+          storeImage: true,
+        },
+      },
       communityMembers: {
         include: {
           user: {
