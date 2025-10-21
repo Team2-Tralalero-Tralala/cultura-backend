@@ -4,12 +4,10 @@ import {
   MaxLength,
   ValidateNested,
   IsEnum,
-  IsOptional,
 } from "class-validator";
 import { LocationDto } from "../location/location-dto.js";
 import { ImageType } from "@prisma/client";
 import { Type } from "class-transformer";
-
 
 export class StoreDto {
   @IsString({ message: "ชื่อร้านต้องเป็นข้อความ" })
@@ -23,13 +21,17 @@ export class StoreDto {
   detail: string;
 
   @ValidateNested()
+  @IsNotEmpty({ message: "ต้องใส่ที่อยู่" })
   @Type(() => LocationDto)
   location: LocationDto;
 
+  @IsNotEmpty({ message: "ต้องใส่ tag" })
+  tagStores: number[];
+
   @ValidateNested()
   @Type(() => StoreImageDto)
-  @IsOptional()
-  storeImage?: StoreImageDto[];
+  @IsNotEmpty({ message: "ต้องใส่รูปภาพ" })
+  storeImage: StoreImageDto[];
 }
 
 export class StoreImageDto {
@@ -39,5 +41,4 @@ export class StoreImageDto {
 
   @IsEnum(ImageType)
   type: ImageType;
-
 }
