@@ -5,6 +5,7 @@ import bookingHistoriesRoutes from "./booking-history-route.js";
 import communityRoutes from "./community-route.js";
 import dashboardRoutes from "./dashboard-route.js";
 import logRoutes from "./log-route.js";
+import homestayRoutes from "./homestay-route.js";
 import packageRoutes from "./package-route.js";
 import accountRoutes from "./account-routes.js";
 import packageRequestsRoutes from "./package-request-route.js"
@@ -16,9 +17,10 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/booking", bookingHistoriesRoutes);
-rootRouter.use("/users", userRoutes);
 rootRouter.use("/packages", packageRoutes);
+rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
+rootRouter.use(homestayRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
 
