@@ -1,7 +1,4 @@
-import type { UserPayload } from "~/Libs/Types/index.js";
-import { mapLocation } from "../community/community-service.js";
 import prisma from "../database-service.js";
-import type { StoreDto } from "./store-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 
 /**
@@ -17,14 +14,27 @@ import type { PaginationResponse } from "../pagination-dto.js";
  */
 
 export const getAllStore = async (
+    userId: number,
     communityId: number,
     page: number = 1,
     limit: number = 10
 ): Promise<PaginationResponse<any>> => {
-    if (!Number.isInteger(communityId)) {
-        throw new Error("Community ID must be a number");
+    if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
+        throw new Error("ID must be a number");
     }
-
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true},
+    });
+    if (!user) throw new Error("User not found");
+    if (user.role?.name?.toLowerCase() != "superadmin"){
+        throw new Error("Forbidden");
+    }
+    const community = await prisma.community.findFirst({
+        where: {id: communityId, isDeleted: false},
+    });
+    if(!community) throw new Error("Community not found");
+    
     const skip = (page - 1) * limit;
 
     const totalCount = await prisma.store.count({
@@ -47,14 +57,14 @@ export const getAllStore = async (
             name: true,
             detail: true,
             tagStores: {
-                select: {
+                select:{
                     tag: {
                         select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
-                },
+                            id:true,
+                            name:true
+                        }
+                    }
+                }
             },
         },
     });

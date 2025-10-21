@@ -1,12 +1,12 @@
 import { IsNumberString } from "class-validator";
-import {
-    commonDto,
-    type TypedHandlerFromDto,
-} from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
+import {
+    commonDto,
+    type TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
 
 /*
  * ฟังก์ชัน : CommunityIdParamDto
@@ -41,12 +41,11 @@ export const getAllStore: TypedHandlerFromDto<
     typeof getAllStoreDto
 > = async (req, res) => {
     try {
+        const userId = Number(req.user!.id)
         const communityId = Number(req.params.communityId);
-        const { page = 1, limit = 10 } = req.query;
-
-        const result = await StoreService.getAllStore(communityId, page, limit);
-        return createResponse(res, 200, "All stores in Community", result);
-    } catch (error: any) {
-        return createErrorResponse(res, 400, error.message);
+        const result = await StoreService.getAllStore(userId, communityId);
+        return createResponse(res, 200, "get store successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
     }
 };
