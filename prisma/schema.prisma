@@ -62,6 +62,7 @@ enum PackageApproveStatus {
   PENDING
   APPROVE
   PENDING_SUPER
+  REJECTED
 }
 
 /**

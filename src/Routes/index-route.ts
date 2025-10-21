@@ -21,6 +21,7 @@ rootRouter.use("/logs", logRoutes);
 rootRouter.use("/package-requests", packageRequestsRoutes)
 
 rootRouter.use("/shared/logs", logRoutes);
+rootRouter.use(packageRequestRoutes);
 rootRouter.use(storeRoute);
 
 export default rootRouter;
