@@ -385,27 +385,54 @@ export async function getCommunityDetailById(
   if (user.role?.name?.toLowerCase() !== "superadmin")
     throw new Error("Forbidden");
 
-  // ใช้ findFirst เพื่อกัน soft-delete (findUnique ใส่เงื่อนไขอื่นไม่ได้)
-  const community = await prisma.community.findFirst({
-    where: { id: communityId, isDeleted: false },
-    include: {
-      communityImage: true,
-      location: true,
-      packages: true,
-      homestays: true,
-      stores: true,
-      member: {
-        select: {
-          id: true,
-          fname: true,
-          lname: true,
-          email: true,
-          roleId: true,
-          memberOfCommunity: true,
-        },
+ // ✅ ใช้ findFirst เพื่อกัน soft-delete (findUnique ใส่เงื่อนไขอื่นไม่ได้)
+const community = await prisma.community.findFirst({
+  where: { id: communityId, isDeleted: false },
+  include: {
+    // ✅ รูปภาพของชุมชน (COVER / LOGO / GALLERY / VIDEO)
+    communityImage: true,
+
+    // ✅ ดึงข้อมูลที่อยู่
+    location: true,
+
+    // ✅ ดึงแพ็กเกจ + รูปของแพ็กเกจ
+    packages: {
+      include: {
+        packageFile: true, // ← เพิ่มตรงนี้
       },
     },
-  });
+
+    // ✅ ดึงที่พัก + รูปของที่พัก
+    homestays: {
+      include: {
+        homestayImage: true, // ← เพิ่มตรงนี้
+      },
+    },
+
+    // ✅ ดึงร้านค้า + รูปของร้านค้า
+    stores: {
+      include: {
+        storeImage: true, // ← เพิ่มตรงนี้
+      },
+    },
+
+    // ✅ ดึงสมาชิก (ถ้ามีรูป profile จะโชว์ได้เลย)
+    member: {
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        email: true,
+        phone: true,
+        activityRole: true,
+        profileImage: true, // ← เพิ่มให้ส่งรูปโปรไฟล์มาด้วย
+        memberOfCommunity: true,
+        roleId: true,
+      },
+    },
+  },
+});
+
 
   if (!community) throw new Error("Community not found");
   return community;
