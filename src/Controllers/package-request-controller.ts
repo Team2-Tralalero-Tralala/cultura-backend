@@ -142,7 +142,7 @@ export const patchRejectPackageRequest: TypedHandlerFromDto<
     } catch (error) {
         return createErrorResponse(res, 400, (error as Error).message);
     }
-  
+}
 import { getDetailRequestById } from "~/Services/package/package-request-service.js";
 
 
