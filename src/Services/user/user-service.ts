@@ -221,3 +221,29 @@ export async function unblockAccount(userId: number) {
   if (!user) throw new Error("User not found");
   return user;
 }
+
+
+/* 
+ * Function: createAccount
+ * Input : payload (object) → ข้อมูลผู้ใช้ เช่น username, email, password, roleId, ฯลฯ
+ *         pathFile (string) → path ของไฟล์รูปโปรไฟล์
+ * Output: ข้อมูลผู้ใช้ที่สร้างใหม่ (id, username, email, status)
+ */
+export async function createAccount(payload: any, pathFile: string) {
+  const user = await prisma.user.create({
+    data: {
+      ...payload,
+      // roleId: Number(payload.roleId),
+      // memberOfCommunity: Number(payload.memberOfCommunity),
+      profileImage: pathFile
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      status: true,
+    },
+  });
+
+  return user;
+}
