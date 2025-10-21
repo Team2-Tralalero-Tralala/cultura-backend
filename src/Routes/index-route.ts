@@ -6,7 +6,6 @@ import communityRoutes from "./community-route.js";
 import dashboardRoutes from "./dashboard-route.js";
 import logRoutes from "./log-route.js";
 import packageRoutes from "./package-route.js";
-import logRoutes from "./log-route.js";
 import accountRoutes from "./account-routes.js";
 import packageRequestsRoutes from "./package-request-route.js"
 import storeRoute from "./store-route.js";
