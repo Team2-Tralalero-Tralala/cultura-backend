@@ -269,7 +269,6 @@ async function main() {
       fname: "Member",
       lname: "One",
       phone: "0810000005",
-      memberOfCommunity: community1.id,
     },
   });
   const member2 = await prisma.user.create({
@@ -281,8 +280,14 @@ async function main() {
       fname: "Member",
       lname: "Two",
       phone: "0810000006",
-      memberOfCommunity: community2.id,
       activityRole: "ผู้นำเที่ยว",
+    },
+  });
+
+  const communityMember1 = await prisma.communityMembers.create({
+    data: {
+      communityId: 1,
+      memberId: member1.id,
     },
   });
 
