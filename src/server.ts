@@ -2,6 +2,7 @@ import express from "express";
 import rootRouter from "./Routes/index-route.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import userRouter from "./Routes/user-route.js";
 
 const app = express();
 app.use(cookieParser());
