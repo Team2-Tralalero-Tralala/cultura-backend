@@ -23,6 +23,7 @@ export const homestayDataByID = async (req: Request, res: Response) => {
     if (!homestayDataByID) {
       return createErrorResponse(res, 400, "Homestay not found");
     }
+    // ถ้าลบสำเร็จ ให้ส่งข้อมูลกลับพร้อมข้อความยืนยัน
     return createResponse(
       res,
       200,

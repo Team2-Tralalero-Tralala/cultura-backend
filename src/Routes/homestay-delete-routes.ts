@@ -4,7 +4,7 @@ const router = express.Router();
 
 /*
  * คำอธิบาย : Route สำหรับ Super Admin ลบข้อมูลโฮมสเตย์
- * Path : PATCH /api/homestaydata/:id
+ * Path : PATCH/api/homestaydata/:id
  */
 
 router.patch("/:id", homestayDataByID);

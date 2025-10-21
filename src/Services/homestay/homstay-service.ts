@@ -121,16 +121,16 @@ export const getHomestaysAll = async (
     };
   }
 
-  // ====== ตรวจสอบว่าชุมชนมีอยู่จริง ======
+  // ตรวจสอบว่าชุมชนมีอยู่จริง
   const community = await prisma.community.findUnique({
     where: { id: communityId, isDeleted: false },
   });
   if (!community) throw new Error("Community not found.");
 
-  // ====== คำนวณ pagination ======
+  // คำนวณ pagination 
   const skip = (page - 1) * limit;
 
-  // ====== นับจำนวนข้อมูลทั้งหมด (เฉพาะที่ไม่ถูกลบ) ======
+  // นับจำนวนข้อมูลทั้งหมด (เฉพาะที่ไม่ถูกลบ)
   const totalCount = await prisma.homestay.count({
     where: {
       communityId,
@@ -138,7 +138,7 @@ export const getHomestaysAll = async (
     },
   });
 
-  // ====== ดึงข้อมูล homestay (เฉพาะที่ไม่ถูกลบ) ======
+  // ดึงข้อมูล homestay (เฉพาะที่ไม่ถูกลบ) 
   const homestays = await prisma.homestay.findMany({
     where: {
       communityId,
@@ -157,7 +157,7 @@ export const getHomestaysAll = async (
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ====== ส่งผลลัพธ์กลับ ======
+  // ส่งผลลัพธ์กลับ 
   return {
     data: homestays,
     pagination: {

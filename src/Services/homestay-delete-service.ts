@@ -8,6 +8,7 @@ import prisma from "./database-service.js";
 
 export const homestayDataByID = async (id: number) => {
   const numberId = Number(id);
+  
   if (isNaN(numberId)) {
     throw new Error("Incorrect ID");
   }
@@ -16,9 +17,12 @@ export const homestayDataByID = async (id: number) => {
     where: { id: numberId },
   });
 
+  // ถ้าไม่พบข้อมูลโฮมสเตย์ ให้แจ้ง error
   if (!homestay) {
     throw new Error("Homestay not found");
   }
+
+  // isDeleted = true และบันทึกเวลาที่ลบ (deleteAt)
   return await prisma.homestay.update({
     where: { id: numberId },
     data: {
