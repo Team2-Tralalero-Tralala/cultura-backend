@@ -17,7 +17,7 @@ const tagRoutes = Router();
  * คำอธิบาย : route สำหรับสร้างประเภทหรือแท็ก
  */
 tagRoutes.post(
-    "/tag",
+    "/super/tag",
     validateDto(createTagDto),
     authMiddleware,
     allowRoles("superadmin"),
@@ -28,7 +28,7 @@ tagRoutes.post(
  * คำอธิบาย : route สำหรับลบประเภทหรือแท็ก
  */
 tagRoutes.patch(
-    "/tag/:tagId",
+    "/super/tag/:tagId",
     validateDto(deleteTagByIdDto),
     authMiddleware,
     allowRoles("superadmin"),
@@ -39,7 +39,7 @@ tagRoutes.patch(
  * คำอธิบาย : route สำหรับแก้ไขประเภทหรือแท็ก
  */
 tagRoutes.put(
-    "/tag/:tagId",
+    "/super/tag/:tagId",
     validateDto(editTagDto),
     authMiddleware,
     allowRoles("superadmin"),
@@ -50,7 +50,7 @@ tagRoutes.put(
  * คำอธิบาย : route สำหรับดึงข้อมูลประเภทหรือแท็กมาแสดงทั้งหมด
  */
 tagRoutes.get(
-    "/shared/tags",
+    "/super/shared/tags",
     getAllTags
 );
 
