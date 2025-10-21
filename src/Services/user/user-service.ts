@@ -22,7 +22,7 @@ export async function getAccountAll(
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
 
-  // 🧩 Role-based condition
+  // Role-based condition
   if (user.role.toLowerCase() === "superadmin") {
     // เห็นทุกคน
   } else if (user.role.toLowerCase() === "admin") {
@@ -41,10 +41,12 @@ export async function getAccountAll(
     whereCondition.id = user.id; // member / tourist
   }
 
-  // ✅ ดึงเฉพาะผู้ใช้ที่มีสถานะ ACTIVE เท่านั้น
+  // ดึงเฉพาะผู้ใช้ที่มีสถานะ ACTIVE เท่านั้น
   whereCondition.status = "ACTIVE";
+  whereCondition.isDeleted = false;
+  whereCondition.deleteAt = null;
 
-  // 🔍 Search ชื่อ
+  // Search ชื่อ
   if (searchName) {
     whereCondition.OR = [
       { fname: { contains: searchName } },
@@ -53,7 +55,7 @@ export async function getAccountAll(
     ];
   }
 
-  // 🎭 Filter Role
+  // Filter Role
   if (filterRole && filterRole.toLowerCase() !== "all") {
     whereCondition.role = { name: filterRole };
   }
@@ -97,9 +99,9 @@ export async function getUserByStatus(
   searchName?: string
 ): Promise<PaginationResponse<any>> {
   const skip = (page - 1) * limit;
-  const whereCondition: any = { status };
+  const whereCondition: any = {};
 
-  // 🧩 Role-based visibility
+  // Role-based visibility
   if (user.role.toLowerCase() === "superadmin") {
     // เห็นทุกคน
   } else if (user.role.toLowerCase() === "admin") {
@@ -118,6 +120,11 @@ export async function getUserByStatus(
     whereCondition.id = user.id;
   }
 
+  // ดึงเฉพาะผู้ใช้ที่มีสถานะ BLOCKED เท่านั้น
+  whereCondition.status = "BLOCKED";
+  whereCondition.isDeleted = false;
+  whereCondition.deleteAt = null;
+  
   // 🔍 Search ชื่อ
   if (searchName) {
     whereCondition.OR = [
@@ -182,14 +189,14 @@ export async function deleteAccount(userId: number) {
   const findUser = await prisma.user.findUnique({ where: { id: userId } });
   if (!findUser) throw new Error("User not found");
 
-  try {
-    return await prisma.user.delete({ where: { id: userId } });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
-      throw new Error("Cannot delete user: user is still linked to other records");
-    }
-    throw error;
-  }
+  const deleteUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+  return deleteUser;
 }
 
 export async function blockAccount(userId: number) {
