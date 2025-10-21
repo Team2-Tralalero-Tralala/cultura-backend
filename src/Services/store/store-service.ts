@@ -121,7 +121,14 @@ export async function editStore(
     return newStore;
   });
 }
-
+/**
+ * ฟังก์ชัน : getStoreById
+ * คำอธิบาย : ดึงข้อมูลร้านค้าตามรหัสร้านค้า
+ * Input :
+ *   - storeId : รหัสร้านค้า
+ * Output :
+ *   - ข้อมูลร้านค้าที่พบ
+ */
 export async function getStoreById(storeId: number) {
   return prisma.store.findFirst({
     where: {
