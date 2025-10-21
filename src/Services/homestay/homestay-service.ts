@@ -218,62 +218,72 @@ export async function createHomestaysBulkBySuperAdmin(
     communityId: number,
     dataList: HomestayDto[]
 ) {
+    // --- ตรวจผู้ใช้และสิทธิ์ ---
     const me = await getUserOrFail(currentUserId);
     ensureSuperAdmin(me.role?.name);
+
+    // --- ตรวจว่ามี community เป้าหมายจริง ---
     await getCommunityOrFail(Number(communityId));
 
-    const results = await prisma.$transaction(async (tx) => {
-        const created: any[] = [];
-        for (const d of dataList) {
-            const loc = await tx.location.create({
-                data: {
-                    houseNumber: d.location.houseNumber,
-                    villageNumber: d.location.villageNumber ?? null,
-                    subDistrict: d.location.subDistrict,
-                    district: d.location.district,
-                    province: d.location.province,
-                    postalCode: d.location.postalCode,
-                    detail: d.location.detail ?? null,
-                    latitude: d.location.latitude,
-                    longitude: d.location.longitude,
-                },
-            });
+    // --- เตรียม operations สำหรับทรานแซคชันแบบ array (จะไม่มีตัวแปร tx ให้ implicit any) ---
+    const ops = dataList.map((d) => {
+        const tagIds = normalizeTagIdArray((d as any).tagHomestays);
 
-            const tagIds = normalizeTagIdArray((d as any).tagHomestays);
+        return prisma.homestay.create({
+            data: {
+                communityId: Number(communityId),
+                name: d.name,
+                type: d.type,
+                guestPerRoom: d.guestPerRoom,
+                totalRoom: d.totalRoom,
+                facility: d.facility,
 
-            const hs = await tx.homestay.create({
-                data: {
-                    communityId: Number(communityId),
-                    locationId: loc.id,
-                    name: d.name,
-                    type: d.type,
-                    guestPerRoom: d.guestPerRoom,
-                    totalRoom: d.totalRoom,
-                    facility: d.facility,
-                    ...(Array.isArray(d.homestayImage) && d.homestayImage.length > 0
-                        ? {
-                            homestayImage: {
-                                create: d.homestayImage.map((f) => ({
-                                    image: f.image,
-                                    type: f.type,
-                                })),
-                            },
-                        }
-                        : {}),
-                    ...(tagIds.length > 0
-                        ? {
-                            tagHomestays: {
-                                create: tagIds.map((tagId) => ({ tagId })),
-                            },
-                        }
-                        : {}),
+                // ----- สร้าง location แบบ nested (ไม่ต้อง create แยกก่อน) -----
+                location: {
+                    create: {
+                        houseNumber: d.location.houseNumber,
+                        villageNumber: d.location.villageNumber ?? null,
+                        subDistrict: d.location.subDistrict,
+                        district: d.location.district,
+                        province: d.location.province,
+                        postalCode: d.location.postalCode,
+                        detail: d.location.detail ?? null,
+                        latitude: d.location.latitude,
+                        longitude: d.location.longitude,
+                    },
                 },
-                include: { location: true, homestayImage: true, tagHomestays: { include: { tag: true } } },
-            });
-            created.push(hs);
-        }
-        return created;
+
+                // ----- แนบรูป homestay แบบ nested (ถ้ามี) -----
+                ...(Array.isArray(d.homestayImage) && d.homestayImage.length > 0
+                    ? {
+                        homestayImage: {
+                            create: d.homestayImage.map((f: HomestayImageDto) => ({
+                                image: f.image,
+                                type: f.type,
+                            })),
+                        },
+                    }
+                    : {}),
+
+                // ----- แนบแท็ก homestay แบบ nested (ถ้ามี) -----
+                ...(tagIds.length > 0
+                    ? {
+                        tagHomestays: {
+                            create: tagIds.map((tagId) => ({ tagId })),
+                        },
+                    }
+                    : {}),
+            },
+            include: {
+                location: true,
+                homestayImage: true,
+                tagHomestays: { include: { tag: true } },
+            },
+        });
     });
+
+    // --- รันทรานแซคชันแบบ array form (atomic ทั้งชุด) ---
+    const results = await prisma.$transaction(ops);
     return results;
 }
 
