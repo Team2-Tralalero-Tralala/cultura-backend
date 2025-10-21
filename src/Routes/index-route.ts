@@ -24,6 +24,7 @@ rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
 
 rootRouter.use("/shared/logs", logRoutes);
+rootRouter.use(homestayRoutes)
 rootRouter.use(packageRequestsRoutes);
 rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);

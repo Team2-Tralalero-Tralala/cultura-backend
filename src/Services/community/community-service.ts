@@ -359,7 +359,24 @@ export async function getCommunityDetailById(
         },
       },
     },
-  });
+
+    // ✅ ดึงสมาชิก (ถ้ามีรูป profile จะโชว์ได้เลย)
+    member: {
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        email: true,
+        phone: true,
+        activityRole: true,
+        profileImage: true, // ← เพิ่มให้ส่งรูปโปรไฟล์มาด้วย
+        memberOfCommunity: true,
+        roleId: true,
+      },
+    },
+  },
+});
+
 
   if (!community) throw new Error("Community not found");
   return community;
