@@ -125,7 +125,7 @@ export async function getUserByStatus(
   whereCondition.isDeleted = false;
   whereCondition.deleteAt = null;
   
-  // 🔍 Search ชื่อ
+  // Search ชื่อ
   if (searchName) {
     whereCondition.OR = [
       { fname: { contains: searchName } },
@@ -163,9 +163,9 @@ export async function getUserByStatus(
 
 /*
  * ฟังก์ชัน : getUserById / block / unblock / delete
- * คงเหมือนเดิม
  */
 
+// คำอธิบาย : ดึงข้อมูลผู้ใช้ตาม ID
 export async function getUserById(userId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -185,6 +185,7 @@ export async function getUserById(userId: number) {
   return user;
 }
 
+// คำอธิบาย : ลบบัญชีผู้ใช้ (soft delete)
 export async function deleteAccount(userId: number) {
   const findUser = await prisma.user.findUnique({ where: { id: userId } });
   if (!findUser) throw new Error("User not found");
@@ -199,6 +200,7 @@ export async function deleteAccount(userId: number) {
   return deleteUser;
 }
 
+// คำอธิบาย : บล็อกบัญชีผู้ใช้
 export async function blockAccount(userId: number) {
   const user = await prisma.user.update({
     where: { id: userId },
@@ -209,6 +211,7 @@ export async function blockAccount(userId: number) {
   return user;
 }
 
+// คำอธิบาย : ปลดบล็อกบัญชีผู้ใช้
 export async function unblockAccount(userId: number) {
   const user = await prisma.user.update({
     where: { id: userId },

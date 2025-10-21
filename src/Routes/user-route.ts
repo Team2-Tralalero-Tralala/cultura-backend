@@ -48,7 +48,7 @@ userRoutes.get(
 userRoutes.get(
   "/super/users/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin", "member"),
+  allowRoles("superadmin", "admin"),
   validateDto(getUserByIdDto),
   getUserById
 );

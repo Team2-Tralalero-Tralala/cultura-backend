@@ -78,6 +78,7 @@ export const deleteAccountByIdDto = { params: IdParamDto } satisfies commonDto;
 export const blockAccountByIdDto = { params: IdParamDto } satisfies commonDto;
 export const unblockAccountByIdDto = { params: IdParamDto } satisfies commonDto;
 
+// ดึงข้อมูลผู้ใช้ตาม ID
 export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
@@ -88,6 +89,7 @@ export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (re
   }
 };
 
+// ลบบัญชีผู้ใช้
 export const deleteAccountById: TypedHandlerFromDto<typeof deleteAccountByIdDto> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
@@ -98,6 +100,7 @@ export const deleteAccountById: TypedHandlerFromDto<typeof deleteAccountByIdDto>
   }
 };
 
+// บล็อกบัญชีผู้ใช้
 export const blockAccountById: TypedHandlerFromDto<typeof blockAccountByIdDto> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
@@ -108,6 +111,7 @@ export const blockAccountById: TypedHandlerFromDto<typeof blockAccountByIdDto> =
   }
 };
 
+// ปลดบล็อกบัญชีผู้ใช้
 export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDto> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
