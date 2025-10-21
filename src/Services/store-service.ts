@@ -1,28 +1,38 @@
-import { PackagePublishStatus } from "@prisma/client";
 import prisma from "./database-service.js";
 
 /*
- * ฟังก์ชัน : getDraftPackage
- * คำอธิบาย : ดึงแพ็กเกจที่เป็น DRAFT เท่านั้น และเลือกเฉพาะข้อมูลสำคัญ
- * Output : คืนชื่อแพ็กเกจ, ชื่อชุมชน, ชื่อผู้ดูแล, สถานะแพ็กเกจ
+ * ฟังก์ชัน : getStoreById
+ * คำอธิบาย : ดึงข้อมูลร้านค้าพร้อมรูปภาพทั้งหมด และความสัมพันธ์อื่น ๆ เช่นแท็ก ชุมชน ที่ตั้ง
  */
-export async function getStoreById(createById: number) {
+export async function getStoreById(storeId: number) {
   const store = await prisma.store.findUnique({
-    where: {
-      id: createById,
-    },
-    select: {
-      id: true,
-      name: true,
-      detail: true,
-      tagStores: {
+    where: { id: storeId },
+    include: {
+      // ✅ ชื่อ relation ต้องตรงกับ schema (storeImage)
+      storeImgae: {
         select: {
-          tag: { select: { name: true } },
+          id: true,
+          image: true,
+          type: true,
         },
       },
+      // ดึงแท็กร้าน (tagStores → tag)
+      tagStores: {
+        select: {
+          tag: { select: { id: true, name: true } },
+        },
+      },
+      // ดึงชื่อชุมชน
+      community: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      // ดึงตำแหน่งที่ตั้ง (ถ้ามี latitude, longitude)
+      location: true,
     },
   });
 
   return store;
 }
-   

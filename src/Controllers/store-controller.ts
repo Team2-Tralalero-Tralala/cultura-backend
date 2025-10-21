@@ -18,7 +18,7 @@ export const getStoreById: TypedHandlerFromDto<typeof storeDto> = async (
     return createResponse(
       res,
       200,
-      "Fetched draft package successfully",
+      "Fetched store successfully",
       result
     );
   } catch (error) {
