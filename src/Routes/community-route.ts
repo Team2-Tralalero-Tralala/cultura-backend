@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as CommunityController from "~/Controllers/community-controller.js";
+import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
@@ -7,16 +8,28 @@ const communityRoutes = Router();
 
 communityRoutes.post(
   "/super/community",
-  validateDto(CommunityController.createCommunityDto),
+  // validateDto(CommunityController.createCommunityDto),
   authMiddleware,
   allowRoles("superadmin"),
+  upload.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
   CommunityController.createCommunity
 );
 communityRoutes.put(
   "/super/community/:communityId",
-  validateDto(CommunityController.editCommunityDto),
+  // validateDto(CommunityController.editCommunityDto),
   authMiddleware,
   allowRoles("superadmin"),
+  upload.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
   CommunityController.editCommunity
 );
 communityRoutes.patch(

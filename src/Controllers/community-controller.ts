@@ -28,7 +28,29 @@ export const createCommunity: TypedHandlerFromDto<
   typeof createCommunityDto
 > = async (req, res) => {
   try {
-    const result = await CommunityService.createCommunity(req.body);
+    const files = req.files as {
+      logo?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+    const parsed = JSON.parse(req.body.data);
+
+    const communityImage = [
+      ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
+
+      ...(files.cover?.[0]
+        ? [{ image: files.cover[0].path, type: "COVER" }]
+        : []),
+
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
+      ...(files.video?.map((f) => ({ image: f.path, type: "VIDEO" })) || []),
+    ];
+    const result = await CommunityService.createCommunity({
+      ...parsed,
+      communityImage,
+    });
     return createResponse(res, 201, "Community created successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message, error.invalidMembers);
@@ -64,7 +86,29 @@ export const editCommunity: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const communityId = Number(req.params.communityId);
-    const result = await CommunityService.editCommunity(communityId, req.body);
+    const files = req.files as {
+      logo?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+    const parsed = JSON.parse(req.body.data);
+
+    const communityImage = [
+      ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
+
+      ...(files.cover?.[0]
+        ? [{ image: files.cover[0].path, type: "COVER" }]
+        : []),
+
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
+      ...(files.video?.map((f) => ({ image: f.path, type: "VIDEO" })) || []),
+    ];
+    const result = await CommunityService.editCommunity(communityId, {
+      ...parsed,
+      communityImage,
+    });
     return createResponse(res, 200, "Update community successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message, error.invalidMembers);
