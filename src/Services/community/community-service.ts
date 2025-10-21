@@ -442,7 +442,6 @@ export async function getUnassignedMembers() {
   });
 }
 
-
 /*
  * ฟังก์ชัน: getCommunityDetailByAdmin
  * คำอธิบาย: ดึงรายละเอียดชุมชนของ "แอดมินคนปัจจุบัน" (admin ของชุมชนนั้น)
@@ -472,26 +471,28 @@ export async function getCommunityDetailByAdmin(userId: number) {
 
   const community = await prisma.community.findFirst({
     where: { adminId: userId, isDeleted: false },
-     include: {
-    communityImage: true,
-    location: true,
-    packages: true,
-    homestays: true,
-    stores: true,
-    member: {
-      select: {
-        id: true,
-        fname: true,
-        lname: true,
-        email: true,
-        roleId: true,
-        memberOfCommunity: true,
-      }
-    }
-  },
-});
+    include: {
+      communityImage: true,
+      location: true,
+      packages: true,
+      homestays: true,
+      stores: true,
+      communityMembers: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fname: true,
+              lname: true,
+              email: true,
+              roleId: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
   if (!community) throw new Error("Community not found");
   return community;
 }
-
