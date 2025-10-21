@@ -8,7 +8,7 @@ import type { PaginationResponse } from "../pagination-dto.js";
  * Input : LocationDto (ข้อมูลที่อยู่ เช่น บ้านเลขที่ หมู่ที่ ซอย ตำบล อำเภอ จังหวัด รหัสไปรษณีย์ ละติจูด ลองจิจูด)
  * Output : Object ของ location ที่พร้อมนำไปใช้ใน Prisma create/update
  */
-const mapLocation = (loc: LocationDto) => ({
+export const mapLocation = (loc: LocationDto) => ({
   houseNumber: loc.houseNumber,
   villageNumber: loc.villageNumber ?? null,
   alley: loc.alley ?? null,
@@ -76,15 +76,8 @@ export async function checkMember(member: number[], communityId: number) {
  * Output : Community object ที่ถูกสร้างใหม่ พร้อม relation (location, homestays, stores, members)
  */
 export async function createCommunity(community: CommunityDto) {
-  const {
-    location,
-    homestay,
-    store,
-    adminId,
-    communityImage,
-    member,
-    ...communityData
-  } = community;
+  const { location, adminId, communityImage, member, ...communityData } =
+    community;
 
   return prisma.$transaction(async (transaction) => {
     // check admin
@@ -502,3 +495,57 @@ export async function getUnassignedMembers() {
   });
   return members;
 }
+
+
+/*
+ * ฟังก์ชัน: getCommunityDetailByAdmin
+ * คำอธิบาย: ดึงรายละเอียดชุมชนของ "แอดมินคนปัจจุบัน" (admin ของชุมชนนั้น)
+ * Input:
+ *   - userId (number): ผู้ใช้ที่เรียก (ต้องเป็น role=admin)
+ * Output:
+ *   - community + relations ของชุมชนที่ adminId = userId
+ * Error:
+ *   - "ID must be Number"
+ *   - "User not found"
+ *   - "Forbidden"
+ *   - "Community not found"
+ */
+export async function getCommunityDetailByAdmin(userId: number) {
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new Error("ID must be Number");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "admin") {
+    throw new Error("Forbidden");
+  }
+
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+     include: {
+    communityImage: true,
+    location: true,
+    packages: true,
+    homestays: true,
+    stores: true,
+    member: {
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        email: true,
+        roleId: true,
+        memberOfCommunity: true,
+      }
+    }
+  },
+});
+
+  if (!community) throw new Error("Community not found");
+  return community;
+}
+
