@@ -11,7 +11,7 @@ import {
  */
 export class IdParamDto {
   @IsNumberString()
-  homestayId?: string;
+  homestayId!: string;
 }
 
 /*
