@@ -9,6 +9,10 @@ import {
 } from "class-validator";
 
 export class CreateAccountDto {
+  // @IsOptional()
+  // @IsString()
+  // profileImage?: string | null;
+
   @IsInt()
   @IsPositive()
   roleId!: number;
@@ -70,6 +74,10 @@ export class CreateAccountDto {
 }
 
 export class EditAccountDto {
+  // @IsOptional()
+  // @IsString()
+  // profileImage?: string | null;
+
   @IsOptional()
   @IsString()
   @MinLength(1)

@@ -12,6 +12,7 @@
   import { CreateAccountDto, EditAccountDto } from "../Services/account/account-dto.js";
   import type { commonDto, TypedHandlerFromDto } from "../Libs/Types/TypedHandler.js";
   import type { Request, Response } from "express";
+import { log } from "console";
 
   /** ----------------------------- DTOs ----------------------------- **/
 
@@ -45,7 +46,9 @@
       const result = await AccountService.createAccount(req.body as CreateAccountDto);
       return createResponse(res, 201, "Account created successfully", result);
     } catch (error) {
+      console.error(error);
       const message = (error as Error).message;
+      
 
       // Map error messages to standard response
       switch (message) {
@@ -57,6 +60,7 @@
           return createErrorResponse(res, 409, "Duplicate data (username, email, or phone)");
         default:
           return createErrorResponse(res, 400, "Failed to create account");
+          
       }
     }
   };
