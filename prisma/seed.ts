@@ -431,8 +431,8 @@ async function main() {
       statusPackage: PackagePublishStatus.PUBLISH,
       startDate: new Date("2025-01-01"),
       dueDate: new Date("2025-01-05"),
-      openBookingAt: new Date("2025-01-01"),
-      closeBookingAt: new Date("2025-01-05"),
+      bookingOpenDate: new Date("2025-01-01"),
+      bookingCloseDate: new Date("2025-01-05"),
       facility: "Meals",
     },
   });

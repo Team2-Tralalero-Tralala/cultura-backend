@@ -1,51 +1,105 @@
+// Services/package/package-service.ts
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
 
-/*
- * คำอธิบาย : ฟังก์ชันสร้าง Package ใหม่ในระบบ
- * Input  : ข้อมูล PackageDto (communityId, overseerMemberId, location, name, ฯลฯ)
- * Output : ข้อมูล Package ที่ถูกสร้างใหม่
- */
+/* ============================================================================================
+ * Helpers (เก็บเฉพาะที่จำเป็น)
+ * ============================================================================================ */
+const toNull = <T>(v: T | undefined | null): T | null => (v ?? null);
+
+/** where เฉพาะ role + ซ่อนของที่ลบแล้ว (isDeleted = false) */
+function buildWhereForRole(user: any): any {
+    const base = { isDeleted: false };
+    switch (user?.role?.name) {
+        case "superadmin":
+            return base;
+        case "admin": {
+            const adminCommunityIds = user.communitiesAdmin.map((c: any) => c.id);
+            return { ...base, communityId: { in: adminCommunityIds } };
+        }
+        case "member":
+            return { ...base, overseerMemberId: user.id };
+        case "tourist":
+            return { ...base, statusApprove: "APPROVE", statusPackage: "PUBLISH" };
+        default:
+            // หาไม่เจออะไร
+            return { id: -1 };
+    }
+}
+
+function composeDateTimeIso(
+    dateStr: string,              // "yyyy-mm-dd"
+    timeStr?: string,             // "HH:mm"
+    useEndOfDayIfMissing = false
+): Date {
+    if (typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        throw new Error(`Invalid dateStr: ${dateStr}`);
+    }
+
+    const hhmm = (timeStr && /^\d{2}:\d{2}$/.test(timeStr))
+        ? timeStr
+        : (useEndOfDayIfMissing ? "23:59" : "00:00");
+
+    // ทำเป็น "YYYY-MM-DDTHH:mm:ss" (ไม่มี Z ⇒ ตีความเป็น local)
+    const isoLocal = `${dateStr}T${hhmm}:${useEndOfDayIfMissing && !timeStr ? "59" : "00"}`;
+    return new Date(isoLocal);
+}
+
+/* ============================================================================================
+ * Create
+ * ============================================================================================ */
 export const createPackage = async (data: PackageDto) => {
-    // ตรวจสอบว่า community มีจริง
-    const community = await prisma.community.findUnique({
-        where: { id: data.communityId }
-    });
-
-    if (!community) {
-        throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
+    // ตรวจ community (ถ้ามีส่งมา)
+    if (data.communityId !== undefined && data.communityId !== null) {
+        const community = await prisma.community.findUnique({
+            where: { id: Number(data.communityId) },
+        });
+        if (!community) throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
     }
 
-    // ตรวจสอบว่า overseerMemberId มีจริง
+    // ตรวจ overseer
     const overseer = await prisma.user.findUnique({
-        where: { id: data.overseerMemberId }
+        where: { id: Number(data.overseerMemberId) },
+        include: { memberOf: true },
     });
-    if (!overseer) {
-        throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
+    if (!overseer) throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
+
+    // ถ้าไม่ได้ส่ง communityId ให้อนุมานจากชุมชนของ overseer
+    const resolvedCommunityId =
+        data.communityId ?? overseer.memberOf?.id ?? null;
+    if (!resolvedCommunityId) {
+        throw new Error("ไม่พบชุมชนของผู้ดูแล แพ็กเกจต้องสังกัดชุมชน");
     }
 
-    // สร้าง location ใหม่
+    // สร้าง Location
     const location = await prisma.location.create({
         data: {
             houseNumber: data.location.houseNumber,
+            villageNumber: toNull(data.location.villageNumber),
+            alley: toNull(data.location.alley),
             subDistrict: data.location.subDistrict,
             district: data.location.district,
             province: data.location.province,
             postalCode: data.location.postalCode,
-            detail: data.location.detail,
+            detail: toNull(data.location.detail),
             latitude: data.location.latitude,
             longitude: data.location.longitude,
         },
     });
 
-    // สร้าง Package โดยผูกกับ location และเพิ่ม packageFile ถ้ามี
-    return await prisma.package.create({
+    // จัดการวันเวลาเริ่ม-สิ้นสุด (รองรับ startTime/endTime ถ้ามี)
+    const startAt = composeDateTimeIso(data.startDate, (data as any).startTime);
+    const dueAt = composeDateTimeIso(data.dueDate, (data as any).endTime, true);
+
+    // NOTE: schema ใช้ bookingOpenDate/bookingCloseDate
+    // ใน DTO สร้างยังไม่มี field เปิด/ปิดจอง → ไม่ set (คงเป็น null)
+    return prisma.package.create({
         data: {
-            communityId: data.communityId,
+            communityId: Number(resolvedCommunityId),
             locationId: location.id,
-            overseerMemberId: data.overseerMemberId,
-            createById: data.createById,
+            overseerMemberId: Number(data.overseerMemberId),
+            createById: data.createById ?? Number(data.overseerMemberId),
             name: data.name,
             description: data.description,
             capacity: data.capacity,
@@ -53,236 +107,431 @@ export const createPackage = async (data: PackageDto) => {
             warning: data.warning,
             statusPackage: data.statusPackage,
             statusApprove: data.statusApprove,
-            startDate: new Date(data.startDate),
-            dueDate: new Date(data.dueDate),
+            startDate: startAt,
+            dueDate: dueAt,
+            // bookingOpenDate: undefined,
+            // bookingCloseDate: undefined,
             facility: data.facility,
-
-            // ใช้ conditional spread แทน undefined
-            ...(data.packageFile && {
-                packageFile: {
-                    create: data.packageFile.map((file: any) => ({
-                        filePath: file.filePath,
-                        type: file.type,
-                    })),
-                },
-            }),
+            ...(Array.isArray((data as any).packageFile) && (data as any).packageFile.length > 0
+                ? {
+                    packageFile: {
+                        create: (data as any).packageFile.map((f: PackageFileDto) => ({
+                            filePath: f.filePath,
+                            type: f.type,
+                        })),
+                    },
+                }
+                : {}),
         },
         include: { location: true, packageFile: true },
     });
 };
 
-/*
- * คำอธิบาย : ฟังก์ชันแก้ไขข้อมูล Package ที่มีอยู่
- * Input  : id (หมายเลข Package), data (ข้อมูล Package ที่แก้ไข)
- * Output : ข้อมูล Package ที่ถูกอัปเดต พร้อม location
- */
+/* ============================================================================================
+ * Edit (อัปเดตเฉพาะสิ่งที่ส่งมา, กัน undefined)
+ * ============================================================================================ */
 export const editPackage = async (id: number, data: any) => {
-    // ตรวจสอบว่า package มีจริง
-    const packageExist = await prisma.package.findUnique({
+    const pkg = await prisma.package.findUnique({
         where: { id },
-        include: { location: true, packageFile: true }, // include packageFile ด้วย
-    });
-    if (!packageExist) {
-        throw new Error(`Package ID ${id} ไม่พบในระบบ`);
-    }
-
-    // ตรวจสอบ communityId ถ้ามีการแก้ไข
-    if (data.communityId) {
-        const community = await prisma.community.findUnique({
-            where: { id: data.communityId },
-        });
-        if (!community) {
-            throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
-        }
-    }
-
-    // ตรวจสอบ overseerMemberId ถ้ามีการแก้ไข
-    if (data.overseerMemberId) {
-        const overseer = await prisma.user.findUnique({
-            where: { id: data.overseerMemberId },
-        });
-        if (!overseer) {
-            throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
-        }
-    }
-
-    // แยก field ออกมา
-    const { location, locationId, packageFile, ...packageData } = data;
-
-    const result = await prisma.package.update({
-        where: { id },
-        data: {
-            community: { connect: { id: data.communityId } },
-            overseerPackage: { connect: { id: data.overseerMemberId } },
-            createPackage: { connect: { id: data.createById } },
-
-            name: data.name,
-            description: data.description,
-            capacity: data.capacity,
-            price: data.price,
-            warning: data.warning,
-            statusPackage: data.statusPackage,
-            statusApprove: data.statusApprove,
-            startDate: new Date(data.startDate),
-            dueDate: new Date(data.dueDate),
-            facility: data.facility,
-
-            location: {
-                update: {
-                    houseNumber: location.houseNumber,
-                    subDistrict: location.subDistrict,
-                    district: location.district,
-                    province: location.province,
-                    postalCode: location.postalCode,
-                    detail: location.detail,
-                    latitude: location.latitude,
-                    longitude: location.longitude,
-                },
-            },
-
-            // อัปเดต packageFile เฉพาะกรณีที่ส่งมา
-            ...(packageFile && {
-                packageFile: {
-                    deleteMany: {},
-                    create: packageFile.map((file: PackageFileDto) => ({
-                        filePath: file.filePath,
-                        type: file.type,
-                    })),
-                },
-            }),
-        },
         include: { location: true, packageFile: true },
     });
+    if (!pkg) throw new Error(`Package ID ${id} ไม่พบในระบบ`);
 
-    return result;
+    if (data.communityId !== undefined && data.communityId !== null) {
+        const community = await prisma.community.findUnique({
+            where: { id: Number(data.communityId) },
+        });
+        if (!community) throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
+    }
+    if (data.overseerMemberId !== undefined && data.overseerMemberId !== null) {
+        const overseer = await prisma.user.findUnique({
+            where: { id: Number(data.overseerMemberId) },
+        });
+        if (!overseer) throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
+    }
+
+    // recompute วัน-เวลา ถ้าส่งมา (ไม่ส่งมา → คงค่าเดิม)
+    const startAt =
+        data.startDate
+            ? composeDateTimeIso(data.startDate, data.startTime)
+            : pkg.startDate;
+
+    const dueAt =
+        data.dueDate
+            ? composeDateTimeIso(data.dueDate, data.endTime, true)
+            : pkg.dueDate;
+
+    const updateData: any = {
+        ...(data.communityId !== undefined && { community: { connect: { id: Number(data.communityId) } } }),
+        ...(data.overseerMemberId !== undefined && { overseerPackage: { connect: { id: Number(data.overseerMemberId) } } }),
+
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.capacity !== undefined && { capacity: Number(data.capacity) }),
+        ...(data.price !== undefined && { price: Number(data.price) }),
+        ...(data.warning !== undefined && { warning: data.warning }),
+        ...(data.statusPackage !== undefined && { statusPackage: data.statusPackage }),
+        ...(data.statusApprove !== undefined && { statusApprove: data.statusApprove }),
+        ...(startAt !== undefined && { startDate: startAt }),
+        ...(dueAt !== undefined && { dueDate: dueAt }),
+        ...(data.facility !== undefined && { facility: data.facility }),
+
+        // booking window (ถ้าคุณจะรองรับในอนาคต ให้ส่งชื่อให้ตรง schema)
+        ...(data.bookingOpenDate !== undefined && { bookingOpenDate: new Date(data.bookingOpenDate) }),
+        ...(data.bookingCloseDate !== undefined && { bookingCloseDate: new Date(data.bookingCloseDate) }),
+    };
+
+    // อัปเดต location เฉพาะส่งมา
+    if (data.location) {
+        const loc = data.location;
+        updateData.location = {
+            update: {
+                ...(loc.houseNumber !== undefined && { houseNumber: loc.houseNumber }),
+                ...(loc.villageNumber !== undefined && { villageNumber: toNull(loc.villageNumber) }),
+                ...(loc.alley !== undefined && { alley: toNull(loc.alley) }),
+                ...(loc.subDistrict !== undefined && { subDistrict: loc.subDistrict }),
+                ...(loc.district !== undefined && { district: loc.district }),
+                ...(loc.province !== undefined && { province: loc.province }),
+                ...(loc.postalCode !== undefined && { postalCode: loc.postalCode }),
+                ...(loc.detail !== undefined && { detail: toNull(loc.detail) }),
+                ...(loc.latitude !== undefined && { latitude: Number(loc.latitude) }),
+                ...(loc.longitude !== undefined && { longitude: Number(loc.longitude) }),
+            },
+        };
+    }
+
+    // อัปเดตไฟล์แบบ replace เฉพาะเมื่อส่งมา
+    if (Array.isArray(data.packageFile)) {
+        updateData.packageFile = {
+            deleteMany: {},
+            create: (data.packageFile as PackageFileDto[]).map((file) => ({
+                filePath: file.filePath,
+                type: file.type,
+            })),
+        };
+    }
+
+    return prisma.package.update({
+        where: { id },
+        data: updateData,
+        include: { location: true, packageFile: true },
+    });
 };
 
-
-/*
- * คำอธิบาย : ดึง Package ตามหมายเลข ID
- * Input  : id (หมายเลข Package)
- * Output : รายการ Package ที่พบ (อาจเป็น array)
- */
+/* ============================================================================================
+ * Get list by role (ใช้ userId จาก token ฝั่ง controller)
+ * ============================================================================================ */
 export const getPackageByRole = async (
-    id: number,
-    page: number = 1,
-    limit: number = 10
+    userId: number,
+    page = 1,
+    limit = 10
 ): Promise<PaginationResponse<any>> => {
-    if (isNaN(id)) {
-        throw new Error(`Member ID ${id} ไม่ถูกต้อง`);
-    }
+    const user = await prisma.user.findUnique({
+        where: { id: Number(userId) },
+        include: { role: true, memberOf: true, communitiesAdmin: true },
+    });
+    if (!user) throw new Error(`Member ID ${userId} ไม่ถูกต้อง`);
+
+    const whereCondition = buildWhereForRole(user);
 
     const skip = (page - 1) * limit;
-
-    const user = await prisma.user.findUnique({
-        where: { id },
-        include: { role: true, memberOf: true, communitiesAdmin: true }
-    });
-
-    let whereCondition: any = {};
-
-    switch (user?.role.name) {
-        case "superadmin":
-            // superadmin เห็นทั้งหมด
-            break;
-
-        case "admin":
-            const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
-            whereCondition.communityId = { in: adminCommunityIds };
-            break;
-
-        case "member":
-            whereCondition.overseerMemberId = user.id;
-            break;
-
-        case "tourist":
-            whereCondition = {
-                statusApprove: "APPROVE",
-                statusPackage: "PUBLISH",
-            };
-            break;
-
-        default:
-            return {
-                data: [],
-                pagination: {
-                    currentPage: page,
-                    totalPages: 0,
-                    totalCount: 0,
-                    limit,
-                },
-            };
-    }
-
     const totalCount = await prisma.package.count({ where: whereCondition });
 
     const packages = await prisma.package.findMany({
         where: whereCondition,
-        include: { community: true, location: true },
+        include: {
+            community: true,
+            location: true,
+            overseerPackage: {
+                select: { id: true, username: true, fname: true, lname: true, email: true },
+            },
+        },
         skip,
         take: limit,
     });
 
     const totalPages = Math.ceil(totalCount / limit);
-
     return {
         data: packages,
-        pagination: {
-            currentPage: page,
-            totalPages,
-            totalCount,
-            limit,
-        },
+        pagination: { currentPage: page, totalPages, totalCount, limit },
     };
 };
 
-
-/*
- * คำอธิบาย : ลบ Package ออกจากระบบ
- * Input  : id (หมายเลข Package)
- * Output : ข้อมูล Package ที่ถูกลบ
- */
-export const deletePackage = async (userId: number, packageId: number) => {
+/* ============================================================================================
+ * Soft delete (เช็คสิทธิ์แบบง่ายตาม role)
+ * ============================================================================================ */
+export const deletePackage = async (currentUserId: number, packageId: number) => {
     const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { role: true, memberOf: true },
+        where: { id: Number(currentUserId) },
+        include: { role: true, communitiesAdmin: true },
     });
+    if (!user) throw new Error(`User ID ${currentUserId} ไม่พบในระบบ`);
 
-    if (!user) {
-        throw new Error(`User ID ${userId} ไม่พบในระบบ`)
+    const pkg = await prisma.package.findUnique({
+        where: { id: Number(packageId) },
+    });
+    if (!pkg) throw new Error(`Package ID ${packageId} ไม่พบในระบบ`);
+
+    const role = user.role?.name;
+    if (role === "admin") {
+        const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
+        if (!adminCommunityIds.includes(pkg.communityId)) {
+            throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
+        }
+    } else if (role === "member") {
+        if (pkg.overseerMemberId !== user.id) {
+            throw new Error("คุณไม่มีสิทธิ์ลบ Package ที่คุณไม่ได้ดูแล");
+        }
+    } else if (role !== "superadmin") {
+        throw new Error("คุณไม่มีสิทธิ์ลบ Package");
     }
 
-    const packageExist = await prisma.package.findUnique({
-        where: { id: packageId },
-        include: { community: true }
+    // soft delete
+    return prisma.package.update({
+        where: { id: Number(packageId) },
+        data: { isDeleted: true, deleteAt: new Date() },
     });
-
-    if (!packageExist) {
-        throw new Error(`Package ID ${packageId} ไม่พบในระบบ`);
-    }
-    switch (user.role.name) {
-        case "superadmin":
-            // superadmin ลบได้ทุกอย่าง
-            break;
-        case "admin":
-            // admin ต้องเป็น admin ของ community นั้นเท่านั้น
-            if (user.memberOfCommunity !== packageExist.communityId) {
-                throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
-            }
-            break;
-        case "member":
-            // member ต้องเป็น overseer ของ package เท่านั้น
-            if (packageExist.overseerMemberId !== user.id) {
-                throw new Error("คุณไม่มีสิทธิ์ลบ Package ที่คุณไม่ได้ดูแล");
-            }
-            break;
-        default:
-            throw new Error("คุณไม่มีสิทธิ์ลบ Package");
-    }
-    const deleted = await prisma.package.delete({
-        where: { id: packageId },
-    });
-
-    return deleted;
 };
+
+/* ============================================================================================
+ * Detail
+ * ============================================================================================ */
+export const getPackageDetailById = async (id: number) => {
+    return prisma.package.findUnique({
+        where: { id: Number(id) },
+        include: {
+            createPackage: { select: { id: true, fname: true, lname: true } },
+            overseerPackage: { select: { id: true, fname: true, lname: true } },
+            tagPackages: {
+                include: { tag: { select: { id: true, name: true } } },
+            },
+            packageFile: { select: { id: true, filePath: true, type: true } },
+            location: {
+                select: {
+                    id: true,
+                    detail: true,
+                    houseNumber: true,
+                    villageNumber: true,
+                    alley: true,
+                    subDistrict: true,
+                    district: true,
+                    province: true,
+                    postalCode: true,
+                    latitude: true,
+                    longitude: true,
+                },
+            },
+            homestayHistories: {
+                include: {
+                    homestay: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,
+                            guestPerRoom: true,
+                            totalRoom: true,
+                            facility: true,
+                            homestayImage: { select: { id: true, image: true, type: true } },
+                            location: {
+                                select: {
+                                    detail: true,
+                                    subDistrict: true,
+                                    district: true,
+                                    province: true,
+                                    latitude: true,
+                                    longitude: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+};
+
+// ===== เพิ่มต่อจากท้ายไฟล์ package-service.ts =====
+
+// Create (delegate)
+export const createPackageBySuperAdmin = (data: PackageDto, _uid: number) =>
+    createPackage(data);
+export const createPackageByAdmin = (data: PackageDto, _uid: number) =>
+    createPackage(data);
+export const createPackageByMember = (data: PackageDto, _uid: number) =>
+    createPackage(data);
+
+// Edit (delegate)
+export const editPackageBySuperAdmin = (id: number, data: any, _uid: number) =>
+    editPackage(id, data);
+export const editPackageByAdmin = (id: number, data: any, _uid: number) =>
+    editPackage(id, data);
+export const editPackageByMember = (id: number, data: any, _uid: number) =>
+    editPackage(id, data);
+
+// Delete (delegate)
+export const deletePackageBySuperAdmin = (uid: number, packageId: number) =>
+    deletePackage(uid, packageId);
+export const deletePackageByAdmin = (uid: number, packageId: number) =>
+    deletePackage(uid, packageId);
+export const deletePackageByMember = (uid: number, packageId: number) =>
+    deletePackage(uid, packageId);
+
+// List (delegate ไปยัง getPackageByRole; role ถูกตรวจจาก user ใน DB อยู่แล้ว)
+export const getPackagesBySuperAdmin = (uid: number, page = 1, limit = 10) =>
+    getPackageByRole(uid, page, limit);
+export const getPackagesByAdmin = (uid: number, page = 1, limit = 10) =>
+    getPackageByRole(uid, page, limit);
+export const getPackagesByMember = (uid: number, page = 1, limit = 10) =>
+    getPackageByRole(uid, page, limit);
+export const getPackagesByTourist = (uid: number, page = 1, limit = 10) =>
+    getPackageByRole(uid, page, limit);
+
+
+type ListByPackageInput = {
+    userId: number;
+    packageId: number;
+    q?: string;
+    limit?: number;
+};
+
+export async function listHomestaysByPackage({
+    userId, packageId, q = "", limit = 8,
+}: ListByPackageInput) {
+    if (!Number.isInteger(userId) || userId <= 0) throw new Error("Invalid user");
+    if (!Number.isInteger(packageId) || packageId <= 0) throw new Error("Invalid packageId");
+
+    const me = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!me) throw new Error("User not found");
+
+    const pkg = await prisma.package.findFirst({
+        where: { id: packageId, isDeleted: false },
+        select: { communityId: true },
+    });
+    if (!pkg) throw new Error("Package not found");
+    if (!pkg.communityId) throw new Error("Package has no community");
+
+    const nameFilter = q.trim()
+        ? { name: { contains: q.trim() } }
+        : undefined;
+
+    const homestays = await prisma.homestay.findMany({
+        where: {
+            communityId: pkg.communityId,
+            isDeleted: false,
+            ...(nameFilter ? { OR: [nameFilter] } : {}),
+        },
+        select: {
+            id: true,
+            name: true,
+            facility: true,
+            homestayImage: { select: { image: true } },
+        },
+        orderBy: [{ name: "asc" }],
+        take: Math.max(1, Math.min(50, Number(limit) || 8)),
+    });
+
+    return homestays;
+}
+
+export async function updatePackageTags(packageId: number, tagIds: number[]) {
+    const pid = Number(packageId);
+    const ids = (tagIds ?? [])
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n) && n > 0);
+
+    // ลบความเชื่อมเดิมทั้งหมดของแพ็กเกจนี้ก่อน
+    await prisma.tagsPackages.deleteMany({ where: { packageId: pid } });
+
+    // สร้างความเชื่อมใหม่ (แทนที่ทั้งชุด)
+    if (ids.length > 0) {
+        await prisma.tagsPackages.createMany({
+            data: ids.map((tagId) => ({ packageId: pid, tagId })),
+            skipDuplicates: true, // แนะนำให้มี unique composite ที่ (packageId, tagId)
+        });
+    }
+}
+
+type ListHomestaysInput = { userId: number; q?: string; limit?: number };
+
+export async function listCommunityHomestays({ userId, q = "", limit = 8 }: ListHomestaysInput) {
+    if (!Number.isInteger(userId) || userId <= 0) throw new Error("Invalid user");
+
+    const me = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: { select: { name: true } }, memberOfCommunity: true },
+    });
+    if (!me) throw new Error("User not found");
+    if (!me.memberOfCommunity) throw new Error("User has no community");
+
+    const qTrim = q.trim();
+    const or = qTrim ? [{ name: { contains: qTrim } }] : [];
+
+    const homestays = await prisma.homestay.findMany({
+        where: {
+            communityId: me.memberOfCommunity,
+            isDeleted: false,
+            ...(or.length ? { OR: or } : {}),
+        },
+        select: { id: true, name: true, facility: true, homestayImage: { select: { image: true } } },
+        orderBy: [{ name: "asc" }],
+        take: Math.max(1, Math.min(50, Number(limit) || 8)),
+    });
+
+    return homestays;
+}
+
+export async function getCommunityMembersAndAdmin(
+  communityId: number,
+  q?: string,
+  limit = 50
+) {
+  if (!Number.isInteger(communityId) || communityId <= 0) {
+    throw new Error("ID must be Number");
+  }
+
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+    select: { id: true, adminId: true },
+  });
+  if (!community) throw new Error("Community not found");
+
+  const admin =
+    community.adminId != null
+      ? await prisma.user.findFirst({
+        where: {
+          id: community.adminId,
+          isDeleted: false,
+          role: { name: "admin" },
+        },
+        select: { id: true, fname: true, lname: true }, // ขนาดเล็กพอสำหรับ selector
+      })
+      : null;
+
+  const nameFilter =
+    q && q.trim()
+      ? {
+        OR: [
+          { fname: { contains: q.trim(), mode: "insensitive" } },
+          { lname: { contains: q.trim(), mode: "insensitive" } },
+        ],
+      }
+      : {};
+
+  const members = await prisma.user.findMany({
+    where: {
+      isDeleted: false,
+      role: { name: "member" },
+      memberOfCommunity: communityId,
+      ...nameFilter,
+    },
+    select: { id: true, fname: true, lname: true },
+    orderBy: [{ fname: "asc" }, { lname: "asc" }],
+    take: Number.isFinite(limit) ? Number(limit) : 50,
+  });
+
+  return [
+    ...(admin ? [admin] : []),
+    ...members,
+  ];
+}
 

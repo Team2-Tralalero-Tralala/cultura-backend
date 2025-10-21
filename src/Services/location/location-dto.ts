@@ -59,6 +59,6 @@ export class LocationDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(100, { message: "รายละเอียดที่อยู่ต้องไม่เกิน 60 ตัวอักษร" })
-  detail?: string;
+  @MaxLength(100, { message: "รายละเอียดที่อยู่ต้องไม่เกิน 100 ตัวอักษร" })
+  detail?: string | null;
 }
