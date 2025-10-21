@@ -15,8 +15,8 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/booking", bookingHistoriesRoutes);
-rootRouter.use("/users", userRoutes);
 rootRouter.use("/packages", packageRoutes);
+rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
