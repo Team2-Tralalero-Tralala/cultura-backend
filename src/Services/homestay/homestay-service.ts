@@ -231,7 +231,10 @@ export async function createHomestaysBulkBySuperAdmin(
 
         return prisma.homestay.create({
             data: {
-                communityId: Number(communityId),
+                // เปลี่ยนจาก communityId: Number(communityId)
+                // เป็นการเชื่อมความสัมพันธ์แบบ connect แทน
+                community: { connect: { id: Number(communityId) } },
+
                 name: d.name,
                 type: d.type,
                 guestPerRoom: d.guestPerRoom,

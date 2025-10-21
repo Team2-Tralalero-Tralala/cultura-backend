@@ -35,8 +35,27 @@ export const createHomestay = async (req: Request, res: Response) => {
             gallery?: Express.Multer.File[];
         };
 
-        // ② แปลง body จาก key "data"
-        const parsed = JSON.parse(req.body.data);
+        // ตรวจชนิด content-type
+        const isMultipart = req.is("multipart/form-data");
+
+        // พาร์ส body
+        let parsed: any;
+        if (isMultipart) {
+            if (!req.body?.data) {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' (JSON string) ต้องถูกส่งมาใน multipart/form-data");
+            }
+            try {
+                parsed = JSON.parse(req.body.data);
+            } catch {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' ไม่ใช่ JSON ที่ถูกต้อง");
+            }
+        } else {
+            // รองรับ application/json ตรง ๆ
+            parsed = req.body;
+            if (!parsed || typeof parsed !== "object") {
+                return createErrorResponse(res, 400, "Body ต้องเป็น JSON object");
+            }
+        }
 
         // ③ รวมไฟล์เป็น homestayImage (เหมือน createStore)
         const homestayImage = [
@@ -144,7 +163,26 @@ export const editHomestay = async (req: Request, res: Response) => {
             gallery?: Express.Multer.File[];
         };
 
-        const parsed = JSON.parse(req.body.data);
+        const isMultipart = req.is("multipart/form-data");
+
+        // พาร์ส body
+        let parsed: any;
+        if (isMultipart) {
+            if (!req.body?.data) {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' (JSON string) ต้องถูกส่งมาใน multipart/form-data");
+            }
+            try {
+                parsed = JSON.parse(req.body.data);
+            } catch {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' ไม่ใช่ JSON ที่ถูกต้อง");
+            }
+        } else {
+            // รองรับ application/json ตรง ๆ
+            parsed = req.body;
+            if (!parsed || typeof parsed !== "object") {
+                return createErrorResponse(res, 400, "Body ต้องเป็น JSON object");
+            }
+        }
 
         const homestayImage = [
             ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
