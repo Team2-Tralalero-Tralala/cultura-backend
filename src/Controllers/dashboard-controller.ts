@@ -1,0 +1,61 @@
+import {
+  commonDto,
+  type TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { GetSuperAdminDashboardDto } from "~/Services/dashboard/dashboard-dto.js";
+import * as DashboardService from "~/Services/dashboard/dashboard-service.js";
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Super Admin
+ * Input : query (dateStart, dateEnd, page, limit, groupBy, province, region, search)
+ * Output : ข้อมูล Dashboard
+ */
+export const getSuperAdminDashboardDto = {
+  query: GetSuperAdminDashboardDto
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Super Admin
+ * Input : req.query (dateStart, dateEnd, page, limit, groupBy, province, region, search)
+ * Output : JSON response พร้อมข้อมูล Dashboard
+ */
+export const getSuperAdminDashboard: TypedHandlerFromDto<
+  typeof getSuperAdminDashboardDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
+
+    const { 
+      dateStart, 
+      dateEnd, 
+      page = 1, 
+      limit = 10, 
+      groupBy = "day",
+      province,
+      region,
+      search 
+    } = req.query;
+
+    const filter: { province?: string; region?: string; search?: string } = {};
+    if (province) filter.province = province;
+    if (region) filter.region = region;
+    if (search) filter.search = search;
+
+    const result = await DashboardService.getSuperAdminDashboardData(
+      dateStart!,
+      dateEnd!,
+      page,
+      limit,
+      groupBy,
+      filter
+    );
+    
+    return createResponse(res, 200, "Dashboard data retrieved successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
