@@ -5,6 +5,8 @@ import bookingHistoriesRoutes from "./booking-history-route.js";
 import communityRoutes from "./community-route.js";
 import logRoutes from "./log-route.js";
 import packageRoutes from "./package-route.js";
+import packageRequestsRoutes from "./package-request-route.js"
+import storeRoute from "./store-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
 
@@ -16,7 +18,11 @@ rootRouter.use("/users", userRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);
+rootRouter.use("/logs", logRoutes);
+
 rootRouter.use("/shared/logs", logRoutes);
+rootRouter.use(packageRequestsRoutes);
+rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);
 
 export default rootRouter;
