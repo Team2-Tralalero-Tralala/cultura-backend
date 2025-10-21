@@ -164,7 +164,7 @@ export class CommunityDto {
   store?: StoreDto[];
 
   @IsOptional()
-  member?: number[];
+  communityMembers?: number[];
 
   @ValidateNested({ each: true })
   @Type(() => CommunityImageDto)
