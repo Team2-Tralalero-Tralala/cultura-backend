@@ -42,7 +42,7 @@
 
   export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async (req, res) => {
     try {
-      const result = await AccountService.createAccount(req.body);
+      const result = await AccountService.createAccount(req.body as CreateAccountDto);
       return createResponse(res, 201, "Account created successfully", result);
     } catch (error) {
       const message = (error as Error).message;
@@ -76,7 +76,7 @@
    */
   export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (req, res) => {
     try {
-      const result = await AccountService.editAccount(Number(req.params.id), req.body);
+      const result = await AccountService.editAccount(Number(req.params.id), req.body as EditAccountDto);
       return createResponse(res, 200, "Account updated successfully", result);
     } catch (error) {
       return createErrorResponse(res, 400, (error as Error).message);
