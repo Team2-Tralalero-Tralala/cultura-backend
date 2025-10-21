@@ -47,6 +47,30 @@ export class commonDto {
 type InferDto<T> = T extends new (...args: any[]) => any ? InstanceType<T> : T;
 
 /*
+ * คำอธิบาร : Utility type สำหรับแปลง optional properties ให้รองรับ undefined
+ * เพื่อให้สอดคล้องกับ exactOptionalPropertyTypes: true
+ * Input : Generic type T
+ * Output : Type ที่ optional properties สามารถเป็น undefined ได้
+ */
+type AllowUndefined<T> = T extends object
+  ? {
+      [K in keyof T]: undefined extends T[K] ? T[K] | undefined : T[K];
+    }
+  : T;
+
+/*
+ * คำอธิบาย : Utility type สำหรับแปลงทุก properties ให้รองรับ undefined
+ * ใช้สำหรับ query parameters ที่อาจไม่มีค่าก่อนผ่าน validation
+ * Input : Generic type T
+ * Output : Type ที่ทุก properties เป็น optional และสามารถเป็น undefined ได้
+ */
+type AllowAllUndefined<T> = T extends object
+  ? {
+      [K in keyof T]?: T[K] | undefined;
+    }
+  : T;
+
+/*
  * คำอธิบาย : Type สำหรับสร้าง Typed Express Handler ที่มี type safety
  * รับ DTO class ที่ extends commonDto และสร้าง handler function
  * ที่มี type safety สำหรับ req.params, req.body, req.query
@@ -56,10 +80,10 @@ type InferDto<T> = T extends new (...args: any[]) => any ? InstanceType<T> : T;
  */
 export type TypedHandlerFromDto<T extends commonDto> = (
     req: express.Request<
-        InferDto<T["params"]>,
+        T["params"] extends undefined ? unknown : AllowUndefined<InferDto<T["params"]>>,
         any,
-        InferDto<T["body"]>,
-        InferDto<T["query"]>
+        T["body"] extends undefined ? unknown : AllowUndefined<InferDto<T["body"]>>,
+        T["query"] extends undefined ? unknown : AllowAllUndefined<InferDto<T["query"]>>
     >,
     res: express.Response,
     next: express.NextFunction
