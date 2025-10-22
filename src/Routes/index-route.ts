@@ -19,7 +19,8 @@ rootRouter.use("/booking", bookingHistoriesRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
-rootRouter.use(homestayRoutes);
+rootRouter.use("/shared/logs", logRoutes);
+rootRouter.use(homestayRoutes)
 rootRouter.use(tagRoutes);
 rootRouter.use("/logs", logRoutes);
 
