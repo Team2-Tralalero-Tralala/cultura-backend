@@ -62,6 +62,7 @@ enum PackageApproveStatus {
   PENDING
   APPROVE
   PENDING_SUPER
+  REJECTED
 }
 
 /**
@@ -292,6 +293,8 @@ model Package {
   statusApprove    PackageApproveStatus? @map("pk_status_approve")
   startDate        DateTime              @map("pk_start_date") @db.DateTime
   dueDate          DateTime              @map("pk_due_date") @db.DateTime
+  bookingOpenDate  DateTime?             @map("pk_booking_open_date") @db.DateTime
+  bookingCloseDate DateTime?             @map("pk_booking_close_date") @db.DateTime
   facility         String                @map("pk_facility") @db.VarChar(200)
   rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
   isDeleted        Boolean               @default(false) @map("pk_is_deleted")
