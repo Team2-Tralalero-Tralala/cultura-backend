@@ -24,6 +24,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", rootRouter);
+app.use("/uploads", express.static("uploads"));
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

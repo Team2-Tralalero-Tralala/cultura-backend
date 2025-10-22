@@ -4,95 +4,143 @@ globs: src/**/*.ts
 alwaysApply: true
 ---
 
-# Cultura Tourism Community Management System - Coding Standards
+# CODING STANDARD (CS) — FULL TEXT TRANSCRIPTION
 
-## Project Context
-This is a Tourism Community Management System (Cultura) backend built with Express.js and TypeScript following Three-Tier Architecture (TTA):
-- **Business Logic Tier**: Express.js for RESTful API and business logic
-- **Data Tier**: Prisma ORM with MySQL database for data storage and management
-- **Presentation Tier**: Separate React.js frontend (not in this repository)
+## การควบคุมการเปลี่ยนแปลงเอกสาร
+ตารางที่ 0-1 การควบคุมการเปลี่ยนแปลงเอกสาร
 
-## File Naming Standards
+**ชื่อเอกสาร**: Coding Standard (CS)  
+**เวอร์ชันปัจจุบัน**: 1.1.1  
+**วันที่แก้ไขเวอร์ชันล่าสุด**: 29 สิงหาคม 2568  
+**ผู้จัดทำเอกสารนี้**: ณัฏฐนันท์ สิริสุรยุทธ  
 
-### Server-side (Express.js/TypeScript)
-- **Routes**: Use kebab-case with `-route.ts` suffix (e.g., `user-route.ts`, `auth-route.ts`)
-- **Controllers**: Use kebab-case with `-controller.ts` suffix (e.g., `user-controller.ts`, `auth-controller.ts`)
-- **Services**: Use kebab-case with `-service.ts` suffix (e.g., `user-service.ts`, `auth-service.ts`)
-- **DTOs**: Use kebab-case with `-dto.ts` suffix (e.g., `user-dto.ts`, `community-dto.ts`)
-- **Middlewares**: Use kebab-case with `-middleware.ts` suffix (e.g., `auth-middleware.ts`)
-- **Multi-word files**: Use hyphens to separate words (e.g., `user-profile-controller.ts`)
-- **File names**: Must match folder purpose (Controllers folder → `user-controller.ts`)
+### ประวัติการแก้ไข
+- **1.0.0** (12 กรกฎาคม 2568)
+  • จัดทำบทนำ
+  • จัดทำสารบัญ
+  • จัดทำส่วนที่ 1 และส่วนที่ 2
+  ผู้แก้ไข: ณัฏฐนันท์
+- **1.0.1** (16 กรกฎาคม 2568): แก้ไขเอกสาร — ณัฏฐนันท์
+- **1.0.2** (21 กรกฎาคม 2568): แก้ไขเอกสาร — ณัฏฐนันท์
+- **1.1.0** (20 สิงหาคม 2568): เพิ่มโครงสร้างโปรเจกต์, เพิ่มสารบัญรูปภาพ — ณัฏฐนันท์
+- **1.1.1** (29 สิงหาคม 2568): แก้ไขเอกสาร — ณัฏฐนันท์
 
-## Function Naming Standards
+## บทนำ
+การพัฒนาระบบซอฟต์แวร์อย่างเป็นระบบและมีประสิทธิภาพ จำเป็นต้องกำหนดแนวทางในการเขียนโปรแกรมให้เป็นมาตรฐานเดียวกัน เอกสารมาตรฐานการเขียนโปรแกรม (Coding Standard) ฉบับนี้จัดทำขึ้นเพื่อเป็นแนวทางปฏิบัติที่ชัดเจนสำหรับนักพัฒนาในการเขียนโปรแกรมให้มีความถูกต้อง เป็นระเบียบ สอดคล้องกัน และสามารถบำรุงรักษาได้ในระยะยาว วัตถุประสงค์หลักเพื่อส่งเสริมความเข้าใจร่วมกันในการพัฒนา ลดความซับซ้อนในการทำงานร่วมกัน และยกระดับคุณภาพของซอฟต์แวร์ให้มีความน่าเชื่อถือ อ่านง่าย และพร้อมสำหรับการขยายระบบในอนาคต รวมถึงกำหนดรูปแบบการตั้งชื่อ โครงสร้างโปรเจกต์ และการเขียนคำอธิบาย (คอมเมนต์)
 
-### Server-side Functions
-- **Controller functions**: camelCase (e.g., `createUser`, `getUserById`)
-- **Service functions**: camelCase (e.g., `validateUser`, `processPayment`)
-- **Middleware functions**: camelCase (e.g., `authenticateUser`, `validateToken`)
-- **Route functions**: camelCase (e.g., `getUsers`, `updateUser`)
-- **DTO classes**: PascalCase (e.g., `CreateUserDto`, `UpdateCommunityDto`)
+## ส่วนที่ 1 สมาชิกภายในทีม
+ระบบบริหารจัดการชุมชนท่องเที่ยว (Cultura) ได้พัฒนามาตรฐานนี้เพื่อแนะนำมาตรฐานการเขียนโปรแกรมภายในทีม ช่วยให้สมาชิกมีความเข้าใจตรงกัน ลดข้อผิดพลาด ประหยัดเวลา และเพิ่มประสิทธิภาพการพัฒนาโครงการ
 
-## Route Naming Standards (Server)
-- Use kebab-case for paths (e.g., `/user-profiles`, `/community-events`)
-- Use plural nouns in URLs (e.g., `/users`, `/activities`)
-- Avoid verbs in URLs (NO: `/get-users`, YES: `/users`)
-- Make names meaningful and descriptive
-- Follow RESTful conventions (GET, POST, PUT, DELETE)
+### ตารางที่ 2-1 สมาชิกภายในทีม
+1) 66160097 นางสาวสโรชา ดอกยี่สุ่น — Team Leader
+2) 66160358 นายธีรพล ประสพศิลป์ — Planning Manager
+3) 66160082 นางสาวกุลกัลยา แวดแดง — Planning Engineer
+4) 66160352 นางสาวณัฏฐนันท์ สิริสุรยุทธ — Development Manager
+5) 66160084 นายธันวา อ่อนสุวรรณ — Development Engineer
+6) 66160108 นายนภัสกร กุลตังวัฒนา — Development Engineer
+7) 66160376 นางสาวสมิตานัน แตนิล — Quality Manager
+8) 66160377 นายสรยุทธ สร้อยสน — Quality Engineer
+9) 66160229 นายธมนันท์ ธรรมมา — Quality Engineer
+10) 66160354 นายต่อลาภ ฤทธิ์ชัย — Support Manager
+11) 66160362 นางสาวปรางวรี ขุนลอด — Support Engineer
+12) 66160098 นายสุภษิต มีเดชา — Support Engineer
 
-## Variable Naming Standards
+## ส่วนที่ 2 มาตรฐานการเขียนโปรแกรม (Coding Standard)
+มาตรฐานนี้กำหนดในบริบทของการพัฒนาด้วย React.js (Presentation Tier) และ Express.js (Business Logic / RESTful API) ภายใต้สถาปัตยกรรม Three‑Tier Architecture (TTA) ข้อมูลจัดเก็บใน Data Tier (ฐานข้อมูล)
 
-### General Variables
-- Use camelCase (e.g., `userId`, `userName`, `isActive`)
+### 1) การตั้งชื่อโฟลเดอร์ (Folder)
+#### 1.1 โฟลเดอร์ Service (server)
+ใช้ kebab-case (เช่น booking-history) และตั้งชื่อตามโมดูล
 
-### Loop Variables
-- Use descriptive names (e.g., `index`, `counter`)
-- **FORBIDDEN**: Single letters like `i`, `j`, `k`
+### 2) การตั้งชื่อไฟล์
+#### 2.1 Component (Client)
+ใช้ PascalCase (เช่น LoginForm.tsx) และสื่อความหมาย
 
-### Array Variables
-- Use camelCase with plural names (e.g., `userLists`, `activityData`)
+#### 2.2 Route / Controller / Services (Server)
+- ใช้ kebab-case (เช่น user-routes.js, auth-route.js)
+- ชื่อไฟล์ต้องตรงกับโฟลเดอร์ตามหน้าที่ (เช่น Controllers/user-controller.js)
+- ตั้งชื่อสื่อความหมาย
 
-### Object Variables
-- Use camelCase with descriptive nouns (e.g., `userData`, `activityInfo`)
+### 3) การตั้งชื่อฟังก์ชัน
+#### 3.1 ฟังก์ชัน Component (Client)
+- ใช้ PascalCase (เช่น UserProfile) และต้องตรงกับชื่อไฟล์ (UserProfile.tsx → UserProfile)
 
-### Boolean Variables
-- Use camelCase with `is` prefix (e.g., `isReserved`, `isActive`, `isLoggedIn`)
+#### 3.2 ฟังก์ชันภายใน Component (Client)
+- ใช้ camelCase (เช่น getNew)
 
-## Database Standards
+#### 3.3 ฟังก์ชัน Controller/Middleware/Service (Server)
+- ใช้ camelCase (เช่น createUser)
+- (ทุกกรณีตั้งชื่อสื่อความหมาย)
 
-### Database Naming
-- Use lowercase with underscores (e.g., `cultura_system`)
+### 4) การตั้งชื่อตัวแปร
+#### 4.1 ทั่วไป
+camelCase (userId), ชื่อสื่อความหมาย
 
-### Table Naming
-- Use lowercase with underscores (e.g., `community_events`, `user_profiles`)
-- Use plural nouns (e.g., `users`, `activities`, `notifications`)
+#### 4.2 ตัวนับรอบ
+ใช้คำเกี่ยวกับการนับ (index) — ห้าม i/j/k
 
-### Field Naming
-- Use lowercase with underscores
-- Prefix with table abbreviation:
-  - **Single syllable table**: First + last non-s letters (e.g., `tours` → `tr_id`)
-  - **Multi-syllable table**: First syllable + last syllable (e.g., `notifications` → `nt_id`)
-  - **Multi-word table**: First word + last word (e.g., `activity_reviews` → `ar_id`)
-  - **Many-to-many tables**: Combine both table abbreviations (e.g., `user_activities` → `usat_id`)
+#### 4.3 Array
+camelCase พหูพจน์ (userLists)
 
-### Prisma Schema Standards
-- Use `@@map()` to map model names to database table names
-- Use `@map()` to map field names to database column names
-- **MANDATORY**: Every model must have comments explaining its purpose
-- Example: `// ตาราง users คือ ตารางเก็บข้อมูลผู้ใช้ทั้งหมด`
+#### 4.4 Object
+camelCase คำนามบ่งบอกลักษณะข้อมูล (userData)
 
-## Config Variable Standards
-- **MANDATORY**: Use UPPERCASE with snake_case (e.g., `API_KEY`, `DB_URL`)
-- Use abbreviation of main topic + underscore + data name
-- **FORBIDDEN**: Duplicate names, unauthorized modifications
-- **REQUIRED**: Team consultation before any config changes
+#### 4.5 Boolean
+camelCase และมีคำนำหน้า is (isReserved)
 
-## Comment Standards
+### 5) มาตรฐานฐานข้อมูล
+#### 5.1 ชื่อฐานข้อมูล
+ตัวพิมพ์เล็กทั้งหมด ใช้ขีดล่าง (snake_case) เช่น cultura_system
 
-### Function Comments
-- **MANDATORY**: Write comments before function declaration
-- Include Input/Output descriptions
-- Use English or Thai only
-- Format:
+#### 5.2 ชื่อตาราง
+ตัวพิมพ์เล็กทั้งหมด snake_case และใช้พหูพจน์ (users, activity_reviews)
+
+#### 5.3 ชื่อฟิลด์
+ตัวพิมพ์เล็ก snake_case โดยขึ้นต้นด้วย "ตัวย่อของชื่อตาราง" ตามกฎ:
+- **ตาราง 1 คำ/1 พยางค์**: ใช้อักษรแรก + อักษรสุดท้ายที่ไม่ใช่ s (tours → tr_id)
+- **ตาราง 1 คำ/หลายพยางค์**: อักษรแรกของพยางค์แรก + อักษรแรกของพยางค์สุดท้าย (notifications → nt_id)
+- **ตารางหลายคำ**: อักษรแรกของคำแรก + อักษรแรกของคำสุดท้าย (activity_reviews → ar_id)
+- **ตาราง many-to-many**: รวมตัวย่อของทั้งสองตาราง + ชื่อฟิลด์ (user_activities → usat_id)
+
+#### 5.4 คอมเมนต์ตาราง
+ทุกตารางต้องมีคอมเมนต์อธิบายหน้าที่ (เช่น users = ตารางเก็บข้อมูลผู้ใช้ทั้งหมด)
+
+### 6) การกำหนด Schema ของ Prisma (server)
+#### 6.1 ชื่อ Model
+PascalCase (Community) และสื่อความหมาย
+
+#### 6.2 ชื่อ Property
+primary key ต้องใช้ id; อื่น ๆ ใช้ camelCase (firstName)
+
+#### 6.3 ชื่อ Relation
+camelCase (communityMembers); ใช้ @relation และกำหนด onDelete ตาม business rule
+
+#### 6.4 Index Rule
+ใช้ @@unique/@@index ตามความจำเป็น
+
+#### 6.5 ชื่อ Enum
+PascalCase (CommunityStatus)
+
+#### 6.6 ค่า Enum
+UPPERCASE ทั้งหมด (OPEN, CLOSED)
+
+#### 6.7 Migration
+แก้ไข Schema ทุกครั้งต้องสร้าง Migration ใหม่; commit แยกไฟล์ migration
+
+#### 6.8 ชื่อ Commit ของ Migration (Conventional Commit)
+- chore(prisma): add community table
+- chore(prisma): update relation community-member
+
+### 7) การตั้งชื่อตัวแปรของ Config
+**ข้อบังคับ**: UPPERCASE ทั้งหมด, snake_case (API_KEY)  
+**หลักการ**: ชื่อย่อหัวข้อหลัก + _ + ชื่อข้อมูล (DB_URL)  
+**ข้อห้าม**: ห้ามชื่อซ้ำ/แก้ไขหรือลบโดยพลการ ต้องปรึกษาทีมก่อนเสมอ
+
+### 8) การเขียนคอมเมนต์
+#### 8.1 คอมเมนต์ฟังก์ชัน (Client/Server)
+เขียนก่อนประกาศฟังก์ชัน: อธิบายการทำงาน, Input, Output (ไทย/อังกฤษ)
+
+**ตัวอย่าง**:
 ```typescript
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลกิจกรรม
@@ -101,90 +149,183 @@ This is a Tourism Community Management System (Cultura) backend built with Expre
  */
 ```
 
-### Service/Controller File Comments
-- **MANDATORY**: Write service/controller description at the top of file
-- Explain service/controller purpose and functionality
-- Use English or Thai only
-- Format:
+#### 8.2 คอมเมนต์ DTO Validation (Server)
+ต้องมีคอมเมนต์ก่อนประกาศ DTO, อธิบายวัตถุประสงค์, Input/Output (ไทย/อังกฤษ)
+
+**ตัวอย่าง**:
 ```typescript
 /*
- * คำอธิบาย : Service สำหรับจัดการข้อมูลผู้ใช้งาน เช่น การสร้าง, แก้ไข, ลบ และดึงข้อมูลผู้ใช้
+ * DTO: createCommunityDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Community ใหม่
+ * Input: body — เช่น ชื่อชุมชน คำอธิบาย วันที่ลงทะเบียน
+ * Output: ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 ```
 
-## Project Structure Standards
+#### 8.3 คอมเมนต์ไฟล์ Component
+คอมเมนต์บรรทัดแรกของไฟล์ อธิบายการทำงานของ Component (ไทย/อังกฤษ)
 
-### Server Structure (Express.js/TypeScript)
-```
-src/
-├── Controllers/    # Business logic controllers
-├── Routes/         # Route definitions
-├── Services/       # Service layer (business logic)
-├── Middlewares/    # Middleware functions
-├── Libs/          # Utility functions and shared code
-│   ├── Types/     # TypeScript types and interfaces
-│   └── ...        # Other utilities
-├── prisma/        # Database schema and migrations
-└── server.ts      # Main server file
+**ตัวอย่าง**:
+```typescript
+/*
+ * คำอธิบาย: Component แสดงข้อมูลโปรไฟล์ของผู้ใช้งาน เช่น ชื่อ รูปภาพ รายละเอียดอื่น ๆ
+ */
 ```
 
-## Code Quality Rules
+### 9) โครงสร้างของโปรเจกต์
+#### 9.1 Client
+- **node_modules** — ไลบรารีจาก npm
+- **Components** — คอมโพเนนต์ใช้ซ้ำ (ปุ่ม ฟอร์ม การ์ด ฯลฯ)
+- **Layouts** — โครงร่างหลักของหน้าเว็บ (Page Layouts / Templates)
+- **Libs** — utilities/hook ฟังก์ชันช่วย (เช่น แปลงเวลา)
+- **Pages** — ไฟล์หน้าเพจหลัก (Route) เช่น Home.tsx, Login.tsx, Dashboard.tsx
+- **Types** — TypeScript types/interfaces ส่วนกลาง (User, Community, ApiResponse)
+- **.env** — ค่า config ฝั่ง Client (เช่น API URL, keys)
 
-### TypeScript Usage
-- Define types in `/Libs/Types` folder
-- Use interfaces for data structures (User, Community, ApiResponse)
-- Type all function parameters and return values
-- Use DTOs for request/response validation with class-validator
-- Use TypedHandler for type-safe Express handlers
+#### 9.2 Server
+- **prisma** — จัดการ/เชื่อมต่อฐานข้อมูล
+- **src** — โค้ดหลัก (Routes, Controllers, Middlewares, Services)
+- **tests** — ชุดทดสอบฝั่ง Server
+- **uploads** — ไฟล์ที่ผู้ใช้อัปโหลด (รูป/เอกสาร)
+- **node_modules** — ไลบรารีจาก npm
+- **.env** — ค่า config ฝั่ง Server (เช่น DB/Keys)
 
-### Error Handling
-- Implement proper error handling for all API calls
-- Use try-catch blocks for async operations
-- Provide meaningful error messages
-- Use standard response format from `createResponse.ts`
+### 10) มาตรฐานการเขียนโปรแกรมฝั่ง Server
+#### 10.1 ลำดับ import library
+1. External Libraries/Packages (เช่น express, prisma, class-validator)
+2. Internal Functions/Modules/Files (services, controllers, middlewares, utilities)
 
-### Performance
-- Optimize database queries with proper indexing
-- Use Prisma's built-in query optimization
-- Implement proper pagination for large datasets
-- Use connection pooling for database connections
+#### 10.2 Export Function
+ใช้ named export ติดหน้า function โดยตรง (ไม่ใช้ export default)
 
-### Security
-- Validate all inputs using DTOs and class-validator
-- Implement proper authentication middleware
-- Use environment variables for sensitive data
-- Sanitize user inputs
-- Use proper CORS configuration
+#### 10.3 Services
+##### 10.3.1 โครงสร้างภายใน Services (business logic)
+- ถ้าใช้ได้เฉพาะโมดูล: เก็บภายในโฟลเดอร์ย่อยของโมดูล
+- ถ้าใช้ซ้ำหลายโมดูล: เก็บส่วนกลาง (common)
 
-### Prisma Best Practices
-- Use transactions for complex operations
-- Implement proper error handling for database operations
-- Use Prisma's type safety features
-- Follow the established schema patterns
-- Use proper relations and foreign keys
+##### 10.3.3 มาตรฐานไฟล์ module-service.ts
+- ตรวจสอบความถูกต้องของพารามิเตอร์เสมอ
+- ห้ามใช้ any เป็นชนิดข้อมูลของพารามิเตอร์
+- เข้าถึงข้อมูลผ่าน Prisma ORM เท่านั้น
+- ข้อความ Error ใช้ภาษาไทย (ยกเว้นคำทับศัพท์จำเป็น)
+- ค่าที่คืนกลับเป็นประเภทที่เข้าใจง่าย (object หรือ primitive)
 
-## Development Workflow
-- Follow TTA (Three-Tier Architecture) principles
-- Maintain separation of concerns
-- Write tests for critical functionality
-- Document all APIs and services
-- Use proper Git workflow with meaningful commit messages
+#### 10.4 Controllers
+- ตรวจสอบชนิดข้อมูลด้วย TypedHandlerFromDto<typeof DTO>
+- ทุก Controller ต้องมี DTO กำกับ
+- ฟังก์ชันทุกตัวเป็น async
+- เรียกใช้ข้อมูลผ่าน Service เท่านั้น (ห้าม business logic ใน controller)
+- DTO และ Route Processor ต้องมีคอมเมนต์อธิบายหน้าที่
 
-## Team Standards
-- All team members must follow these standards
-- Code reviews should verify compliance
-- No exceptions to naming conventions
-- All changes require team consultation for config modifications
-- Use consistent code formatting (Prettier/ESLint)
+#### 10.5 Routes
+##### 10.5.1 ลำดับ Middleware/Controller
+1) Authentication Middleware
+2) Role Middleware
+3) DTO Validation Middleware
+4) Controller
 
-## API Response Standards
-- Use standard response format from `createResponse.ts`
-- Include proper HTTP status codes
-- Provide meaningful error messages
-- Use consistent response structure across all endpoints
+##### 10.5.2 Route Ordering
+- Static route มาก่อน (GET /community)
+- Dynamic route/slug ภายหลัง (GET /community/:id)
 
-## DTO Validation Standards
-- Use class-validator decorators for input validation
-- Create separate DTOs for create, update, and query operations
-- Validate all required fields
-- Use proper validation messages in Thai or English
+### 11) มาตรการเขียนโปรแกรมฝั่ง Client
+#### 11.1 Role Prefix
+- /super/... (Super Admin)
+- /admin/... (Admin)
+- /member/... (Member)
+- /tourist/... (Tourist)
+- /guest/... (สาธารณะ/ไม่ต้องล็อกอิน)
+
+#### 11.2 การตั้งชื่อ Route
+- ใช้ kebab-case (เช่น /booking-histories)
+- สอดคล้องกับ API เพื่อให้เห็นความเชื่อมโยง Frontend–Backend
+  (เช่น API: /api/super/communities → React Route: /super/communities)
+- รูปแบบ /[actor]/[resource] สำหรับหน้าจัดการ (เช่น /super/communities)
+- สร้างข้อมูลใหม่: เติม /create (เช่น /super/communities/create)
+- แก้ไขข้อมูล: /edit/:id (เช่น /super/communities/:communityId)
+- เก็บประกาศ route ในไฟล์ App.tsx เท่านั้น
+
+## มาตรฐาน RESTful API
+### 1) การตั้งชื่อ API Endpoint
+#### 1.1 Role-based API Prefix
+- /api/super/... — Super Admin
+- /api/admin/... — Admin
+- /api/member/... — Member
+- /api/tourist/... — Tourist
+- /api/shared/... — ใช้ร่วมกันได้
+
+#### 1.2 โครงสร้าง API (API Structure)
+```
+api/{ACTOR}/{MODULE}/{SUBMODULE}/{SUB-SUBMODULE}?{QUERY}
+```
+- **{ACTOR}**: บทบาทผู้ใช้ (เช่น /admin)
+- **{MODULE}**: โมดูลหลัก (เช่น /community)
+- **{SUBMODULE}**: โมดูลย่อย (เช่น /refunds)
+- **{QUERY}**: ค่าพารามิเตอร์ (เช่น ?page=1&limit=10)
+
+**ตัวอย่าง**:
+- GET api/super/community?page=1&limit=10&search=name
+- GET api/admin/packages
+- GET api/admin/booking-histories/booked?status=pending
+- POST api/admin/booking-histories/booked/1/approve
+
+#### 1.3 หลักการตั้งชื่อ Path (URI/Route)
+- ใช้ kebab-case (/tourist/booking-histories)
+- เอกพจน์เมื่ออ้างอิง 1 รายการ (เช่น /super/community/:communityId)
+- พหูพจน์เมื่ออ้างอิงหลายรายการ (/super/communities)
+- หลีกเลี่ยงคำกริยาใน URL (/get-users, /create-users)
+- สอดคล้องกับ Role-Based Access
+
+#### 1.4 HTTP Methods
+- **GET**: ดึงข้อมูล
+- **POST**: สร้าง/เปลี่ยนสถานะ (มักมี body)
+- **PUT**: แทนที่ทั้ง resource
+- **PATCH**: แก้ไขบางส่วน
+
+### 2) Parameters & Query
+ใช้ query สำหรับ filter/search/pagination (เช่น status=active, sort=createdDate)
+
+**ตัวอย่าง**: GET /packages?status=publish&limit=10&offset=0
+
+### 3) Request/Response Body
+#### 3.1 Request Body
+JSON
+
+#### 3.2 Response Body
+JSON
+
+#### 3.3 Pagination (response ควรมี)
+- data, page, limit, totalCount, totalPages
+
+### 4) การจัดการ Error Response
+(ระบุแนวทางสอดคล้องกับมาตรฐานทีม/ระบบ)
+
+## Git Workflow และ Commit Message Convention
+### 1) Git Workflow (Git Flow)
+- **main**: โค้ดพร้อมใช้งานจริง (production) — เสถียร/พร้อม deploy ทุก commit
+- **develop**: รวมงานจาก feature เพื่อทดสอบ/บูรณาการก่อน release
+- **feature/***: พัฒนา feature ใหม่ แตกจาก develop → PR กลับเข้า develop
+- **hotfix/***: แก้ไขเร่งด่วนบน production แตกจาก main → รวมกลับเข้า main และ develop
+
+### 2) Commit Message (Conventional Commits)
+**รูปแบบ**: `<type>(optional scope): <description>`
+
+**ประเภทที่อนุญาต**:
+- **feat**: เพิ่มฟีเจอร์ใหม่
+- **fix**: แก้ไข bug
+- **docs**: เอกสาร
+- **style**: รูปแบบโค้ด (ไม่กระทบ logic)
+- **refactor**: ปรับโครงสร้าง (ไม่เปลี่ยนพฤติกรรม)
+- **test**: เพิ่ม/แก้ไขชุดทดสอบ
+- **chore**: งานทั่วไป (dependencies/config)
+- **perf**: ประสิทธิภาพ
+
+**ตัวอย่าง**:
+- feat(auth): add email and password login functionality
+- fix(user): resolve issue where user data failed to save
+- docs(readme): add setup instructions for development environment
+- style(community): format code for better readability
+- refactor(service): extract authentication logic from controller
+- test(auth): add test case for invalid password login
+- chore(deps): update Prisma to version 5.12.0
+- perf(query): optimize data retrieval by using select instead of include
