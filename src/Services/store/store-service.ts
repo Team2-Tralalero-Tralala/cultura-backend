@@ -1,21 +1,12 @@
+
+import type { PaginationResponse } from "../pagination-dto.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
-import { mapLocation } from "../community/community-service.js";
-import prisma from "../database-service.js";
 import type { StoreDto } from "./store-dto.js";
-/*
+import prisma from "../database-service.js";
+
+/**
  * ฟังก์ชัน : createStore
- * คำอธิบาย :
- *   สร้างร้านค้าใหม่ในชุมชน โดยเชื่อมโยงกับ:
- *     - ชุมชน (communityId)
- *     - ที่ตั้ง (location)
- *     - รูปภาพร้านค้า (storeImage)
- *     - ประเภทร้านค้า (tagStores)
- * Input :
- *   - store : ข้อมูลร้านค้า (StoreDto)
- *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
- *   - communityId : รหัสชุมชนที่ร้านค้าสังกัด
- * Output :
- *   - ข้อมูลร้านค้าที่สร้างใหม่
+ * รายละเอียด : เพิ่มร้านค้าใหม่ในชุมชน พร้อม location, รูปภาพ, และ tag
  */
 export async function createStore(
   store: StoreDto,
@@ -29,9 +20,9 @@ export async function createStore(
       data: {
         ...storeData,
         community: { connect: { id: communityId } },
-        location: { create: mapLocation(location) },
+        location: location ? { create: location } : undefined,
         storeImage: {
-          create: storeImage.map((img) => ({
+          create: storeImage?.map((img) => ({
             image: img.image,
             type: img.type,
           })),
@@ -43,6 +34,7 @@ export async function createStore(
       },
     });
 
+    // เพิ่ม tag ของร้าน
     if (tagStores?.length) {
       await transaction.tagStore.createMany({
         data: tagStores.map((tagId: number) => ({
@@ -56,72 +48,78 @@ export async function createStore(
   });
 }
 
-/*
- * ฟังก์ชัน : editStore
- * รายละเอียด :
- *   แก้ไขข้อมูลร้านค้าตามรหัส โดยอัปเดตข้อมูลทั่วไป ที่ตั้ง รูปภาพ และป้ายกำกับ
- * Input :
- *   - storeId : รหัสร้านค้า
- *   - store : ข้อมูลร้านค้าที่แก้ไข (StoreDto)
- *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
- * Output :
- *   - ข้อมูลร้านค้าที่อัปเดตแล้ว
+/**
+ * ฟังก์ชัน : getAllStore
+ * รายละเอียด : ดึงร้านค้าทั้งหมดในชุมชน (เฉพาะ superadmin)
  */
-export async function editStore(
-  storeId: number,
-  store: StoreDto,
-  user: UserPayload
-) {
-  const findStore = await prisma.store.findFirst({
-    where: {
-      id: storeId,
-    },
-    include: { community: true },
-  });
-
-  if (!findStore) throw new Error("ไม่พบร้านค้า");
-  if (
-    user.role.toLowerCase() === "admin" &&
-    findStore.community.adminId !== user.id
-  ) {
-    throw new Error("คุณไม่มีสิทธิ์แก้ไขร้านค้าของชุมชนอื่น");
+export const getAllStore = async (
+  userId: number,
+  communityId: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
+    throw new Error("ID must be a number");
   }
 
-  const { location, tagStores, storeImage, ...storeData } = store;
-  return prisma.$transaction(async (transaction) => {
-    const newStore = await transaction.store.update({
-      where: { id: storeId },
-      data: {
-        ...storeData,
-        location: { update: mapLocation(location) },
-        storeImage: {
-          deleteMany: {},
-          create: storeImage.map((img) => ({
-            image: img.image,
-            type: img.type,
-          })),
+  // ตรวจสอบสิทธิ์ผู้ใช้
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "superadmin") {
+    throw new Error("Forbidden");
+  }
+
+  // ตรวจสอบว่าชุมชนมีอยู่จริง
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+  });
+  if (!community) throw new Error("Community not found");
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.store.count({
+    where: { isDeleted: false, communityId },
+  });
+
+  const stores = await prisma.store.findMany({
+    where: { isDeleted: false, communityId },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      detail: true,
+      tagStores: {
+        select: {
+          tag: {
+            select: { id: true, name: true },
+          },
         },
       },
-      include: {
-        storeImage: true,
-        tagStores: true,
-        location: true,
-      },
-    });
-    await transaction.tagStore.deleteMany({
-      where: { storeId },
-    });
-
-    await transaction.tagStore.createMany({
-      data: tagStores.map((tagId) => ({
-        tagId,
-        storeId,
-      })),
-    });
-    return newStore;
+    },
   });
-}
 
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: stores,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+};
+
+/**
+ * ฟังก์ชัน : getStoreById
+ * รายละเอียด : ดึงข้อมูลร้านค้าตามรหัส
+ */
 export async function getStoreById(storeId: number) {
   return prisma.store.findFirst({
     where: {
@@ -130,17 +128,13 @@ export async function getStoreById(storeId: number) {
       deleteAt: null,
     },
     select: {
+      id: true,
       name: true,
       detail: true,
       storeImage: true,
       tagStores: {
         select: {
-          tag: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          tag: { select: { id: true, name: true } },
         },
       },
       location: true,
@@ -148,24 +142,79 @@ export async function getStoreById(storeId: number) {
   });
 }
 
+/**
+ * ฟังก์ชัน : editStore
+ * รายละเอียด : แก้ไขข้อมูลร้านค้า (พร้อมอัปเดตแท็ก, รูปภาพ, location)
+ */
+export async function editStore(
+  storeId: number,
+  store: StoreDto,
+  user: UserPayload
+) {
+  const { location, storeImage, tagStores, ...storeData } = store;
 
-/*
+  // ตรวจสอบสิทธิ์
+  const role = user.role.toLowerCase();
+  if (role !== "superadmin" && role !== "admin") {
+    throw new Error("คุณไม่มีสิทธิ์แก้ไขร้านค้า");
+  }
+
+  const exist = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: { community: true },
+  });
+  if (!exist) throw new Error("ไม่พบร้านค้าที่ต้องการแก้ไข");
+
+  if (role === "admin" && exist.community.adminId !== user.id) {
+    throw new Error("คุณไม่มีสิทธิ์แก้ไขร้านค้าของชุมชนอื่น");
+  }
+
+  return prisma.$transaction(async (transaction) => {
+    // อัปเดตข้อมูลหลักของร้าน
+    const updatedStore = await transaction.store.update({
+      where: { id: storeId },
+      data: {
+        ...storeData,
+        location: location ? { update: location } : undefined,
+      },
+    });
+
+    // ลบแท็กเดิมแล้วเพิ่มแท็กใหม่
+    await transaction.tagStore.deleteMany({ where: { storeId } });
+    if (tagStores?.length) {
+      await transaction.tagStore.createMany({
+        data: tagStores.map((tagId) => ({ tagId, storeId })),
+      });
+    }
+
+    // ลบรูปเก่าแล้วเพิ่มรูปใหม่
+    await transaction.storeImage.deleteMany({ where: { storeId } });
+    if (storeImage?.length) {
+      await transaction.storeImage.createMany({
+        data: storeImage.map((img) => ({
+          storeId,
+          image: img.image,
+          type: img.type,
+        })),
+      });
+    }
+
+    return updatedStore;
+  });
+}
+
+/**
  * ฟังก์ชัน : deleteStore
- * รายละเอียด :
- *   ทำการ Soft Delete ร้านค้า (ไม่ลบจริง) โดยตั้งค่า isDeleted = true และเก็บเวลาที่ลบใน deleteAt
- * Input :
- *   - storeId : รหัสร้านค้า
- *   - user : ข้อมูลผู้ใช้ (ใช้ตรวจสอบสิทธิ์)
- * Output :
- *   - ร้านค้าที่ถูกลบ
+ * รายละเอียด : Soft Delete ร้านค้า (isDeleted = true, deleteAt = เวลาปัจจุบัน)
  */
 export async function deleteStore(storeId: number, user: UserPayload) {
-  //ตรวจสอบสิทธิ์
-  if (user.role.toLowerCase() !== "superadmin" && user.role.toLowerCase() !== "admin") {
+  // ตรวจสอบสิทธิ์
+  const role = user.role.toLowerCase();
+  if (role !== "superadmin" && role !== "admin") {
     throw new Error("คุณไม่มีสิทธิ์ลบร้านค้า");
   }
 
-  //ตรวจสอบว่าร้านค้านี้มีอยู่หรือไม่
+  // ตรวจสอบว่าร้านค้ามีอยู่จริง
   const findStore = await prisma.store.findUnique({
     where: { id: storeId },
     include: { community: true },
@@ -175,15 +224,12 @@ export async function deleteStore(storeId: number, user: UserPayload) {
     throw new Error("ไม่พบร้านค้าที่ต้องการลบ");
   }
 
-  //ถ้าเป็น admin ต้องเป็นเจ้าของชุมชนนั้นเท่านั้นถึงจะลบได้
-  if (
-    user.role.toLowerCase() === "admin" &&
-    findStore.community.adminId !== user.id
-  ) {
+  // ถ้าเป็น admin ต้องเป็นเจ้าของชุมชนเท่านั้น
+  if (role === "admin" && findStore.community.adminId !== user.id) {
     throw new Error("คุณไม่มีสิทธิ์ลบร้านค้าของชุมชนอื่น");
   }
 
-  //Soft delete โดยตั้ง isDeleted = true และบันทึกเวลา deleteAt
+  // Soft Delete
   const deleted = await prisma.store.update({
     where: { id: storeId },
     data: {

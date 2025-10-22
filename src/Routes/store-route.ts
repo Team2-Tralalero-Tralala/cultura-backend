@@ -1,5 +1,8 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type RequestHandler, type Response } from "express";
+import type { ParamsDictionary } from "express-serve-static-core";
+import type { ParsedQs } from "qs";
 import * as StoreController from "~/Controllers/store-controller.js";
+import type { errorResponse } from "~/Libs/createResponse.js";
 import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
@@ -14,13 +17,13 @@ const storeRoute = Router();
  */
 storeRoute.post(
   "/shared/community/:communityId/store",
-  // validateDto(StoreController.createStoreDto),
   upload.fields([
     { name: "cover", maxCount: 1 },
     { name: "gallery", maxCount: 5 },
   ]),
   authMiddleware,
   allowRoles("superadmin", "admin"),
+  validateDto(StoreController.createStoreDto),
   StoreController.createStore
 );
 
@@ -29,51 +32,58 @@ storeRoute.post(
  * รายละเอียด :
  *   ใช้สำหรับ "แก้ไขข้อมูลร้านค้า" ตามรหัสร้าน (storeId)
  *   จำกัดสิทธิ์ให้เฉพาะ superadmin และ admin ที่เกี่ยวข้องกับชุมชนเท่านั้น
- * Middleware :
- *   - validateDto(StoreController.editStoreDto) : ตรวจสอบข้อมูลที่ส่งมา
- *   - authMiddleware : ตรวจสอบ token ของผู้ใช้
- *   - allowRoles("superadmin", "admin") : ตรวจสอบสิทธิ์การแก้ไข
- * Controller :
- *   - StoreController.editStore
  */
 storeRoute.put(
   "/shared/store/:storeId",
-  // validateDto(StoreController.editStoreDto),
   upload.fields([
     { name: "cover", maxCount: 1 },
     { name: "gallery", maxCount: 5 },
   ]),
   authMiddleware,
   allowRoles("superadmin", "admin"),
+  validateDto(StoreController.editStoreDto),
   StoreController.editStore
 );
 
+/*
+ * เส้นทาง : GET /shared/store/:storeId
+ * รายละเอียด :
+ *   ใช้สำหรับ "ดึงข้อมูลร้านค้ารายตัว" ตามรหัส storeId
+ *   จำกัดสิทธิ์ให้เฉพาะ superadmin และ admin เท่านั้น
+ */
 storeRoute.get(
   "/shared/store/:storeId",
-  validateDto(StoreController.getStoreByIdDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
+  validateDto(StoreController.getStoreByIdDto),
   StoreController.getStoreById
 );
-export default storeRoute;
 
+/*
+ * เส้นทาง : GET /super/community/:communityId/store
+ * รายละเอียด :
+ *   ใช้สำหรับ "ดึงข้อมูลร้านค้าทั้งหมดในชุมชน" (สำหรับ SuperAdmin)
+ */
+storeRoute.get(
+  "/super/community/:communityId/store",
+  authMiddleware,
+  allowRoles("superadmin"),
+  validateDto(StoreController.getAllStoreDto),
+  StoreController.getAllStore
+);
 
 /*
  * เส้นทาง : PATCH /shared/store/:storeId/delete
  * รายละเอียด :
  *   ใช้สำหรับ "ลบร้านค้า (Soft Delete)" โดยตั้งค่า isDeleted = true
- *   จำกัดสิทธิ์ให้เฉพาะ superadmin และ admin ที่เกี่ยวข้องกับชุมชนเท่านั้น
- * Middleware :
- *   - validateDto(StoreController.deleteStoreDto) : ตรวจสอบข้อมูลที่ส่งมา
- *   - authMiddleware : ตรวจสอบ token ของผู้ใช้
- *   - allowRoles("superadmin", "admin") : ตรวจสอบสิทธิ์การลบ
- * Controller :
- *   - StoreController.deleteStore
+ *   จำกัดสิทธิ์ให้เฉพาะ superadmin และ admin เท่านั้น
  */
 storeRoute.patch(
   "/shared/store/:storeId/delete",
-  validateDto(StoreController.deleteStoreDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
+  validateDto(StoreController.deleteStoreDto),
   StoreController.deleteStore
 );
+
+export default storeRoute;

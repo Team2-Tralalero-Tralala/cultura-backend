@@ -4,6 +4,7 @@ import {
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
@@ -17,6 +18,36 @@ export class CommunityIdParamDto {
   @IsNumberString()
   communityId?: string;
 }
+
+/*
+ * DTO สำหรับ endpoint: GET /super/community/:communityId/store
+ * ใช้ตรวจสอบ query (page, limit) และ params (communityId)
+ */
+export const getAllStoreDto = {
+  query: PaginationDto,
+  params: CommunityIdParamDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getAllStore
+ * รายละเอียด : ดึงข้อมูลร้านค้าทั้งหมดของชุมชน (สำหรับ SuperAdmin)
+ */
+export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    const userId = Number(req.user!.id);
+    const communityId = Number(req.params.communityId);
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 10);
+
+    const result = await StoreService.getAllStore(userId, communityId, page, limit);
+    return createResponse(res, 200, "Get store list successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
 
 /*
  * ฟังก์ชัน : createStoreDto
@@ -160,6 +191,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     return createErrorResponse(res, 400, error.message);
   }
 };
+
 
 export const getStoreByIdDto = {
   params: IdParamDto,
