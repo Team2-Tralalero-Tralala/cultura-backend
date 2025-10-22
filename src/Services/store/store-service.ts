@@ -1,21 +1,16 @@
-import type { UserPayload } from "~/Libs/Types/index.js";
-import { mapLocation } from "../community/community-service.js";
 import prisma from "../database-service.js";
-import type { StoreDto } from "./store-dto.js";
-/*
- * ฟังก์ชัน : createStore
- * คำอธิบาย :
- *   สร้างร้านค้าใหม่ในชุมชน โดยเชื่อมโยงกับ:
- *     - ชุมชน (communityId)
- *     - ที่ตั้ง (location)
- *     - รูปภาพร้านค้า (storeImage)
- *     - ประเภทร้านค้า (tagStores)
+import type { PaginationResponse } from "../pagination-dto.js";
+
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนตาม communityId
+ *            ใช้สำหรับหน้ารวมร้านค้าในแต่ละชุมชน และรองรับการแบ่งหน้า (pagination)
  * Input :
- *   - store : ข้อมูลร้านค้า (StoreDto)
- *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
- *   - communityId : รหัสชุมชนที่ร้านค้าสังกัด
+ * - communityId : number (รหัสชุมชนที่ต้องการดึงร้านค้า)
+ * - page : number (หน้าที่ต้องการแสดงผล เริ่มต้นที่ 1)
+ * - limit : number (จำนวนรายการต่อหน้า เริ่มต้นที่ 10)
  * Output :
- *   - ข้อมูลร้านค้าที่สร้างใหม่
+ * - PaginationResponse : ประกอบด้วยข้อมูลร้านค้า (id, name, detail, tags)
+ *   และ metadata สำหรับการแบ่งหน้า เช่น currentPage, totalPages, totalCount, limit
  */
 export async function createStore(
   store: StoreDto,
@@ -79,27 +74,10 @@ export async function editStore(
     include: { community: true },
   });
 
-  if (!findStore) throw new Error("ไม่พบร้านค้า");
-  if (
-    user.role.toLowerCase() === "admin" &&
-    findStore.community.adminId !== user.id
-  ) {
-    throw new Error("คุณไม่มีสิทธิ์แก้ไขร้านค้าของชุมชนอื่น");
-  }
-
-  const { location, tagStores, storeImage, ...storeData } = store;
-  return prisma.$transaction(async (transaction) => {
-    const newStore = await transaction.store.update({
-      where: { id: storeId },
-      data: {
-        ...storeData,
-        location: { update: mapLocation(location) },
-        storeImage: {
-          deleteMany: {},
-          create: storeImage.map((img) => ({
-            image: img.image,
-            type: img.type,
-          })),
+    const totalCount = await prisma.store.count({
+        where: {
+            isDeleted: false,
+            communityId, // ดึงเฉพาะร้านในชุมชนนั้น
         },
       },
       include: {
@@ -112,11 +90,29 @@ export async function editStore(
       where: { storeId },
     });
 
-    await transaction.tagStore.createMany({
-      data: tagStores.map((tagId) => ({
-        tagId,
-        storeId,
-      })),
+    const stores = await prisma.store.findMany({
+        where: {
+            isDeleted: false,
+            communityId,
+        },
+        orderBy: { id: "asc" },
+        skip,
+        take: limit,
+        select: {
+            id: true,
+            name: true,
+            detail: true,
+            tagStores: {
+                select:{
+                    tag: {
+                        select: {
+                            id:true,
+                            name:true
+                        }
+                    }
+                }
+            },
+        },
     });
     return newStore;
   });
