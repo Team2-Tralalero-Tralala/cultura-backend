@@ -12,6 +12,8 @@ import type {
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { verifyToken } from "~/Libs/token.js";
 
+export const JWT_EXPIRATION_SECONDS = 24 * 60 * 60;
+
 /*
  * DTO : signupDto
  * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /signup
@@ -62,7 +64,7 @@ export const loginDto = {
  */
 export const login: TypedHandlerFromDto<typeof loginDto> = async (req, res) => {
   try {
-    const result = await AuthService.login(req.body, req.ip ?? "");
+    const result = await AuthService.login(req.body, req.ip ?? "", JWT_EXPIRATION_SECONDS);
     res.cookie("accessToken", result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production" || false, // ใช้ secure cookie ใน production
