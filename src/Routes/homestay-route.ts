@@ -56,4 +56,10 @@ homestayRoutes.put(
     editHomestay
 );
 
+homestayRoutes.get(
+    "/super/community/:communityId/homestays",
+    validateDto(HomestayController.getHomestaysAllDto),
+    authMiddleware,
+    allowRoles("superadmin"),
+    getHomestaysAll
 export default homestayRoutes;

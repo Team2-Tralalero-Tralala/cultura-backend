@@ -4,7 +4,7 @@
  * โดยเชื่อมต่อกับฐานข้อมูลผ่าน Prisma
  */
 import prisma from "../database-service.js";
-import { TagDto} from "./tag-dto.js";
+import { TagDto } from "./tag-dto.js";
 
 /*
  * ฟังก์ชัน : createTag
@@ -13,7 +13,7 @@ import { TagDto} from "./tag-dto.js";
  * Output : tagId (number) - รหัส Tag ที่สร้างใหม่
  * Error : throw error ถ้าไม่สามารถสร้าง Tag ได้
  */
-export async function createTag(tag : TagDto) {
+export async function createTag(tag: TagDto) {
   const tagExists = await prisma.tag.findFirst({
     where: { name: tag.name },
   });
@@ -32,7 +32,7 @@ export async function createTag(tag : TagDto) {
  * Output : message (string) - ข้อความยืนยันการลบ
  * Error : throw error ถ้าไม่พบ Tag
  */
-export async function deleteTagById(tagId:number) {
+export async function deleteTagById(tagId: number) {
   const findTag = await prisma.tag.findUnique({
     where: { id: tagId, isDeleted: false },
   });
@@ -40,7 +40,7 @@ export async function deleteTagById(tagId:number) {
 
   return await prisma.tag.update({
     where: { id: tagId },
-    data: {isDeleted: true, deleteAt: new Date()},
+    data: { isDeleted: true, deleteAt: new Date() },
   });
 }
 
@@ -51,10 +51,10 @@ export async function deleteTagById(tagId:number) {
  * Output : message (string) - ข้อความยืนยันการแก้ไข
  * Error : throw error ถ้าไม่พบ Tag
  */
-export async function editTag( tagId:number, tag:TagDto) {
+export async function editTag(tagId: number, tag: TagDto) {
   const findTag = await prisma.tag.findUnique({ where: { id: tagId } });
   if (!findTag) throw new Error("Tag not found");
-  
+
   return await prisma.tag.update({
     where: { id: tagId },
     data: { name: tag.name },
@@ -94,4 +94,3 @@ export async function getAllTags(page: number = 1, limit: number = 10) {
     },
   };
 }
-
