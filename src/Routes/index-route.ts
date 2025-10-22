@@ -11,6 +11,7 @@ import packageRequestsRoutes from "./package-request-route.js";
 import storeRoute from "./store-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
+import bannerRoutes from "./banner-route.js";
 
 const rootRouter: Router = Router();
 
@@ -30,5 +31,6 @@ rootRouter.use(packageRequestsRoutes);
 rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);
 rootRouter.use("/super/dashboard", dashboardRoutes);
+rootRouter.use("/banner", bannerRoutes);
 
 export default rootRouter;
