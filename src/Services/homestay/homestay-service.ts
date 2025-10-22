@@ -15,6 +15,9 @@ async function getUserOrFail(userId: number) {
     return user;
 }
 
+const stripUploadPrefix = (s?: string) =>
+    (s || "").replace(/\\/g, "/").replace(/^(\.\/)?(public\/)?(uploads\/)+/i, "");
+
 /*
  * คำอธิบาย : ดึง community ตาม communityId; ไม่พบให้ throw
  * Input  : communityId:number
@@ -98,7 +101,7 @@ async function createHomestayCore(communityId: number, data: HomestayDto) {
                 ? {
                     homestayImage: {
                         create: data.homestayImage.map((f) => ({
-                            image: f.image,
+                            image: stripUploadPrefix(f.image),
                             type: f.type,
                         })),
                     },
@@ -170,7 +173,7 @@ async function editHomestayCore(
                 homestayImage: {
                     deleteMany: {},
                     create: ((data as any).homestayImage as HomestayImageDto[]).map((f) => ({
-                        image: f.image,
+                        image: stripUploadPrefix(f.image),
                         type: f.type,
                     })),
                 },
