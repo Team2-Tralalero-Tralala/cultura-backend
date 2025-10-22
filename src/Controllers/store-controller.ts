@@ -1,12 +1,12 @@
 import { IsNumberString } from "class-validator";
+import {
+  commonDto,
+  type TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
-import {
-    commonDto,
-    type TypedHandlerFromDto,
-} from "~/Libs/Types/TypedHandler.js";
 
 /*
  * ฟังก์ชัน : CommunityIdParamDto
@@ -20,9 +20,27 @@ export class CommunityIdParamDto {
 }
 
 /*
- * คำอธิบาย : DTO สำหรับดึงข้อมูลร้านค้าทั้งหมด (รองรับ pagination)
+ * ฟังก์ชัน : createStoreDto
+ * รายละเอียด :
+ *   ใช้กำหนดโครงสร้างข้อมูล (DTO) สำหรับสร้างร้านค้าใหม่
  * Input :
- *   - query (page, limit)
+ *   - params : CommunityIdParamDto
+ *   - body : StoreDto
+ * Output :
+ *   - ข้อมูลร้านค้าที่สร้างสำเร็จ
+ */
+export const createStoreDto = {
+  body: StoreDto,
+  params: CommunityIdParamDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : createStore
+ * รายละเอียด :
+ *   รับข้อมูลร้านค้าใหม่จากผู้ใช้ แล้วส่งต่อให้ StoreService.createStore
+ *   เพื่อลงฐานข้อมูล พร้อมตรวจสอบสิทธิ์ผู้ใช้งาน
+ * Input :
+ *   - req.body : StoreDto (ข้อมูลร้านค้าใหม่)
  *   - req.params.communityId : string (รหัสชุมชน)
  * Output :
  *   - 201 : ร้านค้าสร้างสำเร็จ พร้อมข้อมูลที่สร้าง
@@ -86,29 +104,32 @@ export class IdParamDto {
  * Output :
  *   - ข้อมูลร้านค้าที่อัปเดตแล้ว
  */
-export const getAllStoreDto = {
-    query: PaginationDto,
-    params: CommunityIdParamDto,
+export const editStoreDto = {
+  body: StoreDto,
+  params: IdParamDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getAllStore
- * อธิบาย : ดึง ข้อมูลร้านค้า ทั้งหมด ของ superadmin โดยดึงจาก Id ของ Community
- * Input : req.params.communityId
- * Output : ร้านค้าทั้งหมด
+ * ฟังก์ชัน : editStore
+ * รายละเอียด :
+ *   อัปเดตรายละเอียดร้านค้า เช่น ชื่อ ที่อยู่ รูปภาพ และป้ายกำกับ
+ *   โดยตรวจสอบสิทธิ์ก่อนแก้ไข
+ * Input :
+ *   - req.params.storeId : string (รหัสร้านค้า)
+ *   - req.body : StoreDto (ข้อมูลร้านค้าใหม่)
+ * Output :
+ *   - 201 : แก้ไขข้อมูลสำเร็จ
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
  */
-export const getAllStore: TypedHandlerFromDto<
-    typeof getAllStoreDto
-> = async (req, res) => {
-    try {
-        const userId = Number(req.user!.id)
-        const communityId = Number(req.params.communityId);
-        const result = await StoreService.getAllStore(userId, communityId);
-        return createResponse(res, 200, "get store successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
+export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
     }
-};
     // รับไฟล์จาก multer
     const files = req.files as {
       cover?: Express.Multer.File[];
@@ -152,6 +173,34 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
     const storeId = Number(req.params.storeId);
     const result = await StoreService.getStoreById(storeId);
     return createResponse(res, 201, "Store update successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+export const getAllStoreDto = {
+  query: PaginationDto,
+  params: CommunityIdParamDto,
+} satisfies commonDto;
+
+export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const { page = 1, limit = 10 } = req.query;
+    const user = req.user?.role;
+    if (!user) {
+      return createErrorResponse(res, 400, "ไม่พบ role");
+    }
+    const result = await StoreService.getAllStore(
+      user,
+      communityId,
+      page,
+      limit
+    );
+    return createResponse(res, 200, "All stores in Community", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }

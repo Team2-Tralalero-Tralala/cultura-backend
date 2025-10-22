@@ -1,16 +1,22 @@
+import type { UserPayload } from "~/Libs/Types/index.js";
+import { mapLocation } from "../community/community-service.js";
 import prisma from "../database-service.js";
-import type { PaginationResponse } from "../pagination-dto.js";
-
-/**
- * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนตาม communityId
- *            ใช้สำหรับหน้ารวมร้านค้าในแต่ละชุมชน และรองรับการแบ่งหน้า (pagination)
+import type { StoreDto } from "./store-dto.js";
+import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
+/*
+ * ฟังก์ชัน : createStore
+ * คำอธิบาย :
+ *   สร้างร้านค้าใหม่ในชุมชน โดยเชื่อมโยงกับ:
+ *     - ชุมชน (communityId)
+ *     - ที่ตั้ง (location)
+ *     - รูปภาพร้านค้า (storeImage)
+ *     - ประเภทร้านค้า (tagStores)
  * Input :
- * - communityId : number (รหัสชุมชนที่ต้องการดึงร้านค้า)
- * - page : number (หน้าที่ต้องการแสดงผล เริ่มต้นที่ 1)
- * - limit : number (จำนวนรายการต่อหน้า เริ่มต้นที่ 10)
+ *   - store : ข้อมูลร้านค้า (StoreDto)
+ *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
+ *   - communityId : รหัสชุมชนที่ร้านค้าสังกัด
  * Output :
- * - PaginationResponse : ประกอบด้วยข้อมูลร้านค้า (id, name, detail, tags)
- *   และ metadata สำหรับการแบ่งหน้า เช่น currentPage, totalPages, totalCount, limit
+ *   - ข้อมูลร้านค้าที่สร้างใหม่
  */
 export async function createStore(
   store: StoreDto,
@@ -74,10 +80,27 @@ export async function editStore(
     include: { community: true },
   });
 
-    const totalCount = await prisma.store.count({
-        where: {
-            isDeleted: false,
-            communityId, // ดึงเฉพาะร้านในชุมชนนั้น
+  if (!findStore) throw new Error("ไม่พบร้านค้า");
+  if (
+    user.role.toLowerCase() === "admin" &&
+    findStore.community.adminId !== user.id
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์แก้ไขร้านค้าของชุมชนอื่น");
+  }
+
+  const { location, tagStores, storeImage, ...storeData } = store;
+  return prisma.$transaction(async (transaction) => {
+    const newStore = await transaction.store.update({
+      where: { id: storeId },
+      data: {
+        ...storeData,
+        location: { update: mapLocation(location) },
+        storeImage: {
+          deleteMany: {},
+          create: storeImage.map((img) => ({
+            image: img.image,
+            type: img.type,
+          })),
         },
       },
       include: {
@@ -90,29 +113,11 @@ export async function editStore(
       where: { storeId },
     });
 
-    const stores = await prisma.store.findMany({
-        where: {
-            isDeleted: false,
-            communityId,
-        },
-        orderBy: { id: "asc" },
-        skip,
-        take: limit,
-        select: {
-            id: true,
-            name: true,
-            detail: true,
-            tagStores: {
-                select:{
-                    tag: {
-                        select: {
-                            id:true,
-                            name:true
-                        }
-                    }
-                }
-            },
-        },
+    await transaction.tagStore.createMany({
+      data: tagStores.map((tagId) => ({
+        tagId,
+        storeId,
+      })),
     });
     return newStore;
   });
@@ -150,3 +155,78 @@ export async function getStoreById(storeId: number) {
     },
   });
 }
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนตาม communityId
+ *            ใช้สำหรับหน้ารวมร้านค้าในแต่ละชุมชน และรองรับการแบ่งหน้า (pagination)
+ * Input :
+ * - communityId : number (รหัสชุมชนที่ต้องการดึงร้านค้า)
+ * - page : number (หน้าที่ต้องการแสดงผล เริ่มต้นที่ 1)
+ * - limit : number (จำนวนรายการต่อหน้า เริ่มต้นที่ 10)
+ * Output :
+ * - PaginationResponse : ประกอบด้วยข้อมูลร้านค้า (id, name, detail, tags)
+ *   และ metadata สำหรับการแบ่งหน้า เช่น currentPage, totalPages, totalCount, limit
+ */
+
+export const getAllStore = async (
+  userRole: string,
+  communityId: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(communityId)) {
+    throw new Error("ID must be a number");
+  }
+  if (userRole != "superadmin") {
+    throw new Error("Forbidden");
+  }
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+  });
+  if (!community) throw new Error("Community not found");
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.store.count({
+    where: {
+      isDeleted: false,
+      communityId, // ดึงเฉพาะร้านในชุมชนนั้น
+    },
+  });
+
+  const stores = await prisma.store.findMany({
+    where: {
+      isDeleted: false,
+      communityId,
+    },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      detail: true,
+      tagStores: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: stores,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+};
