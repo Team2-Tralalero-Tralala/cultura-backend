@@ -20,13 +20,15 @@ rootRouter.use("/booking", bookingHistoriesRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
-rootRouter.use(homestayRoutes);
-rootRouter.use("/tags", tagRoutes);
+rootRouter.use("/shared/logs", logRoutes);
+rootRouter.use(homestayRoutes)
+rootRouter.use(tagRoutes);
 rootRouter.use("/logs", logRoutes);
 
 rootRouter.use("/shared/logs", logRoutes);
 rootRouter.use(accountRoutes);
 rootRouter.use(homestayRoutes)
+rootRouter.use(homestayRoutes);
 rootRouter.use(packageRequestsRoutes);
 rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);

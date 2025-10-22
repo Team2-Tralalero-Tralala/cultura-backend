@@ -6,6 +6,14 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const storeRoute = Router();
 
+storeRoute.get(
+    "/super/community/:communityId/store",
+    validateDto(StoreController.getAllStoreDto),
+    authMiddleware,
+    allowRoles("superadmin"),
+    StoreController.getAllStore
+);
+
 /*
  * เส้นทาง : POST /shared/community/:communityId/store
  * รายละเอียด :
