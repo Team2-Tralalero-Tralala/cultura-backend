@@ -12,36 +12,82 @@ import type { PaginationResponse } from "../pagination-dto.js";
  * - PaginationResponse : ประกอบด้วยข้อมูลร้านค้า (id, name, detail, tags)
  *   และ metadata สำหรับการแบ่งหน้า เช่น currentPage, totalPages, totalCount, limit
  */
+export async function createStore(
+  store: StoreDto,
+  user: UserPayload,
+  communityId: number
+) {
+  const { location, storeImage, tagStores, ...storeData } = store;
 
-export const getAllStore = async (
-    userId: number,
-    communityId: number,
-    page: number = 1,
-    limit: number = 10
-): Promise<PaginationResponse<any>> => {
-    if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
-        throw new Error("ID must be a number");
-    }
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { role: true},
+  return prisma.$transaction(async (transaction) => {
+    const newStore = await transaction.store.create({
+      data: {
+        ...storeData,
+        community: { connect: { id: communityId } },
+        location: { create: mapLocation(location) },
+        storeImage: {
+          create: storeImage.map((img) => ({
+            image: img.image,
+            type: img.type,
+          })),
+        },
+      },
+      include: {
+        storeImage: true,
+        location: true,
+      },
     });
-    if (!user) throw new Error("User not found");
-    if (user.role?.name?.toLowerCase() != "superadmin"){
-        throw new Error("Forbidden");
+
+    if (tagStores?.length) {
+      await transaction.tagStore.createMany({
+        data: tagStores.map((tagId: number) => ({
+          tagId,
+          storeId: newStore.id,
+        })),
+      });
     }
-    const community = await prisma.community.findFirst({
-        where: {id: communityId, isDeleted: false},
-    });
-    if(!community) throw new Error("Community not found");
-    
-    const skip = (page - 1) * limit;
+
+    return newStore;
+  });
+}
+
+/*
+ * ฟังก์ชัน : editStore
+ * รายละเอียด :
+ *   แก้ไขข้อมูลร้านค้าตามรหัส โดยอัปเดตข้อมูลทั่วไป ที่ตั้ง รูปภาพ และป้ายกำกับ
+ * Input :
+ *   - storeId : รหัสร้านค้า
+ *   - store : ข้อมูลร้านค้าที่แก้ไข (StoreDto)
+ *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
+ * Output :
+ *   - ข้อมูลร้านค้าที่อัปเดตแล้ว
+ */
+export async function editStore(
+  storeId: number,
+  store: StoreDto,
+  user: UserPayload
+) {
+  const findStore = await prisma.store.findFirst({
+    where: {
+      id: storeId,
+    },
+    include: { community: true },
+  });
 
     const totalCount = await prisma.store.count({
         where: {
             isDeleted: false,
             communityId, // ดึงเฉพาะร้านในชุมชนนั้น
         },
+      },
+      include: {
+        storeImage: true,
+        tagStores: true,
+        location: true,
+      },
+    });
+    await transaction.tagStore.deleteMany({
+      where: { storeId },
     });
 
     const stores = await prisma.store.findMany({
@@ -68,16 +114,39 @@ export const getAllStore = async (
             },
         },
     });
-
-    const totalPages = Math.ceil(totalCount / limit);
-
-    return {
-        data: stores,
-        pagination: {
-            currentPage: page,
-            totalPages,
-            totalCount,
-            limit,
+    return newStore;
+  });
+}
+/**
+ * ฟังก์ชัน : getStoreById
+ * คำอธิบาย : ดึงข้อมูลร้านค้าตามรหัสร้านค้า
+ * Input :
+ *   - storeId : รหัสร้านค้า
+ * Output :
+ *   - ข้อมูลร้านค้าที่พบ
+ */
+export async function getStoreById(storeId: number) {
+  return prisma.store.findFirst({
+    where: {
+      id: storeId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+    select: {
+      name: true,
+      detail: true,
+      storeImage: true,
+      tagStores: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
-    };
-};
+      },
+      location: true,
+    },
+  });
+}
