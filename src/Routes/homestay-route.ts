@@ -12,6 +12,8 @@ import {
     createHomestaysBulk,
     getHomestayDetail,
     editHomestay,
+    getHomestaysAllDto,
+    getHomestaysAll,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -58,8 +60,9 @@ homestayRoutes.put(
 
 homestayRoutes.get(
     "/super/community/:communityId/homestays",
-    validateDto(HomestayController.getHomestaysAllDto),
+    validateDto(getHomestaysAllDto),
     authMiddleware,
     allowRoles("superadmin"),
     getHomestaysAll
+);
 export default homestayRoutes;

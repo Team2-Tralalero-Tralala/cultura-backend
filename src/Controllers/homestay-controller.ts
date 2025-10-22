@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import * as HomestayService from "../Services/homestay/homestay-service.js";
-import type { commonDto } from "~/Libs/Types/TypedHandler.js";
 import { HomestayDto } from "~/Services/homestay/homestay-dto.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { IsNumberString } from "class-validator";

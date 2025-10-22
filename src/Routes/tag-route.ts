@@ -36,27 +36,6 @@ tagRoutes.put(
 );
 tagRoutes.get(
     "/shared/tags",
-    getAllTags
-  "/super/tag",
-  validateDto(createTagDto),
-  authMiddleware,
-  allowRoles("superadmin"),
-  createTag
-);
-tagRoutes.delete(
-  "/super/tag/:tagId",
-  validateDto(deleteTagByIdDto),
-  authMiddleware,
-  allowRoles("superadmin"),
-  deleteTagById
-);
-tagRoutes.put(
-  "/super/tags/:tagId",
-  validateDto(editTagDto),
-  authMiddleware,
-  allowRoles("superadmin"),
-  editTag
-);
-tagRoutes.get("/shared/tags", getAllTags);
+    getAllTags);
 
 export default tagRoutes;
