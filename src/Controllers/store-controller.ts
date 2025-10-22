@@ -235,11 +235,7 @@ export const deleteStoreDto = {
  *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
  */
 export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
-  req,
-  res
-) => {
-  try {
-    if (!req.user) {
+      if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
     }
 
@@ -252,4 +248,30 @@ export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
   }
 };
 
+export const getAllStoreDto = {
+  query: PaginationDto,
+  params: CommunityIdParamDto,
+} satisfies commonDto;
 
+export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const { page = 1, limit = 10 } = req.query;
+    const user = req.user?.role;
+    if (!user) {
+      return createErrorResponse(res, 400, "ไม่พบ role");
+    }
+    const result = await StoreService.getAllStore(
+      user,
+      communityId,
+      page,
+      limit
+    );
+    return createResponse(res, 200, "All stores in Community", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};

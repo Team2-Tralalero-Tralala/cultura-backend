@@ -103,6 +103,7 @@ export const getAllStore = async (
     },
   });
 
+
   const totalPages = Math.ceil(totalCount / limit);
 
   return {
@@ -119,6 +120,10 @@ export const getAllStore = async (
 /**
  * ฟังก์ชัน : getStoreById
  * รายละเอียด : ดึงข้อมูลร้านค้าตามรหัส
+ * Input :
+ *   - storeId : รหัสร้านค้า
+ * Output :
+ *   - ข้อมูลร้านค้าที่พบ
  */
 export async function getStoreById(storeId: number) {
   return prisma.store.findFirst({
@@ -240,3 +245,78 @@ export async function deleteStore(storeId: number, user: UserPayload) {
 
   return deleted;
 }
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนตาม communityId
+ *            ใช้สำหรับหน้ารวมร้านค้าในแต่ละชุมชน และรองรับการแบ่งหน้า (pagination)
+ * Input :
+ * - communityId : number (รหัสชุมชนที่ต้องการดึงร้านค้า)
+ * - page : number (หน้าที่ต้องการแสดงผล เริ่มต้นที่ 1)
+ * - limit : number (จำนวนรายการต่อหน้า เริ่มต้นที่ 10)
+ * Output :
+ * - PaginationResponse : ประกอบด้วยข้อมูลร้านค้า (id, name, detail, tags)
+ *   และ metadata สำหรับการแบ่งหน้า เช่น currentPage, totalPages, totalCount, limit
+ */
+
+export const getAllStore = async (
+  userRole: string,
+  communityId: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(communityId)) {
+    throw new Error("ID must be a number");
+  }
+  if (userRole != "superadmin") {
+    throw new Error("Forbidden");
+  }
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+  });
+  if (!community) throw new Error("Community not found");
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.store.count({
+    where: {
+      isDeleted: false,
+      communityId, // ดึงเฉพาะร้านในชุมชนนั้น
+    },
+  });
+
+  const stores = await prisma.store.findMany({
+    where: {
+      isDeleted: false,
+      communityId,
+    },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      detail: true,
+      tagStores: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: stores,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+};
