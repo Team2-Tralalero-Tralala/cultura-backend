@@ -9,6 +9,8 @@ import {
   IsOptional,
   ValidateNested,
   IsEnum,
+  IsArray,
+  ArrayUnique,
 } from "class-validator";
 import { LocationDto } from "../location/location-dto.js";
 import { ImageType } from "@prisma/client";
@@ -24,13 +26,19 @@ export class HomestayDto {
   @IsString()
   @IsNotEmpty({ message: "ประเภทห้องพักห้ามว่าง" })
   @MaxLength(45, { message: "ประเภทห้องพักต้องไม่เกิน 45 ตัวอักษร" })
-  roomType: string;
+  type: string;
 
   @IsNumber({}, { message: "จำนวนคนต้องเป็นตัวเลข" })
   @IsInt({ message: "จำนวนคนต้องเป็นจำนวนเต็ม" })
   @IsPositive({ message: "จำนวนคนต้องมากกว่า 0" })
   @Min(1, { message: "จำนวนคนต้องอย่างน้อย 1" })
-  capacity: number;
+  guestPerRoom: number;
+
+  @IsNumber({}, { message: "จำนวนคนต้องเป็นตัวเลข" })
+  @IsInt({ message: "จำนวนคนต้องเป็นจำนวนเต็ม" })
+  @IsPositive({ message: "จำนวนคนต้องมากกว่า 0" })
+  @Min(1, { message: "จำนวนคนต้องอย่างน้อย 1" })
+  totalRoom: number;
 
   @IsString({ message: "รายละเอียดต้องเป็นข้อความ" })
   @IsNotEmpty({ message: "รายละเอียดห้ามว่าง" })
@@ -45,6 +53,13 @@ export class HomestayDto {
   @Type(() => HomestayImageDto)
   @IsOptional()
   homestayImage?: HomestayImageDto[];
+
+  @IsOptional()
+  @IsArray({ message: "tagHomestays ต้องเป็นอาเรย์ของตัวเลข" })
+  @ArrayUnique({ message: "tagHomestays ต้องไม่ซ้ำกัน" })
+  @IsInt({ each: true, message: "tagHomestays ทุกค่าต้องเป็นตัวเลขจำนวนเต็ม" })
+  @Type(() => Number) // แปลง string -> number อัตโนมัติเมื่อมาจาก JSON/form
+  tagHomestays?: number[];
 }
 
 export class HomestayImageDto {
@@ -54,5 +69,4 @@ export class HomestayImageDto {
 
   @IsEnum(ImageType)
   type: ImageType;
-
 }

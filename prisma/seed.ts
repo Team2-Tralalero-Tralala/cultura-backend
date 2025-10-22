@@ -1,21 +1,29 @@
 // prisma/seed.ts
-import { PrismaClient } from "@prisma/client";
+import {
+  PrismaClient,
+  ImageType,
+  BookingStatus,
+  PackagePublishStatus,
+} from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
-import bcrypt from "bcrypt";
+
 /*
- * คําอธิบาย : ฟังก์ชันหลักสำหรับรันการ seed ข้อมูลเริ่มต้นลงฐานข้อมูล
+ * ฟังก์ชัน : main
+ * คำอธิบาย : ฟังก์ชันหลักสำหรับ Seed ข้อมูลเริ่มต้นเข้าสู่ฐานข้อมูลของระบบ
  * Input : ไม่มี
- * Output : ข้อมูลตัวอย่างในตารางหลักทั้งหมด
+ * Output : ข้อมูลตัวอย่างในทุกตารางหลัก (Role, User, Community, Homestay, Store, Package ฯลฯ)
  */
 async function main() {
   const hash = (password: string) => bcrypt.hashSync(password, 10);
+
   /*
-   * คําอธิบาย : สร้าง role พื้นฐานของระบบ เช่น superadmin, admin, member, tourist
-   * Input : ชื่อ role
-   * Output : ข้อมูล role ที่ถูกเพิ่มลงฐานข้อมูล
+   * ส่วนที่ 1 : Seed ข้อมูล Role พื้นฐาน
+   * Input : ชื่อ Role (superadmin, admin, member, tourist)
+   * Output : บันทึก Role ลงตาราง roles
    */
-  const roles = await prisma.role.createMany({
+  await prisma.role.createMany({
     data: [
       { name: "superadmin" },
       { name: "admin" },
@@ -25,11 +33,6 @@ async function main() {
     skipDuplicates: true,
   });
 
-  /*
-   * คําอธิบาย : ดึง role ที่สร้างแล้วมาใช้อ้างอิง
-   * Input : ชื่อ role
-   * Output : ข้อมูล role แต่ละประเภท
-   */
   const roleSuper = await prisma.role.findFirst({
     where: { name: "superadmin" },
   });
@@ -38,10 +41,11 @@ async function main() {
   const roleTourist = await prisma.role.findFirst({
     where: { name: "tourist" },
   });
+
   /*
-   * คําอธิบาย : สร้างผู้ใช้งานระบบในแต่ละ role เช่น superadmin, admin, member, tourist
-   * Input : ข้อมูลผู้ใช้งาน (username, email, password, profile)
-   * Output : ข้อมูลผู้ใช้งานที่ถูกเพิ่มลงฐานข้อมูล
+   * ส่วนที่ 2 : สร้างผู้ใช้งานตัวอย่าง
+   * Input : roleId, username, email, password, ชื่อจริง-นามสกุล
+   * Output : ข้อมูลผู้ใช้งานในระบบ
    */
   const superAdmin = await prisma.user.create({
     data: {
@@ -98,14 +102,9 @@ async function main() {
       fname: "Tourist",
       lname: "One",
       phone: "0810000007",
-      gender: "MALE",
-      birthDate: new Date("1995-05-20"),
-      subDistrict: "บางรัก",
-      district: "กรุงเทพมหานคร",
-      province: "กรุงเทพฯ",
-      postalCode: "10500",
     },
   });
+
   const tourist2 = await prisma.user.create({
     data: {
       roleId: roleTourist!.id,
@@ -115,18 +114,13 @@ async function main() {
       fname: "Tourist",
       lname: "Two",
       phone: "0810000008",
-      gender: "FEMALE",
-      birthDate: new Date("1998-11-10"),
-      subDistrict: "หาดใหญ่",
-      district: "สงขลา",
-      province: "สงขลา",
-      postalCode: "90110",
     },
   });
+
   /*
-   * คําอธิบาย : สร้างข้อมูล location พื้นฐาน
-   * Input : รายละเอียดที่อยู่, latitude, longitude
-   * Output : ข้อมูล location ที่ถูกเพิ่มลงฐานข้อมูล
+   * ส่วนที่ 3 : สร้างข้อมูล Location
+   * Input : รายละเอียดที่อยู่, houseNumber, lat, lng
+   * Output : ข้อมูลพิกัดในตาราง locations
    */
   const location1 = await prisma.location.create({
     data: {
@@ -140,7 +134,6 @@ async function main() {
       longitude: 100.5,
     },
   });
-
   const location2 = await prisma.location.create({
     data: {
       detail: "Second location",
@@ -153,7 +146,6 @@ async function main() {
       longitude: 100.55,
     },
   });
-
   const location3 = await prisma.location.create({
     data: {
       detail: "Third location",
@@ -166,47 +158,24 @@ async function main() {
       longitude: 100.6,
     },
   });
+
   /*
-   * คําอธิบาย : สร้างบัญชีธนาคารสำหรับใช้งานร่วมกับ community
-   * Input : bankName, accountName, accountNumber
-   * Output : ข้อมูลบัญชีธนาคาร
-   */
-  const bank1 = await prisma.bankAccount.create({
-    data: {
-      bankName: "Bangkok Bank",
-      accountName: "Admin One",
-      accountNumber: "1234567890",
-    },
-  });
-  const bank2 = await prisma.bankAccount.create({
-    data: {
-      bankName: "SCB",
-      accountName: "Member One",
-      accountNumber: "2222222222",
-    },
-  });
-  const bank3 = await prisma.bankAccount.create({
-    data: {
-      bankName: "KBank",
-      accountName: "Tourist One",
-      accountNumber: "3333333333",
-    },
-  });
-  /*
-   * คําอธิบาย : สร้าง community ตัวอย่าง พร้อมผูก location, admin และ bank account
-   * Input : ข้อมูลชุมชน (name, type, registerNumber, adminId, locationId, bankAccountId)
-   * Output : ข้อมูล community
+   * ส่วนที่ 4 : สร้างข้อมูล Community
+   * Input : locationId, adminId, รายละเอียด community
+   * Output : ข้อมูลชุมชนในตาราง communities
    */
   const community1 = await prisma.community.create({
     data: {
       locationId: location1.id,
-      adminId: admin1!.id,
-      bankAccountId: bank1.id,
+      adminId: admin1.id,
       name: "Green Village",
       type: "Tourism",
       registerNumber: "REG001",
       registerDate: new Date("2020-01-01"),
       description: "Eco community",
+      bankName: "Bangkok Bank",
+      accountName: "Admin One",
+      accountNumber: "1234567890",
       mainActivityName: "Farming",
       mainActivityDescription: "Organic rice",
       phone: "0901111111",
@@ -220,13 +189,15 @@ async function main() {
   const community2 = await prisma.community.create({
     data: {
       locationId: location2.id,
-      adminId: admin2!.id,
-      bankAccountId: bank2.id,
+      adminId: admin2.id,
       name: "Blue Village",
       type: "Cultural",
       registerNumber: "REG002",
       registerDate: new Date("2021-01-01"),
       description: "Culture community",
+      bankName: "SCB",
+      accountName: "Member One",
+      accountNumber: "2222222222",
       mainActivityName: "Crafts",
       mainActivityDescription: "Handicraft products",
       phone: "0902222222",
@@ -240,13 +211,15 @@ async function main() {
   const community3 = await prisma.community.create({
     data: {
       locationId: location3.id,
-      adminId: admin3!.id,
-      bankAccountId: bank3.id,
+      adminId: admin3.id,
       name: "Red Village",
       type: "Adventure",
       registerNumber: "REG003",
       registerDate: new Date("2022-01-01"),
       description: "Adventure community",
+      bankName: "KBank",
+      accountName: "Tourist One",
+      accountNumber: "3333333333",
       mainActivityName: "Climbing",
       mainActivityDescription: "Mountain trekking",
       phone: "0903333333",
@@ -256,22 +229,36 @@ async function main() {
       mainAdminPhone: "0903333333",
     },
   });
+
   /*
-   * คําอธิบาย : สร้างภาพประกอบของ community
-   * Input : communityId, path รูป, type
-   * Output : ข้อมูล community image
+   * ส่วนที่ 5 : เพิ่มรูปภาพของ Community
+   * Input : communityId, image path, type
+   * Output : ข้อมูล community_images
    */
   await prisma.communityImage.createMany({
     data: [
-      { communityId: community1.id, image: "/community1.jpg", type: "LOGO" },
-      { communityId: community2.id, image: "/community2.jpg", type: "COVER" },
-      { communityId: community1.id, image: "/community3.jpg", type: "LOGO" },
+      {
+        communityId: community1.id,
+        image: "/community1.jpg",
+        type: ImageType.LOGO,
+      },
+      {
+        communityId: community2.id,
+        image: "/community2.jpg",
+        type: ImageType.COVER,
+      },
+      {
+        communityId: community3.id,
+        image: "/community3.jpg",
+        type: ImageType.LOGO,
+      },
     ],
   });
+
   /*
-   * คําอธิบาย : สร้าง member และผูกเข้ากับ community
-   * Input : ข้อมูล member และ communityId
-   * Output : ข้อมูล member
+   * ส่วนที่ 6 : เพิ่มสมาชิกของชุมชน (Member)
+   * Input : ข้อมูลผู้ใช้ + memberOfCommunity
+   * Output : ข้อมูลผู้ใช้งานที่เป็นสมาชิก
    */
   const member1 = await prisma.user.create({
     data: {
@@ -282,7 +269,6 @@ async function main() {
       fname: "Member",
       lname: "One",
       phone: "0810000005",
-      memberOfCommunity: 1,
     },
   });
   const member2 = await prisma.user.create({
@@ -294,14 +280,21 @@ async function main() {
       fname: "Member",
       lname: "Two",
       phone: "0810000006",
-      memberOfCommunity: 2,
       activityRole: "ผู้นำเที่ยว",
     },
   });
+
+  const communityMember1 = await prisma.communityMembers.create({
+    data: {
+      communityId: 1,
+      memberId: member1.id,
+    },
+  });
+
   /*
-   * คําอธิบาย : สร้าง banner ของระบบ
-   * Input : path รูปภาพ
-   * Output : ข้อมูล banner
+   * ส่วนที่ 7 : Banner
+   * Input : path รูป
+   * Output : แบนเนอร์แสดงบนหน้าเว็บ
    */
   await prisma.banner.createMany({
     data: [
@@ -312,9 +305,9 @@ async function main() {
   });
 
   /*
-   * คําอธิบาย : สร้าง store ของ community และภาพ store
-   * Input : communityId, locationId, detail ของร้านค้า
-   * Output : ข้อมูล store และ store image
+   * ส่วนที่ 8 : Store และรูปภาพ Store
+   * Input : communityId, locationId, detail
+   * Output : ข้อมูลร้านค้าและรูปประกอบ
    */
   const store1 = await prisma.store.create({
     data: {
@@ -341,61 +334,69 @@ async function main() {
     },
   });
 
-  /*
-   * คําอธิบาย : สร้าง homestay และภาพ homestay
-   * Input : communityId, locationId, detail ของ homestay
-   * Output : ข้อมูล homestay และ homestay image
-   */
-
   await prisma.storeImage.createMany({
     data: [
-      { storeId: store1.id, image: "/store1.jpg", type: "COVER" },
-      { storeId: store2.id, image: "/store2.jpg", type: "COVER" },
-      { storeId: store3.id, image: "/store3.jpg", type: "GALLERY" },
+      { storeId: store1.id, image: "/store1.jpg", type: ImageType.COVER },
+      { storeId: store2.id, image: "/store2.jpg", type: ImageType.COVER },
+      { storeId: store3.id, image: "/store3.jpg", type: ImageType.GALLERY },
     ],
   });
 
+  /*
+   * ส่วนที่ 9 : Homestay และรูปภาพ Homestay
+   * Input : communityId, locationId, รายละเอียดห้องพัก
+   * Output : ข้อมูล homestay และ homestay_images
+   */
   const homestay1 = await prisma.homestay.create({
     data: {
       name: "Homestay A",
-      roomType: "Single",
-      capacity: 2,
+      type: "Single",
+      guestPerRoom: 2,
+      totalRoom: 5,
+      facility: "WiFi, AirCon",
       communityId: community1.id,
       locationId: location1.id,
-      detail: "Homestay",
     },
   });
   const homestay2 = await prisma.homestay.create({
     data: {
       name: "Homestay B",
-      roomType: "Double",
-      capacity: 4,
+      type: "Double",
+      guestPerRoom: 4,
+      totalRoom: 8,
+      facility: "Breakfast, AC",
       communityId: community2.id,
       locationId: location2.id,
-      detail: "Homestay",
     },
   });
   const homestay3 = await prisma.homestay.create({
     data: {
       name: "Homestay C",
-      roomType: "Dorm",
-      capacity: 10,
+      type: "Dorm",
+      guestPerRoom: 10,
+      totalRoom: 20,
+      facility: "Shared kitchen",
       communityId: community3.id,
       locationId: location3.id,
-      detail: "Homestay",
     },
   });
+
   await prisma.homestayImage.createMany({
     data: [
-      { homestayId: homestay1.id, image: "/home1.jpg", type: "COVER" },
-      { homestayId: homestay2.id, image: "/home2.jpg", type: "COVER" },
-      { homestayId: homestay3.id, image: "/home3.jpg", type: "GALLERY" },
+      { homestayId: homestay1.id, image: "/home1.jpg", type: ImageType.COVER },
+      { homestayId: homestay2.id, image: "/home2.jpg", type: ImageType.COVER },
+      {
+        homestayId: homestay3.id,
+        image: "/home3.jpg",
+        type: ImageType.GALLERY,
+      },
     ],
   });
+
   /*
-   * คําอธิบาย : สร้าง tag และเชื่อมโยงกับ store, homestay, package
-   * Input : ชื่อ tag
-   * Output : ข้อมูล tag และความสัมพันธ์
+   * ส่วนที่ 10 : Tag และความสัมพันธ์กับ Store/Homestay
+   * Input : ชื่อ Tag
+   * Output : ข้อมูล tag และตารางเชื่อมโยง
    */
   const tag1 = await prisma.tag.create({ data: { name: "Nature" } });
   const tag2 = await prisma.tag.create({ data: { name: "Culture" } });
@@ -417,114 +418,53 @@ async function main() {
   });
 
   /*
-   * คําอธิบาย : สร้าง package ท่องเที่ยว และไฟล์ประกอบ
-   * Input : communityId, locationId, overseerMemberId, createById
-   * Output : ข้อมูล package และ package file
+   * ส่วนที่ 11 : Package และ PackageFile
+   * Input : communityId, overseerMemberId, createById, รายละเอียดแพ็กเกจ
+   * Output : ข้อมูล package และ package_files
    */
   const pkg1 = await prisma.package.create({
     data: {
       communityId: community1.id,
       locationId: location1.id,
-      overseerMemberId: member1!.id,
-      createById: admin1!.id,
+      overseerMemberId: member1.id,
+      createById: admin1.id,
       name: "Eco Tour",
       description: "Farm visit",
       capacity: 10,
       price: 500,
       warning: "Bring boots",
-      statusPackage: "PUBLISH",
+      statusPackage: PackagePublishStatus.PUBLISH,
       startDate: new Date("2025-01-01"),
       dueDate: new Date("2025-01-05"),
+      bookingOpenDate: new Date("2025-01-01"),
+      bookingCloseDate: new Date("2025-01-05"),
       facility: "Meals",
     },
   });
-  const pkg2 = await prisma.package.create({
-    data: {
-      communityId: community2.id,
-      locationId: location2.id,
-      overseerMemberId: member2!.id,
-      createById: admin2!.id,
-      name: "Cultural Tour",
-      description: "Handicrafts",
-      capacity: 15,
-      price: 800,
-      warning: "No flash photos",
-      statusPackage: "DRAFT",
-      startDate: new Date("2025-02-01"),
-      dueDate: new Date("2025-02-05"),
-      facility: "Guide",
-    },
+
+  await prisma.packageFile.create({
+    data: { packageId: pkg1.id, filePath: "/pkg1.jpg", type: ImageType.COVER },
   });
-  const pkg3 = await prisma.package.create({
-    data: {
-      communityId: community3.id,
-      locationId: location3.id,
-      overseerMemberId: member1!.id,
-      createById: admin1!.id,
-      name: "Adventure Tour",
-      description: "Mountain climbing",
-      capacity: 20,
-      price: 1500,
-      warning: "Physical checkup required",
-      statusPackage: "UNPUBLISH",
-      startDate: new Date("2025-03-01"),
-      dueDate: new Date("2025-03-10"),
-      facility: "Gear",
-    },
-  });
-  await prisma.packageFile.createMany({
-    data: [
-      { packageId: pkg1.id, filePath: "/pkg1.jpg", type: "COVER" },
-      { packageId: pkg2.id, filePath: "/pkg2.jpg", type: "COVER" },
-      { packageId: pkg3.id, filePath: "/pkg3.jpg", type: "GALLERY" },
-    ],
-  });
-  await prisma.tagsPackages.createMany({
-    data: [
-      { tagId: tag1.id, packageId: pkg1.id },
-      { tagId: tag2.id, packageId: pkg2.id },
-      { tagId: tag3.id, packageId: pkg3.id },
-    ],
-  });
+
   /*
-   * คําอธิบาย : สร้างประวัติการจอง (booking history)
-   * Input : touristId, packageId, bankId, status
-   * Output : ข้อมูล booking
+   * ส่วนที่ 12 : Booking History
+   * Input : touristId, packageId, status, participant
+   * Output : ประวัติการจองใน booking_histories
    */
   const booking1 = await prisma.bookingHistory.create({
     data: {
-      touristId: tourist1!.id,
+      touristId: tourist1.id,
       packageId: pkg1.id,
-      touristBankId: bank3.id,
       bookingAt: new Date(),
-      status: "BOOKED",
+      status: BookingStatus.BOOKED,
       totalParticipant: 2,
     },
   });
-  const booking2 = await prisma.bookingHistory.create({
-    data: {
-      touristId: tourist2!.id,
-      packageId: pkg2.id,
-      touristBankId: bank3.id,
-      bookingAt: new Date(),
-      status: "PENDING",
-      totalParticipant: 3,
-    },
-  });
-  const booking3 = await prisma.bookingHistory.create({
-    data: {
-      touristId: tourist1!.id,
-      packageId: pkg3.id,
-      touristBankId: bank3.id,
-      bookingAt: new Date(),
-      status: "CANCELLED",
-      totalParticipant: 1,
-    },
-  });
+
   /*
-   * คําอธิบาย : สร้าง feedback และรูปภาพ feedback
+   * ส่วนที่ 13 : Feedback และ FeedbackImage
    * Input : bookingHistoryId, message, rating
-   * Output : ข้อมูล feedback
+   * Output : คำติชมและรูปแนบใน feedbacks / feedback_images
    */
   const feedback1 = await prisma.feedback.create({
     data: {
@@ -535,39 +475,21 @@ async function main() {
     },
   });
 
-  const feedback2 = await prisma.feedback.create({
-    data: {
-      bookingHistoryId: booking2.id,
-      createdAt: new Date(),
-      message: "Good but delayed",
-      rating: 3,
-    },
+  await prisma.feedbackImage.create({
+    data: { feedbackId: feedback1.id, image: "/feedback1.jpg" },
   });
 
-  const feedback3 = await prisma.feedback.create({
-    data: {
-      bookingHistoryId: booking3.id,
-      createdAt: new Date(),
-      message: "Had to cancel",
-      rating: 1,
-    },
-  });
-
-  await prisma.feedbackImage.createMany({
-    data: [
-      { feedbackId: feedback1.id, image: "/home1.jpg" },
-      { feedbackId: feedback2.id, image: "/home2.jpg" },
-      { feedbackId: feedback3.id, image: "/home3.jpg" },
-    ],
-  });
-
-  console.log("Seed completed successfully!");
+  console.log("✅ Seed completed successfully!");
 }
 
+/*
+ * ฟังก์ชัน : main()
+ * คำอธิบาย : เรียกใช้งาน seed และจัดการปิด connection
+ */
 main()
   .then(() => prisma.$disconnect())
   .catch(async (e) => {
-    console.error(e);
+    console.error("❌ Seed error:", e);
     await prisma.$disconnect();
     process.exit(1);
   });
