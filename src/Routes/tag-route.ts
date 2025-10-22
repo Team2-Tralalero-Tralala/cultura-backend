@@ -39,3 +39,5 @@ tagRoutes.get(
     getAllTags);
 
 export default tagRoutes;
+
+
