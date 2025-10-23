@@ -14,7 +14,6 @@ import {
     patchRejectPackageRequest,
     getDetailRequest,
 } from "~/Controllers/package-request-controller.js";
-
 const packageRequestRoutes = Router();
 
 /**
@@ -48,5 +47,11 @@ packageRequestRoutes.patch(
     patchRejectPackageRequest
 );
 
-packageRequestRoutes.get("/super/package-requests/:requestId", authMiddleware, allowRoles("superadmin"), getDetailRequest);
+packageRequestRoutes.get(
+    "/super/package-requests/:requestId", 
+    authMiddleware, 
+    allowRoles("superadmin"), 
+    getDetailRequest
+);
+
 export default packageRequestRoutes;
