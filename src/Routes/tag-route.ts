@@ -1,13 +1,5 @@
 import { Router } from "express";
-import {
-  createTag,
-  createTagDto,
-  deleteTagById,
-  deleteTagByIdDto,
-  editTag,
-  editTagDto,
-  getAllTags,
-} from "../Controllers/tag-controller.js";
+import * as TagController from "../Controllers/tag-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
@@ -18,10 +10,10 @@ const tagRoutes = Router();
  */
 tagRoutes.post(
     "/super/tag",
-    validateDto(createTagDto),
+    validateDto(TagController.createTagDto),
     authMiddleware,
     allowRoles("superadmin"),
-    createTag
+    TagController.createTag
 );
 
 /**
@@ -29,10 +21,10 @@ tagRoutes.post(
  */
 tagRoutes.patch(
     "/super/tag/:tagId",
-    validateDto(deleteTagByIdDto),
+    validateDto(TagController.deleteTagByIdDto),
     authMiddleware,
     allowRoles("superadmin"),
-    deleteTagById
+    TagController.deleteTagById
 );
 
 /**
@@ -40,10 +32,10 @@ tagRoutes.patch(
  */
 tagRoutes.put(
     "/super/tag/:tagId",
-    validateDto(editTagDto),
+    validateDto(TagController.editTagDto),
     authMiddleware,
     allowRoles("superadmin"),
-    editTag
+    TagController.editTag
 );
 
 /**
@@ -51,8 +43,9 @@ tagRoutes.put(
  */
 tagRoutes.get(
     "/shared/tags",
+    validateDto(TagController.getAllTagsDto),
     authMiddleware,
     allowRoles("superadmin"),
-    getAllTags);
+    TagController.getAllTags);
 
 export default tagRoutes;
