@@ -155,6 +155,7 @@ export async function getStoreById(storeId: number) {
     },
   });
 }
+
 /**
  * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนตาม communityId
  *            ใช้สำหรับหน้ารวมร้านค้าในแต่ละชุมชน และรองรับการแบ่งหน้า (pagination)
@@ -166,7 +167,6 @@ export async function getStoreById(storeId: number) {
  * - PaginationResponse : ประกอบด้วยข้อมูลร้านค้า (id, name, detail, tags)
  *   และ metadata สำหรับการแบ่งหน้า เช่น currentPage, totalPages, totalCount, limit
  */
-
 export const getAllStore = async (
   userRole: string,
   communityId: number,
@@ -224,9 +224,9 @@ export const getAllStore = async (
     data: stores,
     pagination: {
       currentPage: page,
-      totalPages,
-      totalCount,
       limit,
+      totalCount,
+      totalPages,
     },
   };
 };
