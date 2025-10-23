@@ -51,6 +51,7 @@ packageRequestRoutes.get(
     "/super/package-requests/:requestId", 
     authMiddleware, 
     allowRoles("superadmin"), 
-    getDetailRequest);
+    getDetailRequest
+);
 
 export default packageRequestRoutes;
