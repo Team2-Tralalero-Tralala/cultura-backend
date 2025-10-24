@@ -24,13 +24,19 @@ export class HomestayDto {
   @IsString()
   @IsNotEmpty({ message: "ประเภทห้องพักห้ามว่าง" })
   @MaxLength(45, { message: "ประเภทห้องพักต้องไม่เกิน 45 ตัวอักษร" })
-  roomType: string;
+  type: string;
 
   @IsNumber({}, { message: "จำนวนคนต้องเป็นตัวเลข" })
   @IsInt({ message: "จำนวนคนต้องเป็นจำนวนเต็ม" })
   @IsPositive({ message: "จำนวนคนต้องมากกว่า 0" })
   @Min(1, { message: "จำนวนคนต้องอย่างน้อย 1" })
-  capacity: number;
+  guestPerRoom: number;
+
+  @IsNumber({}, { message: "จำนวนคนต้องเป็นตัวเลข" })
+  @IsInt({ message: "จำนวนคนต้องเป็นจำนวนเต็ม" })
+  @IsPositive({ message: "จำนวนคนต้องมากกว่า 0" })
+  @Min(1, { message: "จำนวนคนต้องอย่างน้อย 1" })
+  totalRoom: number;
 
   @IsString({ message: "รายละเอียดต้องเป็นข้อความ" })
   @IsNotEmpty({ message: "รายละเอียดห้ามว่าง" })
@@ -54,5 +60,4 @@ export class HomestayImageDto {
 
   @IsEnum(ImageType)
   type: ImageType;
-
 }
