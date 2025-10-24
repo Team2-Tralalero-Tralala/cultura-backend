@@ -4,6 +4,7 @@ import {
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
@@ -172,6 +173,34 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
     const storeId = Number(req.params.storeId);
     const result = await StoreService.getStoreById(storeId);
     return createResponse(res, 201, "Store update successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+export const getAllStoreDto = {
+  query: PaginationDto,
+  params: CommunityIdParamDto,
+} satisfies commonDto;
+
+export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const { page = 1, limit = 10 } = req.query;
+    const user = req.user?.role;
+    if (!user) {
+      return createErrorResponse(res, 400, "ไม่พบ role");
+    }
+    const result = await StoreService.getAllStore(
+      user,
+      communityId,
+      page,
+      limit
+    );
+    return createResponse(res, 200, "All stores in Community", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }

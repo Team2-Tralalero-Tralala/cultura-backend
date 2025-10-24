@@ -115,4 +115,12 @@ userRoutes.put(
   unblockAccountById
 );
 
+userRoutes.post(
+    "/account/change-password/me",
+    authMiddleware,
+    allowRoles("superadmin", "admin", "member", "tourist"),
+    validateDto(changePasswordDto),
+    changePassword
+  );
+  
 export default userRoutes;
