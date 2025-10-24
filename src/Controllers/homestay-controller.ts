@@ -229,3 +229,49 @@ export const getHomestaysAll: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/*
+ * DTO สำหรับ "ดึงรายละเอียด Homestay ตาม id (เฉพาะแอดมิน)"
+ */
+export class HomestayIdParamDto {
+  @IsNumberString({}, { message: "homestayId ต้องเป็นตัวเลข" })
+  homestayId!: string;
+}
+
+export const getHomestayDetailByAdminDto = {
+  params: HomestayIdParamDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงรายละเอียด Homestay ตาม id (เฉพาะแอดมินของชุมชนนั้น)"
+ * Route : GET /admin/homestay/:homestayId
+ * Input :
+ *   - req.user.id  (จาก middleware auth)
+ *   - req.params.homestayId
+ * Output :
+ *   - JSON response พร้อมรายละเอียด homestay (รวม community, location, image, tag)
+ * หมายเหตุ :
+ *   - เฉพาะแอดมินของชุมชนนั้นเท่านั้นที่เข้าถึงได้
+ */
+export const getHomestayDetailByAdmin: TypedHandlerFromDto<
+  typeof getHomestayDetailByAdminDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user!.id);
+    const homestayId = Number(req.params.homestayId);
+
+    const result = await HomestayService.getHomestayDetailByAdmin(
+      userId,
+      homestayId
+    );
+
+    return createResponse(
+      res,
+      200,
+      "Homestay detail retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

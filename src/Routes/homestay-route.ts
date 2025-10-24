@@ -14,6 +14,8 @@ import {
     editHomestay,
     getHomestaysAllDto,
     getHomestaysAll,
+    getHomestayDetailByAdminDto,
+    getHomestayDetailByAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -65,4 +67,13 @@ homestayRoutes.get(
     allowRoles("superadmin"),
     getHomestaysAll
 );
+
+homestayRoutes.get(
+  "/admin/community/homestay/:homestayId",
+  validateDto(getHomestayDetailByAdminDto),
+  authMiddleware,
+  allowRoles("admin"),
+  getHomestayDetailByAdmin
+);
+
 export default homestayRoutes;

@@ -452,3 +452,87 @@ export const getHomestaysAll = async (
         },
     };
 };
+
+
+/**
+ * คำอธิบาย : ดึงรายละเอียด Homestay ตาม id (เฉพาะ Admin ของชุมชนนั้นๆ)
+ * Input  :
+ *   - userId (number) : id ของผู้ใช้ (Admin)
+ *   - homestayId (number) : id ของ homestay ที่ต้องการดูรายละเอียด
+ * Output :
+ *   - homestay (รวมความสัมพันธ์)
+ * เงื่อนไข :
+ *   - ต้องเป็น admin ของ community ที่ homestay นั้นอยู่เท่านั้นถึงจะดูได้
+ */
+export async function getHomestayDetailByAdmin(userId: number, homestayId: number) {
+  // ===== ตรวจความถูกต้องของ input =====
+  if (
+    !Number.isInteger(userId) ||
+    !Number.isInteger(homestayId) ||
+    userId <= 0 ||
+    homestayId <= 0
+  ) {
+    throw new Error("ID must be a positive integer");
+  }
+
+  // ===== ตรวจว่า user เป็น admin =====
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "admin") {
+    throw new Error("Forbidden: Not an admin");
+  }
+
+  // ===== ดึง homestay พร้อมข้อมูล community =====
+  const homestay = await prisma.homestay.findUnique({
+    where: { id: homestayId },
+    include: {
+      community: {
+        select: { id: true, name: true, adminId: true },
+      },
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          alley: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      homestayImage: {
+        select: { id: true, image: true, type: true },
+      },
+      tagHomestays: {
+        include: {
+          tag: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  if (!homestay) throw new Error("Homestay not found");
+
+  // ===== ตรวจว่า homestay เป็นของ community ที่ admin เป็นเจ้าของหรือไม่ =====
+  const community = await prisma.community.findFirst({
+    where: {
+      id: homestay.communityId,
+      adminId: userId,
+      isDeleted: false,
+    },
+  });
+
+  if (!community) {
+    throw new Error("Forbidden: You are not the admin of this homestay’s community");
+  }
+
+  return homestay;
+}
