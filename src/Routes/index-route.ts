@@ -12,6 +12,7 @@ import storeRoute from "./store-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
 import bannerRoutes from "./banner-route.js";
+import bankRoutes from "./bank-route.js";
 
 const rootRouter: Router = Router();
 
@@ -21,7 +22,7 @@ rootRouter.use("/packages", packageRoutes);
 rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/shared/logs", logRoutes);
-rootRouter.use(homestayRoutes)
+rootRouter.use(homestayRoutes);
 rootRouter.use(tagRoutes);
 rootRouter.use("/logs", logRoutes);
 
@@ -32,5 +33,6 @@ rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);
 rootRouter.use("/super/dashboard", dashboardRoutes);
 rootRouter.use("/banner", bannerRoutes);
+rootRouter.use(bankRoutes);
 
 export default rootRouter;
