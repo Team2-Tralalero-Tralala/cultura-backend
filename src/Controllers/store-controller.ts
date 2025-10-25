@@ -256,7 +256,6 @@ export const getAllStoreForAdmin: TypedHandlerFromDto<typeof getAllStoreForAdmin
         if (!req.user) {
             return createErrorResponse(res, 401, "Unauthorized: User not found");
         }
-
         const userId = req.user.id;
         const { page = 1, limit = 10 } = req.query;
 
