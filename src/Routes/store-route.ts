@@ -77,7 +77,7 @@ storeRoute.get(
  *   โดยจำกัดสิทธิ์ให้เฉพาะ admin เท่านั้น
  */
 storeRoute.get(
-    "/admin/community/stores/all",
+    "/admin/community/own/stores/all",
     validateDto(StoreController.getAllStoreForAdminDto),
     authMiddleware,
     allowRoles("admin"),
