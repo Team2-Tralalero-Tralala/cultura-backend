@@ -320,15 +320,10 @@ export const updateProfileImage = async (req, res) => {
       try {
         if (fs.existsSync(oldPath)) {
           fs.unlinkSync(oldPath);
-          console.log(`ลบรูปเก่าเรียบร้อย: ${oldPath}`);
-        } else {
-          console.log(`ไม่พบไฟล์เก่าที่จะลบ: ${oldPath}`);
         }
       } catch (err) {
         console.warn(`ลบรูปเก่าล้มเหลว: ${err.message}`);
       }
-    } else {
-      console.log("ไม่มีรูปเก่าในระบบ — ข้ามการลบ");
     }
 
     // ===== ตัด path เหลือเฉพาะชื่อไฟล์ แล้วเติม / ข้างหน้า =====
@@ -339,7 +334,6 @@ export const updateProfileImage = async (req, res) => {
 
     return createResponse(res, 200, "อัปเดตรูปโปรไฟล์สำเร็จ", updatedUser);
   } catch (error) {
-    console.error("updateProfileImage error:", error);
     return createErrorResponse(res, 500, (error as Error).message);
   }
 };
