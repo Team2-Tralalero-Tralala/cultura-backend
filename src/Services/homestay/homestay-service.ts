@@ -384,71 +384,149 @@ export async function getHomestayDetailById(id: number) {
 }
 // services/homestay-service.ts
 
-
-/*
+/**
  * ฟังก์ชัน : getHomestaysAll
- * อธิบาย : ดึง homestay ทั้งหมดในชุมชน (ใช้ได้เฉพาะ superadmin เท่านั้น)
- * Input : userId (รหัสผู้ใช้), communityId (รหัสชุมชน), page, limit
- * Output :
- *   - ถ้าเป็น superadmin → ได้ homestay ทั้งหมดในชุมชนนั้นพร้อม pagination
- *   - ถ้าไม่ใช่ superadmin → Forbidden
+ * คำอธิบาย : ดึง homestay ทั้งหมดในชุมชน พร้อมระบบ pagination ใช้ได้เฉพาะผู้ใช้ role "admin" หรือ "superadmin"
+ * Input:
+ * - userId      : number  (รหัสผู้ใช้)
+ * - communityId : number  (รหัสชุมชน)
+ * - page        : number  (หน้าที่ต้องการ แปลงเป็น 1 ถ้าไม่มี)
+ * - limit       : number  (จำนวนรายการต่อหน้า แปลงเป็น 10 ถ้าไม่มี)
+ * Output:
+ * - ถ้าเป็น admin/superadmin:
+ *   {
+ *     data: Homestay[], 
+ *     pagination: { currentPage, totalPages, totalCount, limit }
+ *   }
+ * - ถ้า user ไม่พบ หรือ role ไม่ตรง throw Error (Forbidden / User not found)
+ * - ถ้า community ไม่พบหรือถูกลบ throw Error
  */
+
 export const getHomestaysAll = async (
-    userId: number,
-    communityId: number,
-    page: number = 1,
-    limit: number = 10
+  userId: number,
+  communityId: number,
+  page: number = 1,
+  limit: number = 10
 ): Promise<PaginationResponse<any>> => {
-    if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
-        throw new Error("ID must be Number");
-    }
+  // ====== ตรวจสอบค่าพารามิเตอร์ ======
+  if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
+    throw new Error("ID must be Number");
+  }
 
-    //ตรวจสอบสิทธิ์ผู้ใช้
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { role: true },
-    });
-    if (!user) throw new Error("User not found");
-    if (user.role?.name?.toLowerCase() !== "superadmin") {
-        throw new Error("Forbidden");
-    }
+  // ====== ตรวจสอบสิทธิ์ผู้ใช้ ======
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: true,
+      Community: true, 
+    },
+  });
 
-    // ตรวจสอบว่าชุมชนมีอยู่จริง (ใช้ findFirst ป้องกัน soft-delete)
-    const community = await prisma.community.findFirst({
-        where: { id: communityId, isDeleted: false },
-    });
-    if (!community) throw new Error("Community not found");
+  if (!user) throw new Error("User not found");
 
-    const skip = (page - 1) * limit;
+  const roleName = user.role?.name?.toLowerCase();
+  if (roleName !== "admin" && roleName !== "superadmin") {
+    throw new Error(
+      "Forbidden : only admin or superadmin can access this resource"
+    );
+  }
 
-    // นับจำนวน homestay ทั้งหมดในชุมชน
-    const totalCount = await prisma.homestay.count({
-        where: { communityId, isDeleted: false },
-    });
+  const community = await prisma.community.findUnique({
+    where: { id: communityId },
+  });
+  if (!community || community.isDeleted)
+    throw new Error("Community not found or deleted");
 
-    // ดึงข้อมูล homestay เฉพาะ field ที่ต้องการ
-    const homestays = await prisma.homestay.findMany({
-        where: { communityId, isDeleted: false },
-        orderBy: { id: "asc" },
-        skip,
-        take: limit,
-        select: {
-            id: true,        // รหัสที่พัก
-            name: true,      // ชื่อที่พัก
-            type: true,      // ประเภทห้องพัก
-            facility: true,  // สิ่งอำนวยความสะดวก
-        },
-    });
+  // ====== คำนวณ pagination ======
+  const skip = (page - 1) * limit;
 
-    const totalPages = Math.ceil(totalCount / limit);
+  // นับจำนวน homestay ทั้งหมด (เฉพาะที่ไม่ถูกลบ)
+  const totalCount = await prisma.homestay.count({
+    where: {
+      communityId,
+      isDeleted: false,
+    },
+  });
 
-    return {
-        data: homestays,
-        pagination: {
-            currentPage: page,
-            totalPages,
-            totalCount,
-            limit,
-        },
-    };
+  // ดึงข้อมูล homestay
+  const homestays = await prisma.homestay.findMany({
+    where: {
+      communityId,
+      isDeleted: false,
+    },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      facility: true,
+      type: true,
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // ====== ส่งผลลัพธ์กลับ ======
+  return {
+    data: homestays,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
 };
+
+
+/**
+ * ฟังก์ชัน : deleteHomestayById
+ * คำอธิบาย : Soft delete homestay ตาม ID ใช้ได้เฉพาะผู้ใช้ role "admin" เท่านั้น
+ * Input:
+ * - userId     : number  (รหัสผู้ใช้)
+ * - homestayId : number  (รหัส homestay ที่ต้องการลบ)
+ * Output:
+ * - ถ้า user เป็น admin และ homestay ยังไม่ถูกลบ จะ return Homestay (หลัง update isDeleted = true)
+ * - ถ้า user ไม่พบ throw Error("User not found")
+ * - ถ้า role ไม่ใช่ admin throw Error("Forbidden : only admin can delete homestays")
+ * - ถ้า homestay ไม่พบหรือถูกลบแล้ว throw Error("Homestay not found or already deleted")
+ */
+
+export const deleteHomestayById = async (
+  userId: number,
+  homestayId: number
+) => {
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const roleName = user.role?.name.toLowerCase();
+  if (roleName !== "admin") {
+    throw new Error("Forbidden : only admin can delete homestays");
+  }
+
+
+  const homestay = await prisma.homestay.findUnique({
+    where: { id: homestayId },
+  });
+
+  if (!homestay || homestay.isDeleted) {
+    throw new Error("Homestay not found or already deleted");
+  }
+
+  const deletedHomestay = await prisma.homestay.update({
+    where: { id: homestayId },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+
+  return deletedHomestay;
+};
+

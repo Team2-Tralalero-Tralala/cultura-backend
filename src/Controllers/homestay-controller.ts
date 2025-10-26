@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import * as HomestayService from "../Services/homestay/homestay-service.js";
 import { HomestayDto } from "~/Services/homestay/homestay-dto.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import prisma from "~/Services/database-service.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 import { IsNumberString } from "class-validator";
 import {
   commonDto,
@@ -207,16 +209,21 @@ export const editHomestay = async (req: Request, res: Response) => {
 /*
  * DTO สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
  */
+
 export class IdParamDto {
   @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลข" })
   communityId?: string; // แก้เป็น optional
 }
 
-export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
+export const getHomestaysAllDto = {
+  params: IdParamDto,
+  query: PaginationDto,
+} satisfies commonDto;
 
 /*
  * ฟังก์ชัน Controller สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
  */
+
 export const getHomestaysAll: TypedHandlerFromDto<
   typeof getHomestaysAllDto
 > = async (req, res) => {
@@ -229,3 +236,87 @@ export const getHomestaysAll: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/**
+ * ฟังก์ชัน : getHomestaysAllAdmin
+ * คำอธิบาย : ดึงข้อมูลที่พักทั้งหมดในชุมชนสำหรับผู้ใช้ role "admin" พร้อมระบบแบ่งหน้า
+ *
+ * Input:
+ * - req.user.id        : number  (รหัสผู้ใช้)
+ * - req.user.role      : string  (ต้องเป็น "admin")
+ * - req.params.communityId : number  (รหัสชุมชน)
+ * - req.query.page     : number  (หน้าที่ต้องการ แปลงเป็น 1 ถ้าไม่มี)
+ * - req.query.limit    : number  (จำนวนรายการต่อหน้า แปลงเป็น 10 ถ้าไม่มี)
+ *
+ * Output:
+ * - 200 : { message: string, data: PaginationResponse<Homestay> }
+ * - 403 : { message: string }  (ถ้าไม่ใช่ admin)
+ * - 400 : { message: string }  (กรณี error)
+ */
+
+export const getHomestaysAllAdmin: TypedHandlerFromDto<
+  typeof getHomestaysAllDto
+> = async (req, res) => {
+  try {
+    const role = req.user?.role?.toLowerCase();
+    if (role !== "admin") {
+      return createErrorResponse(
+        res,
+        403, "Forbidden : only superadmin can access this resource"
+      );
+    }
+
+    const userId = Number(req.user!.id);
+    const communityId = Number(req.params.communityId);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const result = await HomestayService.getHomestaysAll(
+      userId,
+      communityId,
+      page,
+      limit
+    );
+    return createResponse(res, 200, "get homestay successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/**
+ * ฟังก์ชัน : deleteHomestayById
+ * คำอธิบาย : Soft delete homestay เฉพาะผู้ใช้ role "admin"
+ *
+ * Input:
+ * - req.user.id   : number  (รหัสผู้ใช้)
+ * - req.user.role : string  (ต้องเป็น "admin")
+ * - req.params.id : number  (รหัส homestay ที่ต้องการลบ)
+ *
+ * Output:
+ * - 200 : { message: string, data: Homestay }  (ลบสำเร็จ)
+ * - 400 : { message: string }  (homestayId ไม่ถูกต้อง หรือเกิด error)
+ * - 401 : { message: string }  (ไม่มี role หรือไม่ได้ login)
+ */
+
+export const deleteHomestayById = async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.role) {
+      return createErrorResponse(res, 401, "Unauthorized : no role found");
+    }
+
+    const homestayId = Number(req.params.id);
+    if (isNaN(homestayId)) {
+      return createErrorResponse(res, 400, "Homestay ID must be a number");
+    }
+
+    const deleted = await HomestayService.deleteHomestayById(
+      req.user.id,
+      homestayId
+    );
+
+    return createResponse(res, 200, "Deleted homestay successfully", deleted);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
