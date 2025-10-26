@@ -14,6 +14,7 @@ import {
     unblockAccountByIdDto,
     createAccountDto,
     createAccount,
+    updateProfileImage
 } from "../Controllers/user-controller.js";
 
 import { validateDto } from "~/Libs/validateDto.js";
@@ -32,14 +33,17 @@ userRoutes.post(
     createAccount
 ); 
 
-//เทส API ใช้ฟังก์ชันบีบไฟล์
-userRoutes.post(
-    "/",
-    upload.single("profileImage"),
-    compressUploadedFile,
-    validateDto(createAccountDto),
-    createAccount
-); 
+/* ==========================================================
+ *  อัปโหลดรูปโปรไฟล์ของผู้ใช้
+ * ========================================================== */
+userRoutes.put(
+  "/super/users/profile/:userId",
+  authMiddleware,
+  allowRoles("superadmin", "admin"),
+  upload.single("profileImage"),
+  compressUploadedFile,
+  updateProfileImage
+);
 
 /* ==========================================================
  *  Super Admin / Admin : จัดการบัญชีผู้ใช้ทั้งหมด

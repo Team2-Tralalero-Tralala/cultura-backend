@@ -44,7 +44,7 @@ export async function getAccountAll(
   // ดึงเฉพาะผู้ใช้ที่มีสถานะ ACTIVE เท่านั้น
   whereCondition.status = "ACTIVE";
   whereCondition.isDeleted = false;
-  whereCondition.deleteAt = null;
+
 
   // Search ชื่อ
   if (searchName) {
@@ -123,7 +123,6 @@ export async function getUserByStatus(
   // ดึงเฉพาะผู้ใช้ที่มีสถานะ BLOCKED เท่านั้น
   whereCondition.status = "BLOCKED";
   whereCondition.isDeleted = false;
-  whereCondition.deleteAt = null;
   
   // Search ชื่อ
   if (searchName) {
@@ -246,4 +245,29 @@ export async function createAccount(payload: any, pathFile: string) {
   });
 
   return user;
+}
+
+/*
+ * ฟังก์ชัน : updateProfileImage
+ * คำอธิบาย : อัปเดตรูปโปรไฟล์ของผู้ใช้ในฐานข้อมูล
+ */
+export async function updateProfileImage(userId: number, pathFile: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { profileImage: pathFile },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      profileImage: true,
+    },
+  });
+
+  return updatedUser;
 }

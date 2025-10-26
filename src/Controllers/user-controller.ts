@@ -24,6 +24,9 @@ import {
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { Type } from "class-transformer";
 
+import fs from "fs";
+import path from "path";
+
 
 /*
  * DTO : getUserByIdDto
@@ -287,3 +290,56 @@ export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async
     }
 };
 
+/*
+ * ฟังก์ชัน : updateProfileImage
+ * คำอธิบาย :
+ *  - ถ้ามีรูปเดิม → ลบไฟล์เก่าออกจาก uploads/
+ *  - ถ้าไม่มีรูปเดิม → เพิ่มใหม่ได้เลย
+ */
+export const updateProfileImage = async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const pathFile = req.file ? req.file.path.replace(/\\/g, "/") : null;
+
+    if (!userId) {
+      return createErrorResponse(res, 400, "Invalid user ID");
+    }
+
+    if (!pathFile) {
+      return createErrorResponse(res, 400, "No file uploaded");
+    }
+
+    // ===== ดึงข้อมูลผู้ใช้เดิม =====
+    const oldUser = await UserService.getUserById(userId);
+    const oldImage = oldUser?.profileImage;
+
+    // ===== ถ้ามีรูปเก่า → ลบไฟล์เก่า =====
+    if (oldImage && oldImage.trim() !== "" && oldImage.includes(".")) {
+      // เอา / ออกจากข้างหน้าแล้วต่อกับ uploads/
+      const oldPath = path.resolve(process.cwd(), "uploads", oldImage.replace(/^\//, ""));
+      try {
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+          console.log(`ลบรูปเก่าเรียบร้อย: ${oldPath}`);
+        } else {
+          console.log(`ไม่พบไฟล์เก่าที่จะลบ: ${oldPath}`);
+        }
+      } catch (err) {
+        console.warn(`ลบรูปเก่าล้มเหลว: ${err.message}`);
+      }
+    } else {
+      console.log("ไม่มีรูปเก่าในระบบ — ข้ามการลบ");
+    }
+
+    // ===== ตัด path เหลือเฉพาะชื่อไฟล์ แล้วเติม / ข้างหน้า =====
+    const fileNameOnly = "/" + path.basename(pathFile); // เช่น uploads/xxx.jpg → /xxx.jpg
+
+    // ===== บันทึกลงฐานข้อมูล =====
+    const updatedUser = await UserService.updateProfileImage(userId, fileNameOnly);
+
+    return createResponse(res, 200, "อัปเดตรูปโปรไฟล์สำเร็จ", updatedUser);
+  } catch (error) {
+    console.error("updateProfileImage error:", error);
+    return createErrorResponse(res, 500, (error as Error).message);
+  }
+};
