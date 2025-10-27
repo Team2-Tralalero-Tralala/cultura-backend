@@ -13,7 +13,7 @@ bankRoutes.get(
   "/super/banks",
   validateDto(BankController.getAllBanksDto),
   authMiddleware,
-  allowRoles("superadmin"),
+  allowRoles("superadmin", "admin"),
   BankController.getAllBanks
 );
 
