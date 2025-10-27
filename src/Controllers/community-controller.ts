@@ -152,7 +152,6 @@ export const deleteCommunityById: TypedHandlerFromDto<
   }
 };
 
-
 /*
  * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
  */
@@ -274,7 +273,6 @@ export const getCommunityDetailById: TypedHandlerFromDto<
   }
 };
 
-
 /*
  * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนของแอดมิน (ไม่ต้องมี params/query)
  * Input : ไม่มี (ใช้ req.user.id)
@@ -294,9 +292,71 @@ export const getCommunityDetailByAdmin: TypedHandlerFromDto<
   try {
     const userId = Number(req.user!.id);
     const result = await CommunityService.getCommunityDetailByAdmin(userId);
-    return createResponse(res, 200, "Community detail (admin) retrieved successfully", result);
+    return createResponse(
+      res,
+      200,
+      "Community detail (admin) retrieved successfully",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
 
+export const editCommunityByAdminyDto = {
+  body: CommunityDto,
+} satisfies commonDto;
+
+export const editCommunityByAdmin: TypedHandlerFromDto<
+  typeof editCommunityByAdminyDto
+> = async (req, res) => {
+  try {
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+
+    const files = req.files as {
+      logo?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+    const parsed = JSON.parse(req.body.data);
+
+    const communityImage = [
+      ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
+
+      ...(files.cover?.[0]
+        ? [{ image: files.cover[0].path, type: "COVER" }]
+        : []),
+
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
+      ...(files.video?.map((f) => ({ image: f.path, type: "VIDEO" })) || []),
+    ];
+    const result = await CommunityService.editCommunityByAdmin(req.user, {
+      ...parsed,
+      communityImage,
+    });
+    return createResponse(res, 200, "Update community successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message, error.invalidMembers);
+  }
+};
+/*
+ * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ */
+export const getCommunityOwnDto = {} satisfies commonDto;
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ */
+export const getCommunityOwn: TypedHandlerFromDto<
+  typeof getCommunityOwnDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    const result = await CommunityService.getCommunityOwn(userId);
+    return createResponse(res, 200, "get community successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
