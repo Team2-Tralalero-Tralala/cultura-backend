@@ -17,6 +17,6 @@ rootRouter.use("/packages", packageRoutes);
 rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/shared/logs", logRoutes);
-rootRouter.use("/stores", storeRoutes);
+rootRouter.use("/super/stores", storeRoutes);
 
 export default rootRouter;
