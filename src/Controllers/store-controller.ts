@@ -4,6 +4,7 @@ import {
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
@@ -176,3 +177,55 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
     return createErrorResponse(res, 400, error.message);
   }
 };
+
+/*
+ * ฟังก์ชัน : getAllStoreDto
+ * รายละเอียด :
+ *   ใช้กำหนดโครงสร้างข้อมูล (DTO) สำหรับดึงข้อมูลร้านค้า
+ * Input :
+ *   - query : PaginationDto
+ *   - params : CommunityIdParamDto
+ * Output :
+ *   - รายการข้อมูลร้านค้าทั้งฟมด
+ */
+export const getAllStoreDto = {
+  query: PaginationDto,
+  params: CommunityIdParamDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getAllStore
+ * รายละเอียด :
+ *   ดึงข้อมูลร้านค้าทั้งหมดในชุมชนตามหน้าและจำนวนที่ระบุ
+ *   ตรวจสอบสิทธิ์ของผู้ใช้ก่อนเข้าถึงข้อมูล
+ * Input :
+ *   - req.params.communityId : string (รหัสชุมชน)
+ *   - req.query.page : number (หมายเลขหน้าที่ต้องการ, ค่าเริ่มต้น 1)
+ *   - req.query.limit : number (จำนวนรายการต่อหน้า, ค่าเริ่มต้น 10)
+ * Output :
+ *   - 200 : ดึงข้อมูลร้านค้าสำเร็จ พร้อมผลลัพธ์
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
+ */
+export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const { page = 1, limit = 10 } = req.query;
+    if (!req.user) {
+      return createErrorResponse(res, 400, "ไม่พบ role");
+    }
+    const result = await StoreService.getAllStore(
+      req.user.role,
+      communityId,
+      page,
+      limit
+    );
+    return createResponse(res, 200, "All stores in Community", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+

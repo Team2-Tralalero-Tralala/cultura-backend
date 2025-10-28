@@ -7,6 +7,20 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const storeRoute = Router();
 
 /*
+ * เส้นทาง : get /super/community/:communityId/store
+ * รายละเอียด :
+ *   ใช้สำหรับ "ดึงข้อมูลร้านค้าทั้งหมด" 
+ *   โดยจำกัดสิทธิ์ให้เฉพาะ superadmin เท่านั้น
+ */
+storeRoute.get(
+    "/super/community/:communityId/store",
+    validateDto(StoreController.getAllStoreDto),
+    authMiddleware,
+    allowRoles("superadmin"),
+    StoreController.getAllStore
+);
+
+/*
  * เส้นทาง : POST /shared/community/:communityId/store
  * รายละเอียด :
  *   ใช้สำหรับ "สร้างข้อมูลร้านค้าใหม่" ภายในชุมชน
