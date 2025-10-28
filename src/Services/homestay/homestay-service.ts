@@ -476,7 +476,6 @@ function getAdminCommunityId(
 
     // 2. Admin ต้องผูกกับ communityId
     const communityId = user.communityId;
-    console.log(communityId, user.communityId);
     
     if (!communityId) {
         throw new Error("บัญชี Admin ของคุณไม่ได้ผูกกับชุมชนใด");
