@@ -105,7 +105,7 @@ userRoutes.get(
 userRoutes.patch(
   "/super/users/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(deleteAccountByIdDto),
   deleteAccountById
 );
@@ -114,7 +114,7 @@ userRoutes.patch(
 userRoutes.put(
   "/super/users/block/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(blockAccountByIdDto),
   blockAccountById
 );
@@ -123,7 +123,7 @@ userRoutes.put(
 userRoutes.put(
   "/super/users/unblock/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(unblockAccountByIdDto),
   unblockAccountById
 );

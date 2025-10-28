@@ -25,6 +25,7 @@ export async function getAccountAll(
   // Role-based condition
   if (user.role.toLowerCase() === "superadmin") {
     // เห็นทุกคน
+    whereCondition.id = { not: user.id };
   } else if (user.role.toLowerCase() === "admin") {
     const adminCommunities = await prisma.community.findMany({
       where: { adminId: user.id },
@@ -33,9 +34,10 @@ export async function getAccountAll(
     const communityIds = adminCommunities.map((c) => c.id);
 
     if (communityIds.length === 0) {
-      whereCondition.id = user.id; // ไม่มีชุมชน → เห็นเฉพาะตัวเอง
+      whereCondition.id = { not: user.id }; // ไม่มีชุมชน → ไม่ต้องแสดงตัวเอง
     } else {
       whereCondition.memberOfCommunity = { in: communityIds };
+      whereCondition.id = { not: user.id };
     }
   } else {
     whereCondition.id = user.id; // member / tourist
@@ -44,7 +46,6 @@ export async function getAccountAll(
   // ดึงเฉพาะผู้ใช้ที่มีสถานะ ACTIVE เท่านั้น
   whereCondition.status = "ACTIVE";
   whereCondition.isDeleted = false;
-  whereCondition.deleteAt = null;
 
   // Search ชื่อ
   if (searchName) {
@@ -131,7 +132,6 @@ export async function getUserByStatus(
   // ดึงเฉพาะผู้ใช้ที่มีสถานะ BLOCKED เท่านั้น
   whereCondition.status = "BLOCKED";
   whereCondition.isDeleted = false;
-  whereCondition.deleteAt = null;
   
   // Search ชื่อ
   if (searchName) {
