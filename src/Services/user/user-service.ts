@@ -2,6 +2,7 @@ import { Prisma, UserStatus } from "@prisma/client";
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
+import { createErrorResponse } from "~/Libs/createResponse.js";
 
 /*
  * ฟังก์ชัน : getAccountAll
@@ -35,7 +36,11 @@ export async function getAccountAll(
     if (communityIds.length === 0) {
       whereCondition.id = user.id; // ไม่มีชุมชน → เห็นเฉพาะตัวเอง
     } else {
-      whereCondition.memberOfCommunity = { in: communityIds };
+      whereCondition.communityMembers = { 
+        some: { 
+          communityId: { in: communityIds } 
+        } 
+      };
     }
   } else {
     whereCondition.id = user.id; // member / tourist
@@ -72,7 +77,7 @@ export async function getAccountAll(
       email: true,
       status: true,
       role: { select: { name: true } },
-      memberOf: { select: { name: true } },
+      Community: { select: { name: true } },
     },
     orderBy: { id: "desc" },
     skip,
