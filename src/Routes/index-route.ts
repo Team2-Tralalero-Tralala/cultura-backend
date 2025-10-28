@@ -3,9 +3,10 @@ import authRoutes from "./auth-route.js";
 import backupRoutes from "./backup-route.js";
 import bookingHistoriesRoutes from "./booking-history-route.js";
 import communityRoutes from "./community-route.js";
+import configRoutes from "./config-route.js";
 import logRoutes from "./log-route.js";
+import packageRequestsRoutes from "./package-request-route.js";
 import packageRoutes from "./package-route.js";
-import packageRequestsRoutes from "./package-request-route.js"
 import storeRoute from "./store-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
@@ -20,6 +21,7 @@ rootRouter.use(communityRoutes);
 rootRouter.use("/tags", tagRoutes);
 rootRouter.use("/logs", logRoutes);
 
+rootRouter.use(configRoutes);
 rootRouter.use("/shared/logs", logRoutes);
 rootRouter.use(packageRequestsRoutes);
 rootRouter.use(storeRoute);
