@@ -13,3 +13,12 @@ storeRoute.get(
     StoreController.getAllStoreForAdmin
 );
 export default storeRoute;
+
+// 🔹 PATCH /admin/community/stores/:id/delete
+storeRoute.patch(
+    "/admin/community/stores/:id/delete",
+    validateDto(StoreController.deleteStoreByAdminDto),
+    authMiddleware,
+    allowRoles("admin"),
+    StoreController.deleteStoreByAdmin
+);

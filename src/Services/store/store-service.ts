@@ -89,3 +89,65 @@ export async function getAllStoreForAdmin(
         },
     };
 }
+
+/**
+ * ฟังก์ชัน : deleteStoreByAdmin
+ * อธิบาย : ลบร้านค้าแบบ soft delete เฉพาะร้านในชุมชนของ admin เท่านั้น
+ * Input :
+ *   - userId : รหัสผู้ใช้ (admin)
+ *   - storeId : รหัสร้านค้า
+ * Output :
+ *   - ข้อมูลร้านที่ถูกลบ (หรือ error ถ้าไม่พบ)
+ */
+export async function deleteStoreByAdmin(userId: number, storeId: number) {
+    if (!Number.isInteger(userId) || userId <= 0) {
+        throw new Error("Invalid userId");
+    }
+    if (!Number.isInteger(storeId) || storeId <= 0) {
+        throw new Error("Invalid storeId");
+    }
+
+    // 🔹 ตรวจสอบสิทธิ์ของ user
+    const user = await prisma.user.findUnique({
+  where: { id: userId },
+  select: {
+    id: true,
+    memberOfCommunity: true,
+    role: {
+      select: { name: true },
+    },
+  },
+});
+
+
+    if (!user) throw new Error("User not found");
+    if (user.role?.name?.toLowerCase() !== "admin") {
+        throw new Error("Forbidden: Only admin can delete stores");
+    }
+
+    const communityId = user.memberOfCommunity;
+    if (!communityId) {
+        throw new Error("User is not assigned to any community");
+    }
+
+    // 🔹 ตรวจสอบว่าร้านอยู่ในชุมชนของ admin หรือไม่
+    const store = await prisma.store.findUnique({
+        where: { id: storeId },
+    });
+
+    if (!store || store.isDeleted) {
+        throw new Error("Store not found or already deleted");
+    }
+    if (store.communityId !== communityId) {
+        throw new Error("Forbidden: You can only delete stores in your own community");
+    }
+
+    // 🔹 ลบแบบ soft delete
+    const deletedStore = await prisma.store.update({
+        where: { id: storeId },
+        data: { isDeleted: true },
+    });
+
+    return deletedStore;
+}
+
