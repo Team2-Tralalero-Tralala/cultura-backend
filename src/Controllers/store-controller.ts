@@ -52,9 +52,6 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
   res
 ) => {
   try {
-    if (!req.user)
-      return createErrorResponse(res, 401, "User not authenticated");
-
     const communityId = Number(req.params.communityId);
 
     // รับไฟล์จาก multer
@@ -75,7 +72,6 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
 
     const result = await StoreService.createStore(
       { ...parsed, storeImage },
-      req.user,
       communityId
     );
 
@@ -128,7 +124,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
 ) => {
   try {
     if (!req.user) {
-      return createErrorResponse(res, 401, "User not authenticated");
+      return createErrorResponse(res, 401, "ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน");
     }
     // รับไฟล์จาก multer
     const files = req.files as {
@@ -168,10 +164,10 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
 ) => {
   try {
     if (!req.user) {
-      return createErrorResponse(res, 401, "User not authenticated");
+      return createErrorResponse(res, 401, "ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน");
     }
     const storeId = Number(req.params.storeId);
-    const result = await StoreService.getStoreById(storeId);
+    const result = await StoreService.getStoreById(storeId, req.user);
     return createResponse(res, 201, "Store update successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
@@ -201,6 +197,53 @@ export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
       limit
     );
     return createResponse(res, 200, "All stores in Community", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/*
+ * ฟังก์ชัน : createStore
+ * รายละเอียด :
+ *   รับข้อมูลร้านค้าใหม่จากผู้ใช้ แล้วส่งต่อให้ StoreService.createStore
+ *   เพื่อลงฐานข้อมูล พร้อมตรวจสอบสิทธิ์ผู้ใช้งาน
+ * Input :
+ *   - req.body : StoreDto (ข้อมูลร้านค้าใหม่)
+ *   - req.params.communityId : string (รหัสชุมชน)
+ * Output :
+ *   - 201 : ร้านค้าสร้างสำเร็จ พร้อมข้อมูลที่สร้าง
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
+ */
+export const createStoreByAdmin: TypedHandlerFromDto<
+  typeof createStoreDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
+    // รับไฟล์จาก multer
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+    };
+
+    // แปลง body JSON ที่แนบมาใน "data"
+    const parsed = JSON.parse(req.body.data);
+
+    // รวมไฟล์พร้อม type
+    const storeImage = [
+      ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
+    ];
+
+    const result = await StoreService.createStoreByAdmin(
+      { ...parsed, storeImage },
+      req.user
+    );
+
+    return createResponse(res, 201, "Store created successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
