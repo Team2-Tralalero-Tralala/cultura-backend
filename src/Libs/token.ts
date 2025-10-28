@@ -35,8 +35,8 @@ export class LoginData {
  * Input : payload (LoginData) - ข้อมูลผู้ใช้ เช่น id, username, role
  * Output : token (string) - JWT ที่สามารถนำไปใช้ยืนยันตัวตน
  */
-export function generateToken(payload: LoginData) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+export function generateToken(payload: LoginData, expirationSeconds: number) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: `${expirationSeconds}s` });
 }
 /*
  * ฟังก์ชัน : verifyToken
