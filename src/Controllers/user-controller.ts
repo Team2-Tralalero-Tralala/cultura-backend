@@ -25,6 +25,9 @@ import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { Type } from "class-transformer";
 
 
+import fs from "fs";
+import path from "path";
+
 /*
  * DTO : getUserByIdDto
  * คำอธิบาย : ใช้ตรวจสอบพารามิเตอร์ userId ใน endpoint /users/:userId
@@ -287,3 +290,68 @@ export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async
     }
 };
 
+/*
+ * ฟังก์ชัน : updateProfileImage
+ * คำอธิบาย :
+ *  - ถ้ามีรูปเดิม → ลบไฟล์เก่าออกจาก uploads/
+ *  - ถ้าไม่มีรูปเดิม → เพิ่มใหม่ได้เลย
+ */
+export const updateProfileImage = async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const pathFile = req.file ? req.file.path.replace(/\\/g, "/") : null;
+
+    if (!userId) {
+      return createErrorResponse(res, 400, "Invalid user ID");
+    }
+
+    if (!pathFile) {
+      return createErrorResponse(res, 400, "No file uploaded");
+    }
+
+    // ===== ดึงข้อมูลผู้ใช้เดิม =====
+    const oldUser = await UserService.getUserById(userId);
+    const oldImage = oldUser?.profileImage;
+
+    // ===== ถ้ามีรูปเก่า → ลบไฟล์เก่า =====
+    if (oldImage && oldImage.trim() !== "" && oldImage.includes(".")) {
+      // เอา / ออกจากข้างหน้าแล้วต่อกับ uploads/
+      const oldPath = path.resolve(process.cwd(), "uploads", oldImage.replace(/^\//, ""));
+      try {
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      } catch (err) {
+        console.warn(`ลบรูปเก่าล้มเหลว: ${err.message}`);
+      }
+    }
+
+    // ===== ตัด path เหลือเฉพาะชื่อไฟล์ แล้วเติม / ข้างหน้า =====
+    const fileNameOnly = "/" + path.basename(pathFile); // เช่น uploads/xxx.jpg → /xxx.jpg
+
+    // ===== บันทึกลงฐานข้อมูล =====
+    const updatedUser = await UserService.updateProfileImage(userId, fileNameOnly);
+
+    return createResponse(res, 200, "อัปเดตรูปโปรไฟล์สำเร็จ", updatedUser);
+  } catch (error) {
+    return createErrorResponse(res, 500, (error as Error).message);
+  }
+};
+
+/*
+ * ฟังก์ชัน : getMemberByAdmin
+ * คำอธิบาย : สำหรับ Admin ที่ต้องการดูรายละเอียดสมาชิกในชุมชนตัวเอง
+ */
+export const getMemberByAdmin: TypedHandlerFromDto<typeof getUserByIdDto> = async (req, res) => {
+  try {
+    if (!req.user) return createErrorResponse(res, 401, "User not authenticated");
+
+    const userId = Number(req.params.userId);
+    const adminId = req.user.id;
+
+    const result = await UserService.getMemberByAdmin(userId, adminId);
+    return createResponse(res, 200, "User fetched successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 403, (error as Error).message);
+  }
+};

@@ -14,6 +14,8 @@ import {
     unblockAccountByIdDto,
     createAccountDto,
     createAccount,
+    updateProfileImage,
+    getMemberByAdmin
 } from "../Controllers/user-controller.js";
 
 import { validateDto } from "~/Libs/validateDto.js";
@@ -32,14 +34,26 @@ userRoutes.post(
     createAccount
 ); 
 
-//เทส API ใช้ฟังก์ชันบีบไฟล์
-userRoutes.post(
-    "/",
-    upload.single("profileImage"),
-    compressUploadedFile,
-    validateDto(createAccountDto),
-    createAccount
-); 
+/* ==========================================================
+ *  อัปโหลดรูปโปรไฟล์ของผู้ใช้
+ * ========================================================== */
+userRoutes.put(
+  "/super/users/profile/:userId",
+  authMiddleware,
+  allowRoles("superadmin"),
+  upload.single("profileImage"),
+  compressUploadedFile,
+  updateProfileImage
+);
+
+userRoutes.put(
+  "/admin/member/profile/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  upload.single("profileImage"),
+  compressUploadedFile,
+  updateProfileImage
+);
 
 /* ==========================================================
  *  Super Admin / Admin : จัดการบัญชีผู้ใช้ทั้งหมด
@@ -49,7 +63,7 @@ userRoutes.post(
 userRoutes.get(
   "/super/accounts",
   authMiddleware,                     // ตรวจสอบ token ก่อน
-  allowRoles("superadmin", "admin"),  // ตรวจสอบสิทธิ์
+  allowRoles("superadmin"),  // ตรวจสอบสิทธิ์
   validateDto(getAccountsDto),        // ตรวจสอบ query parameters
   getAccountAll
 );
@@ -58,7 +72,7 @@ userRoutes.get(
 userRoutes.get(
   "/super/accounts/status/:status",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(getUserByStatusDto),
   getUserByStatus
 );
@@ -70,9 +84,17 @@ userRoutes.get(
 userRoutes.get(
   "/super/users/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(getUserByIdDto),
   getUserById
+);
+
+userRoutes.get(
+  "/admin/member/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(getUserByIdDto),
+  getMemberByAdmin
 );
 
 /* ==========================================================

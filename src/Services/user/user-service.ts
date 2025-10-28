@@ -72,9 +72,17 @@ export async function getAccountAll(
       email: true,
       status: true,
       role: { select: { name: true } },
-      memberOf: { select: { name: true } },
+      communityAdmin: {
+        select: { name: true },
+      },
+      communityMembers: {
+        select: {
+          Community: { select: { name: true } },
+        },
+      },
+
     },
-    orderBy: { id: "desc" },
+    orderBy: { id: "asc" },
     skip,
     take: limit,
   });
@@ -146,9 +154,17 @@ export async function getUserByStatus(
       email: true,
       activityRole: true,
       role: { select: { name: true } },
-      memberOf: { select: { name: true } },
+      communityAdmin: {
+        select: { name: true },
+      },
+      communityMembers: {
+        select: {
+          Community: { select: { name: true } },
+        },
+      },
+
     },
-    orderBy: { id: "desc" },
+    orderBy: { id: "asc" },
     skip,
     take: limit,
   });
@@ -170,6 +186,7 @@ export async function getUserById(userId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
+      id: true,
       profileImage: true,
       username: true,
       email: true,
@@ -178,7 +195,14 @@ export async function getUserById(userId: number) {
       phone: true,
       activityRole: true,
       role: { select: { name: true } },
-      memberOf: { select: { name: true } },
+      communityAdmin: {
+        select: { name: true },
+      },
+      communityMembers: {
+        select: {
+          Community: { select: { name: true } },
+        },
+      },
     },
   });
   if (!user) throw new Error("User not found");
@@ -244,6 +268,83 @@ export async function createAccount(payload: any, pathFile: string) {
       status: true,
     },
   });
+
+  return user;
+}
+
+/*
+ * ฟังก์ชัน : updateProfileImage
+ * คำอธิบาย : อัปเดตรูปโปรไฟล์ของผู้ใช้ในฐานข้อมูล
+ */
+export async function updateProfileImage(userId: number, pathFile: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { profileImage: pathFile },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      profileImage: true,
+    },
+  });
+
+  return updatedUser;
+}
+
+/*
+ * ฟังก์ชัน : getMemberByAdmin
+ * คำอธิบาย : แอดมินสามารถดูข้อมูลได้เฉพาะสมาชิกในชุมชนที่ตัวเองดูแล
+ */
+export async function getMemberByAdmin(userId: number, adminId: number) {
+  // ดึงรายการชุมชนที่ admin เป็นเจ้าของ
+  const adminCommunities = await prisma.community.findMany({
+    where: { adminId },
+    select: { id: true },
+  });
+
+  const communityIds = adminCommunities.map((c) => c.id);
+
+  if (communityIds.length === 0) {
+    throw new Error("คุณไม่มีชุมชนในความดูแล");
+  }
+
+  // ดึงข้อมูลผู้ใช้เป้าหมาย
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      profileImage: true,
+      username: true,
+      email: true,
+      fname: true,
+      lname: true,
+      phone: true,
+      activityRole: true,
+      role: { select: { name: true } },
+      communityMembers: {
+        select: { Community: { select: { id: true, name: true } } },
+      },
+    },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  // ตรวจสอบว่า user อยู่ในชุมชนที่ admin ดูแลหรือไม่
+  const isMemberInCommunity =
+    user.communityMembers?.some(
+      (member) =>
+        member.Community && communityIds.includes(member.Community.id)
+    ) ?? false;
+
+  if (!isMemberInCommunity) {
+    throw new Error("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้นี้");
+  }
 
   return user;
 }

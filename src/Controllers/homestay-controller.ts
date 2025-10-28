@@ -229,3 +229,15 @@ export const getHomestaysAll: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+export const getHomestaysAllAdmin: TypedHandlerFromDto<
+  typeof getHomestaysAllDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user!.id);
+    const result = await HomestayService.getHomestaysAllAdmin(userId);
+    return createResponse(res, 200, "get homestay successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
