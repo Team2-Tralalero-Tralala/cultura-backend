@@ -174,11 +174,35 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
   }
 };
 
+/*
+ * ฟังก์ชัน : getAllStoreDto
+ * รายละเอียด :
+ *   ใช้กำหนดโครงสร้างข้อมูล (DTO) สำหรับดึงข้อมูลร้านค้า
+ * Input :
+ *   - query : PaginationDto
+ *   - params : CommunityIdParamDto
+ * Output :
+ *   - รายการข้อมูลร้านค้าทั้งฟมด
+ */
 export const getAllStoreDto = {
   query: PaginationDto,
   params: CommunityIdParamDto,
 } satisfies commonDto;
 
+/*
+ * ฟังก์ชัน : getAllStore
+ * รายละเอียด :
+ *   ดึงข้อมูลร้านค้าทั้งหมดในชุมชนตามหน้าและจำนวนที่ระบุ
+ *   ตรวจสอบสิทธิ์ของผู้ใช้ก่อนเข้าถึงข้อมูล
+ * Input :
+ *   - req.params.communityId : string (รหัสชุมชน)
+ *   - req.query.page : number (หมายเลขหน้าที่ต้องการ, ค่าเริ่มต้น 1)
+ *   - req.query.limit : number (จำนวนรายการต่อหน้า, ค่าเริ่มต้น 10)
+ * Output :
+ *   - 200 : ดึงข้อมูลร้านค้าสำเร็จ พร้อมผลลัพธ์
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
+ */
 export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
   req,
   res
@@ -186,12 +210,11 @@ export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
   try {
     const communityId = Number(req.params.communityId);
     const { page = 1, limit = 10 } = req.query;
-    const user = req.user?.role;
-    if (!user) {
+    if (!req.user) {
       return createErrorResponse(res, 400, "ไม่พบ role");
     }
     const result = await StoreService.getAllStore(
-      user,
+      req.user.role,
       communityId,
       page,
       limit
@@ -248,3 +271,40 @@ export const createStoreByAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, error.message);
   }
 };
+/*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูลร้านค้าทั้งหมดของแอดมิน (เฉพาะในชุมชนของตนเอง)
+ * Input :
+ *   - query (page, limit)
+ * Output : รายการข้อมูลร้านค้าทั้งหมดของแอดมิน พร้อม pagination
+ */
+export const getAllStoreForAdminDto = {
+    query: PaginationDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getAllStoreForAdmin
+ * อธิบาย : ดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนของผู้ใช้ที่มี role เป็น "admin"
+ * Input :
+ *   - req.user.id (จาก middleware auth)
+ *   - req.query.page, req.query.limit
+ * Output :
+ *   - ร้านค้าทั้งหมดของแอดมินภายในชุมชนที่เขาสังกัด พร้อมข้อมูล pagination
+ */
+export const getAllStoreForAdmin: TypedHandlerFromDto<typeof getAllStoreForAdminDto> = async (
+  req, 
+  res
+) => {
+    try {
+        if (!req.user) {
+            return createErrorResponse(res, 401, "Unauthorized: User not found");
+        }
+        const userId = req.user.id;
+        const { page = 1, limit = 10 } = req.query;
+
+        const result = await StoreService.getAllStoreForAdmin(userId, page, limit);
+        return createResponse(res, 200, "All stores for admin", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
+    }
+};
+

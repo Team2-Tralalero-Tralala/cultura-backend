@@ -1,3 +1,19 @@
+/*
+ * คำอธิบาย : Router สำหรับจัดการเส้นทาง (Route) ของข้อมูลบัญชีผู้ใช้ (User)
+ * ใช้สำหรับเชื่อมโยงเส้นทาง API เข้ากับ Controller ที่เกี่ยวข้องกับการจัดการบัญชี
+ * โดยรองรับการทำงานของ SuperAdmin และ Admin
+ *
+ * ฟังก์ชันหลักที่รองรับ :
+ *   - อัปโหลดรูปโปรไฟล์ผู้ใช้
+ *   - ดึงข้อมูลผู้ใช้ทั้งหมด / ตามสถานะ / ตาม ID
+ *   - สร้างบัญชีใหม่ / บล็อก / ปลดบล็อก / ลบผู้ใช้
+ *
+ * Middleware ที่ใช้ :
+ *   - authMiddleware : ตรวจสอบสิทธิ์การเข้าสู่ระบบ
+ *   - allowRoles : จำกัดสิทธิ์เฉพาะบทบาทที่กำหนด (SuperAdmin, Admin)
+ *   - upload.single / compressUploadedFile : สำหรับอัปโหลดและบีบอัดไฟล์รูปภาพ
+ */
+
 import { Router } from "express";
 import { 
     getAccountAll,
@@ -14,6 +30,8 @@ import {
     unblockAccountByIdDto,
     createAccountDto,
     createAccount,
+    updateProfileImage,
+    getMemberByAdmin
 } from "../Controllers/user-controller.js";
 
 import { validateDto } from "~/Libs/validateDto.js";
@@ -23,85 +41,134 @@ import { upload } from "../Libs/uploadFile.js";
 
 const userRoutes = Router();
 
-//เทส API ใช้ฟังก์ชันบีบไฟล์
+/* 
+ * เส้นทาง : POST /
+ * คำอธิบาย : ทดสอบ API สำหรับสร้างบัญชีใหม่พร้อมอัปโหลดรูปภาพ
+ * สิทธิ์ที่เข้าถึงได้ : ทุกคน (ใช้เพื่อทดสอบ)
+ */
 userRoutes.post(
-    "/",
-    upload.single("profileImage"),
-    compressUploadedFile,
-    validateDto(createAccountDto),
-    createAccount
-); 
+  "/",
+  upload.single("profileImage"),
+  compressUploadedFile,
+  validateDto(createAccountDto),
+  createAccount
+);
 
-//เทส API ใช้ฟังก์ชันบีบไฟล์
-userRoutes.post(
-    "/",
-    upload.single("profileImage"),
-    compressUploadedFile,
-    validateDto(createAccountDto),
-    createAccount
-); 
+/* 
+ * เส้นทาง : PUT /super/users/profile/:userId
+ * คำอธิบาย : อัปโหลดรูปโปรไฟล์ของผู้ใช้ (เฉพาะ SuperAdmin)
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
+userRoutes.put(
+  "/super/users/profile/:userId",
+  authMiddleware,
+  allowRoles("superadmin"),
+  upload.single("profileImage"),
+  compressUploadedFile,
+  updateProfileImage
+);
 
-/* ==========================================================
- *  Super Admin / Admin : จัดการบัญชีผู้ใช้ทั้งหมด
- * ========================================================== */
+/* 
+ * เส้นทาง : PUT /admin/member/profile/:userId
+ * คำอธิบาย : อัปโหลดรูปโปรไฟล์ของสมาชิก (เฉพาะ Admin)
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+userRoutes.put(
+  "/admin/member/profile/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  upload.single("profileImage"),
+  compressUploadedFile,
+  updateProfileImage
+);
 
-//  ดึงบัญชีผู้ใช้ทั้งหมด (พร้อม search / filterRole / pagination)
+/* 
+ * เส้นทาง : GET /super/accounts
+ * คำอธิบาย : ดึงบัญชีผู้ใช้ทั้งหมด (รองรับ search / filterRole / pagination)
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
 userRoutes.get(
   "/super/accounts",
-  authMiddleware,                     // ตรวจสอบ token ก่อน
-  allowRoles("superadmin", "admin"),  // ตรวจสอบสิทธิ์
-  validateDto(getAccountsDto),        // ตรวจสอบ query parameters
+  authMiddleware,
+  allowRoles("superadmin"),
+  validateDto(getAccountsDto),
   getAccountAll
 );
 
-//  ดึงบัญชีผู้ใช้ตามสถานะ (ACTIVE / BLOCKED) + searchName
+/* 
+ * เส้นทาง : GET /super/accounts/status/:status
+ * คำอธิบาย : ดึงบัญชีผู้ใช้ตามสถานะ (ACTIVE / BLOCKED)
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
 userRoutes.get(
   "/super/accounts/status/:status",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(getUserByStatusDto),
   getUserByStatus
 );
 
-/* ==========================================================
- *  Super Admin / Admin / Member : ดูข้อมูลผู้ใช้เฉพาะคน
- * ========================================================== */
-
+/* 
+ * เส้นทาง : GET /super/users/:userId
+ * คำอธิบาย : ดึงข้อมูลรายละเอียดของผู้ใช้ตาม userId (เฉพาะ SuperAdmin)
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
 userRoutes.get(
   "/super/users/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(getUserByIdDto),
   getUserById
 );
 
-/* ==========================================================
- *  Super Admin / Admin : ลบ / บล็อก / ปลดบล็อก
- * ========================================================== */
+/* 
+ * เส้นทาง : GET /admin/member/:userId
+ * คำอธิบาย : ดึงรายละเอียดของสมาชิกในชุมชนที่ Admin ดูแลอยู่
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+userRoutes.get(
+  "/admin/member/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(getUserByIdDto),
+  getMemberByAdmin
+);
 
-// ลบบัญชีผู้ใช้
+/* 
+ * เส้นทาง : PATCH /super/users/:userId
+ * คำอธิบาย : ลบบัญชีผู้ใช้แบบ Soft Delete
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
 userRoutes.patch(
   "/super/users/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(deleteAccountByIdDto),
   deleteAccountById
 );
 
-// บล็อกบัญชีผู้ใช้
+/* 
+ * เส้นทาง : PUT /super/users/block/:userId
+ * คำอธิบาย : ระงับบัญชีผู้ใช้ (Block)
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
 userRoutes.put(
   "/super/users/block/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(blockAccountByIdDto),
   blockAccountById
 );
 
-// ปลดบล็อกบัญชีผู้ใช้
+/* 
+ * เส้นทาง : PUT /super/users/unblock/:userId
+ * คำอธิบาย : ปลดการระงับบัญชีผู้ใช้ (Unblock)
+ * สิทธิ์ที่เข้าถึงได้ : SuperAdmin
+ */
 userRoutes.put(
   "/super/users/unblock/:userId",
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   validateDto(unblockAccountByIdDto),
   unblockAccountById
 );

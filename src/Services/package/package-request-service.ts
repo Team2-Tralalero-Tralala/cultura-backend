@@ -171,17 +171,25 @@ import { PackageApproveStatus } from "@prisma/client";
 
 /*
  * ฟังก์ชัน : getDetailRequestById
- * คำอธิบาย : ดึงประวัติการจอง (bookingHistory) ตามสิทธิ์ของผู้ใช้งาน
+ * คำอธิบาย : ดึงรายละเอีดยแพ็กเกจจากหน้าคำขอของ superadmin
  * Input :
  *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
  * Output :
  *   - Array ของ object ที่ประกอบด้วย:
- *       - ชื่อผู้จอง
- *       - ชื่อกิจกรรม
+ *       - ชื่อแพ้กเกจ
+ *       - รายละเอียด
+ *       - ความจุ
  *       - ราคา
- *       - สถานะ
- *       - หลักฐานการโอน
- *       - เวลาในการจอง
+ *       - วันที่เริ่มต้น
+ *       - วันที่สิ้นสุด
+ *       - วันที่เปิดจอง
+ *       - วันที่ปิดจอง
+ *       - สิ่งอำนวยความสะดวก
+ *       - ชื่อผู้ดูแลแพ็กเกจ
+ *       - ชื่อผู้สร้างแพ็กเกจ
+ *       - แท็กของแพ็กเกจ
+ *       - ไฟล์ของแพ็กเกจ
+ *       - ที่ตั้งของแพ็กเกจ
  */
 export const getDetailRequestById = async (packageId: number) => {
   return prisma.package.findUnique({
@@ -222,4 +230,63 @@ export const getDetailRequestById = async (packageId: number) => {
   });
 };
 
+/*
+ * ฟังก์ชัน : getDetailRequestByIdForAdmin
+ * คำอธิบาย : ดึงรายละเอีดยแพ็กเกจจากหน้าคำขอของ admin
+ * Input :
+ *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
+ * Output :
+ *   - Array ของ object ที่ประกอบด้วย:
+ *       - ชื่อแพ้กเกจ
+ *       - รายละเอียด
+ *       - ความจุ
+ *       - ราคา
+ *       - วันที่เริ่มต้น
+ *       - วันที่สิ้นสุด
+ *       - วันที่เปิดจอง
+ *       - วันที่ปิดจอง
+ *       - สิ่งอำนวยความสะดวก
+ *       - ชื่อผู้ดูแลแพ็กเกจ
+ *       - ชื่อผู้สร้างแพ็กเกจ
+ *       - แท็กของแพ็กเกจ
+ *       - ไฟล์ของแพ็กเกจ
+ *       - ที่ตั้งของแพ็กเกจ
+ */
+export const getDetailRequestByIdForAdmin = async (packageId: number) => {
+  return prisma.package.findUnique({
+    where: { id: packageId, statusApprove: PackageApproveStatus.PENDING },
+    select: {
+      name: true,
+      description: true,
+      capacity: true,
+      price: true,
+      startDate: true,
+      dueDate: true,
+      bookingOpenDate: true,
+      bookingCloseDate: true,
+      facility: true,
 
+      overseerPackage: { select: { fname: true, lname: true } },
+      createPackage:   { select: { fname: true, lname: true } },
+
+      tagPackages: {
+        select: { tag: { select: { name: true } } },
+      },
+      packageFile: { select: { filePath: true } },
+      location: {
+        select: {
+          houseNumber: true,
+          villageNumber: true,
+          alley: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          detail: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+    },
+  });
+};
