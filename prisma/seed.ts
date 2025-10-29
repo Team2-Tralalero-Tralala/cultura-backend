@@ -433,17 +433,66 @@ async function main() {
       capacity: 10,
       price: 500,
       warning: "Bring boots",
-      statusPackage: PackagePublishStatus.PUBLISH,
-      startDate: new Date("2025-01-01"),
-      dueDate: new Date("2025-01-05"),
-      bookingOpenDate: new Date("2025-01-01"),
-      bookingCloseDate: new Date("2025-01-05"),
+      statusPackage: "PUBLISH",
+      startDate: new Date("2025-01-01T00:00:00.000Z"),
+      dueDate: new Date("2025-01-05T00:00:00.000Z"),
+      openBookingAt: new Date("2024-11-01T00:00:00.000Z"),
+      closeBookingAt: new Date("2024-12-31T00:00:00.000Z"),
       facility: "Meals",
     },
   });
-
-  await prisma.packageFile.create({
-    data: { packageId: pkg1.id, filePath: "/pkg1.jpg", type: ImageType.COVER },
+  const pkg2 = await prisma.package.create({
+    data: {
+      communityId: community2.id,
+      locationId: location2.id,
+      overseerMemberId: member2!.id,
+      createById: admin2!.id,
+      name: "Cultural Tour",
+      description: "Handicrafts",
+      capacity: 15,
+      price: 800,
+      warning: "No flash photos",
+      statusPackage: "DRAFT",
+      startDate: new Date("2025-02-01T00:00:00.000Z"),
+      dueDate: new Date("2025-02-05T00:00:00.000Z"),
+      openBookingAt: new Date("2024-12-01T00:00:00.000Z"),
+      closeBookingAt: new Date("2024-01-31T00:00:00.000Z"),
+      facility: "Guide",
+      
+    },
+  });
+  const pkg3 = await prisma.package.create({
+    data: {
+      communityId: community3.id,
+      locationId: location3.id,
+      overseerMemberId: member1!.id,
+      createById: admin1!.id,
+      name: "Adventure Tour",
+      description: "Mountain climbing",
+      capacity: 20,
+      price: 1500,
+      warning: "Physical checkup required",
+      statusPackage: "UNPUBLISH",
+      startDate: new Date("2025-03-01T00:00:00.000Z"),
+      dueDate: new Date("2025-03-10T00:00:00.000Z"),
+      openBookingAt: new Date("2025-01-31T00:00:00.000Z"),
+      closeBookingAt: new Date("2025-02-28T00:00:00.000Z"),
+      facility: "Gear",
+    },
+  });
+  await prisma.packageFile.createMany({
+    data: [
+      { packageId: pkg1.id, filePath: "/pkg1.jpg", type: "COVER" },
+      { packageId: pkg2.id, filePath: "/pkg2.jpg", type: "COVER" },
+      { packageId: pkg3.id, filePath: "/pkg3.jpg", type: "GALLERY" },
+    ],
+  });
+  await prisma.tagsPackages.createMany({
+    data: [
+      { tagId: tag1.id, packageId: pkg1.id },
+      { tagId: tag2.id, packageId: pkg2.id },
+      { tagId: tag3.id, packageId: pkg3.id },
+    ],
   });
 
   /*

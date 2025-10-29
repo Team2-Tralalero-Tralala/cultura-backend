@@ -2,7 +2,7 @@ import "reflect-metadata";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import rootRouter from "./Routes/index-route.js";
+import userRouter from "./Routes/user-route.js";
 
 const app = express();
 app.use(cookieParser());
