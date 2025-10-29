@@ -389,74 +389,136 @@ export async function getHomestayDetailById(id: number) {
 // services/homestay-service.ts
 
 
-/*
+/**
  * ฟังก์ชัน : getHomestaysAll
- * อธิบาย : ดึง homestay ทั้งหมดในชุมชน (ใช้ได้เฉพาะ superadmin เท่านั้น)
- * Input : userId (รหัสผู้ใช้), communityId (รหัสชุมชน), page, limit
- * Output :
- *   - ถ้าเป็น superadmin → ได้ homestay ทั้งหมดในชุมชนนั้นพร้อม pagination
- *   - ถ้าไม่ใช่ superadmin → Forbidden
+ * อธิบาย : ดึง homestay ทั้งหมดในชุมชน (สำหรับ SuperAdmin)
+ * Mapping : GET /super/community/:communityId/homestays
  */
 export const getHomestaysAll = async (
-    userId: number,
-    communityId: number,
-    page: number = 1,
-    limit: number = 10
+  userId: number,
+  communityId: number,
+  page: number = 1,
+  limit: number = 10
 ): Promise<PaginationResponse<any>> => {
-    if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
-        throw new Error("ID must be Number");
-    }
+  if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
+    throw new Error("ID must be a number");
+  }
 
-    //ตรวจสอบสิทธิ์ผู้ใช้
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { role: true },
-    });
-    if (!user) throw new Error("User not found");
-    if (user.role?.name?.toLowerCase() !== "superadmin") {
-        throw new Error("Forbidden");
-    }
+  // ===== ตรวจสอบสิทธิ์ผู้ใช้ =====
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
 
-    // ตรวจสอบว่าชุมชนมีอยู่จริง (ใช้ findFirst ป้องกัน soft-delete)
-    const community = await prisma.community.findFirst({
-        where: { id: communityId, isDeleted: false },
-    });
-    if (!community) throw new Error("Community not found");
+  const role = user.role?.name?.toLowerCase();
+  if (role !== "superadmin") {
+    throw new Error("Forbidden: Only SuperAdmin can access this route");
+  }
 
-    const skip = (page - 1) * limit;
+  // ===== ตรวจสอบว่าชุมชนมีอยู่จริง =====
+  const community = await prisma.community.findFirst({
+    where: { id: communityId, isDeleted: false },
+  });
+  if (!community) throw new Error("Community not found");
 
-    // นับจำนวน homestay ทั้งหมดในชุมชน
-    const totalCount = await prisma.homestay.count({
-        where: { communityId, isDeleted: false },
-    });
+  // ===== Pagination =====
+  const skip = (page - 1) * limit;
 
-    // ดึงข้อมูล homestay เฉพาะ field ที่ต้องการ
-    const homestays = await prisma.homestay.findMany({
-        where: { communityId, isDeleted: false },
-        orderBy: { id: "asc" },
-        skip,
-        take: limit,
-        select: {
-            id: true,        // รหัสที่พัก
-            name: true,      // ชื่อที่พัก
-            type: true,      // ประเภทห้องพัก
-            facility: true,  // สิ่งอำนวยความสะดวก
-        },
-    });
+  // ===== ดึงข้อมูล homestay =====
+  const totalCount = await prisma.homestay.count({
+    where: { communityId, isDeleted: false },
+  });
 
-    const totalPages = Math.ceil(totalCount / limit);
+  const homestays = await prisma.homestay.findMany({
+    where: { communityId, isDeleted: false },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      facility: true,
+    },
+  });
 
-    return {
-        data: homestays,
-        pagination: {
-            currentPage: page,
-            totalPages,
-            totalCount,
-            limit,
-        },
-    };
+  return {
+    data: homestays,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
 };
 
+/**
+ * ฟังก์ชัน : getHomestaysAllAdmin
+ * อธิบาย : ดึง homestay ทั้งหมดของชุมชนที่ admin คนนั้นดูแล
+ * Mapping : GET /admin/community/homestays/all
+ */
+export const getHomestaysAllAdmin = async (
+  userId: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(userId)) {
+    throw new Error("User ID must be a number");
+  }
+
+  // ===== ตรวจสอบสิทธิ์ผู้ใช้ =====
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  const role = user.role?.name?.toLowerCase();
+  if (role !== "admin") {
+    throw new Error("Forbidden: Only Admin can access this route");
+  }
+
+  // ===== หา community ที่ admin ดูแล =====
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+  });
+  if (!community) throw new Error("Admin has no assigned community");
+
+  const communityId = community.id;
+
+  // ===== Pagination =====
+  const skip = (page - 1) * limit;
+
+  // ===== ดึงข้อมูล homestay =====
+  const totalCount = await prisma.homestay.count({
+    where: { communityId, isDeleted: false },
+  });
+
+  const homestays = await prisma.homestay.findMany({
+    where: { communityId, isDeleted: false },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      facility: true,
+    },
+  });
+
+  return {
+    data: homestays,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
+};
 /*
  * (Helper ใหม่)
  * คำอธิบาย : ตรวจสิทธิ์ว่าผู้ใช้เป็น Admin และดึง communityId ที่ผูกกับ Admin

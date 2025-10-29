@@ -14,6 +14,7 @@ import {
     editHomestay,
     getHomestaysAllDto,
     getHomestaysAll,
+    getHomestaysAllAdmin,
     createHomestayAdmin,
     editHomestayAdmin,
 } from "../Controllers/homestay-controller.js";
@@ -68,6 +69,11 @@ homestayRoutes.get(
     getHomestaysAll
 );
 
+homestayRoutes.get(
+    "/admin/community/homestays/all",
+    authMiddleware,
+    allowRoles("admin"),
+    getHomestaysAllAdmin
 /**
  * Admin
  * - สร้าง/แก้ไข Homestay ภายในชุมชนของตนเอง
