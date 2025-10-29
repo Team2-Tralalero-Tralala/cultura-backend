@@ -2,6 +2,7 @@ import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import type { UserPayload } from "~/Libs/Types/index.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
@@ -440,4 +441,89 @@ export async function getUnassignedMembers() {
     select: { id: true, fname: true, lname: true },
     orderBy: { fname: "asc" },
   });
+}
+/**
+ * คำอธิบาย : แก้ไขข้อมูลชุมชนของผู้ดูแล (Admin) ที่ล็อกอินอยู่
+ * Input :
+ *   - user (UserPayload) : ข้อมูลผู้ใช้ที่ล็อกอิน
+ *  - communityData (CommunityDto) : ข้อมูลชุมชนที่ต้องการแก้ไข
+ * Output :
+ *   - Object ของชุมชนที่อัปเดตแล้ว พร้อมความสัมพันธ์ทั้งหมด
+ * หมายเหตุ :
+ *   - ผู้ใช้ต้องเป็นแอดมินที่ดูแลชุมชนอยู่เท่านั้น
+ */
+export async function editCommunityByAdmin(
+  user: UserPayload,
+  communityData: CommunityDto
+) {
+  const { location, adminId, communityImage, communityMembers, ...data } =
+    communityData;
+
+  const community = await prisma.community.findFirst({
+    where: {
+      adminId: user.id,
+      isDeleted: false,
+      deleteAt: null,
+    },
+  });
+
+  if (!community) {
+    throw new Error("ไม่พบชุมชนที่ผู้ดูแลนี้ดูแลอยู่");
+  }
+
+  return await prisma.community.update({
+    where: {
+      id: community.id,
+    },
+    data: {
+      ...data,
+      admin: {
+        connect: { id: community.adminId },
+      },
+      location: { update: mapLocation(location) },
+      communityImage: {
+        deleteMany: {},
+        create:
+          communityImage?.map((img) => ({
+            image: img.image,
+            type: img.type,
+          })) ?? [],
+      },
+    },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: {
+        select: { id: true, fname: true, lname: true },
+      },
+      communityMembers: {
+        include: {
+          user: { select: { id: true, fname: true, lname: true } },
+        },
+      },
+    },
+  });
+}
+
+/*
+ * คำอธิบาย : ดึงข้อมูลชุมชนของผู้ดูแล (Admin) ที่ล็อกอินอยู่
+ * Input :
+ *   - communityId (number) : รหัสของชุมชน
+ * Output :
+ *   - Object ข้อมูลชุมชนพร้อม location, image, admin, members
+ */
+export async function getCommunityOwn(userId: number) {
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: { select: { id: true, fname: true, lname: true } },
+      communityMembers: {
+        include: { user: { select: { id: true, fname: true, lname: true } } },
+      },
+    },
+  });
+  if (!community) throw new Error("ไม่พบชุมชน");
+  return community;
 }
