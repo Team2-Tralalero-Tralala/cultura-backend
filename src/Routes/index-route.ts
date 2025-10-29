@@ -20,6 +20,7 @@ const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/booking", bookingHistoriesRoutes);
+rootRouter.use("/booking-histories", bookingHistoriesRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
