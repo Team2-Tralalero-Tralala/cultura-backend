@@ -15,6 +15,8 @@ import {
     getHomestaysAllDto,
     getHomestaysAll,
     getHomestaysAllAdmin,
+    createHomestayAdmin,
+    editHomestayAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -72,5 +74,31 @@ homestayRoutes.get(
     authMiddleware,
     allowRoles("admin"),
     getHomestaysAllAdmin
+/**
+ * Admin
+ * - สร้าง/แก้ไข Homestay ภายในชุมชนของตนเอง
+ * (*** หมายเหตุ: หาก role ชื่ออื่นที่ไม่ใช่ 'admin' เช่น 'member' ให้แก้ตรง allowRoles)
+ */
+homestayRoutes.post(
+    "/admin/community/homestay",
+    authMiddleware,
+    allowRoles("admin"), // อนุญาตทั้ง admin และ superadmin
+    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 5 }]),
+    createHomestayAdmin
+);
+
+homestayRoutes.put(
+    "/admin/community/homestay/edit/:homestayId",
+    authMiddleware,
+    allowRoles("admin"),
+    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 5 }]),
+    editHomestayAdmin
+);
+
+homestayRoutes.get(
+    "/admin/homestays/:homestayId",
+    authMiddleware,
+    allowRoles("admin"),
+    getHomestayDetail
 );
 export default homestayRoutes;
