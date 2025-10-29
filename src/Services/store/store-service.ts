@@ -144,9 +144,13 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
 
     // 🔹 ลบแบบ soft delete
     const deletedStore = await prisma.store.update({
-        where: { id: storeId },
-        data: { isDeleted: true },
-    });
+    where: { id: storeId },
+    data: { 
+        isDeleted: true,
+        deleteAt: new Date(),
+    },
+});
+
 
     return deletedStore;
 }
