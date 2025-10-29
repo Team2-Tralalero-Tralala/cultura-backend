@@ -13,7 +13,7 @@ import { PaginationDto } from "~/Libs/Types/pagination-dto.js";
  * Input :
  *   - page : หมายเลขหน้า
  *   - limit : จำนวนรายการต่อหน้า
- *   - searchName (optional) : ค้นหาจากชื่อหรือนามสกุล
+ *   - searchName (optional) : 
  *   - filterRole (optional) : กรองตามบทบาท (เช่น admin, member)
  */
 export class AccountQueryDto extends PaginationDto {

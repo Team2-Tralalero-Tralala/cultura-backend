@@ -4,8 +4,8 @@ import { HomestayDto } from "~/Services/homestay/homestay-dto.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { IsNumberString } from "class-validator";
 import {
-  commonDto,
-  type TypedHandlerFromDto,
+    commonDto,
+    type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 /*
  * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอน "สร้าง Homestay (เดี่ยว)" สำหรับ SuperAdmin
@@ -208,8 +208,8 @@ export const editHomestay = async (req: Request, res: Response) => {
  * DTO สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
  */
 export class IdParamDto {
-  @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลข" })
-  communityId?: string; // แก้เป็น optional
+    @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลข" })
+    communityId?: string; // แก้เป็น optional
 }
 
 export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
@@ -218,14 +218,137 @@ export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
  * ฟังก์ชัน Controller สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
  */
 export const getHomestaysAll: TypedHandlerFromDto<
+    typeof getHomestaysAllDto
+> = async (req, res) => {
+    try {
+        const userId = Number(req.user!.id);
+        const communityId = Number(req.params.communityId);
+        const result = await HomestayService.getHomestaysAll(userId, communityId);
+        return createResponse(res, 200, "get homestay successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
+    }
+};
+
+
+/*
+ * POST /admin/community/:communityId/homestay
+ * (Admin/SuperAdmin) สร้าง Homestay 1 รายการภายใต้ชุมชนที่กำหนด
+ * Input: params.communityId, body: HomestayDto
+ * Output: 200 + ข้อมูลที่พักที่ถูกสร้าง
+ */
+export const createHomestayAdmin = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
+
+        // ① รับไฟล์
+        const files = req.files as {
+            cover?: Express.Multer.File[];
+            gallery?: Express.Multer.File[];
+        };
+
+        // ตรวจชนิด content-type
+        const isMultipart = req.is("multipart/form-data");
+
+        // พาร์ส body
+        let parsed: any;
+        if (isMultipart) {
+            if (!req.body?.data) {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' (JSON string) ต้องถูกส่งมาใน multipart/form-data");
+            }
+            try {
+                parsed = JSON.parse(req.body.data);
+            } catch {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' ไม่ใช่ JSON ที่ถูกต้อง");
+            }
+        } else {
+            parsed = req.body;
+            if (!parsed || typeof parsed !== "object") {
+                return createErrorResponse(res, 400, "Body ต้องเป็น JSON object");
+            }
+        }
+
+        // ③ รวมไฟล์เป็น homestayImage
+        const homestayImage = [
+            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+        ];
+
+        // *** เปลี่ยนไปเรียก Service "ByAdmin" ***
+        const result = await HomestayService.createHomestayByAdmin(
+            Number(req.user.id),
+            { ...parsed, homestayImage } as HomestayDto
+        );
+
+        return createResponse(res, 201, "Create Homestay Success", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
+    }
+};
+
+export const getHomestaysAllAdmin: TypedHandlerFromDto<
   typeof getHomestaysAllDto
 > = async (req, res) => {
   try {
     const userId = Number(req.user!.id);
-    const communityId = Number(req.params.communityId);
-    const result = await HomestayService.getHomestaysAll(userId, communityId);
+    const result = await HomestayService.getHomestaysAllAdmin(userId);
     return createResponse(res, 200, "get homestay successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
+};
+/*
+ * PUT /admin/homestay/edit/:homestayId
+ * (Admin/SuperAdmin) แก้ไข Homestay
+ * Input: params.homestayId, body: HomestayDto (หรือ partial)
+ * Output: 200 + updated entity
+ */
+export const editHomestayAdmin = async (req: Request, res: Response) => {
+    try {
+        if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
+
+        const id = Number(req.params.homestayId);
+        if (!id) return createErrorResponse(res, 400, "ID must be a number");
+
+        const files = req.files as {
+            cover?: Express.Multer.File[];
+            gallery?: Express.Multer.File[];
+        };
+
+        const isMultipart = req.is("multipart/form-data");
+
+        // พาร์ส body
+        let parsed: any;
+        if (isMultipart) {
+            if (!req.body?.data) {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' (JSON string) ต้องถูกส่งมาใน multipart/form-data");
+            }
+            try {
+                parsed = JSON.parse(req.body.data);
+            } catch {
+                return createErrorResponse(res, 400, "ฟิลด์ 'data' ไม่ใช่ JSON ที่ถูกต้อง");
+            }
+        } else {
+            parsed = req.body;
+            if (!parsed || typeof parsed !== "object") {
+                return createErrorResponse(res, 400, "Body ต้องเป็น JSON object");
+            }
+        }
+
+        const homestayImage = [
+            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+        ];
+
+        // *** เปลี่ยนไปเรียก Service "ByAdmin" ***
+        const result = await HomestayService.editHomestayByAdmin(
+            Number(req.user.id),
+            id,
+            { ...parsed, homestayImage }
+        );
+
+        return createResponse(res, 200, "Homestay Updated", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
+    }
 };
