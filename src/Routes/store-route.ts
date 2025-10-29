@@ -13,11 +13,11 @@ const storeRoute = Router();
  *   โดยจำกัดสิทธิ์ให้เฉพาะ superadmin เท่านั้น
  */
 storeRoute.get(
-    "/super/community/:communityId/store",
-    validateDto(StoreController.getAllStoreDto),
-    authMiddleware,
-    allowRoles("superadmin"),
-    StoreController.getAllStore
+  "/super/community/:communityId/store",
+  validateDto(StoreController.getAllStoreDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  StoreController.getAllStore
 );
 
 /*
@@ -27,14 +27,14 @@ storeRoute.get(
  *   โดยจำกัดสิทธิ์ให้เฉพาะ superadmin และ admin เท่านั้น
  */
 storeRoute.post(
-  "/shared/community/:communityId/store",
+  "/super/community/:communityId/store",
   // validateDto(StoreController.createStoreDto),
   upload.fields([
     { name: "cover", maxCount: 1 },
     { name: "gallery", maxCount: 5 },
   ]),
   authMiddleware,
-  allowRoles("superadmin", "admin"),
+  allowRoles("superadmin"),
   StoreController.createStore
 );
 
@@ -70,6 +70,23 @@ storeRoute.get(
   StoreController.getStoreById
 );
 
+/*
+ * เส้นทาง : POST /shared/community/:communityId/store
+ * รายละเอียด :
+ *   ใช้สำหรับ "สร้างข้อมูลร้านค้าใหม่" ภายในชุมชน
+ *   โดยจำกัดสิทธิ์ให้เฉพาะ superadmin และ admin เท่านั้น
+ */
+storeRoute.post(
+  "/admin/community/store",
+  // validateDto(StoreController.createStoreDto),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+  ]),
+  authMiddleware,
+  allowRoles("admin"),
+  StoreController.createStoreByAdmin
+);
 /*
  * เส้นทาง : get /admin/community/stores/all
  * รายละเอียด :

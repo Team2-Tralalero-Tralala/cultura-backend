@@ -18,11 +18,7 @@ import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
  * Output :
  *   - ข้อมูลร้านค้าที่สร้างใหม่
  */
-export async function createStore(
-  store: StoreDto,
-  user: UserPayload,
-  communityId: number
-) {
+export async function createStore(store: StoreDto, communityId: number) {
   const { location, storeImage, tagStores, ...storeData } = store;
 
   return prisma.$transaction(async (transaction) => {
@@ -130,7 +126,21 @@ export async function editStore(
  * Output :
  *   - ข้อมูลร้านค้าที่พบ
  */
-export async function getStoreById(storeId: number) {
+export async function getStoreById(storeId: number, user: UserPayload) {
+  const findStore = await prisma.store.findFirst({
+    where: {
+      id: storeId,
+    },
+    include: { community: true },
+  });
+
+  if (!findStore) throw new Error("ไม่พบร้านค้า");
+  if (
+    user.role.toLowerCase() === "admin" &&
+    findStore.community.adminId !== user.id
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์เข้าถึงร้านค้าของชุมชนอื่น");
+  }
   return prisma.store.findFirst({
     where: {
       id: storeId,
@@ -231,6 +241,64 @@ export const getAllStore = async (
   };
 };
 
+/*
+ * ฟังก์ชัน : createStoreByAdmin
+ * คำอธิบาย :
+ *   สร้างร้านค้าใหม่ในชุมชน โดยให้ระบบค้นหา communityId
+ *   จาก admin ที่กำลังล็อกอิน (user.id)
+ *   แล้วสร้างร้านค้าเชื่อมกับชุมชนนั้นโดยอัตโนมัติ
+ * Input :
+ *   - store : ข้อมูลร้านค้า (StoreDto)
+ *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
+ * Output :
+ *   - ข้อมูลร้านค้าที่สร้างใหม่
+ */
+export async function createStoreByAdmin(store: StoreDto, user: UserPayload) {
+  const { location, storeImage, tagStores, ...storeData } = store;
+
+  return prisma.$transaction(async (transaction) => {
+    const community = await transaction.community.findFirst({
+      where: {
+        adminId: user.id,
+        isDeleted: false,
+        deleteAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (!community) {
+      throw new Error("ไม่พบชุมชนของผู้ดูแลรายนี้");
+    }
+    const newStore = await transaction.store.create({
+      data: {
+        ...storeData,
+        community: { connect: { id: community.id } },
+        location: { create: mapLocation(location) },
+        storeImage: {
+          create: storeImage.map((img) => ({
+            image: img.image,
+            type: img.type,
+          })),
+        },
+      },
+      include: {
+        storeImage: true,
+        location: true,
+      },
+    });
+
+    if (tagStores?.length) {
+      await transaction.tagStore.createMany({
+        data: tagStores.map((tagId: number) => ({
+          tagId,
+          storeId: newStore.id,
+        })),
+      });
+    }
+
+    return newStore;
+  });
+}
 /**
  * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนของผู้ใช้ที่มี role เป็น "admin"
  *            โดยดึงข้อมูลจาก community ที่ user สังกัดอยู่
