@@ -57,9 +57,21 @@ export function validateDto(dto: commonDto) {
             
             // ตรวจสอบ validation
             const errors = await validate(instance);
+            
             if (errors.length > 0) {
-                const formatted = formatValidationErrorsForApiResponse(errors);
-                return createErrorResponse(res, 400, "Validation Error!", undefined, formatted);
+                // Check if the error is due to empty DTO with unknown value
+                const hasUnknownValueError = errors.some(error => 
+                    error.constraints?.unknownValue === 'an unknown value was passed to the validate function'
+                );
+                
+                // If it's just an unknown value error and the data is empty, skip validation
+                // This handles cases where DTO classes have no properties defined
+                if (hasUnknownValueError && Object.keys(dataToValidate).length === 0) {
+                    console.log(`Skipping validation for empty ${DtoKey} - DTO allows empty objects`);
+                } else {
+                    const formatted = formatValidationErrorsForApiResponse(errors);
+                    return createErrorResponse(res, 400, "Validation Error!", undefined, undefined, formatted);
+                }
             }
             
             // ใส่ transformed instance กลับไปใน request object
