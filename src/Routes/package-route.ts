@@ -25,6 +25,7 @@ import {
     getCommunityMembers,
     listCommunityHomestaysDto,
     listCommunityHomestays,
+    listAllHomestaysSuperAdmin,
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -159,6 +160,13 @@ packageRoutes.get(
     listHomestaysByPackage
 );
 
+packageRoutes.get(
+    "/super/list-homestays",
+    validateDto(listCommunityHomestaysDto),
+    authMiddleware,
+    allowRoles("superadmin"),
+    listAllHomestaysSuperAdmin
+);
 
 packageRoutes.get(
     "/super/community/:communityId/members",

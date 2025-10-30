@@ -15,7 +15,7 @@ function buildWhereForRole(user: any): any {
         case "superadmin":
             return base;
         case "admin": {
-            const adminCommunityIds = user.communitiesAdmin.map((c: any) => c.id);
+            const adminCommunityIds = user.communityAdmin.map((c: any) => c.id);
             return { ...base, communityId: { in: adminCommunityIds } };
         }
         case "member":
@@ -61,13 +61,13 @@ export const createPackage = async (data: PackageDto) => {
     // ตรวจ overseer
     const overseer = await prisma.user.findUnique({
         where: { id: Number(data.overseerMemberId) },
-        include: { memberOf: true },
+        include: { Community: true },
     });
     if (!overseer) throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
 
     // ถ้าไม่ได้ส่ง communityId ให้อนุมานจากชุมชนของ overseer
     const resolvedCommunityId =
-        data.communityId ?? overseer.memberOf?.id ?? null;
+        data.communityId ?? overseer.Community?.id ?? null;
     if (!resolvedCommunityId) {
         throw new Error("ไม่พบชุมชนของผู้ดูแล แพ็กเกจต้องสังกัดชุมชน");
     }
@@ -92,6 +92,13 @@ export const createPackage = async (data: PackageDto) => {
     const startAt = composeDateTimeIso(data.startDate, (data as any).startTime);
     const dueAt = composeDateTimeIso(data.dueDate, (data as any).endTime, true);
 
+    const openBooking = data.bookingOpenDate
+        ? composeDateTimeIso(data.bookingOpenDate, (data as any).openTime)
+        : null;
+
+    const closeBooking = data.bookingCloseDate
+        ? composeDateTimeIso(data.bookingCloseDate, (data as any).closeTime, true)
+        : null;
     // NOTE: schema ใช้ bookingOpenDate/bookingCloseDate
     // ใน DTO สร้างยังไม่มี field เปิด/ปิดจอง → ไม่ set (คงเป็น null)
     return prisma.package.create({
@@ -109,8 +116,8 @@ export const createPackage = async (data: PackageDto) => {
             statusApprove: data.statusApprove,
             startDate: startAt,
             dueDate: dueAt,
-            // bookingOpenDate: undefined,
-            // bookingCloseDate: undefined,
+            bookingOpenDate: openBooking,
+            bookingCloseDate: closeBooking,
             facility: data.facility,
             ...(Array.isArray((data as any).packageFile) && (data as any).packageFile.length > 0
                 ? {
@@ -127,6 +134,9 @@ export const createPackage = async (data: PackageDto) => {
     });
 };
 
+/* ============================================================================================
+ * Edit (อัปเดตเฉพาะสิ่งที่ส่งมา, กัน undefined)
+ * ============================================================================================ */
 /* ============================================================================================
  * Edit (อัปเดตเฉพาะสิ่งที่ส่งมา, กัน undefined)
  * ============================================================================================ */
@@ -150,7 +160,7 @@ export const editPackage = async (id: number, data: any) => {
         if (!overseer) throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
     }
 
-    // recompute วัน-เวลา ถ้าส่งมา (ไม่ส่งมา → คงค่าเดิม)
+    // recompute วัน-เวลา (Package)
     const startAt =
         data.startDate
             ? composeDateTimeIso(data.startDate, data.startTime)
@@ -160,6 +170,27 @@ export const editPackage = async (id: number, data: any) => {
         data.dueDate
             ? composeDateTimeIso(data.dueDate, data.endTime, true)
             : pkg.dueDate;
+
+    const openBooking =
+        data.bookingOpenDate
+            ? composeDateTimeIso(data.bookingOpenDate, data.openTime)
+            : pkg.bookingOpenDate;
+
+    const closeBooking =
+        data.bookingCloseDate
+            ? composeDateTimeIso(data.bookingCloseDate, data.closeTime, true)
+            : pkg.bookingCloseDate;
+
+    // [เพิ่ม] แปลงวันเวลาของ Homestay (ถ้ามี)
+    const homestayCheckIn = (data.homestayId && data.homestayCheckInDate)
+        ? composeDateTimeIso(data.homestayCheckInDate, data.homestayCheckInTime)
+        : undefined;
+
+    const homestayCheckOut = (data.homestayId && data.homestayCheckOutDate)
+        ? composeDateTimeIso(data.homestayCheckOutDate, data.homestayCheckOutTime, true)
+        : undefined;
+
+    const hasHomestayLink = data.homestayId && homestayCheckIn && homestayCheckOut && data.bookedRoom;
 
     const updateData: any = {
         ...(data.communityId !== undefined && { community: { connect: { id: Number(data.communityId) } } }),
@@ -175,10 +206,8 @@ export const editPackage = async (id: number, data: any) => {
         ...(startAt !== undefined && { startDate: startAt }),
         ...(dueAt !== undefined && { dueDate: dueAt }),
         ...(data.facility !== undefined && { facility: data.facility }),
-
-        // booking window (ถ้าคุณจะรองรับในอนาคต ให้ส่งชื่อให้ตรง schema)
-        ...(data.bookingOpenDate !== undefined && { bookingOpenDate: new Date(data.bookingOpenDate) }),
-        ...(data.bookingCloseDate !== undefined && { bookingCloseDate: new Date(data.bookingCloseDate) }),
+        ...(data.bookingOpenDate !== undefined && { bookingOpenDate: openBooking }),
+        ...(data.bookingCloseDate !== undefined && { bookingCloseDate: closeBooking }),
     };
 
     // อัปเดต location เฉพาะส่งมา
@@ -211,10 +240,28 @@ export const editPackage = async (id: number, data: any) => {
         };
     }
 
+    // [เพิ่ม] Logic การอัปเดต Homestay (แบบลบของเก่า-สร้างใหม่)
+    // เราใช้ 'data.homestayId !== undefined' เพื่อเช็กว่ามีการส่งข้อมูลส่วนนี้มา
+    if (data.homestayId !== undefined) {
+        updateData.homestayHistories = {
+            deleteMany: {}, // ลบประวัติ Homestay ที่ผูกกับ Package นี้ทั้งหมด
+            ...(hasHomestayLink // ถ้าข้อมูลใหม่ครบถ้วน (มี ID, วันที่, ห้อง)
+                ? {
+                    create: { // สร้างประวัติใหม่
+                        homestayId: Number(data.homestayId),
+                        bookedRoom: Number(data.bookedRoom),
+                        checkInTime: homestayCheckIn!,
+                        checkOutTime: homestayCheckOut!,
+                    },
+                }
+                : {}), // ถ้าข้อมูลไม่ครบ (เช่น กดลบ Homestay) ก็จะไม่สร้างใหม่
+        };
+    }
+
     return prisma.package.update({
         where: { id },
         data: updateData,
-        include: { location: true, packageFile: true },
+        include: { location: true, packageFile: true, homestayHistories: true },
     });
 };
 
@@ -228,7 +275,7 @@ export const getPackageByRole = async (
 ): Promise<PaginationResponse<any>> => {
     const user = await prisma.user.findUnique({
         where: { id: Number(userId) },
-        include: { role: true, memberOf: true, communitiesAdmin: true },
+        include: { role: true, Community: true, communityAdmin: true },
     });
     if (!user) throw new Error(`Member ID ${userId} ไม่ถูกต้อง`);
 
@@ -263,7 +310,7 @@ export const getPackageByRole = async (
 export const deletePackage = async (currentUserId: number, packageId: number) => {
     const user = await prisma.user.findUnique({
         where: { id: Number(currentUserId) },
-        include: { role: true, communitiesAdmin: true },
+        include: { role: true, communityAdmin: true },
     });
     if (!user) throw new Error(`User ID ${currentUserId} ไม่พบในระบบ`);
 
@@ -274,7 +321,7 @@ export const deletePackage = async (currentUserId: number, packageId: number) =>
 
     const role = user.role?.name;
     if (role === "admin") {
-        const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
+        const adminCommunityIds = user.communityAdmin.map((c) => c.id);
         if (!adminCommunityIds.includes(pkg.communityId)) {
             throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
         }
@@ -458,17 +505,17 @@ export async function listCommunityHomestays({ userId, q = "", limit = 8 }: List
 
     const me = await prisma.user.findUnique({
         where: { id: userId },
-        select: { role: { select: { name: true } }, memberOfCommunity: true },
+        select: { role: { select: { name: true } }, communityId: true },
     });
     if (!me) throw new Error("User not found");
-    if (!me.memberOfCommunity) throw new Error("User has no community");
+    if (!me.communityId) throw new Error("User has no community");
 
     const qTrim = q.trim();
     const or = qTrim ? [{ name: { contains: qTrim } }] : [];
 
     const homestays = await prisma.homestay.findMany({
         where: {
-            communityId: me.memberOfCommunity,
+            communityId: me.communityId,
             isDeleted: false,
             ...(or.length ? { OR: or } : {}),
         },
@@ -481,57 +528,94 @@ export async function listCommunityHomestays({ userId, q = "", limit = 8 }: List
 }
 
 export async function getCommunityMembersAndAdmin(
-  communityId: number,
-  q?: string,
-  limit = 50
+    communityId: number,
+    q?: string,
+    limit = 50
 ) {
-  if (!Number.isInteger(communityId) || communityId <= 0) {
-    throw new Error("ID must be Number");
-  }
+    if (!Number.isInteger(communityId) || communityId <= 0) {
+        throw new Error("ID must be Number");
+    }
 
-  const community = await prisma.community.findFirst({
-    where: { id: communityId, isDeleted: false },
-    select: { id: true, adminId: true },
-  });
-  if (!community) throw new Error("Community not found");
+    const community = await prisma.community.findFirst({
+        where: { id: communityId, isDeleted: false },
+        select: { id: true, adminId: true },
+    });
+    if (!community) throw new Error("Community not found");
 
-  const admin =
-    community.adminId != null
-      ? await prisma.user.findFirst({
+    const admin =
+        community.adminId != null
+            ? await prisma.user.findFirst({
+                where: {
+                    id: community.adminId,
+                    isDeleted: false,
+                    role: { name: "admin" },
+                },
+                select: { id: true, fname: true, lname: true }, // ขนาดเล็กพอสำหรับ selector
+            })
+            : null;
+
+    const nameFilter =
+        q && q.trim()
+            ? {
+                OR: [
+                    { fname: { contains: q.trim(), mode: "insensitive" } },
+                    { lname: { contains: q.trim(), mode: "insensitive" } },
+                ],
+            }
+            : {};
+
+    const members = await prisma.user.findMany({
         where: {
-          id: community.adminId,
-          isDeleted: false,
-          role: { name: "admin" },
+            isDeleted: false,
+            role: { name: "member" },
+            communityId: communityId,
+            ...nameFilter,
         },
-        select: { id: true, fname: true, lname: true }, // ขนาดเล็กพอสำหรับ selector
-      })
-      : null;
+        select: { id: true, fname: true, lname: true },
+        orderBy: [{ fname: "asc" }, { lname: "asc" }],
+        take: Number.isFinite(limit) ? Number(limit) : 50,
+    });
 
-  const nameFilter =
-    q && q.trim()
-      ? {
-        OR: [
-          { fname: { contains: q.trim(), mode: "insensitive" } },
-          { lname: { contains: q.trim(), mode: "insensitive" } },
-        ],
-      }
-      : {};
-
-  const members = await prisma.user.findMany({
-    where: {
-      isDeleted: false,
-      role: { name: "member" },
-      memberOfCommunity: communityId,
-      ...nameFilter,
-    },
-    select: { id: true, fname: true, lname: true },
-    orderBy: [{ fname: "asc" }, { lname: "asc" }],
-    take: Number.isFinite(limit) ? Number(limit) : 50,
-  });
-
-  return [
-    ...(admin ? [admin] : []),
-    ...members,
-  ];
+    return [
+        ...(admin ? [admin] : []),
+        ...members,
+    ];
 }
 
+type ListAllHomestaysInput = {
+    q?: string;
+    limit?: number;
+};
+
+/**
+ * [Super Admin] ดึง Homestays ทั้งหมดในระบบ (สำหรับ Superadmin)
+ * - ใช้สำหรับ Route: /super/list-homestays
+ */
+export async function listAllHomestaysSuperAdmin({ q = "", limit = 8 }: ListAllHomestaysInput) {
+    const qTrim = q.trim();
+    const or = qTrim ? [{ name: { contains: qTrim, mode: "insensitive" } }] : [];
+
+    const homestays = await prisma.homestay.findMany({
+        where: {
+            isDeleted: false,
+            ...(or.length ? { OR: or } : {}),
+        },
+        select: {
+            id: true,
+            name: true,
+            facility: true,
+            homestayImage: {
+                select: { image: true },
+                where: { type: "COVER" }, // เลือกเฉพาะ Cover
+                take: 1
+            },
+            community: { // แสดงว่าอยู่ชุมชนไหน
+                select: { id: true, name: true }
+            }
+        },
+        orderBy: [{ name: "asc" }],
+        take: Math.max(1, Math.min(50, Number(limit) || 8)),
+    });
+
+    return homestays;
+}

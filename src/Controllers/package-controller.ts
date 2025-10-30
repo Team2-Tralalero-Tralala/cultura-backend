@@ -6,99 +6,99 @@ import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.j
 import { IdParamDto, MembersQueryDto, PackageDto, PackageIdParamDto, QueryHomestaysDto, QueryListHomestaysDto, updatePackageDto } from "~/Services/package/package-dto.js";
 
 export const createPackageDto = {
-    body: PackageDto,
+  body: PackageDto,
 } satisfies commonDto;
 
 export async function createPackageSuperAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const result = await PackageService.createPackageBySuperAdmin(
-            { ...req.body, createById: uid },
-            uid
-        );
-        return createResponse(res, 200, "Create Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const result = await PackageService.createPackageBySuperAdmin(
+      { ...req.body, createById: uid },
+      uid
+    );
+    return createResponse(res, 200, "Create Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function createPackageAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const result = await PackageService.createPackageByAdmin(
-            { ...req.body, createById: uid },
-            uid
-        );
-        return createResponse(res, 200, "Create Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const result = await PackageService.createPackageByAdmin(
+      { ...req.body, createById: uid },
+      uid
+    );
+    return createResponse(res, 200, "Create Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function createPackageMember(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const result = await PackageService.createPackageByMember(
-            { ...req.body, createById: uid },
-            uid
-        );
-        return createResponse(res, 200, "Create Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const result = await PackageService.createPackageByMember(
+      { ...req.body, createById: uid },
+      uid
+    );
+    return createResponse(res, 200, "Create Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function listPackagesSuperAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const result = await PackageService.getPackagesBySuperAdmin(uid, page, limit);
-        return createResponse(res, 200, "Get Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const result = await PackageService.getPackagesBySuperAdmin(uid, page, limit);
+    return createResponse(res, 200, "Get Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function listPackagesAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const result = await PackageService.getPackagesByAdmin(uid, page, limit);
-        return createResponse(res, 200, "Get Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const result = await PackageService.getPackagesByAdmin(uid, page, limit);
+    return createResponse(res, 200, "Get Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function listPackagesMember(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const result = await PackageService.getPackagesByMember(uid, page, limit);
-        return createResponse(res, 200, "Get Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const result = await PackageService.getPackagesByMember(uid, page, limit);
+    return createResponse(res, 200, "Get Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function listPackagesTourist(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const result = await PackageService.getPackagesByTourist(uid, page, limit);
-        return createResponse(res, 200, "Get Packages Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const result = await PackageService.getPackagesByTourist(uid, page, limit);
+    return createResponse(res, 200, "Get Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 
 export const editPackageDto = {
-    body: updatePackageDto,
+  body: updatePackageDto,
 } satisfies commonDto;
 
 export async function editPackageSuperAdmin(req: Request, res: Response) {
@@ -171,96 +171,96 @@ export async function editPackageSuperAdmin(req: Request, res: Response) {
 }
 
 export async function editPackageAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const id = Number(req.params.id);
-        const result = await PackageService.editPackageByAdmin(id, req.body, uid);
-        return createResponse(res, 200, "Package Updated", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const id = Number(req.params.id);
+    const result = await PackageService.editPackageByAdmin(id, req.body, uid);
+    return createResponse(res, 200, "Package Updated", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function editPackageMember(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const id = Number(req.params.id);
-        const result = await PackageService.editPackageByMember(id, req.body, uid);
-        return createResponse(res, 200, "Package Updated", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const id = Number(req.params.id);
+    const result = await PackageService.editPackageByMember(id, req.body, uid);
+    return createResponse(res, 200, "Package Updated", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function deletePackageSuperAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const packageId = Number(req.params.id);
-        const result = await PackageService.deletePackageBySuperAdmin(uid, packageId);
-        return createResponse(res, 200, "Package Deleted", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const packageId = Number(req.params.id);
+    const result = await PackageService.deletePackageBySuperAdmin(uid, packageId);
+    return createResponse(res, 200, "Package Deleted", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function deletePackageAdmin(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const packageId = Number(req.params.id);
-        const result = await PackageService.deletePackageByAdmin(uid, packageId);
-        return createResponse(res, 200, "Package Deleted", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const packageId = Number(req.params.id);
+    const result = await PackageService.deletePackageByAdmin(uid, packageId);
+    return createResponse(res, 200, "Package Deleted", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export async function deletePackageMember(req: Request, res: Response) {
-    try {
-        const uid = Number((req as any).user?.id);
-        const packageId = Number(req.params.id);
-        const result = await PackageService.deletePackageByMember(uid, packageId);
-        return createResponse(res, 200, "Package Deleted", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const uid = Number((req as any).user?.id);
+    const packageId = Number(req.params.id);
+    const result = await PackageService.deletePackageByMember(uid, packageId);
+    return createResponse(res, 200, "Package Deleted", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 // + เพิ่มตรงนี้
 export async function getPackageDetail(req: Request, res: Response) {
-    try {
-        const id = Number(req.params.id);
-        const result = await PackageService.getPackageDetailById(id);
-        if (!result) {
-            return createErrorResponse(res, 404, "Package not found");
-        }
-        return createResponse(res, 200, "Get Package Detail Success", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
+  try {
+    const id = Number(req.params.id);
+    const result = await PackageService.getPackageDetailById(id);
+    if (!result) {
+      return createErrorResponse(res, 404, "Package not found");
     }
+    return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 }
 
 export const listHomestaysByPackageDto = {
-    params: PackageIdParamDto,
-    query: QueryHomestaysDto,
+  params: PackageIdParamDto,
+  query: QueryHomestaysDto,
 } satisfies commonDto;
 
 export const listHomestaysByPackage: TypedHandlerFromDto<
-    typeof listHomestaysByPackageDto
+  typeof listHomestaysByPackageDto
 > = async (req, res) => {
-    try {
-        const userId = Number(req.user!.id);
-        const id = Number(req.params.id);               // parse ที่นี่
-        const { q = "", limit = "8" } = req.query;      // limit เป็น string
-        const data = await PackageService.listHomestaysByPackage({
-            userId,
-            packageId: id,
-            q,
-            limit: Number(limit),
-        });
-        return createResponse(res, 200, "fetch homestays successfully", data);
-    } catch (err) {
-        return createErrorResponse(res, 400, (err as Error).message);
-    }
+  try {
+    const userId = Number(req.user!.id);
+    const id = Number(req.params.id);               // parse ที่นี่
+    const { q = "", limit = "8" } = req.query;      // limit เป็น string
+    const data = await PackageService.listHomestaysByPackage({
+      userId,
+      packageId: id,
+      q,
+      limit: Number(limit),
+    });
+    return createResponse(res, 200, "fetch homestays successfully", data);
+  } catch (err) {
+    return createErrorResponse(res, 400, (err as Error).message);
+  }
 };
 
 // Controllers/community-controller.ts  ⬇️ เพิ่ม schema สำหรับ validate
@@ -308,6 +308,24 @@ export const listCommunityHomestays: TypedHandlerFromDto<
     });
 
     return createResponse(res, 200, "fetch homestays successfully", data);
+  } catch (err) {
+    return createErrorResponse(res, 400, (err as Error).message);
+  }
+};
+
+export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
+  typeof listCommunityHomestaysDto // ใช้ DTO เดียวกัน (q, limit)
+> = async (req, res) => {
+  try {
+    // Super Admin ไม่ต้องใช้ userId
+    const { q = "", limit = 8 } = req.query;
+
+    const data = await PackageService.listAllHomestaysSuperAdmin({
+      q,
+      limit: Number(limit),
+    });
+
+    return createResponse(res, 200, "Fetch all homestays successfully", data);
   } catch (err) {
     return createErrorResponse(res, 400, (err as Error).message);
   }

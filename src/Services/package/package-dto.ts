@@ -129,6 +129,26 @@ export class PackageDto {
     packageFile?: PackageFileDto[];
 
     @IsOptional()
+    @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingOpenDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingOpenDate?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingCloseDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingCloseDate?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "openTime ต้องเป็น HH:mm" })
+    openTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "closeTime ต้องเป็น HH:mm" })
+    closeTime?: string;
+
+    @IsOptional()
     @IsArray({ message: "tagIds ต้องเป็น array ของตัวเลข" })
     @ArrayUnique()
     @IsInt({ each: true, message: "tagIds ทุกตัวต้องเป็นตัวเลขจำนวนเต็ม" })
@@ -228,14 +248,14 @@ export class updatePackageDto {
     endTime?: string;
 
     @IsString()
-    @IsNotEmpty({ message: "openBookingAt ห้ามว่าง" })
-    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "openBookingAt ต้องเป็นรูปแบบ yyyy-mm-dd" })
-    openBookingAt!: string;
+    @IsNotEmpty({ message: "bookingOpenDate ห้ามว่าง" })
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingOpenDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingOpenDate!: string;
 
     @IsString()
-    @IsNotEmpty({ message: "closeBookingAt ห้ามว่าง" })
-    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "closeBookingAt ต้องเป็นรูปแบบ yyyy-mm-dd" })
-    closeBookingAt!: string;
+    @IsNotEmpty({ message: "bookingCloseDate ห้ามว่าง" })
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingCloseDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingCloseDate!: string;
 
     @IsOptional()
     @IsString()
@@ -279,6 +299,11 @@ export class updatePackageDto {
 
     @IsOptional() @Matches(/^\d{2}:\d{2}$/)
     homestayCheckOutTime?: string;
+
+    @IsOptional() 
+    @IsInt({ message: "bookedRoom ต้องเป็นตัวเลข" })
+    @Min(1, { message: "bookedRoom ต้องอย่างน้อย 1" })
+    bookedRoom?: number;
 }
 
 export class PackageIdParamDto {
@@ -302,7 +327,7 @@ export class MembersQueryDto {
     q?: string;
 
     @IsOptional()
-    @IsNumber()
+    @IsNumberString()
     limit?: string;
 }
 
