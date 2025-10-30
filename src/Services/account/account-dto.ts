@@ -9,9 +9,10 @@ import {
 } from "class-validator";
 
 export class CreateAccountDto {
-  // @IsOptional()
-  // @IsString()
-  // profileImage?: string | null;
+
+  @IsOptional()
+  @IsString()
+  profileImage?: string | null;
 
   @IsInt()
   @IsPositive()
@@ -66,7 +67,7 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsString()
-  subDistrict?: string;
+  subdistrict?: string;
 
   @IsOptional()
   @IsString()
@@ -74,9 +75,9 @@ export class CreateAccountDto {
 }
 
 export class EditAccountDto {
-  // @IsOptional()
-  // @IsString()
-  // profileImage?: string | null;
+  @IsOptional()
+  @IsString()
+  profileImage?: string | null;
 
   @IsOptional()
   @IsString()
@@ -138,7 +139,7 @@ export class EditAccountDto {
 
   @IsOptional()
   @IsString()
-  subDistrict?: string;
+  subdistrict?: string;
 
   @IsOptional()
   @IsString()

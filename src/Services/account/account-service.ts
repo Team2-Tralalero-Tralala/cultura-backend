@@ -39,7 +39,6 @@ const selectSafe = {
  */
 
 export async function createAccount(body: CreateAccountDto) {
-
   const role = await prisma.role.findUnique({
     where: { id: body.roleId },
     select: { id: true, name: true },
@@ -72,7 +71,7 @@ export async function createAccount(body: CreateAccountDto) {
       email: body.email,
       phone: body.phone,
       password: await bcrypt.hash(body.password, 10),
-
+      ...(body.profileImage && { profileImage: body.profileImage }),
       ...(body.gender && {
         gender:
           body.gender.toUpperCase() === "MALE"
@@ -84,7 +83,7 @@ export async function createAccount(body: CreateAccountDto) {
       ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
       ...(body.province && { province: body.province }),
       ...(body.district && { district: body.district }),
-      ...(body.subDistrict && { subDistrict: body.subDistrict }),
+      ...(body.subdistrict && { subDistrict: body.subdistrict }),
       ...(body.postalCode && { postalCode: body.postalCode }),
     },
     select: selectSafe,
@@ -103,11 +102,16 @@ export async function editAccount(userId: number, body: EditAccountDto) {
   if (!Number.isFinite(userId) || userId <= 0)
     throw new Error("invalid_user_id");
 
-  const exists = await prisma.user.findUnique({
+  const targetUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true },
+    include: { role: true },
   });
-  if (!exists) throw new Error("user_not_found");
+  if (!targetUser) throw new Error("user_not_found");
+
+  const allowedRoles = ["admin", "member", "tourist"];
+  if (!allowedRoles.includes(targetUser.role.name.toLowerCase())) {
+    throw new Error("forbidden_role_edit");
+  }
 
   if (body.username || body.email || body.phone) {
     const dup = await prisma.user.findFirst({
@@ -130,11 +134,12 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     ...(body.username && { username: body.username }),
     ...(body.email && { email: body.email }),
     ...(body.phone && { phone: body.phone }),
+    ...(body.profileImage && { profileImage: body.profileImage }),
     ...(body.gender && { gender: body.gender as any }),
     ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
     ...(body.province && { province: body.province }),
     ...(body.district && { district: body.district }),
-    ...(body.subDistrict && { subDistrict: body.subDistrict }),
+    ...(body.subdistrict && { subDistrict: body.subdistrict }),
     ...(body.postalCode && { postalCode: body.postalCode }),
     ...(body.roleId && { roleId: body.roleId }),
   };
@@ -191,9 +196,21 @@ export async function getAccountById(userId: number) {
       role: { select: { name: true } },
     },
   });
-
+  
   if (!user) throw new Error("user_not_found");
-  return user;
+  const allowedRoles = ["admin", "member", "tourist"];
+
+  if (!allowedRoles.includes(user.role?.name.toLowerCase())) {
+    throw new Error("forbidden_role_access");
+  }
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+
+  return {
+    ...user,
+    profileImageUrl: user.profileImage
+      ? `${baseUrl}/uploads/${user.profileImage}`
+      : null,
+  };
 }
 
 /*
