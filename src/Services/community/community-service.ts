@@ -2,6 +2,7 @@ import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import type { UserPayload } from "~/Libs/Types/index.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
