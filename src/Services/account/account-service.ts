@@ -83,7 +83,7 @@ export async function createAccount(body: CreateAccountDto) {
       ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
       ...(body.province && { province: body.province }),
       ...(body.district && { district: body.district }),
-      ...(body.subdistrict && { subDistrict: body.subdistrict }),
+      ...(body.subDistrict && { subDistrict: body.subDistrict }),
       ...(body.postalCode && { postalCode: body.postalCode }),
     },
     select: selectSafe,

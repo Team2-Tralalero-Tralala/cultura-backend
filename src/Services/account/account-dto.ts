@@ -67,7 +67,7 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsString()
-  subdistrict?: string;
+  subDistrict?: string;
 
   @IsOptional()
   @IsString()
