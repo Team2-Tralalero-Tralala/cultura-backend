@@ -4,12 +4,15 @@
  * โดยเชื่อมต่อกับฐานข้อมูลผ่าน Prisma, เข้ารหัสรหัสผ่านด้วย bcrypt,
  * และสร้าง token ด้วย JWT
  */
-import bcrypt from "bcrypt";
-import prisma from "./database-service.js";
-import { IsEmail, IsString } from "class-validator";
 import { UserStatus } from "@prisma/client";
+import bcrypt from "bcrypt";
+import { IsEmail, IsString } from "class-validator";
 import { generateToken } from "~/Libs/token.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
+import prisma from "./database-service.js";
+
+// JWT token expiration time (should match the value in token.ts)
+const JWT_EXPIRATION_HOURS = 1;
 
 /*
  * ฟังก์ชัน : findRoleIdByName
@@ -22,6 +25,43 @@ async function findRoleIdByName(name: string) {
   const role = await prisma.role.findUnique({ where: { name } });
   if (!role) throw new Error("Role not found");
   return role.id;
+}
+
+/*
+ * ฟังก์ชัน : handleExpiredSessions
+ * คำอธิบาย : จัดการ session ที่หมดอายุโดยอัพเดต logoutTime
+ * Input : userId (number) - รหัสผู้ใช้
+ * Output : จำนวน session ที่หมดอายุ
+ * Logic : อัพเดต logoutTime สำหรับ logs ที่ไม่มี logoutTime และ loginTime เก่ากว่า JWT_EXPIRATION_HOURS
+ * โดยตั้งค่า logoutTime เป็นเวลาที่ session หมดอายุจริง (loginTime + JWT_EXPIRATION_HOURS) ตาม JWT token expiration
+ */
+async function handleExpiredSessions(userId: number, expirationSeconds: number) {
+  const expirationTimeAgo = new Date(Date.now() - expirationSeconds * 1000);
+  
+  const expiredLogs = await prisma.log.findMany({
+    where: {
+      userId: userId,
+      logoutTime: null,
+      loginTime: {
+        lt: expirationTimeAgo,
+      },
+    },
+  });
+
+  if (expiredLogs.length > 0) {
+    // อัพเดตแต่ละ log โดยตั้งค่า logoutTime เป็นเวลาที่ session หมดอายุจริง
+    for (const log of expiredLogs) {
+      const expirationTime = new Date(log.loginTime!.getTime() + expirationSeconds * 1000);
+      await prisma.log.update({
+        where: { id: log.id },
+        data: {
+          logoutTime: expirationTime,
+        },
+      });
+    }
+  }
+
+  return expiredLogs.length;
 }
 
 /*
@@ -121,7 +161,7 @@ export class loginDto {
  *   - ถ้าผู้ใช้ถูก block
  *   - ถ้ารหัสผ่านไม่ถูกต้อง
  */
-export async function login(data: loginDto, ipAddress: string) {
+export async function login(data: loginDto, ipAddress: string, expirationSeconds: number) {
   const user = await prisma.user.findFirst({
     where: {
       OR: [{ username: data.username }, { email: data.username }],
@@ -142,7 +182,11 @@ export async function login(data: loginDto, ipAddress: string) {
     role: user.role?.name,
   };
 
-  const token = generateToken(payload);
+  const token = generateToken(payload, expirationSeconds);
+  
+  // จัดการ session ที่หมดอายุก่อนสร้าง log ใหม่
+  await handleExpiredSessions(user.id, expirationSeconds);
+  
   await prisma.log.create({
     data: {
       user: {
@@ -166,16 +210,37 @@ export async function login(data: loginDto, ipAddress: string) {
  */
 export async function logout(user: UserPayload | undefined, ipAddress: string) {
   if (user) {
-    // Log logout attempt
-    await prisma.log.create({
-      data: {
-        user: {
-          connect: { id: user.id },
-        },
-        ipAddress: ipAddress,
-        logoutTime: new Date(),
+    // หา log ล่าสุดที่ยังไม่มี logoutTime
+    const latestLog = await prisma.log.findFirst({
+      where: {
+        userId: user.id,
+        logoutTime: null,
+      },
+      orderBy: {
+        loginTime: 'desc',
       },
     });
+
+    if (latestLog) {
+      // อัพเดต log ที่มีอยู่
+      await prisma.log.update({
+        where: { id: latestLog.id },
+        data: {
+          logoutTime: new Date(),
+        },
+      });
+    } else {
+      // ถ้าไม่พบ log ที่ยังไม่มี logoutTime ให้สร้าง log ใหม่
+      await prisma.log.create({
+        data: {
+          user: {
+            connect: { id: user.id },
+          },
+          ipAddress: ipAddress,
+          logoutTime: new Date(),
+        },
+      });
+    }
   }
 
   return;

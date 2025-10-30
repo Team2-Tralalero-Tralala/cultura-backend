@@ -38,19 +38,24 @@ export type LogWithUser = {
  *   - limit (number) - จำนวนรายการต่อหน้า
  *   - searchName (string | undefined) - ค้นหาตามชื่อผู้ใช้
  *   - filterRole (string | undefined) - กรองตาม role ("all" = ทั้งหมด, อื่นๆ = กรองตาม role)
+ *   - filterStartDate (string | undefined) - กรองตามวันที่เริ่มต้นในรูปแบบ YYYY-MM-DD
+ *   - filterEndDate (string | undefined) - กรองตามวันที่สิ้นสุดในรูปแบบ YYYY-MM-DD
  * Output : PaginationResponse<LogWithUser>
  * Logic :
  *   - superadmin เห็นทุก log
  *   - admin เห็นเฉพาะ log ของสมาชิกในชุมชนที่ตนเป็น admin
  *   - รองรับการค้นหาและกรองข้อมูล
  *   - filterRole = "all" จะไม่กรอง role, อื่นๆจะกรองตาม role ที่ระบุ
+ *   - filterStartDate และ filterEndDate จะกรองตามช่วงวันที่ที่ระบุ (loginTime หรือ logoutTime)
  */
 export async function getUserLogs(
   user: UserPayload,
   page: number = 1,
   limit: number = 10,
   searchName?: string,
-  filterRole?: string
+  filterRole?: string,
+  filterStartDate?: string,
+  filterEndDate?: string
 ): Promise<PaginationResponse<LogWithUser>> {
     const skip = (page - 1) * limit;
 
@@ -106,6 +111,46 @@ export async function getUserLogs(
                 name: filterRole,
             },
         };
+    }
+
+    // เพิ่ม filter สำหรับกรองตามช่วงวันที่
+    if (filterStartDate || filterEndDate) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        
+        // ตรวจสอบรูปแบบวันที่
+        if (filterStartDate && !dateRegex.test(filterStartDate)) {
+            throw new Error("รูปแบบวันที่เริ่มต้นไม่ถูกต้อง ต้องเป็น YYYY-MM-DD");
+        }
+        if (filterEndDate && !dateRegex.test(filterEndDate)) {
+            throw new Error("รูปแบบวันที่สิ้นสุดไม่ถูกต้อง ต้องเป็น YYYY-MM-DD");
+        }
+
+        // สร้างช่วงวันที่
+        let startDate: Date | undefined;
+        let endDate: Date | undefined;
+
+        if (filterStartDate) {
+            startDate = new Date(filterStartDate + "T00:00:00.000Z");
+        }
+        if (filterEndDate) {
+            endDate = new Date(filterEndDate + "T23:59:59.999Z");
+        }
+
+        // สร้างเงื่อนไขการกรองตามช่วงวันที่
+        const dateFilter: any = {};
+        if (startDate) dateFilter.gte = startDate;
+        if (endDate) dateFilter.lte = endDate;
+
+        if (Object.keys(dateFilter).length > 0) {
+            whereCondition.OR = [
+                {
+                    loginTime: dateFilter,
+                },
+                {
+                    logoutTime: dateFilter,
+                },
+            ];
+        }
     }
 
     // นับจำนวนรายการทั้งหมด
