@@ -441,3 +441,70 @@ export async function getUnassignedMembers() {
     orderBy: { fname: "asc" },
   });
 }
+
+/*
+ * ฟังก์ชัน : getCommunityDetailByAdmin
+ * คำอธิบาย : ดึงรายละเอียดของชุมชนของแอดมิน (เฉพาะ Admin)
+ * Input :
+ *   - userId (number) : รหัสผู้ใช้ (ต้องเป็น role = admin)
+ * Output :
+ *   - Object ข้อมูลชุมชนพร้อมความสัมพันธ์ (location, member, image, store, homestay, package)
+ * หมายเหตุ :
+ *   - ตรวจสอบสิทธิ์ว่า user เป็น Admin เท่านั้น
+ */
+export async function getCommunityDetailByAdmin(userId: number) {
+  // ตรวจสอบรูปแบบ input
+  if (!Number.isInteger(userId) || userId <= 0)
+    throw new Error("ID must be Number");
+
+  // ตรวจสอบผู้ใช้
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "admin")
+    throw new Error("Forbidden");
+
+  // ดึงข้อมูลชุมชนของแอดมิน
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+    include: {
+      communityImage: true,
+      location: true,
+
+      packages: {
+        include: {
+          packageFile: true,
+        },
+      },
+      homestays: {
+        include: {
+          homestayImage: true,
+        },
+      },
+      stores: {
+        include: {
+          storeImage: true,
+        },
+      },
+      communityMembers: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fname: true,
+              lname: true,
+              email: true,
+              roleId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!community) throw new Error("Community not found");
+  return community;
+}
+
