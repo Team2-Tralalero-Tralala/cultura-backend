@@ -1,7 +1,9 @@
 import { Prisma, UserStatus } from "@prisma/client";
+import bcrypt from "bcrypt";
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
+import type { PasswordDto } from "../password-dto.js";
 
 /**
  * ฟังก์ชัน: getAccountAll
@@ -89,7 +91,6 @@ export async function getAccountAll(
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
 }
-
 
 /**
  * ฟังก์ชัน: getUserByStatus
@@ -254,7 +255,10 @@ export async function unblockAccount(userId: number): Promise<any> {
  * Output:
  *   - ข้อมูลผู้ใช้ที่สร้างใหม่ (id, username, email, status)
  */
-export async function createAccount(payload: any, pathFile: string): Promise<any> {
+export async function createAccount(
+  payload: any,
+  pathFile: string
+): Promise<any> {
   const user = await prisma.user.create({
     data: {
       ...payload,
@@ -299,8 +303,6 @@ export async function updateProfileImage(
   return updatedUser;
 }
 
-
-
 /**
  * ฟังก์ชัน: getMemberByAdmin
  * วัตถุประสงค์: แอดมินสามารถดูข้อมูลสมาชิกในชุมชนที่ตัวเองดูแลได้เท่านั้น
@@ -342,13 +344,34 @@ export async function getMemberByAdmin(
 
   const isMemberInCommunity =
     user.communityMembers?.some(
-      (member) =>
-        member.Community && communityIds.includes(member.Community.id)
+      (member) => member.Community && communityIds.includes(member.Community.id)
     ) ?? false;
 
   if (!isMemberInCommunity) {
     throw new Error("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้นี้");
   }
+
+  return user;
+}
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับรีเซ็ตรหัสผ่านของผู้ใช้ (Forget Password)
+ * Input :
+ *   - userId (number) : รหัสผู้ใช้ที่ต้องการเปลี่ยนรหัสผ่าน
+ *   - newPassword (string) : รหัสผ่านใหม่ที่ยังไม่เข้ารหัส
+ * Output :
+ *   - ข้อมูลผู้ใช้ที่อัปเดตรหัสผ่านแล้ว (ไม่รวม password)
+ */
+export async function resetPassword(userId: number, newPassword: PasswordDto) {
+  // เข้ารหัสรหัสผ่านด้วย bcrypt
+  const hashedPassword = await bcrypt.hash(newPassword.newPassword, 10);
+
+  // อัปเดตรหัสผ่านใหม่ในฐานข้อมูล
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+    select: { id: true, email: true, role: true },
+  });
 
   return user;
 }
