@@ -5,7 +5,7 @@
  * Last Modified: 21 ตุลาคม 2568
  */
 import prisma from "../database-service.js";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import type { CreateAccountDto, EditAccountDto } from "./account-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 
