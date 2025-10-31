@@ -49,7 +49,10 @@ ALTER TABLE `homestay_histories` MODIFY `hh_check_in_time` DATETIME NOT NULL,
     MODIFY `hh_check_out_time` DATETIME NOT NULL;
 
 -- AlterTable
-ALTER TABLE `packages` MODIFY `pk_start_date` DATETIME NOT NULL,
+ALTER TABLE `packages` ADD COLUMN `pk_booking_close_date` DATETIME NULL,
+    ADD COLUMN `pk_booking_open_date` DATETIME NULL,
+    MODIFY `pk_status_approve` ENUM('PENDING', 'APPROVE', 'PENDING_SUPER', 'REJECTED') NULL,
+    MODIFY `pk_start_date` DATETIME NOT NULL,
     MODIFY `pk_due_date` DATETIME NOT NULL;
 
 -- AlterTable
