@@ -31,6 +31,11 @@ import { upload } from "~/Libs/uploadFile.js";
 
 const packageRoutes = Router();
 
+/*
+ * คำอธิบาย : (Member) Route สำหรับสร้างแพ็กเกจใหม่
+ * Method : POST
+ * Path : /member/package
+ */
 packageRoutes.post(
     "/member/package",
     authMiddleware,
@@ -38,12 +43,24 @@ packageRoutes.post(
     validateDto(createPackageDto),
     createPackageMember
 );
+
+/*
+ * คำอธิบาย : (Member) Route สำหรับดึงรายการแพ็กเกจ (ของตนเอง)
+ * Method : GET
+ * Path : /member/packages
+ */
 packageRoutes.get(
     "/member/packages",
     authMiddleware,
     allowRoles("member"),
     listPackagesMember
 );
+
+/*
+ * คำอธิบาย : (Member) Routeสำหรับแก้ไขข้อมูลแพ็กเกจ
+ * Method : PUT
+ * Path : /member/package/:id
+ */
 packageRoutes.put(
     "/member/package/:id",
     authMiddleware,
@@ -51,6 +68,12 @@ packageRoutes.put(
     validateDto(editPackageDto),
     editPackageMember
 );
+
+/*
+ * คำอธิบาย : (Member) Route สำหรับลบแพ็กเกจ (Soft Delete)
+ * Method : PATCH
+ * Path : /member/package/:id
+ */
 packageRoutes.patch(
     "/member/package/:id",
     authMiddleware,
@@ -58,6 +81,11 @@ packageRoutes.patch(
     deletePackageMember
 );
 
+/*
+ * คำอธิบาย : (Admin) Route สำหรับสร้างแพ็กเกจใหม่
+ * Method : POST
+ * Path : /admin/package
+ */
 packageRoutes.post(
     "/admin/package",
     authMiddleware,
@@ -65,12 +93,24 @@ packageRoutes.post(
     validateDto(createPackageDto),
     createPackageAdmin
 );
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการแพ็กเกจ (ในชุมชนของตน)
+ * Method : GET
+ * Path : /admin/packages
+ */
 packageRoutes.get(
     "/admin/packages",
     authMiddleware,
     allowRoles("admin"),
     listPackagesAdmin
 );
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับแก้ไขข้อมูลแพ็กเกจ
+ * Method : PUT
+ * Path : /admin/package/:id
+ */
 packageRoutes.put(
     "/admin/package/:id",
     authMiddleware,
@@ -78,6 +118,12 @@ packageRoutes.put(
     validateDto(editPackageDto),
     editPackageAdmin
 );
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับลบแพ็กเกจ (Soft Delete)
+ * Method : PATCH
+ * Path : /admin/package/:id
+ */
 packageRoutes.patch(
     "/admin/package/:id",
     authMiddleware,
@@ -85,6 +131,11 @@ packageRoutes.patch(
     deletePackageAdmin
 );
 
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับสร้างแพ็กเกจใหม่
+ * Method : POST
+ * Path : /super/package
+ */
 packageRoutes.post(
     "/super/package",
     authMiddleware,
@@ -92,12 +143,24 @@ packageRoutes.post(
     validateDto(createPackageDto),
     createPackageSuperAdmin
 );
+
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายการแพ็กเกจทั้งหมด
+ * Method : GET
+ * Path : /super/packages
+ */
 packageRoutes.get(
     "/super/packages",
     authMiddleware,
     allowRoles("superadmin"),
     listPackagesSuperAdmin
 );
+
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับแก้ไขข้อมูลแพ็กเกจ (รองรับไฟล์)
+ * Method : PUT
+ * Path : /super/package/:id
+ */
 packageRoutes.put(
     "/super/package/:id",
     authMiddleware,
@@ -106,6 +169,12 @@ packageRoutes.put(
     // validateDto(editPackageDto),
     editPackageSuperAdmin
 );
+
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับลบแพ็กเกจ (Soft Delete)
+ * Method : PATCH
+ * Path : /super/package/:id
+ */
 packageRoutes.patch(
     "/super/package/:id",
     authMiddleware,
@@ -113,6 +182,11 @@ packageRoutes.patch(
     deletePackageSuperAdmin
 );
 
+/*
+ * คำอธิบาย : (Tourist) Route สำหรับดึงรายการแพ็กเกจ (ที่เผยแพร่แล้ว)
+ * Method : GET
+ * Path : /tourist/packages
+ */
 packageRoutes.get(
     "/tourist/packages",
     authMiddleware,
@@ -120,7 +194,11 @@ packageRoutes.get(
     listPackagesTourist
 );
 
-// MEMBER
+/*
+ * คำอธิบาย : (Member) Route สำหรับดึงข้อมูลแพ็กเกจ 1 รายการ
+ * Method : GET
+ * Path : /member/package/:id
+ */
 packageRoutes.get(
     "/member/package/:id",
     authMiddleware,
@@ -128,7 +206,11 @@ packageRoutes.get(
     getPackageDetail
 );
 
-// ADMIN
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงข้อมูลแพ็กเกจ 1 รายการ
+ * Method : GET
+ * Path : /admin/package/:id
+ */
 packageRoutes.get(
     "/admin/package/:id",
     authMiddleware,
@@ -136,7 +218,11 @@ packageRoutes.get(
     getPackageDetail
 );
 
-// SUPERADMIN
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับดึงข้อมูลแพ็กเกจ 1 รายการ
+ * Method : GET
+ * Path : /super/package/:id
+ */
 packageRoutes.get(
     "/super/package/:id",
     authMiddleware,
@@ -144,7 +230,11 @@ packageRoutes.get(
     getPackageDetail
 );
 
-// TOURIST
+/*
+ * คำอธิบาย : (Tourist) Route สำหรับดึงข้อมูลแพ็กเกจ 1 รายการ
+ * Method : GET
+ * Path : /tourist/package/:id
+ */
 packageRoutes.get(
     "/tourist/package/:id",
     authMiddleware,
@@ -152,6 +242,12 @@ packageRoutes.get(
     getPackageDetail
 );
 
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายการที่พัก (เพื่อใช้เลือก)
+ * ที่อยู่ในชุมชนเดียวกับแพ็กเกจ
+ * Method : GET
+ * Path : /super/homestay-select/:id
+ */
 packageRoutes.get(
     "/super/homestay-select/:id",
     validateDto(listHomestaysByPackageDto),
@@ -160,6 +256,11 @@ packageRoutes.get(
     listHomestaysByPackage
 );
 
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายการที่พักทั้งหมดในระบบ
+ * Method : GET
+ * Path : /super/list-homestays
+ */
 packageRoutes.get(
     "/super/list-homestays",
     validateDto(listCommunityHomestaysDto),
@@ -168,6 +269,11 @@ packageRoutes.get(
     listAllHomestaysSuperAdmin
 );
 
+/*
+ * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายชื่อสมาชิก/แอดมินในชุมชน
+ * Method : GET
+ * Path : /super/community/:communityId/members
+ */
 packageRoutes.get(
     "/super/community/:communityId/members",
     validateDto(getCommunityMembersDto),
@@ -176,6 +282,11 @@ packageRoutes.get(
     getCommunityMembers
 );
 
+/*
+ * คำอธิบาย : (Member) Route สำหรับดึงรายการที่พัก (ในชุมชนของตนเอง)
+ * Method : GET
+ * Path : /member/list-homestays
+ */
 packageRoutes.get(
     "/member/list-homestays",
     validateDto(listCommunityHomestaysDto),
