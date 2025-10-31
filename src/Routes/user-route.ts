@@ -172,4 +172,12 @@ userRoutes.patch(
   UserController.resetPassword
 );
 
+userRoutes.post(
+    "/account/change-password/me",
+    authMiddleware,
+    allowRoles("superadmin", "admin", "member", "tourist"),
+    validateDto(UserController.changePasswordDto),
+    UserController.changePassword
+);
+
 export default userRoutes;
