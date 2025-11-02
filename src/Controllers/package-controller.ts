@@ -61,6 +61,25 @@ export const getPackageByRole = async (req: Request, res: Response) => {
 };
 
 /*
+ * คำอธิบาย : Controller สำหรับดึงข้อมูล Package ตาม ID
+ * Input  : packageId (จาก params)
+ * Output : JSON response { status, message, data }
+ */
+export const getPackageById = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return createErrorResponse(res, 400, "Package ID ต้องเป็นตัวเลข");
+    }
+
+    const result = await PackageService.getPackageDetailById(id);
+    return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 404, (error as Error).message);
+  }
+};
+
+/*
  * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอนแก้ไข Package
  * Input  : body (updatePackageDto)
  * Output : commonDto object

@@ -4,6 +4,7 @@ import {
   editPackage,
   deletePackage,
   getPackageByRole,
+  getPackageById,
   createPackageDto,
   editPackageDto,
 } from "../Controllers/package-controller.js";
@@ -24,6 +25,12 @@ packageRoutes.get(
   authMiddleware,
   allowRoles("superadmin", "admin", "member", "tourist"),
   getPackageByRole
+);
+packageRoutes.get(
+  "/:id",
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member", "tourist"),
+  getPackageById
 );
 packageRoutes.put(
   "/:id",

@@ -176,7 +176,7 @@ export const getPackageByRole = async (
 
     const user = await prisma.user.findUnique({
         where: { id },
-        include: { role: true, memberOf: true, communitiesAdmin: true }
+        include: { role: true, communityAdmin: true }
     });
 
     let whereCondition: any = {};
@@ -187,7 +187,7 @@ export const getPackageByRole = async (
             break;
 
         case "admin":
-            const adminCommunityIds = user.communitiesAdmin.map((c) => c.id);
+            const adminCommunityIds = (user?.communityAdmin || []).map((c) => c.id);
             whereCondition.communityId = { in: adminCommunityIds };
             break;
 
@@ -235,7 +235,6 @@ export const getPackageByRole = async (
         },
     };
 };
-
 
 /*
  * คำอธิบาย : ลบ Package ออกจากระบบ
@@ -285,4 +284,51 @@ export const deletePackage = async (userId: number, packageId: number) => {
 
     return deleted;
 };
+
+/*
+ * คำอธิบาย : ฟังก์ชันดึงรายละเอียด Package ตามหมายเลข ID
+ * Input  : id (หมายเลข Package)
+ * Output : รายละเอียด Package พร้อมความสัมพันธ์ทั้งหมด
+ */
+export const getPackageDetailById = async (id: number) => {
+  // ตรวจสอบว่ามี package จริงไหม
+  const pkg = await prisma.package.findUnique({
+    where: { id },
+    include: {
+      community: { select: { id: true, name: true } },
+      overseerPackage: { select: { id: true, fname: true, lname: true } },
+      createPackage: { select: { id: true, fname: true, lname: true } },
+      tagPackages: {
+        include: {
+          tag: { select: { id: true, name: true } },
+        },
+      },
+      location: {
+        select: {
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      packageFile: {
+        select: {
+          id: true,
+          filePath: true,
+          type: true,
+        },
+      },
+    },
+  });
+
+  if (!pkg) throw new Error(`Package ID ${id} ไม่พบในระบบ`);
+
+  return pkg;
+};
+
 
