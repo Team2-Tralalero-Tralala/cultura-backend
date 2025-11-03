@@ -180,4 +180,17 @@ userRoutes.post(
     UserController.changePassword
 );
 
+/*
+ * เส้นทาง : PATCH /admin/member/:userId
+ * คำอธิบาย : ลบ member ออกจาก Community แบบ Soft Delete
+ * สิทธิ์ที่เข้าถึงได้ : admin
+ */
+userRoutes.patch(
+  "/admin/member/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(UserController.deleteCommunityMemberByIdDto),
+  UserController.deleteCommunityMemberById
+);
+
 export default userRoutes;
