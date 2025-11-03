@@ -484,3 +484,18 @@ export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = asy
         return createErrorResponse(res, 404, (error as Error).message);
     }
 };
+
+export const deleteCommunityMemberByIdDto = { params: IdParamDto } satisfies commonDto;
+
+export const deleteCommunityMemberById: TypedHandlerFromDto<
+  typeof deleteCommunityMemberByIdDto
+> = async (req, res) => { 
+  try {
+    const memberId = Number(req.params.userId);
+    const deletedMember = await UserService.deleteCommunityMember(memberId);
+    return createResponse(res, 200, "Deleted community member successfully", deletedMember);
+  }
+  catch (caughtError) {
+    return createErrorResponse(res, 404, (caughtError as Error).message);
+  }
+};
