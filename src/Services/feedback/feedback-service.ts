@@ -1,15 +1,37 @@
+// src/Services/feedback/package-feedback-admin-service.ts
 import prisma from "../database-service.js";
+import type { UserPayload } from "~/Libs/Types/index.js";
 
 /**
  * ฟังก์ชัน : getPackageFeedbacksByPackageId
- * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจที่กำหนด
- * Input : packageId รหัสของแพ็กเกจที่ต้องการดึง Feedback
- * Output : รายการ Feedback ที่มีข้อมูลเรตติ้ง ข้อความ รูปภาพ และข้อมูลผู้จอง
+ * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจ (เฉพาะแอดมิน)
+ * Input : packageId, user (UserPayload)
+ * Output : Feedback ทั้งหมดของแพ็กเกจนั้น
+ * เฉพาะกรณีที่แพ็กเกจอยู่ใน community ของแอดมินเท่านั้น
  */
-export const getPackageFeedbacksByPackageId = async (packageId: number) => {
-  return prisma.feedback.findMany({
+export const getPackageFeedbacksByPackageId = async (
+  packageId: number,
+  user: UserPayload
+) => {
+  const packageInCommunity = await prisma.package.findFirst({
     where: {
-      bookingHistory: { packageId },
+      id: packageId,
+      community: {
+        adminId: user.id,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!packageInCommunity) {
+    throw new Error("Package not found in your community");
+  }
+
+  const feedbacks = await prisma.feedback.findMany({
+    where: {
+      bookingHistory: {
+        packageId: packageId,
+      },
     },
     select: {
       createdAt: true,
@@ -20,21 +42,19 @@ export const getPackageFeedbacksByPackageId = async (packageId: number) => {
       },
       bookingHistory: {
         select: {
-          tourist: {
-            select: {
-              fname: true,
-              lname: true,
-            },
-          },
-          package: {
-            select: {
-              name: true,
-            },
-          },
+          tourist: { select: { fname: true, lname: true } },
+          package: { select: { name: true } },
         },
       },
     },
   });
+
+  // ถ้าไม่มี feedback
+  if (!feedbacks || feedbacks.length === 0) {
+    throw new Error("No feedback found for this package");
+  }
+
+  return feedbacks;
 };
 
 export default getPackageFeedbacksByPackageId;
