@@ -1,4 +1,3 @@
-// src/Controllers/feedback/package-feedback-admin-controller.ts
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { getPackageFeedbacksByPackageId } from "~/Services/feedback/feedback-service.js";
