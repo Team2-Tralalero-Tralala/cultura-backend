@@ -487,6 +487,13 @@ export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = asy
 
 export const deleteCommunityMemberByIdDto = { params: IdParamDto } satisfies commonDto;
 
+/**
+* ฟังก์ชัน : deleteCommunityMemberById
+* คำอธิบาย : Handler สำหรับลบสมาชิกชุมชนตามรหัส ID โดยเรียก Service ที่เกี่ยวข้อง
+* Input : req (Request) - พารามิเตอร์ userId ใน URL เป็นรหัสสมาชิก
+* Output : Response - ส่งข้อความยืนยันการลบสำเร็จ พร้อมข้อมูลสมาชิกที่ถูกลบ
+* Error : หากไม่พบสมาชิก จะส่ง response 404 พร้อมข้อความ Error
+*/
 export const deleteCommunityMemberById: TypedHandlerFromDto<
   typeof deleteCommunityMemberByIdDto
 > = async (req, res) => { 
