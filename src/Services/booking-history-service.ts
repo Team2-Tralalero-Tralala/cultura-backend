@@ -244,7 +244,7 @@ export const getBookingsByAdmin = async (
         isDeleted: false,
       },
     },
-    orderBy: { bookingAt: "desc" },
+    orderBy: { bookingAt: "asc" },
     skip,
     take: limit,
     select: {
