@@ -481,3 +481,32 @@ export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/*
+ * คำอธิบาย : (Admin) Handler สำหรับดึงรายละเอียดประวัติแพ็กเกจ
+ * Method : GET
+ * Endpoint : /api/admin/package/history/:packageId
+ * Input  : req.params.packageId (หมายเลขไอดีของแพ็กเกจ)
+ * Output : 200 - รายละเอียดแพ็กเกจพร้อมข้อมูลประวัติการใช้งาน Homestay และ Booking
+ *           404 - หากไม่พบแพ็กเกจ
+ *           400 - หากเกิดข้อผิดพลาดอื่น
+ * การทำงาน :
+ *   1. อ่านค่า packageId จากพารามิเตอร์ URL
+ *   2. เรียกใช้ Service ชั้น package-service เพื่อดึงข้อมูลแพ็กเกจและประวัติทั้งหมด
+ *   3. หากไม่พบข้อมูลให้ส่ง Response 404
+ *   4. หากพบให้จัดรูปแบบ Response และส่งกลับให้ Client
+ */
+
+export async function getPackageHistoryDetailAdmin(req: Request, res: Response) {
+  try {
+    const packageId = Number(req.params.packageId);
+    if (!packageId) return createErrorResponse(res, 400, "Invalid packageId");
+
+    const result = await PackageService.getPackageHistoryDetailById(packageId);
+    if (!result) return createErrorResponse(res, 404, "Package history not found");
+
+    return createResponse(res, 200, "Get Package History Detail Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}

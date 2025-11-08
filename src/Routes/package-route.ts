@@ -26,6 +26,7 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
+    getPackageHistoryDetailAdmin,
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -294,4 +295,18 @@ packageRoutes.get(
     allowRoles("member"),
     listCommunityHomestays
 );
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดูรายละเอียดประวัติแพ็กเกจ
+ * Method : GET
+ * Path : /api/admin/package/history/:packageId
+ */
+packageRoutes.get(
+  "/admin/package/history/:packageId",
+  authMiddleware,
+  allowRoles("admin"),
+  getPackageHistoryDetailAdmin
+);
+
 export default packageRoutes;
+
