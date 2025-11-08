@@ -430,21 +430,19 @@ export async function changePassword(userId: number, payload: any) {
  * Error : หากไม่พบสมาชิก จะ throw Error("Community member not found")
  */
 export async function deleteCommunityMember(memberId: number) {
-  const target = await prisma.communityMembers.findUnique({
-    where: { id: memberId },
+  const target = await prisma.communityMembers.findFirst({
+    where: { memberId },
   });
 
   if (!target) throw new Error("Community member not found");
 
-  const deletedMember = await prisma.communityMembers.update({
-    where: { id: memberId },
+  return prisma.communityMembers.update({
+    where: { id: target.id },
     data: {
       isDeleted: true,
       deleteAt: new Date(),
     },
   });
-  return deletedMember;
-
 }
 
 
