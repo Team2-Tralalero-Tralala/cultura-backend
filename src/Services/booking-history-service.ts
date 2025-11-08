@@ -248,6 +248,7 @@ export const getBookingsByAdmin = async (
     skip,
     take: limit,
     select: {
+      id: true,
       tourist: {
         select: {
           fname: true,
@@ -268,6 +269,7 @@ export const getBookingsByAdmin = async (
 
   // คำนวณราคารวม = ราคาแพ็กเกจ * จำนวนผู้เข้าร่วม
   const result = bookings.map((b) => ({
+    id: b.id,
     tourist: b.tourist,
     package: b.package,
     totalPrice: (b.package?.price ?? 0) * (b.totalParticipant ?? 0),
