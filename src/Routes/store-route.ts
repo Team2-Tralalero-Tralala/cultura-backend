@@ -105,7 +105,7 @@ export default storeRoute;
 
 
 /*
- * เส้นทาง : PATCH /shared/store/:storeId/delete
+ * เส้นทาง : DELETE /shared/store/:storeId/delete
  * รายละเอียด :
  *   ใช้สำหรับ "ลบร้านค้า (Soft Delete)" โดยตั้งค่า isDeleted = true
  *   จำกัดสิทธิ์ให้เฉพาะ superadmin และ admin ที่เกี่ยวข้องกับชุมชนเท่านั้น
@@ -116,7 +116,7 @@ export default storeRoute;
  * Controller :
  *   - StoreController.deleteStore
  */
-storeRoute.patch(
+storeRoute.delete(
   "/shared/store/:storeId/delete",
   validateDto(StoreController.deleteStoreDto),
   authMiddleware,
