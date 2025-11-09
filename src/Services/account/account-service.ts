@@ -88,6 +88,15 @@ export async function createAccount(body: CreateAccountDto) {
     },
     select: selectSafe,
   });
+  //  เพิ่มการบันทึกสมาชิกเข้าชุมชน (เฉพาะ Role = member)
+  if (role.name.toLowerCase() === "member" && body.memberOfCommunity) {
+    await prisma.communityMembers.create({
+      data: {
+        communityId: body.memberOfCommunity, // id ของชุมชนจากฟรอนต์เอนด์
+        memberId: created.id,                // id ของ user ที่เพิ่งสร้าง
+      },
+    });
+  }
 
   return created;
 }
