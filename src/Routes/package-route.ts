@@ -26,6 +26,7 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
+    getAllFeedbacks,
     duplicatePackageHistoryDto,
     duplicatePackageHistoryAdmin,
     getPackageHistoryDetailAdmin,
@@ -320,6 +321,19 @@ packageRoutes.get(
     listCommunityHomestays
 );
 
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการ Feedback ทั้งหมดของแพ็กเกจ
+ * Method : GET
+ * Path : /admin/package/feedbacks/all
+ * Middleware : authMiddleware → allowRoles("admin", "member")
+ * Controller : getAllFeedbacks
+ */
+packageRoutes.get(
+    "/admin/package/feedbacks/all",
+    authMiddleware,
+    allowRoles("admin", "member"),
+    getAllFeedbacks
+);
 /*
  * คำอธิบาย : (Admin) Route สำหรับดูรายละเอียดประวัติแพ็กเกจ
  * Method : GET
