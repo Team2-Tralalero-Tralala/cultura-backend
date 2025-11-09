@@ -6,10 +6,19 @@
  */
 
 import type { Request, Response } from "express";
-import * as PackageService from "../Services/package/package-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
-import { IdParamDto, MembersQueryDto, PackageDto, PackageIdParamDto, QueryHomestaysDto, QueryListHomestaysDto, updatePackageDto } from "~/Services/package/package-dto.js";
+import {
+  IdParamDto,
+  MembersQueryDto,
+  PackageDto,
+  PackageDuplicateParamDto,
+  PackageIdParamDto,
+  QueryHomestaysDto,
+  QueryListHomestaysDto,
+  updatePackageDto,
+} from "~/Services/package/package-dto.js";
+import * as PackageService from "../Services/package/package-service.js";
 
 /*
  * DTO: createPackageDto
@@ -180,6 +189,41 @@ export async function listPackagesTourist(req: Request, res: Response) {
 export const editPackageDto = {
   body: updatePackageDto,
 } satisfies commonDto;
+
+/*
+ * DTO: duplicatePackageHistoryDto
+ * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (packageId)
+ * เมื่อมีการคัดลอกแพ็กเกจจากประวัติ
+ * Input: params.packageId
+ * Output: (Passed to handler)
+ */
+export const duplicatePackageHistoryDto = {
+  params: PackageDuplicateParamDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : (Admin) Handler สำหรับคัดลอกแพ็กเกจจากประวัติ
+ * Input: req.user.id, req.params.packageId
+ * Output: 201 - ข้อมูลแพ็กเกจฉบับร่างที่ถูกคัดลอก
+ * 400 - Error message
+ */
+export const duplicatePackageHistoryAdmin: TypedHandlerFromDto<
+  typeof duplicatePackageHistoryDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    const packageId = Number(req.params.packageId);
+
+    const duplicatedPackage = await PackageService.duplicatePackageFromHistory({
+      packageId,
+      userId,
+    });
+
+    return createResponse(res, 201, "Duplicate Package Success", duplicatedPackage);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
 
 /*
  * คำอธิบาย : (SuperAdmin) Handler สำหรับแก้ไขแพ็กเกจ
