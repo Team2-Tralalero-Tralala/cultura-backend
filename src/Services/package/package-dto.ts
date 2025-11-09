@@ -1,24 +1,23 @@
+import { ImageType, PackageApproveStatus, PackagePublishStatus } from "@prisma/client";
 import { Type } from "class-transformer";
 import {
-    IsString,
-    IsNotEmpty,
-    MaxLength,
-    IsNumber,
-    Min,
-    IsEnum,
-    IsOptional,
-    Matches,
-    ValidateNested,
-    IsObject,
-    IsArray,
     ArrayUnique,
+    IsArray,
+    IsEnum,
     IsInt,
+    IsNotEmpty,
+    IsNumber,
+    IsNumberString,
+    IsOptional,
+    IsString,
+    Matches,
     Max,
-    IsNumberString
+    MaxLength,
+    Min,
+    ValidateNested
 } from "class-validator";
-import { PackagePublishStatus, PackageApproveStatus, ImageType } from "@prisma/client";
-import { LocationDto } from "../location/location-dto.js";
 import "reflect-metadata";
+import { LocationDto } from "../location/location-dto.js";
 
 
 /*
@@ -309,6 +308,11 @@ export class updatePackageDto {
 export class PackageIdParamDto {
     @IsNumberString()
     id?: string;
+}
+
+export class PackageDuplicateParamDto {
+    @IsNumberString()
+    packageId?: string;
 }
 
 export class QueryHomestaysDto {

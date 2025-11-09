@@ -1,4 +1,5 @@
 // Services/package/package-service.ts
+import { PackageApproveStatus, PackagePublishStatus } from "@prisma/client";
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
@@ -153,6 +154,143 @@ export const createPackage = async (data: PackageDto) => {
         include: { location: true, packageFile: true },
     });
 };
+
+type DuplicatePackageInput = {
+    packageId: number;
+    userId: number;
+};
+
+/*
+ * คำอธิบาย : คัดลอกแพ็กเกจจากประวัติ และสร้างแพ็กเกจใหม่ในสถานะ Draft
+ * Input: packageId - ID ของแพ็กเกจต้นฉบับ, userId - ID ของผู้ดูแล (Admin) ที่ดำเนินการ
+ * Output : ข้อมูลแพ็กเกจใหม่ที่ถูกคัดลอก
+ */
+export async function duplicatePackageFromHistory({
+    packageId,
+    userId,
+}: DuplicatePackageInput) {
+    if (!Number.isInteger(packageId) || packageId <= 0) {
+        throw new Error("Package ID must be a positive integer");
+    }
+    if (!Number.isInteger(userId) || userId <= 0) {
+        throw new Error("User ID must be a positive integer");
+    }
+
+    const adminUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            role: { select: { name: true } },
+            communityAdmin: { select: { id: true } },
+        },
+    });
+
+    if (!adminUser) {
+        throw new Error("User not found");
+    }
+    if (adminUser.role?.name !== "admin") {
+        throw new Error("เฉพาะผู้ดูแล (Admin) เท่านั้นที่สามารถคัดลอกแพ็กเกจได้");
+    }
+
+    const adminCommunityIds = adminUser.communityAdmin.map((community) => community.id);
+
+    return prisma.$transaction(async (transaction) => {
+        const sourcePackage = await transaction.package.findFirst({
+            where: { id: packageId, isDeleted: false },
+            include: {
+                location: true,
+                packageFile: true,
+                tagPackages: true,
+                homestayHistories: true,
+            },
+        });
+
+        if (!sourcePackage) {
+            throw new Error("ไม่พบแพ็กเกจที่ต้องการคัดลอก");
+        }
+        if (!adminCommunityIds.includes(sourcePackage.communityId)) {
+            throw new Error("คุณไม่มีสิทธิ์คัดลอกแพ็กเกจของชุมชนอื่น");
+        }
+
+        if (!sourcePackage.location) {
+            throw new Error("แพ็กเกจไม่มีข้อมูลสถานที่สำหรับคัดลอก");
+        }
+
+        const clonedLocation = await transaction.location.create({
+            data: {
+                houseNumber: sourcePackage.location.houseNumber,
+                villageNumber: toNull(sourcePackage.location.villageNumber),
+                alley: toNull(sourcePackage.location.alley),
+                subDistrict: sourcePackage.location.subDistrict,
+                district: sourcePackage.location.district,
+                province: sourcePackage.location.province,
+                postalCode: sourcePackage.location.postalCode,
+                detail: toNull(sourcePackage.location.detail),
+                latitude: sourcePackage.location.latitude,
+                longitude: sourcePackage.location.longitude,
+            },
+        });
+
+        const duplicatedPackage = await transaction.package.create({
+            data: {
+                communityId: sourcePackage.communityId,
+                locationId: clonedLocation.id,
+                overseerMemberId: sourcePackage.overseerMemberId,
+                createById: userId,
+                name: sourcePackage.name,
+                description: sourcePackage.description,
+                capacity: sourcePackage.capacity,
+                price: sourcePackage.price,
+                warning: sourcePackage.warning,
+                statusPackage: PackagePublishStatus.DRAFT,
+                statusApprove: PackageApproveStatus.PENDING,
+                startDate: sourcePackage.startDate,
+                dueDate: sourcePackage.dueDate,
+                bookingOpenDate: sourcePackage.bookingOpenDate,
+                bookingCloseDate: sourcePackage.bookingCloseDate,
+                facility: sourcePackage.facility,
+                ...(sourcePackage.packageFile.length
+                    ? {
+                        packageFile: {
+                            create: sourcePackage.packageFile.map((file) => ({
+                                filePath: file.filePath,
+                                type: file.type,
+                            })),
+                        },
+                    }
+                    : {}),
+                ...(sourcePackage.tagPackages.length
+                    ? {
+                        tagPackages: {
+                            create: sourcePackage.tagPackages.map((tag) => ({
+                                tagId: tag.tagId,
+                            })),
+                        },
+                    }
+                    : {}),
+                ...(sourcePackage.homestayHistories.length
+                    ? {
+                        homestayHistories: {
+                            create: sourcePackage.homestayHistories.map((history) => ({
+                                homestayId: history.homestayId,
+                                bookedRoom: history.bookedRoom,
+                                checkInTime: history.checkInTime,
+                                checkOutTime: history.checkOutTime,
+                            })),
+                        },
+                    }
+                    : {}),
+            },
+            include: {
+                location: true,
+                packageFile: true,
+                tagPackages: true,
+                homestayHistories: true,
+            },
+        });
+
+        return duplicatedPackage;
+    });
+}
 
 /* ============================================================================================
  * Edit (อัปเดตเฉพาะสิ่งที่ส่งมา, กัน undefined)

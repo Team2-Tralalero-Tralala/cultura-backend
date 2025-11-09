@@ -26,6 +26,8 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
+    duplicatePackageHistoryDto,
+    duplicatePackageHistoryAdmin,
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -92,6 +94,19 @@ packageRoutes.post(
     allowRoles("admin"),
     validateDto(createPackageDto),
     createPackageAdmin
+);
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับคัดลอกแพ็กเกจจากประวัติ แล้วสร้างเป็นฉบับร่าง
+ * Method : POST
+ * Path : /admin/package/history/:packageId/duplicate
+ */
+packageRoutes.post(
+    "/admin/package/history/:packageId/duplicate",
+    authMiddleware,
+    allowRoles("admin"),
+    validateDto(duplicatePackageHistoryDto),
+    duplicatePackageHistoryAdmin
 );
 
 /*
