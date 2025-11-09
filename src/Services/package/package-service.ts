@@ -764,6 +764,55 @@ export async function listAllHomestaysSuperAdmin({ query = "", limit = 8 }: List
 }
 
 /*
+ * คำอธิบาย : ดึงรายละเอียดประวัติแพ็กเกจตามหมายเลข ID (สำหรับแอดมิน)
+ * Method : ใช้ Prisma query join ตารางที่เกี่ยวข้องทั้งหมด
+ * Input  : packageId (หมายเลขแพ็กเกจ)
+ * Output : Object รวมข้อมูลแพ็กเกจ, HomestayHistory, BookingHistory
+ * การทำงาน :
+ *   1. ตรวจสอบว่า packageId ถูกต้องและมีอยู่ในระบบ
+ *   2. ใช้ Prisma findUnique() เพื่อดึงข้อมูลหลักจากตาราง packages
+ *   3. include ตารางที่เกี่ยวข้อง เช่น HomestayHistory, BookingHistory, User, Community
+ *   4. ส่ง Object ที่จัดรูปแบบแล้วกลับไปยัง Controller
+ */
+export async function getPackageHistoryDetailById(packageId: number) {
+  const foundPackage = await prisma.package.findUnique({
+    where: { id: packageId, isDeleted: false },
+    include: {
+      community: { select: { id: true, name: true } },
+      createPackage: { select: { id: true, fname: true, lname: true } },
+      overseerPackage: { select: { id: true, fname: true, lname: true } },
+      location: true,
+      packageFile: true,
+      bookingHistories: {
+        select: {
+          id: true,
+          bookingAt: true,
+          totalParticipant: true,
+          status: true,
+          tourist: { select: { fname: true, lname: true } },
+        },
+      },
+      homestayHistories: {
+        include: {
+          homestay: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              guestPerRoom: true,
+              totalRoom: true,
+              facility: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!foundPackage) return null;
+  return foundPackage;
+}
+/*
  * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin 
  * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
  * Output : ข้อมูลแพ็กเกจพร้อม Pagination

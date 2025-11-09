@@ -26,6 +26,7 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
+    getPackageHistoryDetailAdmin,
     getHistoriesPackageAdmin,
     getPackageByRole,
     getPackageById
@@ -302,6 +303,18 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("member"),
     listCommunityHomestays
+);
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดูรายละเอียดประวัติแพ็กเกจ
+ * Method : GET
+ * Path : /api/admin/package/history/:packageId
+ */
+packageRoutes.get(
+  "/admin/package/history/:packageId",
+  authMiddleware,
+  allowRoles("admin"),
+  getPackageHistoryDetailAdmin
 );
 
 /*
