@@ -9,7 +9,7 @@ import swaggerJsDoc from "swagger-jsdoc";
 
 const app = express();
 
-import swaggerOptions from "./swaggerOption.js";
+import swaggerOptions from "./Libs/swaggerOption.js";
 
 const swaggerSpec = swaggerJsDoc(swaggerOptions);
 app.use(
