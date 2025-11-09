@@ -26,7 +26,9 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
-    getHistoriesPackageAdmin
+    getHistoriesPackageAdmin,
+    getPackageByRole,
+    getPackageById
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -155,6 +157,12 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("superadmin"),
     listPackagesSuperAdmin
+);
+packageRoutes.get(
+  "/:id",
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member", "tourist"),
+  getPackageById
 );
 
 /*
