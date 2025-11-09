@@ -97,7 +97,7 @@ communityRoutes.get(
   "/super/admins/unassigned",
   validateDto(CommunityController.unassignedAdminsDto),
   authMiddleware,
-  allowRoles("superadmin"),
+  allowRoles("superadmin", "admin"),
   CommunityController.getUnassignedAdmins
 );
 /*
@@ -109,7 +109,7 @@ communityRoutes.get(
   "/super/members/unassigned",
   validateDto(CommunityController.unassignedMemberDto),
   authMiddleware,
-  allowRoles("superadmin"),
+  allowRoles("superadmin", "admin"),
   CommunityController.getUnassignedMembers
 );
 /*
@@ -150,7 +150,34 @@ communityRoutes.get(
   allowRoles("superadmin"),
   CommunityController.getCommunityDetailById
 );
-
+/*
+ * เส้นทาง : GET /admin/community
+ * คำอธิบาย : ใช้สำหรับดึงข้อมูลรายละเอียดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบอยู่
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+communityRoutes.get(
+  "/admin/community/own",
+  validateDto(CommunityController.getCommunityOwnDto),
+  authMiddleware,
+  allowRoles("admin"),
+  CommunityController.getCommunityOwn
+);
+/*
+ * เส้นทาง : PUT /admin/community/:communityId
+ * คำอธิบาย : ใช้สำหรับอัปเดตข้อมูลของชุมชน รวมถึงการเปลี่ยนรูปหรือวิดีโอ
+ * สิทธิ์ที่เข้าถึงได้ : admin
+ */
+communityRoutes.put(
+  "/admin/community/own",
+  // validateDto(CommunityController.editCommunityDto),
+  authMiddleware,
+  allowRoles("admin"),
+  upload.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
+  CommunityController.editCommunityByAdmin
+);
 export default communityRoutes;
-
-

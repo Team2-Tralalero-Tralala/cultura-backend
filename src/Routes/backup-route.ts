@@ -4,6 +4,10 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 import {
     createBackup,
     createBackupDto,
+    deleteBackupById,
+    deleteBackupByIdDto,
+    deleteBackupsBulk,
+    deleteBackupsBulkDto,
     getBackupById,
     getBackupByIdDto,
     getBackups,
@@ -30,9 +34,26 @@ backupRoutes.get(
 
 backupRoutes.post(
     "/",
+    validateDto(createBackupDto),
     authMiddleware, 
     allowRoles("superadmin"),
     createBackup
+);
+
+backupRoutes.delete(
+    "/:backupId",
+    validateDto(deleteBackupByIdDto),
+    authMiddleware, 
+    allowRoles("superadmin"),
+    deleteBackupById
+);
+
+backupRoutes.post(
+    "/delete-bulk",
+    validateDto(deleteBackupsBulkDto),
+    authMiddleware, 
+    allowRoles("superadmin"),
+    deleteBackupsBulk
 );
 
 export default backupRoutes;

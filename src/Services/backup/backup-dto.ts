@@ -5,7 +5,7 @@
  * Output: ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 import { Transform } from "class-transformer";
-import { IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsArray, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 /*
  * DTO: BackupQueryDto
@@ -25,6 +25,10 @@ export class BackupQueryDto {
   @Min(1)
   @Max(100)
   limit?: number = 10;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
 
 /*
@@ -42,4 +46,25 @@ export class GetBackupByIdDto {
  * คำอธิบาย: กำหนดสำหรับการสร้าง backup ใหม่
  */
 export class CreateBackupDto {
+}
+
+/*
+ * DTO: DeleteBackupByIdDto
+ * คำอธิบาย: กำหนด schema สำหรับการลบ backup ตาม filename
+ * ใช้สำหรับการตรวจสอบ parameter backup filename (including .zip)
+ */
+export class DeleteBackupByIdDto {
+  @IsString()
+  backupId?: string; // This will be the filename including .zip extension
+}
+
+/*
+ * DTO: DeleteBackupsBulkDto
+ * คำอธิบาย: กำหนด schema สำหรับการลบ backup หลายไฟล์พร้อมกัน
+ * ใช้สำหรับการตรวจสอบ array ของ backup filenames
+ */
+export class DeleteBackupsBulkDto {
+  @IsArray()
+  @IsString({ each: true })
+  ids: string[]; // Array of backup filenames including .zip extension
 }

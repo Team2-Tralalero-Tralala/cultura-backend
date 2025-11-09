@@ -1,42 +1,51 @@
 import { Router } from "express";
-import {
-    createTag,
-    createTagDto,
-    deleteTagById,
-    deleteTagByIdDto,
-    editTag,
-    editTagDto,
-    getAllTags
-} from "../Controllers/tag-controller.js";
+import * as TagController from "../Controllers/tag-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const tagRoutes = Router();
 
+/**
+ * คำอธิบาย : route สำหรับสร้างประเภทหรือแท็ก
+ */
 tagRoutes.post(
-    "/",
-    validateDto(createTagDto),
+    "/super/tag",
+    validateDto(TagController.createTagDto),
     authMiddleware,
     allowRoles("superadmin"),
-    createTag
+    TagController.createTag
 );
-tagRoutes.delete(
-    "/:tagId",
-    validateDto(deleteTagByIdDto),
+
+/**
+ * คำอธิบาย : route สำหรับลบประเภทหรือแท็ก
+ */
+tagRoutes.patch(
+    "/super/tag/:tagId",
+    validateDto(TagController.deleteTagByIdDto),
     authMiddleware,
     allowRoles("superadmin"),
-    deleteTagById
+    TagController.deleteTagById
 );
+
+/**
+ * คำอธิบาย : route สำหรับแก้ไขประเภทหรือแท็ก
+ */
 tagRoutes.put(
-    "/:tagId",
-    validateDto(editTagDto),
+    "/super/tag/:tagId",
+    validateDto(TagController.editTagDto),
     authMiddleware,
     allowRoles("superadmin"),
-    editTag
+    TagController.editTag
 );
+
+/**
+ * คำอธิบาย : route สำหรับดึงข้อมูลประเภทหรือแท็กมาแสดงทั้งหมด
+ */
 tagRoutes.get(
-    "/",
-    getAllTags
-);
+    "/shared/tags",
+    validateDto(TagController.getAllTagsDto),
+    authMiddleware,
+    allowRoles("superadmin", "admin"),
+    TagController.getAllTags);
 
 export default tagRoutes;

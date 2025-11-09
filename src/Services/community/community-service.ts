@@ -2,6 +2,7 @@ import prisma from "../database-service.js";
 import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import type { UserPayload } from "~/Libs/Types/index.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
@@ -440,4 +441,154 @@ export async function getUnassignedMembers() {
     select: { id: true, fname: true, lname: true },
     orderBy: { fname: "asc" },
   });
+}
+
+/*
+ * ฟังก์ชัน : getCommunityDetailByAdmin
+ * คำอธิบาย : ดึงรายละเอียดของชุมชนของแอดมิน (เฉพาะ Admin)
+ * Input :
+ *   - userId (number) : รหัสผู้ใช้ (ต้องเป็น role = admin)
+ * Output :
+ *   - Object ข้อมูลชุมชนพร้อมความสัมพันธ์ (location, member, image, store, homestay, package)
+ * หมายเหตุ :
+ *   - ตรวจสอบสิทธิ์ว่า user เป็น Admin เท่านั้น
+ */
+export async function getCommunityDetailByAdmin(userId: number) {
+  // ตรวจสอบรูปแบบ input
+  if (!Number.isInteger(userId) || userId <= 0)
+    throw new Error("ID must be Number");
+
+  // ตรวจสอบผู้ใช้
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "admin") throw new Error("Forbidden");
+
+  // ดึงข้อมูลชุมชนของแอดมิน
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+    include: {
+      communityImage: true,
+      location: true,
+
+      packages: {
+        include: {
+          packageFile: true,
+        },
+      },
+      homestays: {
+        include: {
+          homestayImage: true,
+        },
+      },
+      stores: {
+        include: {
+          storeImage: true,
+        },
+      },
+      communityMembers: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              fname: true,
+              lname: true,
+              email: true,
+              roleId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!community) throw new Error("Community not found");
+  return community;
+}
+/**
+ * คำอธิบาย : แก้ไขข้อมูลชุมชนของผู้ดูแล (Admin) ที่ล็อกอินอยู่
+ * Input :
+ *   - user (UserPayload) : ข้อมูลผู้ใช้ที่ล็อกอิน
+ *  - communityData (CommunityDto) : ข้อมูลชุมชนที่ต้องการแก้ไข
+ * Output :
+ *   - Object ของชุมชนที่อัปเดตแล้ว พร้อมความสัมพันธ์ทั้งหมด
+ * หมายเหตุ :
+ *   - ผู้ใช้ต้องเป็นแอดมินที่ดูแลชุมชนอยู่เท่านั้น
+ */
+export async function editCommunityByAdmin(
+  user: UserPayload,
+  communityData: CommunityDto
+) {
+  const { location, adminId, communityImage, communityMembers, ...data } =
+    communityData;
+
+  const community = await prisma.community.findFirst({
+    where: {
+      adminId: user.id,
+      isDeleted: false,
+      deleteAt: null,
+    },
+  });
+
+  if (!community) {
+    throw new Error("ไม่พบชุมชนที่ผู้ดูแลนี้ดูแลอยู่");
+  }
+
+  return await prisma.community.update({
+    where: {
+      id: community.id,
+    },
+    data: {
+      ...data,
+      admin: {
+        connect: { id: community.adminId },
+      },
+      location: { update: mapLocation(location) },
+      communityImage: {
+        deleteMany: {},
+        create:
+          communityImage?.map((img) => ({
+            image: img.image,
+            type: img.type,
+          })) ?? [],
+      },
+    },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: {
+        select: { id: true, fname: true, lname: true },
+      },
+      communityMembers: {
+        include: {
+          user: { select: { id: true, fname: true, lname: true } },
+        },
+      },
+    },
+  });
+}
+
+/*
+ * คำอธิบาย : ดึงข้อมูลชุมชนของผู้ดูแล (Admin) ที่ล็อกอินอยู่
+ * Input :
+ *   - communityId (number) : รหัสของชุมชน
+ * Output :
+ *   - Object ข้อมูลชุมชนพร้อม location, image, admin, members
+ */
+export async function getCommunityOwn(userId: number) {
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: { select: { id: true, fname: true, lname: true } },
+      communityMembers: {
+        include: { user: { select: { id: true, fname: true, lname: true } } },
+      },
+    },
+  });
+  if (!community) throw new Error("ไม่พบชุมชน");
+  return community;
 }

@@ -9,6 +9,8 @@ import {
   IsOptional,
   ValidateNested,
   IsEnum,
+  IsArray,
+  ArrayUnique,
 } from "class-validator";
 import { LocationDto } from "../location/location-dto.js";
 import { ImageType } from "@prisma/client";
@@ -51,6 +53,13 @@ export class HomestayDto {
   @Type(() => HomestayImageDto)
   @IsOptional()
   homestayImage?: HomestayImageDto[];
+
+  @IsOptional()
+  @IsArray({ message: "tagHomestays ต้องเป็นอาเรย์ของตัวเลข" })
+  @ArrayUnique({ message: "tagHomestays ต้องไม่ซ้ำกัน" })
+  @IsInt({ each: true, message: "tagHomestays ทุกค่าต้องเป็นตัวเลขจำนวนเต็ม" })
+  @Type(() => Number) // แปลง string -> number อัตโนมัติเมื่อมาจาก JSON/form
+  tagHomestays?: number[];
 }
 
 export class HomestayImageDto {

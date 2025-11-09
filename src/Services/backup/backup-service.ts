@@ -11,7 +11,6 @@ import { createWriteStream, promises as fs } from "fs";
 import path from "path";
 import { promisify } from "util";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
-import type { CreateBackupDto } from "./backup-dto.js";
 
 const execAsync = promisify(exec);
 
@@ -25,11 +24,11 @@ interface BackupInfo {
 
 /*
  * ฟังก์ชัน : getBackups
- * คำอธิบาย : ดึงข้อมูล backups แบบ paginated
- * Input : page (number), limit (number)
+ * คำอธิบาย : ดึงข้อมูล backups แบบ paginated พร้อมการค้นหาตาม filename
+ * Input : page (number), limit (number), search (string, optional)
  * Output : PaginationResponse<BackupInfo>
  */
-export const getBackups = async (page: number, limit: number): Promise<PaginationResponse<BackupInfo>> => {
+export const getBackups = async (page: number, limit: number, search?: string): Promise<PaginationResponse<BackupInfo>> => {
   try {
     // Define backup directory path
     const backupDir = path.join(process.cwd(), "backup");
@@ -97,14 +96,23 @@ export const getBackups = async (page: number, limit: number): Promise<Paginatio
     // Sort by creation date (newest first)
     backupFiles.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+    // Apply search filter if provided
+    let filteredBackups = backupFiles;
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      filteredBackups = backupFiles.filter(backup => 
+        backup.filename.toLowerCase().includes(searchTerm)
+      );
+    }
+
     // Calculate pagination
-    const totalCount = backupFiles.length;
+    const totalCount = filteredBackups.length;
     const totalPages = Math.ceil(totalCount / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     
     // Get paginated data
-    const paginatedData = backupFiles.slice(startIndex, endIndex);
+    const paginatedData = filteredBackups.slice(startIndex, endIndex);
 
     const result: PaginationResponse<BackupInfo> = {
       data: paginatedData,
@@ -381,5 +389,82 @@ SELECT 'Backup info file created - manual backup required' as status;
   } catch (error) {
     console.error("Error in createBackup:", error);
     throw new Error(`Failed to create backup: ${(error as Error).message}`);
+  }
+};
+
+/*
+ * ฟังก์ชัน : deleteBackupById
+ * คำอธิบาย : ลบ backup file ตาม filename
+ * Input : backupId (string) - filename ของ backup ที่ต้องการลบ (including .zip)
+ * Output : success message
+ */
+export const deleteBackupById = async (backupId: string): Promise<{ message: string }> => {
+  try {
+    // Define backup directory path
+    const backupDir = path.join(process.cwd(), "backup");
+    const filePath = path.join(backupDir, backupId);
+    
+    // Check if file exists
+    try {
+      await fs.access(filePath);
+    } catch {
+      throw new Error(`Backup file ${backupId} not found`);
+    }
+
+    // Delete the file
+    await fs.unlink(filePath);
+    
+    return { message: `Backup file ${backupId} deleted successfully` };
+  } catch (error) {
+    console.error("Error in deleteBackupById:", error);
+    throw new Error(`Failed to delete backup file: ${(error as Error).message}`);
+  }
+};
+
+/*
+ * ฟังก์ชัน : deleteBackupsBulk
+ * คำอธิบาย : ลบ backup files หลายไฟล์พร้อมกัน
+ * Input : backupIds (string[]) - array ของ backup filenames ที่ต้องการลบ (including .zip)
+ * Output : success message พร้อมรายละเอียดการลบ
+ */
+export const deleteBackupsBulk = async (backupIds: string[]): Promise<{ 
+  message: string; 
+  deletedCount: number; 
+  failedDeletions: string[] 
+}> => {
+  try {
+    const backupDir = path.join(process.cwd(), "backup");
+    const failedDeletions: string[] = [];
+    let deletedCount = 0;
+
+    // Process each backup file
+    for (const backupId of backupIds) {
+      try {
+        const filePath = path.join(backupDir, backupId);
+        
+        // Check if file exists
+        await fs.access(filePath);
+        
+        // Delete the file
+        await fs.unlink(filePath);
+        deletedCount++;
+      } catch (error) {
+        console.error(`Error deleting backup ${backupId}:`, error);
+        failedDeletions.push(backupId);
+      }
+    }
+
+    const message = deletedCount > 0 
+      ? `Successfully deleted ${deletedCount} backup file(s)${failedDeletions.length > 0 ? `, ${failedDeletions.length} failed` : ''}`
+      : 'No backup files were deleted';
+
+    return {
+      message,
+      deletedCount,
+      failedDeletions
+    };
+  } catch (error) {
+    console.error("Error in deleteBackupsBulk:", error);
+    throw new Error(`Failed to delete backup files: ${(error as Error).message}`);
   }
 };

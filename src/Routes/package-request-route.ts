@@ -12,8 +12,9 @@ import {
     getPackageRequestAllDto,
     patchApprovePackageRequest,
     patchRejectPackageRequest,
+    getDetailRequest,
+    getDetailRequestForAdmin,
 } from "~/Controllers/package-request-controller.js";
-
 const packageRequestRoutes = Router();
 
 /**
@@ -47,9 +48,24 @@ packageRequestRoutes.patch(
     patchRejectPackageRequest
 );
 
-import { getDetailRequest } from "~/Controllers/package-request-controller.js";
+/**
+ * รายละเอียดแพ็กเกจจากหน้าคำขอแพ็กเกจ (สำหรับ superadmin)
+ */
+packageRequestRoutes.get(
+    "/super/package-requests/:requestId", 
+    authMiddleware, 
+    allowRoles("superadmin"), 
+    getDetailRequest
+);
 
-const router = Router();
+/**
+ * รายละเอียดแพ็กเกจจากหน้าคำขอแพ็กเกจ (สำหรับ admin)
+ */
+packageRequestRoutes.get(
+    "/admin/package-requests/:requestId", 
+    authMiddleware, 
+    allowRoles("admin"), 
+    getDetailRequestForAdmin
+);
 
-router.get("/:requestId", authMiddleware, allowRoles("superadmin"), getDetailRequest);
 export default packageRequestRoutes;
