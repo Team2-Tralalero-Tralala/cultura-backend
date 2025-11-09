@@ -716,3 +716,53 @@ export async function listAllHomestaysSuperAdmin({ query = "", limit = 8 }: List
 
     return homestays;
 }
+
+/*
+ * ฟังก์ชัน : getAllFeedbacks
+ * คำอธิบาย : (Admin) ดึง Feedback ทั้งหมดของแพ็กเกจในชุมชนของผู้ใช้
+ * Input:
+ *   - userId : number (รหัสผู้ใช้จาก token)
+ * Output:
+ *   - Object communityData (ข้อมูลชุมชน + แพ็กเกจ + feedback ทั้งหมด)
+ */
+export const getAllFeedbacks = async (userId: number) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            communityId: true // 👈 เอาแค่ field `communityId` (จาก schema)
+        }
+    });
+
+    if (!user?.communityId) {
+        console.log("User not found or does not belong to a community.");
+        return []; // หรือ return ค่าว่างตามที่คุณต้องการ
+    }
+
+    const communityData = await prisma.community.findUnique({
+        where: {
+            id: user.communityId
+        },
+        include: {
+            packages: {
+                include: {
+                    bookingHistories: {
+                        include: {
+                            feedbacks: {
+                                include: {
+                                    feedbackImages: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!communityData) {
+        console.log("Community data not found.");
+        return [];
+    }
+
+    return communityData;
+};

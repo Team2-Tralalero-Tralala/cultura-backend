@@ -26,6 +26,7 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
+    getAllFeedbacks,
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -293,5 +294,19 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("member"),
     listCommunityHomestays
+);
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการ Feedback ทั้งหมดของแพ็กเกจ
+ * Method : GET
+ * Path : /admin/package/feedbacks/all
+ * Middleware : authMiddleware → allowRoles("admin", "member")
+ * Controller : getAllFeedbacks
+ */
+packageRoutes.get(
+    "/admin/package/feedbacks/all",
+    authMiddleware,
+    allowRoles("admin", "member"),
+    getAllFeedbacks
 );
 export default packageRoutes;

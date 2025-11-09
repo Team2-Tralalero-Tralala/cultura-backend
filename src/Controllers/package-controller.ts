@@ -480,4 +480,32 @@ export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
+  };
+
+/*
+ * ฟังก์ชัน : getAllFeedbacks
+ * คำอธิบาย : (Admin/Member) Handler สำหรับดึงรายการ Feedback ทั้งหมดในระบบ
+ * เงื่อนไข :
+ *   - ตรวจสอบสิทธิ์ผู้ใช้จาก req.user (ต้องล็อกอินก่อน)
+ *   - ใช้ userId จาก token เพื่อกรองข้อมูล Feedback ของผู้ใช้
+ * การทำงาน :
+ *   1. ตรวจสอบว่า req.user มีค่าหรือไม่ → ถ้าไม่มีให้ตอบกลับ 401 Unauthorized
+ *   2. เรียกใช้ Service: PackageService.getAllFeedbacks(userId)
+ *   3. ส่งผลลัพธ์กลับพร้อมสถานะ 200 และข้อความ “Get FeedBacks Successfully”
+ * การตอบกลับ :
+ *   - 200 : ดึง Feedback ทั้งหมดสำเร็จ
+ *   - 401 : ไม่มีสิทธิ์เข้าถึง (ไม่ได้ล็อกอิน)
+ *   - 404 : เกิดข้อผิดพลาดขณะดึงข้อมูล
+ */
+export const getAllFeedbacks = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "Unauthorized");
+    }
+    const userId = req.user.id;
+    const result = await PackageService.getAllFeedbacks(userId);
+    return createResponse(res, 200, "Get FeedBacks Successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 404, (error as Error).message);
+  }
 };
