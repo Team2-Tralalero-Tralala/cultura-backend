@@ -455,8 +455,8 @@ async function main() {
       statusPackage: "DRAFT",
       startDate: new Date("2025-02-01T00:00:00.000Z"),
       dueDate: new Date("2025-02-05T00:00:00.000Z"),
-      openBookingAt: new Date("2024-12-01T00:00:00.000Z"),
-      closeBookingAt: new Date("2024-01-31T00:00:00.000Z"),
+      bookingOpenDate: new Date("2024-12-01T00:00:00.000Z"),
+      bookingCloseDate: new Date("2024-01-31T00:00:00.000Z"),
       facility: "Guide",
       
     },
@@ -475,8 +475,8 @@ async function main() {
       statusPackage: "UNPUBLISH",
       startDate: new Date("2025-03-01T00:00:00.000Z"),
       dueDate: new Date("2025-03-10T00:00:00.000Z"),
-      openBookingAt: new Date("2025-01-31T00:00:00.000Z"),
-      closeBookingAt: new Date("2025-02-28T00:00:00.000Z"),
+      bookingOpenDate: new Date("2025-01-31T00:00:00.000Z"),
+      bookingCloseDate: new Date("2025-02-28T00:00:00.000Z"),
       facility: "Gear",
     },
   });
