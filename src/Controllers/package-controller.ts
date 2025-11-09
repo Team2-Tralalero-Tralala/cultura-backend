@@ -134,6 +134,25 @@ export async function listPackagesMember(req: Request, res: Response) {
 }
 
 /*
+ * คำอธิบาย : Controller สำหรับดึงข้อมูล Package ตาม ID
+ * Input  : packageId (จาก params)
+ * Output : JSON response { status, message, data }
+ */
+export const getPackageById = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return createErrorResponse(res, 400, "Package ID ต้องเป็นตัวเลข");
+    }
+
+    const result = await PackageService.getPackageDetailById(id);
+    return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 404, (error as Error).message);
+  }
+};
+
+/*
  * คำอธิบาย : (Tourist) Handler สำหรับดึงรายการแพ็กเกจ (เฉพาะที่อนุมัติและเผยแพร่)
  * Input: req.user.id, req.query.{page, limit}
  * Output: 200 - ข้อมูลแพ็กเกจพร้อม Pagination
@@ -481,3 +500,23 @@ export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/*
+ * คำอธิบาย : (Admin) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * Input: req.user.id, req.query.{page, limit}
+ * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
+ * 400 - Error message
+ */
+export async function getHistoriesPackageAdmin(req: Request, res: Response) {
+  try {
+    const userId = Number((req as any).user?.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const result = await PackageService.getHistoriesPackageByAdmin(userId, page, limit);
+
+    return createResponse(res, 200, "Get History Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}

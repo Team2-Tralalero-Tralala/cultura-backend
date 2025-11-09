@@ -1,6 +1,39 @@
 import prisma from "../database-service.js";
 
 /*
+ * คำอธิบาย : แผนที่จังหวัดตามภาคของประเทศไทย
+ */
+const REGION_TO_PROVINCES: { [key: string]: string[] } = {
+  // English values from frontend
+  "north": ["เชียงใหม่", "เชียงราย", "น่าน", "พะเยา", "แพร่", "แม่ฮ่องสอน", "ลำปาง", "ลำพูน", "อุตรดิตถ์"],
+  "central": ["กรุงเทพมหานคร", "กาญจนบุรี", "ตาก", "นครปฐม", "นครสวรรค์", "นนทบุรี", "ปทุมธานี", "พระนครศรีอยุธยา", "พิจิตร", "พิษณุโลก", "เพชรบูรณ์", "ลพบุรี", "สมุทรปราการ", "สมุทรสงคราม", "สมุทรสาคร", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "อ่างทอง", "อุทัยธานี"],
+  "northeast": ["กาฬสินธุ์", "ขอนแก่น", "ชัยภูมิ", "นครพนม", "นครราชสีมา", "บึงกาฬ", "บุรีรัมย์", "มหาสารคาม", "มุกดาหาร", "ยโสธร", "ร้อยเอ็ด", "เลย", "ศรีสะเกษ", "สกลนคร", "สุรินทร์", "หนองคาย", "หนองบัวลำภู", "อำนาจเจริญ", "อุดรธานี", "อุบลราชธานี"],
+  "south": ["กระบี่", "ชุมพร", "ตรัง", "นครศรีธรรมราช", "นราธิวาส", "ปัตตานี", "พังงา", "พัทลุง", "ภูเก็ต", "ยะลา", "ระนอง", "สงขลา", "สตูล", "สุราษฎร์ธานี"],
+  // Thai values (for backward compatibility)
+  "เหนือ": ["เชียงใหม่", "เชียงราย", "น่าน", "พะเยา", "แพร่", "แม่ฮ่องสอน", "ลำปาง", "ลำพูน", "อุตรดิตถ์"],
+  "ตะวันออก": ["จันทบุรี", "ฉะเชิงเทรา", "ชลบุรี", "ตราด", "ปราจีนบุรี", "ระยอง", "สระแก้ว"],
+  "กลาง": ["กรุงเทพมหานคร", "กาญจนบุรี", "ตาก", "นครปฐม", "นครสวรรค์", "นนทบุรี", "ปทุมธานี", "พระนครศรีอยุธยา", "พิจิตร", "พิษณุโลก", "เพชรบูรณ์", "ลพบุรี", "สมุทรปราการ", "สมุทรสงคราม", "สมุทรสาคร", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "อ่างทอง", "อุทัยธานี"],
+  "ตะวันตก": ["กาญจนบุรี", "ตาก", "ประจวบคีรีขันธ์", "เพชรบุรี", "ราชบุรี"],
+  "ใต้": ["กระบี่", "ชุมพร", "ตรัง", "นครศรีธรรมราช", "นราธิวาส", "ปัตตานี", "พังงา", "พัทลุง", "ภูเก็ต", "ยะลา", "ระนอง", "สงขลา", "สตูล", "สุราษฎร์ธานี"],
+  "อีสาน": ["กาฬสินธุ์", "ขอนแก่น", "ชัยภูมิ", "นครพนม", "นครราชสีมา", "บึงกาฬ", "บุรีรัมย์", "มหาสารคาม", "มุกดาหาร", "ยโสธร", "ร้อยเอ็ด", "เลย", "ศรีสะเกษ", "สกลนคร", "สุรินทร์", "หนองคาย", "หนองบัวลำภู", "อำนาจเจริญ", "อุดรธานี", "อุบลราชธานี"],
+  "ภาคเหนือ": ["เชียงใหม่", "เชียงราย", "น่าน", "พะเยา", "แพร่", "แม่ฮ่องสอน", "ลำปาง", "ลำพูน", "อุตรดิตถ์"],
+  "ภาคตะวันออก": ["จันทบุรี", "ฉะเชิงเทรา", "ชลบุรี", "ตราด", "ปราจีนบุรี", "ระยอง", "สระแก้ว"],
+  "ภาคกลาง": ["กรุงเทพมหานคร", "กาญจนบุรี", "ตาก", "นครปฐม", "นครสวรรค์", "นนทบุรี", "ปทุมธานี", "พระนครศรีอยุธยา", "พิจิตร", "พิษณุโลก", "เพชรบูรณ์", "ลพบุรี", "สมุทรปราการ", "สมุทรสงคราม", "สมุทรสาคร", "สระบุรี", "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "อ่างทอง", "อุทัยธานี"],
+  "ภาคตะวันตก": ["กาญจนบุรี", "ตาก", "ประจวบคีรีขันธ์", "เพชรบุรี", "ราชบุรี"],
+  "ภาคใต้": ["กระบี่", "ชุมพร", "ตรัง", "นครศรีธรรมราช", "นราธิวาส", "ปัตตานี", "พังงา", "พัทลุง", "ภูเก็ต", "ยะลา", "ระนอง", "สงขลา", "สตูล", "สุราษฎร์ธานี"],
+  "ภาคอีสาน": ["กาฬสินธุ์", "ขอนแก่น", "ชัยภูมิ", "นครพนม", "นครราชสีมา", "บึงกาฬ", "บุรีรัมย์", "มหาสารคาม", "มุกดาหาร", "ยโสธร", "ร้อยเอ็ด", "เลย", "ศรีสะเกษ", "สกลนคร", "สุรินทร์", "หนองคาย", "หนองบัวลำภู", "อำนาจเจริญ", "อุดรธานี", "อุบลราชธานี"],
+};  
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายชื่อจังหวัดตามภาค
+ * Input : region (ชื่อภาค)
+ * Output : array ของชื่อจังหวัดในภาคนั้น
+ */
+function getProvincesByRegion(region: string): string[] {
+  return REGION_TO_PROVINCES[region] || [];
+}
+
+/*
  * คำอธิบาย : ฟังก์ชันสำหรับสร้าง array ของ date keys ทั้งหมดในช่วงเวลาที่กำหนด
  * Input : startDate, endDate, groupBy
  * Output : array ของ date keys ตาม groupBy ที่กำหนด
@@ -232,36 +265,51 @@ export async function getSuperAdminDashboardData(
     };
   }
 
-  // get all communities with location
-  const communities = await prisma.community.findMany({
-    where: whereClause,
-    include: {
-      location: true,
-      packages: {
-        where: { isDeleted: false },
-      },
-    },
-  });
-
-  // group by province
-  const provinceStats: { [key: string]: any } = {};
-
-  for (const community of communities) {
-    const provinceName = community.location.province;
-
-    if (!provinceStats[provinceName]) {
-      provinceStats[provinceName] = {
-        province: provinceName,
-        communityCount: 0,
-        packageCount: 0,
-        bookingCount: 0,
-        successBookingCount: 0,
-        cancelledBookingCount: 0,
+    // If region is included: filter provinces by region
+    // If province is also provided, only show that province (within the region)
+    if (filter.region && filter.region !== "all") {
+      const provincesInRegion = getProvincesByRegion(filter.region);
+      
+      if (provincesInRegion.length > 0) {
+        // If province is provided, check if it's in the region and filter to only that province
+        if (filter.province) {
+          if (provincesInRegion.includes(filter.province)) {
+            whereClause.location = {
+              province: filter.province,
+            };
+          } else {
+            // Province is not in the region, return empty result
+            whereClause.location = {
+              province: "__INVALID__", // This will match nothing
+            };
+          }
+        } else {
+          // No specific province, filter by all provinces in the region
+          whereClause.location = {
+            province: {
+              in: provincesInRegion,
+            },
+          };
+        }
+      } else {
+        // Invalid region, return empty result
+        whereClause.location = {
+          province: "__INVALID__", // This will match nothing
+        };
+      }
+    } else if (filter.search) {
+      // If search is provided (and region is not), search by province name
+      whereClause.location = {
+        province: {
+          contains: filter.search,
+        },
+      };
+    } else if (filter.province) {
+      // If region and search are not provided but province is, filter by province
+      whereClause.location = {
+        province: filter.province,
       };
     }
-
-    provinceStats[provinceName].communityCount += 1;
-    provinceStats[provinceName].packageCount += community.packages.length;
 
     // get booking counts for packages in this community
     const packageIds = community.packages.map((pkg) => pkg.id);

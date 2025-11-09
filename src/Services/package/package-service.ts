@@ -684,6 +684,52 @@ type ListAllHomestaysInput = {
 };
 
 /*
+ * คำอธิบาย : ฟังก์ชันดึงรายละเอียด Package ตามหมายเลข ID
+ * Input  : id (หมายเลข Package)
+ * Output : รายละเอียด Package พร้อมความสัมพันธ์ทั้งหมด
+ */
+export const getPackageDetailById = async (id: number) => {
+  // ตรวจสอบว่ามี package จริงไหม
+  const pkg = await prisma.package.findUnique({
+    where: { id },
+    include: {
+      community: { select: { id: true, name: true } },
+      overseerPackage: { select: { id: true, fname: true, lname: true } },
+      createPackage: { select: { id: true, fname: true, lname: true } },
+      tagPackages: {
+        include: {
+          tag: { select: { id: true, name: true } },
+        },
+      },
+      location: {
+        select: {
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      packageFile: {
+        select: {
+          id: true,
+          filePath: true,
+          type: true,
+        },
+      },
+    },
+  });
+
+  if (!pkg) throw new Error(`Package ID ${id} ไม่พบในระบบ`);
+
+  return pkg;
+};
+
+
  * คำอธิบาย : [Super Admin] ดึง Homestays ทั้งหมดในระบบ
  * Input: { query, limit }
  * Output : Array ของข้อมูลที่พัก
@@ -716,3 +762,68 @@ export async function listAllHomestaysSuperAdmin({ query = "", limit = 8 }: List
 
     return homestays;
 }
+
+/*
+ * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin 
+ * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
+ * Output : ข้อมูลแพ็กเกจพร้อม Pagination
+ */
+export const getHistoriesPackageByAdmin = async (
+    userId: number,
+    page = 1,
+    limit = 10
+): Promise<PaginationResponse<any>> => {
+    // ตรวจสอบ user
+    const user = await prisma.user.findUnique({
+        where: { id: Number(userId) },
+        include: { role: true, communityAdmin: true },
+    });
+
+    if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
+    if (user.role?.name !== "admin") throw new Error("อนุญาตเฉพาะผู้ดูแล (Admin) เท่านั้น");
+
+    // ดึงรายการชุมชนที่ admin ดูแล
+    const adminCommunityIds = user.communityAdmin.map((c: any) => c.id);
+    if (adminCommunityIds.length === 0) throw new Error("คุณยังไม่ได้สังกัดชุมชนใดในฐานะผู้ดูแล");
+
+    // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
+    const now = new Date();
+
+    const whereCondition = {
+        isDeleted: false,
+        communityId: { in: adminCommunityIds },
+        dueDate: { lt: now },
+    };
+
+    // pagination
+    const skip = (page - 1) * limit;
+    const totalCount = await prisma.package.count({ where: whereCondition });
+
+    const packages = await prisma.package.findMany({
+        where: whereCondition,
+        include: {
+            community: { select: { id: true, name: true } },
+            overseerPackage: {
+                select: { id: true, fname: true, lname: true},
+            },
+        },
+        orderBy: { dueDate: "desc" },
+        skip,
+        take: limit,
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
+    return {
+        data: packages.map(pkg => ({
+            id: pkg.id,
+            name: pkg.name,
+            community: pkg.community,
+            overseerPackage: pkg.overseerPackage,
+            statusPackage: pkg.statusPackage,
+            dueDate: pkg.dueDate,
+        })),
+        pagination: { currentPage: page, totalPages, totalCount, limit },
+    };
+};
