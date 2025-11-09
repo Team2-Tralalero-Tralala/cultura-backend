@@ -62,6 +62,7 @@ enum PackageApproveStatus {
   PENDING
   APPROVE
   PENDING_SUPER
+  REJECTED
 }
 
 /**
@@ -213,7 +214,7 @@ model CommunityImage {
 model Community {
   id                      Int              @id @default(autoincrement()) @map("ct_id")
   locationId              Int              @map("ct_location_id")
-  adminId                 Int              @unique @map("ct_admin_id")
+  adminId                 Int              @map("ct_admin_id")
   name                    String           @unique @map("ct_name") @db.VarChar(150)
   alias                   String?          @map("ct_alias") @db.VarChar(100)
   type                    String           @map("ct_type") @db.VarChar(90)
@@ -242,13 +243,14 @@ model Community {
   deleteAt                DateTime?        @map("ct_delete_at") @db.Timestamp(0)
 
   // Relations
-  location       Location         @relation(fields: [locationId], references: [id])
-  admin          User             @relation("CommunityAdmin", fields: [adminId], references: [id])
-  member         User[]           @relation("CommunityMember")
-  packages       Package[]
-  stores         Store[]
-  homestays      Homestay[]
-  communityImage CommunityImage[]
+  location         Location           @relation(fields: [locationId], references: [id])
+  admin            User               @relation("CommunityAdmin", fields: [adminId], references: [id])
+  packages         Package[]
+  stores           Store[]
+  homestays        Homestay[]
+  communityImage   CommunityImage[]
+  communityMembers communityMembers[]
+  User             User[]
 
   @@index([locationId])
   @@index([adminId])
@@ -292,6 +294,8 @@ model Package {
   statusApprove    PackageApproveStatus? @map("pk_status_approve")
   startDate        DateTime              @map("pk_start_date") @db.DateTime
   dueDate          DateTime              @map("pk_due_date") @db.DateTime
+  bookingOpenDate  DateTime?             @map("pk_booking_open_date") @db.DateTime
+  bookingCloseDate DateTime?             @map("pk_booking_close_date") @db.DateTime
   facility         String                @map("pk_facility") @db.VarChar(200)
   rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
   isDeleted        Boolean               @default(false) @map("pk_is_deleted")
@@ -336,39 +340,53 @@ model Role {
  * Output : ผู้ใช้งานระบบ
  */
 model User {
-  id                Int         @id @default(autoincrement()) @map("us_id")
-  roleId            Int         @map("us_role_id")
-  memberOfCommunity Int?        @map("us_member_of_community")
-  profileImage      String?     @map("us_profile_image") @db.VarChar(256)
-  username          String      @unique @map("us_username") @db.VarChar(50)
-  email             String      @unique @map("us_email") @db.VarChar(65)
-  password          String      @map("us_password") @db.VarChar(255)
-  fname             String      @map("us_fname") @db.VarChar(100)
-  lname             String      @map("us_lname") @db.VarChar(100)
-  phone             String      @unique @map("us_phone") @db.VarChar(10)
-  gender            Gender?     @map("us_gender")
-  birthDate         DateTime?   @map("us_birth_date") @db.Date
-  subDistrict       String?     @map("us_sub_district") @db.VarChar(60)
-  district          String?     @map("us_district") @db.VarChar(60)
-  province          String?     @map("us_province") @db.VarChar(60)
-  postalCode        String?     @map("us_postal_code") @db.VarChar(5)
-  activityRole      String?     @map("us_activity_role") @db.VarChar(100)
-  status            UserStatus? @default(ACTIVE) @map("us_status")
-  isDeleted         Boolean     @default(false) @map("us_is_deleted")
-  deleteAt          DateTime?   @map("us_delete_at") @db.Timestamp(0)
+  id           Int         @id @default(autoincrement()) @map("us_id")
+  roleId       Int         @map("us_role_id")
+  profileImage String?     @map("us_profile_image") @db.VarChar(256)
+  username     String      @unique @map("us_username") @db.VarChar(50)
+  email        String      @unique @map("us_email") @db.VarChar(65)
+  password     String      @map("us_password") @db.VarChar(255)
+  fname        String      @map("us_fname") @db.VarChar(100)
+  lname        String      @map("us_lname") @db.VarChar(100)
+  phone        String      @unique @map("us_phone") @db.VarChar(10)
+  gender       Gender?     @map("us_gender")
+  birthDate    DateTime?   @map("us_birth_date") @db.Date
+  subDistrict  String?     @map("us_sub_district") @db.VarChar(60)
+  district     String?     @map("us_district") @db.VarChar(60)
+  province     String?     @map("us_province") @db.VarChar(60)
+  postalCode   String?     @map("us_postal_code") @db.VarChar(5)
+  activityRole String?     @map("us_activity_role") @db.VarChar(100)
+  status       UserStatus? @default(ACTIVE) @map("us_status")
+  isDeleted    Boolean     @default(false) @map("us_is_deleted")
+  deleteAt     DateTime?   @map("us_delete_at") @db.Timestamp(0)
 
   // Relations
-  role             Role             @relation(fields: [roleId], references: [id])
-  memberOf         Community?       @relation("CommunityMember", fields: [memberOfCommunity], references: [id])
-  communitiesAdmin Community[]      @relation("CommunityAdmin")
-  bookingHistories BookingHistory[] @relation("Tourist")
-  feedbacksReplied Feedback[]       @relation("FeedbackResponder")
+  role             Role               @relation(fields: [roleId], references: [id])
+  communityAdmin   Community[]        @relation("CommunityAdmin")
+  bookingHistories BookingHistory[]   @relation("Tourist")
+  feedbacksReplied Feedback[]         @relation("FeedbackResponder")
   logs             Log[]
-  overseerPackages Package[]        @relation("OverseerMember")
-  createdPackages  Package[]        @relation("createPackage")
+  overseerPackages Package[]          @relation("OverseerMember")
+  createdPackages  Package[]          @relation("createPackage")
+  communityId      Int?
+  communityMembers communityMembers[]
+  Community        Community?         @relation(fields: [communityId], references: [id])
 
   @@index([roleId])
   @@map("users")
+}
+
+model communityMembers {
+  id          Int @id @default(autoincrement()) @map("cm_id")
+  communityId Int @map("cm_community_id")
+  memberId    Int @map("cm_member_id")
+
+  user      User      @relation(fields: [memberId], references: [id])
+  Community Community @relation(fields: [communityId], references: [id])
+
+  @@index([communityId])
+  @@index([memberId])
+  @@map("community_members")
 }
 
 /**

@@ -1,10 +1,14 @@
 import { Router } from "express";
-import { authMiddleware } from "~/Middlewares/auth-middleware.js";
-import { getByRole } from "../Controllers/booking-history-controller.js";
+import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
+import {
+  getByRole,
+  getDetailBooking,
+} from "../Controllers/booking-history-controller.js";
 
 const router = Router();
 
-router.get("/histories", authMiddleware, getByRole);
+router.get("/histories", authMiddleware, allowRoles("admin", "member"), getByRole);
+router.get("/:id", getDetailBooking);
 
 export default router;
 

@@ -1,34 +1,30 @@
-/* 
- * คำอธิบาย: Middleware สำหรับบีบอัดไฟล์ที่อัปโหลดเข้ามา
- * รองรับรูปภาพ (.jpg, .jpeg, .png) และวิดีโอ (.mp4)
- * เรียกใช้ compressImage และ compressVideo เพื่อลดขนาดไฟล์
- */
+// Middlewares/upload-middleware.ts
 import type { Request, Response, NextFunction } from "express";
-import path from 'path';
-import fs from 'fs';
+import path from "path";
 import { compressImage, compressVideo } from "~/Libs/compressFile.js";
 
-/* 
- * Function: compressUploadedFile
- * Input : req (Request) → ไฟล์อัปโหลด (req.file)
- *         res (Response)
- *         next (NextFunction)
- * Output: ดำเนินการบีบอัดไฟล์ (ถ้ามี) และส่งต่อไปยัง middleware ถัดไป
- */
-export async function compressUploadedFile( req: Request, res: Response, next: NextFunction) {
-    if (!req.file) return next();
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png"]);
+const VIDEO_EXT = new Set([".mp4"]); // จะเพิ่ม .mov/.m4v/.webm ก็ใส่ตรงนี้
 
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const inputPath = req.file.path;
+async function compressOne(f: Express.Multer.File) {
+    const ext = path.extname(f.originalname).toLowerCase();
+    if (IMAGE_EXT.has(ext)) await compressImage(f.path);
+    else if (VIDEO_EXT.has(ext)) await compressVideo(f.path);
+}
 
+export async function compressUploaded(req: Request, _res: Response, next: NextFunction) {
     try {
-        if ([".jpg", ".jpeg", ".png"].includes(ext)) {
-            await compressImage(inputPath);
-        } else if (ext === ".mp4") {
-            await compressVideo(inputPath);
+        if (req.file) {
+            await compressOne(req.file);
+        } else if (Array.isArray(req.files)) {
+            for (const f of req.files) await compressOne(f as Express.Multer.File);
+        } else if (req.files && typeof req.files === "object") {
+            const all = Object.values(req.files).flat() as Express.Multer.File[];
+            for (const f of all) await compressOne(f);
         }
         next();
-    } catch (err) {
-        next(err);
-    }
-};
+    } catch (err) { next(err); }
+}
+
+// ถ้าอยากให้ชื่อเดิมทำงานหลายไฟล์ได้ด้วย:
+export const compressUploadedFile = compressUploaded;

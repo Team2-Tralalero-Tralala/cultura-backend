@@ -3,10 +3,10 @@
  * ประกอบด้วยการสร้าง (create), แก้ไข (edit), ลบ (delete), และดึงข้อมูล Tag ทั้งหมด(get)
  * โดยใช้ TagService ในการทำงานหลัก และส่งผลลัพธ์กลับด้วย createResponse / createErrorResponse
  */
-import { IsInt, IsNumberString } from "class-validator";
-import type { Request, Response } from "express";
+import { IsNumberString } from "class-validator";
 import * as TagService from "../Services/tag/tag-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 
 import {
     TagDto,
@@ -103,13 +103,22 @@ export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (req, res) 
 };
 
 /*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูล Tag ทั้งหมด
+ * Input : query (PaginationDto)
+ * Output : รายการข้อมูล Tag ทั้งหมด (พร้อมข้อมูลการแบ่งหน้า)
+ */
+export const getAllTagsDto = {
+    query: PaginationDto,
+} satisfies commonDto;
+
+/*
  * ฟังก์ชัน : getAllTags
  * Input : req.body - ข้อมูลผู้ใช้จาก client
  * Output :
  *   - 200 OK พร้อมข้อมูล Tag ทั้งหมด
  *   - 400 Bad Request ถ้ามี error
  */
-export const getAllTags = async (req: Request, res: Response) => {
+export const getAllTags : TypedHandlerFromDto<typeof getAllTagsDto> = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
         const result = await TagService.getAllTags(Number(page),Number(limit));

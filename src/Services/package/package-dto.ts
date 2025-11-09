@@ -10,7 +10,11 @@ import {
     Matches,
     ValidateNested,
     IsObject,
-    IsArray
+    IsArray,
+    ArrayUnique,
+    IsInt,
+    Max,
+    IsNumberString
 } from "class-validator";
 import { PackagePublishStatus, PackageApproveStatus, ImageType } from "@prisma/client";
 import { LocationDto } from "../location/location-dto.js";
@@ -42,7 +46,7 @@ export class PackageFileDto {
  */
 export class PackageDto {
     @IsNumber()
-    @IsNotEmpty({ message: "communityId ห้ามว่าง" })
+    @IsOptional()
     communityId: number;
 
     @ValidateNested() //  บอก class-validator ว่า validate field ข้างในด้วย
@@ -55,7 +59,7 @@ export class PackageDto {
     overseerMemberId: number;
 
     @IsNumber()
-    @IsNotEmpty({ message: "createById ห้ามว่าง" })
+    @IsOptional()
     createById: number;
 
     @IsString()
@@ -103,6 +107,16 @@ export class PackageDto {
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
     dueDate: string;
 
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "startTime ต้องเป็นรูปแบบ HH:mm" })
+    startTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็นรูปแบบ HH:mm" })
+    endTime?: string;
+
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })
     @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
@@ -113,6 +127,48 @@ export class PackageDto {
     @ValidateNested({ each: true })
     @Type(() => PackageFileDto)
     packageFile?: PackageFileDto[];
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingOpenDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingOpenDate?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingCloseDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingCloseDate?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "openTime ต้องเป็น HH:mm" })
+    openTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "closeTime ต้องเป็น HH:mm" })
+    closeTime?: string;
+
+    @IsOptional()
+    @IsArray({ message: "tagIds ต้องเป็น array ของตัวเลข" })
+    @ArrayUnique()
+    @IsInt({ each: true, message: "tagIds ทุกตัวต้องเป็นตัวเลขจำนวนเต็ม" })
+    tagIds?: number[];
+
+    /** ---------- NEW: ที่พัก (ไม่บังคับ) ---------- */
+    @IsOptional() @IsInt()
+    homestayId?: number;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "homestayCheckInDate ต้องเป็น yyyy-mm-dd" })
+    homestayCheckInDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/, { message: "homestayCheckInTime ต้องเป็น HH:mm" })
+    homestayCheckInTime?: string;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "homestayCheckOutDate ต้องเป็น yyyy-mm-dd" })
+    homestayCheckOutDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/, { message: "homestayCheckOutTime ต้องเป็น HH:mm" })
+    homestayCheckOutTime?: string;
 }
 
 /*
@@ -123,7 +179,7 @@ export class PackageDto {
  */
 export class updatePackageDto {
     @IsNumber()
-    @IsNotEmpty({ message: "communityId ห้ามว่าง" })
+    @IsOptional()
     communityId?: number;
 
     @ValidateNested() // บอก class-validator ว่า validate field ข้างในด้วย
@@ -133,10 +189,6 @@ export class updatePackageDto {
     @IsNumber()
     @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
     overseerMemberId?: number;
-
-    @IsNumber()
-    @IsNotEmpty({ message: "createById ห้ามว่าง" })
-    createById?: number;
 
     @IsString()
     @IsNotEmpty({ message: "name ห้ามว่าง" })
@@ -166,20 +218,54 @@ export class updatePackageDto {
     @IsEnum(PackagePublishStatus, {
         message: "statusPackage ต้องเป็น PUBLISH | UNPUBLISH | DRAFT",
     })
+    @IsOptional()
     statusPackage?: PackagePublishStatus;
 
     @IsEnum(PackageApproveStatus, {
         message: "statusApprove ต้องเป็น WAIT หรือ APPROVE",
     })
+    @IsOptional()
     statusApprove?: PackageApproveStatus;
 
+    @IsString()
     @IsNotEmpty({ message: "startDate ห้ามว่าง" })
-    @Type(() => Date) // ให้ class-transformer แปลงเป็น Date อัตโนมัติ
-    startDate: Date;
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    startDate!: string;
 
+    @IsString()
     @IsNotEmpty({ message: "dueDate ห้ามว่าง" })
-    @Type(() => Date)
-    dueDate: Date;
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    dueDate!: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "startTime ต้องเป็น HH:mm" })
+    startTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็น HH:mm" })
+    endTime?: string;
+
+    @IsString()
+    @IsNotEmpty({ message: "bookingOpenDate ห้ามว่าง" })
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingOpenDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingOpenDate!: string;
+
+    @IsString()
+    @IsNotEmpty({ message: "bookingCloseDate ห้ามว่าง" })
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingCloseDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
+    bookingCloseDate!: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "openTime ต้องเป็น HH:mm" })
+    openTime?: string;
+
+    @IsOptional()
+    @IsString()
+    @Matches(/^\d{2}:\d{2}$/, { message: "closeTime ต้องเป็น HH:mm" })
+    closeTime?: string;
 
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })
@@ -191,4 +277,73 @@ export class updatePackageDto {
     @Type(() => PackageFileDto)
     @IsOptional()
     packageFile?: PackageFileDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ArrayUnique()
+    @IsInt({ each: true })
+    tagIds?: number[];
+
+    /** ---------- NEW: homestay ---------- */
+    @IsOptional() @IsInt()
+    homestayId?: number;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/)
+    homestayCheckInDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/)
+    homestayCheckInTime?: string;
+
+    @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/)
+    homestayCheckOutDate?: string;
+
+    @IsOptional() @Matches(/^\d{2}:\d{2}$/)
+    homestayCheckOutTime?: string;
+
+    @IsOptional() 
+    @IsInt({ message: "bookedRoom ต้องเป็นตัวเลข" })
+    @Min(1, { message: "bookedRoom ต้องอย่างน้อย 1" })
+    bookedRoom?: number;
+}
+
+export class PackageIdParamDto {
+    @IsNumberString()
+    id?: string;
+}
+
+export class QueryHomestaysDto {
+    @IsOptional()
+    @IsString()
+    q?: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit?: string;
+}
+
+export class MembersQueryDto {
+    @IsOptional()
+    @IsString()
+    q?: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit?: string;
+}
+
+export class QueryListHomestaysDto {
+    @IsOptional()
+    @IsString()
+    q?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    @Max(50)
+    limit?: number = 8;
+}
+
+export class IdParamDto {
+    @IsNumberString()
+    communityId?: string;
 }

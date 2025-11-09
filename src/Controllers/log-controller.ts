@@ -50,14 +50,16 @@ export const getLogs: TypedHandlerFromDto<typeof getLogsDto> = async (
       return createErrorResponse(res, 401, "User not authenticated");
     }
 
-    const { page = 1, limit = 10, searchName, filterRole } = req.query;
+    const { page = 1, limit = 10, searchName, filterRole, filterStartDate, filterEndDate } = req.query;
 
     const result = await LogService.getUserLogs(
       req.user,
       page,
       limit,
       searchName,
-      filterRole
+      filterRole,
+      filterStartDate,
+      filterEndDate
     );
     
     return createResponse(res, 200, "Logs retrieved successfully", result);
