@@ -17,6 +17,7 @@ import bannerRoutes from "./banner-route.js";
 import bankRoutes from "./bank-route.js";
 import storeAdminRoutes  from "./storeAdmin-route.js";
 import feedbackRoutes from "./feedback-routes.js";
+import bookingRoutes from "./booking-history-route.js";
 
 const rootRouter: Router = Router();
 
@@ -42,6 +43,9 @@ rootRouter.use("/super/dashboard", dashboardRoutes);
 rootRouter.use("/banner", bannerRoutes);
 rootRouter.use(bankRoutes);
 rootRouter.use("/admin/stores", storeAdminRoutes);
+rootRouter.use(bookingRoutes);
+
+
 
 rootRouter.use(feedbackRoutes);
 

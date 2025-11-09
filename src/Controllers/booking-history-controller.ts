@@ -2,7 +2,11 @@ import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { getHistoriesByRole } from "../Services/booking-history-service.js";
 import * as bookingService from "../Services/booking-history-service.js";
-
+import { PaginationDto } from "~/Services/pagination-dto.js";
+import {
+  commonDto,
+  type TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
 /*
  * ฟังก์ชัน : getByRole
  * คำอธิบาย : Handler สำหรับดึงประวัติการจองตามสิทธิ์ของผู้ใช้งาน
@@ -53,4 +57,50 @@ export const getDetailBooking = async (req: Request, res: Response) => {
   }
 };
 
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายการการจองทั้งหมดของแอดมิน (รองรับ pagination)
+ * Input :
+ *   - query (page, limit)
+ * Output :
+ *   - รายการการจองทั้งหมดของแพ็กเกจในชุมชน + pagination metadata
+ */
+export const getBookingsByAdminDto = {
+  query: PaginationDto,
+} satisfies commonDto;
 
+/*
+ * ฟังก์ชัน : getBookingsByAdmin
+ * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล
+ * Route : GET /admin/bookings/all
+ * Input :
+ *   - req.user.id (จาก middleware auth)
+ *   - req.query.page, req.query.limit
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
+ * หมายเหตุ :
+ *   - ใช้ข้อมูล adminId จาก token (req.user)
+ *   - เฉพาะผู้ใช้ role "admin" เท่านั้นที่เข้าถึงได้
+ */
+export const getBookingsByAdmin: TypedHandlerFromDto<
+  typeof getBookingsByAdminDto
+> = async (req, res) => {
+  try {
+    const adminId = Number(req.user!.id);
+    const { page = 1, limit = 10 } = req.query;
+
+    const result = await bookingService.getBookingsByAdmin(
+      adminId,
+      Number(page),
+      Number(limit)
+    );
+
+    return createResponse(
+      res,
+      200,
+      "Bookings (admin) retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
