@@ -3,7 +3,7 @@ import {
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import { GetSuperAdminDashboardDto } from "~/Services/dashboard/dashboard-dto.js";
+import * as DashboardDto from "~/Services/dashboard/dashboard-dto.js";
 import * as DashboardService from "~/Services/dashboard/dashboard-service.js";
 
 /*
@@ -12,7 +12,7 @@ import * as DashboardService from "~/Services/dashboard/dashboard-service.js";
  * Output : ข้อมูล Dashboard
  */
 export const getSuperAdminDashboardDto = {
-  query: GetSuperAdminDashboardDto
+  query: DashboardDto.GetSuperAdminDashboardDto,
 } satisfies commonDto;
 
 /*
@@ -28,15 +28,15 @@ export const getSuperAdminDashboard: TypedHandlerFromDto<
       return createErrorResponse(res, 401, "User not authenticated");
     }
 
-    const { 
-      dateStart, 
-      dateEnd, 
-      page = 1, 
-      limit = 10, 
+    const {
+      dateStart,
+      dateEnd,
+      page = 1,
+      limit = 10,
       groupBy = "day",
       province,
       region,
-      search 
+      search,
     } = req.query;
 
     const filter: { province?: string; region?: string; search?: string } = {};
@@ -52,10 +52,59 @@ export const getSuperAdminDashboard: TypedHandlerFromDto<
       groupBy,
       filter
     );
-    
-    return createResponse(res, 200, "Dashboard data retrieved successfully", result);
+
+    return createResponse(
+      res,
+      200,
+      "Dashboard data retrieved successfully",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+/*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Admin
+ * Input : query (dateStart, dateEnd, groupBy)
+ * Output : ข้อมูล Dashboard
+ */
+export const getAdminDashboardDto = {
+  query: DashboardDto.GetAdminDashboardDto,
+} satisfies commonDto;
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Admin
+ * Input : req.query (dateStart, dateEnd, groupBy, req.user.id)
+ * Output : JSON response พร้อมข้อมูล Dashboard
+ */
+export const getAdminDashboard: TypedHandlerFromDto<
+  typeof getAdminDashboardDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
 
+    const {
+      dateStart,
+      dateEnd,
+
+      groupBy = "day",
+    } = req.query;
+
+    const result = await DashboardService.getAdminDashBoard(
+      dateStart!,
+      dateEnd!,
+      groupBy,
+      req.user?.id
+    );
+
+    return createResponse(
+      res,
+      200,
+      "Dashboard data retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

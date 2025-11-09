@@ -15,6 +15,7 @@ import type { Request, Response } from "express";
 import { Type } from "class-transformer";
 import fs from "fs";
 import path from "path";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 import type {
   commonDto,
   TypedHandlerFromDto,
@@ -67,7 +68,7 @@ class StatusParamDto {
  * ใช้ตรวจสอบ Query Parameter ของ endpoint /super/accounts
  */
 export const getAccountsDto = {
-  query: AccountQueryDto,
+  query: PaginationDto,
 } satisfies commonDto;
 
 /**
@@ -91,10 +92,9 @@ export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
     const userData = await UserService.getAccountAll(
       req.user,
       Number(page),
-      Number(limit),
-      searchName,
-      filterRole
+      Number(limit)
     );
+
     return createResponse(res, 200, "Accounts fetched successfully", userData);
   } catch (caughtError) {
     return createErrorResponse(res, 400, (caughtError as Error).message);
@@ -107,19 +107,20 @@ export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
  */
 export const getUserByStatusDto = {
   params: StatusParamDto,
-  query: AccountStatusQueryDto,
+  query: PaginationDto,
 } satisfies commonDto;
 
 /**
  * ฟังก์ชัน: getUserByStatus
  * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ตามสถานะ (ACTIVE หรือ BLOCKED)
  * Input:
- *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
- *   - req.params.status : สถานะของผู้ใช้
- *   - req.query.page, req.query.limit, req.query.searchName
+ *   - req.user : ผู้ใช้ที่ล็อกอินอยู่
+ *   - req.params.status : สถานะที่ต้องการดึง (ACTIVE / BLOCKED)
+ *   - req.query.page, req.query.limit : สำหรับแบ่งหน้า
  * Output:
- *   - 200 OK : คืนข้อมูลผู้ใช้ตามสถานะ
+ *   - 200 OK : คืนข้อมูลผู้ใช้พร้อม pagination
  *   - 400 Bad Request : ถ้า status ไม่ถูกต้อง
+ *   - 401 Unauthorized : ถ้ายังไม่ล็อกอิน
  */
 export const getUserByStatus: TypedHandlerFromDto<
   typeof getUserByStatusDto
@@ -129,6 +130,7 @@ export const getUserByStatus: TypedHandlerFromDto<
       return createErrorResponse(res, 401, "User not authenticated");
     const { page = 1, limit = 10, searchName } = req.query;
     const status = req.params.status;
+
     if (!status || !Object.values(UserStatus).includes(status as UserStatus)) {
       return createErrorResponse(
         res,
@@ -136,13 +138,14 @@ export const getUserByStatus: TypedHandlerFromDto<
         "Invalid status. Must be ACTIVE or BLOCKED"
       );
     }
+
     const userData = await UserService.getUserByStatus(
       req.user,
       status as UserStatus,
       Number(page),
-      Number(limit),
-      searchName
+      Number(limit)
     );
+
     return createResponse(res, 200, "Users fetched successfully", userData);
   } catch (caughtError) {
     return createErrorResponse(res, 500, (caughtError as Error).message);
@@ -483,4 +486,26 @@ export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = asy
     } catch (error) {
         return createErrorResponse(res, 404, (error as Error).message);
     }
+};
+
+export const deleteCommunityMemberByIdDto = { params: IdParamDto } satisfies commonDto;
+
+/**
+* ฟังก์ชัน : deleteCommunityMemberById
+* คำอธิบาย : Handler สำหรับลบสมาชิกชุมชนตามรหัส ID โดยเรียก Service ที่เกี่ยวข้อง
+* Input : req (Request) - พารามิเตอร์ userId ใน URL เป็นรหัสสมาชิก
+* Output : Response - ส่งข้อความยืนยันการลบสำเร็จ พร้อมข้อมูลสมาชิกที่ถูกลบ
+* Error : หากไม่พบสมาชิก จะส่ง response 404 พร้อมข้อความ Error
+*/
+export const deleteCommunityMemberById: TypedHandlerFromDto<
+  typeof deleteCommunityMemberByIdDto
+> = async (req, res) => { 
+  try {
+    const memberId = Number(req.params.userId);
+    const deletedMember = await UserService.deleteCommunityMember(memberId);
+    return createResponse(res, 200, "Deleted community member successfully", deletedMember);
+  }
+  catch (caughtError) {
+    return createErrorResponse(res, 404, (caughtError as Error).message);
+  }
 };

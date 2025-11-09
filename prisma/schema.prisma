@@ -380,6 +380,8 @@ model communityMembers {
   id          Int @id @default(autoincrement()) @map("cm_id")
   communityId Int @map("cm_community_id")
   memberId    Int @map("cm_member_id")
+  isDeleted   Boolean   @default(false) @map("cm_is_deleted")
+  deleteAt    DateTime?   @map("cm_delete_at") @db.Timestamp(0)
 
   user      User      @relation(fields: [memberId], references: [id])
   Community Community @relation(fields: [communityId], references: [id])
