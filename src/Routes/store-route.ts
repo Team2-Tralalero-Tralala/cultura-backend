@@ -101,13 +101,13 @@ storeRoute.get(
     StoreController.getAllStoreForAdmin
 );
 /*
- * เส้นทาง : PATCH /admin/community/stores/:id/delete
+ * เส้นทาง : Delete /admin/community/stores/:id
  * รายละเอียด :
  *   ใช้สำหรับ "modal ลบร้านค้า" 
  *   โดยจำกัดสิทธิ์ให้เฉพาะ admin เท่านั้น
  */
-storeRoute.patch(
-    "/admin/community/stores/:id/delete",
+storeRoute.delete(
+    "/admin/community/stores/:id",
     validateDto(StoreController.deleteStoreByAdminDto),
     authMiddleware,
     allowRoles("admin"),

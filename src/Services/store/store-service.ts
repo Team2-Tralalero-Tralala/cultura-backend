@@ -414,7 +414,7 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     where: { id: userId },
     select: {
       id: true,
-      memberOfCommunity: true,
+      communityId: true,
       role: {
         select: { name: true },
       },
@@ -427,7 +427,7 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     throw new Error("Forbidden: Only admin can delete stores");
   }
 
-  const communityId = user.memberOfCommunity;
+  const communityId = user.communityId;
   if (!communityId) {
     throw new Error("User is not assigned to any community");
   }
