@@ -6,8 +6,9 @@ import { Type } from "class-transformer";
 import fs from "fs";
 import path from "path";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
-import { AccountQueryDto, AccountStatusQueryDto, IdParamDto } from "~/Services/user/user-dto.js";
+import { IdParamDto } from "~/Services/user/user-dto.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 
 /**
  * DTO : getUserByIdDto
@@ -46,7 +47,7 @@ class StatusParamDto {
  * ใช้ตรวจสอบ Query Parameter ของ endpoint /super/accounts
  */
 export const getAccountsDto = {
-  query: AccountQueryDto,
+  query: PaginationDto,
 } satisfies commonDto;
 
 /**
@@ -62,14 +63,15 @@ export const getAccountsDto = {
 export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (req, res) => {
   try {
     if (!req.user) return createErrorResponse(res, 401, "User not authenticated");
-    const { page = 1, limit = 10, searchName, filterRole } = req.query;
+
+    const { page = 1, limit = 10 } = req.query;
+
     const userData = await UserService.getAccountAll(
       req.user,
       Number(page),
-      Number(limit),
-      searchName,
-      filterRole
+      Number(limit)
     );
+
     return createResponse(res, 200, "Accounts fetched successfully", userData);
   } catch (caughtError) {
     return createErrorResponse(res, 400, (caughtError as Error).message);
@@ -82,35 +84,41 @@ export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
  */
 export const getUserByStatusDto = {
   params: StatusParamDto,
-  query: AccountStatusQueryDto,
+  query: PaginationDto,
 } satisfies commonDto;
 
 /**
  * ฟังก์ชัน: getUserByStatus
  * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ตามสถานะ (ACTIVE หรือ BLOCKED)
  * Input:
- *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
- *   - req.params.status : สถานะของผู้ใช้
- *   - req.query.page, req.query.limit, req.query.searchName
+ *   - req.user : ผู้ใช้ที่ล็อกอินอยู่
+ *   - req.params.status : สถานะที่ต้องการดึง (ACTIVE / BLOCKED)
+ *   - req.query.page, req.query.limit : สำหรับแบ่งหน้า
  * Output:
- *   - 200 OK : คืนข้อมูลผู้ใช้ตามสถานะ
+ *   - 200 OK : คืนข้อมูลผู้ใช้พร้อม pagination
  *   - 400 Bad Request : ถ้า status ไม่ถูกต้อง
+ *   - 401 Unauthorized : ถ้ายังไม่ล็อกอิน
  */
 export const getUserByStatus: TypedHandlerFromDto<typeof getUserByStatusDto> = async (req, res) => {
   try {
-    if (!req.user) return createErrorResponse(res, 401, "User not authenticated");
-    const { page = 1, limit = 10, searchName } = req.query;
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
+
     const status = req.params.status;
+    const { page = 1, limit = 10 } = req.query;
+
     if (!status || !Object.values(UserStatus).includes(status as UserStatus)) {
       return createErrorResponse(res, 400, "Invalid status. Must be ACTIVE or BLOCKED");
     }
+
     const userData = await UserService.getUserByStatus(
       req.user,
       status as UserStatus,
       Number(page),
-      Number(limit),
-      searchName
+      Number(limit)
     );
+
     return createResponse(res, 200, "Users fetched successfully", userData);
   } catch (caughtError) {
     return createErrorResponse(res, 500, (caughtError as Error).message);

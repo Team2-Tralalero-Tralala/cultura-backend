@@ -10,21 +10,18 @@ import type { UserPayload } from "~/Libs/Types/index.js";
  *   - SuperAdmin → เห็นทุกคน
  *   - Admin → เห็นเฉพาะสมาชิกในชุมชนตัวเอง
  *   - Member/Tourist → เห็นเฉพาะบัญชีตัวเอง
- * พร้อมรองรับ searchName และ filterRole
  */
 export async function getAccountAll(
   user: UserPayload,
   page: number = 1,
-  limit: number = 10,
-  searchName?: string,
-  filterRole?: string
+  limit: number = 10
 ): Promise<PaginationResponse<any>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
 
   // Role-based condition
   if (user.role.toLowerCase() === "superadmin") {
-    whereCondition.id = { not: user.id }; // เห็นทุกคน
+    whereCondition.id = { not: user.id };
   } else if (user.role.toLowerCase() === "admin") {
     const adminCommunities = await prisma.community.findMany({
       where: { adminId: user.id },
@@ -34,31 +31,17 @@ export async function getAccountAll(
     const communityIds = adminCommunities.map((community) => community.id);
 
     if (communityIds.length === 0) {
-      whereCondition.id = { not: user.id }; // ไม่มีชุมชน → ไม่ต้องแสดงตัวเอง
+      whereCondition.id = { not: user.id };
     } else {
       whereCondition.memberOfCommunity = { in: communityIds };
       whereCondition.id = { not: user.id };
     }
   } else {
-    whereCondition.id = user.id; // Member / Tourist
+    whereCondition.id = user.id; // Member / Tourist เห็นเฉพาะบัญชีตัวเอง
   }
 
   whereCondition.status = "ACTIVE";
   whereCondition.isDeleted = false;
-
-  // Search by name
-  if (searchName) {
-    whereCondition.OR = [
-      { fname: { contains: searchName } },
-      { lname: { contains: searchName } },
-      { username: { contains: searchName } },
-    ];
-  }
-
-  // Filter by role
-  if (filterRole && filterRole.toLowerCase() !== "all") {
-    whereCondition.role = { name: filterRole };
-  }
 
   const totalCount = await prisma.user.count({ where: whereCondition });
 
@@ -105,13 +88,11 @@ export async function getUserByStatus(
   user: UserPayload,
   status: UserStatus,
   page: number = 1,
-  limit: number = 10,
-  searchName?: string
+  limit: number = 10
 ): Promise<PaginationResponse<any>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
 
-  // Role-based visibility
   if (user.role.toLowerCase() === "superadmin") {
     // เห็นทุกคน
   } else if (user.role.toLowerCase() === "admin") {
@@ -132,14 +113,6 @@ export async function getUserByStatus(
 
   whereCondition.status = status;
   whereCondition.isDeleted = false;
-
-  if (searchName) {
-    whereCondition.OR = [
-      { fname: { contains: searchName } },
-      { lname: { contains: searchName } },
-      { username: { contains: searchName } },
-    ];
-  }
 
   const totalCount = await prisma.user.count({ where: whereCondition });
 
