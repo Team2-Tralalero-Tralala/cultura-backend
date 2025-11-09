@@ -1,32 +1,30 @@
+import { Gender, UserStatus } from "@prisma/client";
+import { Type } from "class-transformer";
 import {
-  IsNumberString,
+  IsDateString,
+  IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
+  IsNumberString,
   IsOptional,
   IsString,
-  IsNotEmpty,
   MaxLength,
-  IsEmail,
-  IsDateString,
 } from "class-validator";
-import * as UserService from "../Services/user/user-service.js";
-import { Gender, UserStatus } from "@prisma/client";
 import type { Request, Response } from "express";
-import { Type } from "class-transformer";
 import fs from "fs";
 import path from "path";
-import { PaginationDto } from "~/Services/pagination-dto.js";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import type {
   commonDto,
   TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
+import { PasswordDto } from "~/Services/user/password-dto.js";
 import {
-  AccountQueryDto,
-  AccountStatusQueryDto,
   IdParamDto,
 } from "~/Services/user/user-dto.js";
-import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import { PasswordDto } from "~/Services/user/password-dto.js";
+import * as UserService from "../Services/user/user-service.js";
 
 /**
  * DTO : getUserByIdDto
@@ -88,7 +86,7 @@ export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
   try {
     if (!req.user)
       return createErrorResponse(res, 401, "User not authenticated");
-    const { page = 1, limit = 10, searchName, filterRole } = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const userData = await UserService.getAccountAll(
       req.user,
       Number(page),
@@ -128,7 +126,7 @@ export const getUserByStatus: TypedHandlerFromDto<
   try {
     if (!req.user)
       return createErrorResponse(res, 401, "User not authenticated");
-    const { page = 1, limit = 10, searchName } = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const status = req.params.status;
 
     if (!status || !Object.values(UserStatus).includes(status as UserStatus)) {
@@ -335,10 +333,12 @@ export class FileDto {
  */
 export const createAccount: TypedHandlerFromDto<
   typeof createAccountDto
-> = async (req: Request, res: Response) => {
+> = async (req, res) => {
   try {
     const payload = req.body;
-    if (!req.file) return res.json({ status: 400, message: "file not found" });
+    if (!req.file) {
+      return createErrorResponse(res, 400, "file not found");
+    }
     const filePath = req.file.path;
     const createdUser = await UserService.createAccount(payload, filePath);
     return createResponse(res, 200, "Create User Successful", createdUser);
