@@ -14,6 +14,9 @@ import {
     patchRejectPackageRequest,
     getDetailRequest,
     getDetailRequestForAdmin,
+    patchApprovePackageRequestForAdmin,
+    patchRejectPackageRequestDto,
+    patchRejectPackageRequestForAdmin,
 } from "~/Controllers/package-request-controller.js";
 const packageRequestRoutes = Router();
 
@@ -66,6 +69,27 @@ packageRequestRoutes.get(
     authMiddleware, 
     allowRoles("admin"), 
     getDetailRequestForAdmin
+);
+
+/**
+ * อนุมัติคำขอ (สำหรับ Admin)
+ */
+packageRequestRoutes.patch(
+    "/admin/package-requests/:packageId/approve", // Path ใหม่สำหรับ admin
+    authMiddleware,
+    allowRoles("admin"), // เฉพาะ admin
+    patchApprovePackageRequestForAdmin
+);
+
+/**
+ * ปฏิเสธคำขอ (สำหรับ Admin)
+ */
+packageRequestRoutes.patch(
+    "/admin/package-requests/:packageId/reject", // Path ใหม่สำหรับ admin
+    authMiddleware,
+    allowRoles("admin"), // เฉพาะ admin
+    // validateDto(patchRejectPackageRequestDto), // ใช้ DTO ตัวเดียวกัน
+    patchRejectPackageRequestForAdmin
 );
 
 export default packageRequestRoutes;
