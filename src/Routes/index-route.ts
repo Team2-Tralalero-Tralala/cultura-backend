@@ -9,7 +9,7 @@ import logRoutes from "./log-route.js";
 import homestayRoutes from "./homestay-route.js";
 import packageRoutes from "./package-route.js";
 import accountRoutes from "./account-routes.js";
-import packageRequestsRoutes from "./package-request-route.js"
+import packageRequestsRoutes from "./package-request-route.js";
 import storeRoute from "./store-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
@@ -17,11 +17,14 @@ import bannerRoutes from "./banner-route.js";
 import bankRoutes from "./bank-route.js";
 import storeAdminRoutes  from "./storeAdmin-route.js";
 import bookingRefund from "./booking-route.js"
+import feedbackRoutes from "./feedback-routes.js";
+import bookingRoutes from "./booking-history-route.js";
 
 const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/booking", bookingHistoriesRoutes);
+rootRouter.use(packageRoutes);
 rootRouter.use("/booking-histories", bookingHistoriesRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(userRoutes);
@@ -37,11 +40,15 @@ rootRouter.use(accountRoutes);
 rootRouter.use(packageRequestsRoutes);
 rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);
-rootRouter.use("/super/dashboard", dashboardRoutes);
+rootRouter.use(dashboardRoutes);
 rootRouter.use("/banner", bannerRoutes);
 rootRouter.use(bankRoutes);
 rootRouter.use("/admin/stores", storeAdminRoutes);
+rootRouter.use(bookingRoutes);
 
 rootRouter.use(bookingRefund);
+
+
+rootRouter.use(feedbackRoutes);
 
 export default rootRouter;

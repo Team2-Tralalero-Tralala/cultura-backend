@@ -22,11 +22,11 @@ import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
 
 const accountRoutes = Router();
 
-/** --------------------------------------------------------------------------
+/**
  * @route GET /admin/communities/members
  * @description ดึงข้อมูลสมาชิกในชุมชนของตนเอง (เฉพาะ Admin)
  * @access Admin
- * -------------------------------------------------------------------------- */
+*/
 accountRoutes.get(
   "/admin/communities/members",
   authMiddleware,
@@ -34,11 +34,11 @@ accountRoutes.get(
   getMemberByAdmin
 );
 
-/** --------------------------------------------------------------------------
+/**
  * @route POST /super/account
  * @description สร้างบัญชีผู้ใช้ใหม่ (เฉพาะ SuperAdmin)
  * @access SuperAdmin
- * -------------------------------------------------------------------------- */
+*/
 accountRoutes.post(
   "/super/account",
   validateDto(createAccountDto),
@@ -47,11 +47,11 @@ accountRoutes.post(
   createAccount
 );
 
-/** --------------------------------------------------------------------------
+/**
  * @route PATCH /super/account/:id
  * @description แก้ไขข้อมูลบัญชีผู้ใช้ตาม ID (เฉพาะ SuperAdmin)
  * @access SuperAdmin
- * -------------------------------------------------------------------------- */
+*/
 accountRoutes.patch(
   "/super/account/:id",
   validateDto(editAccountDto),
@@ -60,11 +60,11 @@ accountRoutes.patch(
   editAccount
 );
 
-/** --------------------------------------------------------------------------
+/**
  * @route GET /super/account/users
  * @description ดึงข้อมูลผู้ใช้ทั้งหมดในระบบ (เฉพาะ SuperAdmin)
  * @access SuperAdmin
- * -------------------------------------------------------------------------- */
+ */
 accountRoutes.get(
   "/super/account/users",
   authMiddleware,
@@ -72,11 +72,11 @@ accountRoutes.get(
   getAll
 );
 
-/** --------------------------------------------------------------------------
+/**
  * @route GET /super/account/:role/:id
  * @description ดึงข้อมูลผู้ใช้ตามบทบาท (Admin / Member / Tourist)
  * @access SuperAdmin
- * -------------------------------------------------------------------------- */
+*/
 accountRoutes.get(
   "/super/account/admin/:id",
   authMiddleware,
@@ -96,11 +96,11 @@ accountRoutes.get(
   getAccountById
 );
 
-/** --------------------------------------------------------------------------
+/** 
  * @route PATCH /super/account/:role/:id
  * @description อัปเดตข้อมูลบัญชีผู้ใช้ตามบทบาท (Admin / Member / Tourist)
  * @access SuperAdmin
- * -------------------------------------------------------------------------- */
+  */
 accountRoutes.patch(
   "/super/account/admin/:id",
   validateDto(editAccountDto),

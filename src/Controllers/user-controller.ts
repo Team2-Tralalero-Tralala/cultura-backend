@@ -1,14 +1,32 @@
-import { IsNumberString, IsEnum, IsNumber, IsOptional, IsString, IsNotEmpty, MaxLength, IsEmail, IsDateString } from "class-validator";
+import {
+  IsNumberString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsEmail,
+  IsDateString,
+} from "class-validator";
 import * as UserService from "../Services/user/user-service.js";
 import { Gender, UserStatus } from "@prisma/client";
 import type { Request, Response } from "express";
 import { Type } from "class-transformer";
 import fs from "fs";
 import path from "path";
-import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
-import { IdParamDto } from "~/Services/user/user-dto.js";
-import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
+import type {
+  commonDto,
+  TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
+import {
+  AccountQueryDto,
+  AccountStatusQueryDto,
+  IdParamDto,
+} from "~/Services/user/user-dto.js";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
+import { PasswordDto } from "~/Services/user/password-dto.js";
 
 /**
  * DTO : getUserByIdDto
@@ -27,7 +45,10 @@ export const getUserByIdDto = {
  *   - 200 OK : คืนข้อมูลผู้ใช้
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
-export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (req, res) => {
+export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (
+  req,
+  res
+) => {
   try {
     const userId = Number(req.params.userId);
     const userData = await UserService.getUserById(userId);
@@ -60,12 +81,14 @@ export const getAccountsDto = {
  *   - 200 OK : คืนรายการผู้ใช้พร้อม pagination
  *   - 401 Unauthorized : ถ้าไม่มีข้อมูลผู้ใช้ที่ล็อกอิน
  */
-export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (req, res) => {
+export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
+  req,
+  res
+) => {
   try {
-    if (!req.user) return createErrorResponse(res, 401, "User not authenticated");
-
-    const { page = 1, limit = 10 } = req.query;
-
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+    const { page = 1, limit = 10, searchName, filterRole } = req.query;
     const userData = await UserService.getAccountAll(
       req.user,
       Number(page),
@@ -99,17 +122,21 @@ export const getUserByStatusDto = {
  *   - 400 Bad Request : ถ้า status ไม่ถูกต้อง
  *   - 401 Unauthorized : ถ้ายังไม่ล็อกอิน
  */
-export const getUserByStatus: TypedHandlerFromDto<typeof getUserByStatusDto> = async (req, res) => {
+export const getUserByStatus: TypedHandlerFromDto<
+  typeof getUserByStatusDto
+> = async (req, res) => {
   try {
-    if (!req.user) {
+    if (!req.user)
       return createErrorResponse(res, 401, "User not authenticated");
-    }
-
+    const { page = 1, limit = 10, searchName } = req.query;
     const status = req.params.status;
-    const { page = 1, limit = 10 } = req.query;
 
     if (!status || !Object.values(UserStatus).includes(status as UserStatus)) {
-      return createErrorResponse(res, 400, "Invalid status. Must be ACTIVE or BLOCKED");
+      return createErrorResponse(
+        res,
+        400,
+        "Invalid status. Must be ACTIVE or BLOCKED"
+      );
     }
 
     const userData = await UserService.getUserByStatus(
@@ -138,7 +165,9 @@ export const unblockAccountByIdDto = { params: IdParamDto } satisfies commonDto;
  *   - 200 OK : ลบสำเร็จ
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
-export const deleteAccountById: TypedHandlerFromDto<typeof deleteAccountByIdDto> = async (req, res) => {
+export const deleteAccountById: TypedHandlerFromDto<
+  typeof deleteAccountByIdDto
+> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const deletedUser = await UserService.deleteAccount(userId);
@@ -157,7 +186,9 @@ export const deleteAccountById: TypedHandlerFromDto<typeof deleteAccountByIdDto>
  *   - 200 OK : ระงับสำเร็จ
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
-export const blockAccountById: TypedHandlerFromDto<typeof blockAccountByIdDto> = async (req, res) => {
+export const blockAccountById: TypedHandlerFromDto<
+  typeof blockAccountByIdDto
+> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const blockedUser = await UserService.blockAccount(userId);
@@ -176,11 +207,18 @@ export const blockAccountById: TypedHandlerFromDto<typeof blockAccountByIdDto> =
  *   - 200 OK : ปลดระงับสำเร็จ
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
-export const unblockAccountById: TypedHandlerFromDto<typeof unblockAccountByIdDto> = async (req, res) => {
+export const unblockAccountById: TypedHandlerFromDto<
+  typeof unblockAccountByIdDto
+> = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const unblockedUser = await UserService.unblockAccount(userId);
-    return createResponse(res, 200, "User unblocked successfully", unblockedUser);
+    return createResponse(
+      res,
+      200,
+      "User unblocked successfully",
+      unblockedUser
+    );
   } catch (caughtError) {
     return createErrorResponse(res, 404, (caughtError as Error).message);
   }
@@ -295,7 +333,9 @@ export class FileDto {
  *   - 200 OK : สร้างบัญชีสำเร็จ
  *   - 400 Bad Request : ถ้าไม่พบไฟล์แนบ
  */
-export const createAccount: TypedHandlerFromDto<typeof createAccountDto> = async (req: Request, res: Response) => {
+export const createAccount: TypedHandlerFromDto<
+  typeof createAccountDto
+> = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
     if (!req.file) return res.json({ status: 400, message: "file not found" });
@@ -329,7 +369,11 @@ export const updateProfileImage = async (req: Request, res: Response) => {
     const oldImage = oldUserData?.profileImage;
 
     if (oldImage && oldImage.trim() !== "" && oldImage.includes(".")) {
-      const oldPath = path.resolve(process.cwd(), "uploads", oldImage.replace(/^\//, ""));
+      const oldPath = path.resolve(
+        process.cwd(),
+        "uploads",
+        oldImage.replace(/^\//, "")
+      );
       try {
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
       } catch (caughtError) {
@@ -356,14 +400,112 @@ export const updateProfileImage = async (req: Request, res: Response) => {
  *   - 401 Unauthorized : ถ้าไม่ได้ล็อกอิน
  *   - 403 Forbidden : ถ้าไม่ใช่สมาชิกในชุมชนของแอดมิน
  */
-export const getMemberByAdmin: TypedHandlerFromDto<typeof getUserByIdDto> = async (req, res) => {
+export const getMemberByAdmin: TypedHandlerFromDto<
+  typeof getUserByIdDto
+> = async (req, res) => {
   try {
-    if (!req.user) return createErrorResponse(res, 401, "User not authenticated");
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
     const userId = Number(req.params.userId);
     const adminId = req.user.id;
     const userData = await UserService.getMemberByAdmin(userId, adminId);
     return createResponse(res, 200, "User fetched successfully", userData);
   } catch (caughtError) {
     return createErrorResponse(res, 403, (caughtError as Error).message);
+  }
+};
+/*
+ * DTO : unblockAccountByIdDto
+ * คำอธิบาย : ใช้ตรวจสอบพารามิเตอร์ userId password สำหรับรีเซ็ตรหัสผ่านใหม่
+ */
+export const resetPasswordDto = {
+  params: IdParamDto,
+  body: PasswordDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : forgetPassword
+ * คำอธิบาย : สำหรับตั้งรหัสผ่านใหม่
+ * Input :
+ *   - req.params.userId : รหัสผู้ใช้ (string → number)
+ *   - newPassword : รหัสผ่านใหม่
+ * Output :
+ *   - 200 OK พร้อมข้อมูลผู้ใช้ที่ถูกปลดบล็อค
+ *   - 400 Bad request
+ */
+export const resetPassword: TypedHandlerFromDto<
+  typeof resetPasswordDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const result = await UserService.resetPassword(userId, req.body);
+    return createResponse(res, 200, "Reset new password successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+
+/* 
+ * คำอธิบาย: Controller สำหรับเปลี่ยนรหัสผ่านของผู้ใช้งาน
+ * ตรวจสอบข้อมูลจาก DTO และส่งต่อให้ UserService.changePassword ดำเนินการ
+ */
+export class ChangePasswordDto {
+    @IsString()
+    currentPassword?: string;
+    
+    @IsString()
+    newPassword?: string;
+    
+    @IsString()
+    confirmNewPassword?: string;
+}
+
+
+/* 
+ * DTO: ChangePasswordDto
+ * Input : currentPassword, newPassword, confirmNewPassword (string)
+ * ใช้ตรวจสอบและ validate ค่าที่รับจาก body ของ request
+ */
+export const changePasswordDto = {
+    body: ChangePasswordDto,
+} satisfies commonDto;
+
+/* 
+ * Function: changePassword
+ * Input : req (Request) → รับ body จาก changePasswordDto
+ *         res (Response)
+ * Output: Response JSON (200 เมื่อเปลี่ยนรหัสสำเร็จ / 404 เมื่อผิดพลาด)
+ */
+export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = async (req, res) => {
+    try {
+        const userId = Number(req?.user?.id);
+        const payload = req?.body
+        const result = await UserService.changePassword(userId, payload);
+        return createResponse(res, 200, "Change password successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 404, (error as Error).message);
+    }
+};
+
+export const deleteCommunityMemberByIdDto = { params: IdParamDto } satisfies commonDto;
+
+/**
+* ฟังก์ชัน : deleteCommunityMemberById
+* คำอธิบาย : Handler สำหรับลบสมาชิกชุมชนตามรหัส ID โดยเรียก Service ที่เกี่ยวข้อง
+* Input : req (Request) - พารามิเตอร์ userId ใน URL เป็นรหัสสมาชิก
+* Output : Response - ส่งข้อความยืนยันการลบสำเร็จ พร้อมข้อมูลสมาชิกที่ถูกลบ
+* Error : หากไม่พบสมาชิก จะส่ง response 404 พร้อมข้อความ Error
+*/
+export const deleteCommunityMemberById: TypedHandlerFromDto<
+  typeof deleteCommunityMemberByIdDto
+> = async (req, res) => { 
+  try {
+    const memberId = Number(req.params.userId);
+    const deletedMember = await UserService.deleteCommunityMember(memberId);
+    return createResponse(res, 200, "Deleted community member successfully", deletedMember);
+  }
+  catch (caughtError) {
+    return createErrorResponse(res, 404, (caughtError as Error).message);
   }
 };
