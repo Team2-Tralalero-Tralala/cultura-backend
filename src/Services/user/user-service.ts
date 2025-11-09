@@ -421,3 +421,33 @@ export async function changePassword(userId: number, payload: any) {
 
   return user;
 }
+
+/**
+ * ฟังก์ชัน : deleteCommunityMember
+ * คำอธิบาย : ลบสมาชิกชุมชนแบบ Soft Delete (ไม่ลบข้อมูลออกจากฐานข้อมูลจริง)
+ * Input : memberId (number) - รหัสสมาชิกในตาราง communityMembers
+ * Output : ข้อมูลสมาชิกที่ถูกลบแบบ Soft Delete
+ * Error : หากไม่พบสมาชิก จะ throw Error("Community member not found")
+ */
+export async function deleteCommunityMember(memberId: number) {
+  const target = await prisma.communityMembers.findFirst({
+    where: { memberId },
+  });
+
+  if (!target) throw new Error("Community member not found");
+
+  return prisma.communityMembers.update({
+    where: { id: target.id },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+}
+
+
+
+
+
+
+
