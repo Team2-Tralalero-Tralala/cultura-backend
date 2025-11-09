@@ -164,34 +164,6 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
   }
 };
 
-/* ----------------------------- DELETE STORE ----------------------------- */
-
-export const deleteStoreDto = {
-  params: IdParamDto,
-} satisfies commonDto;
-
-export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
-  req,
-  res
-) => {
-  try {
-    if (!req.user)
-      return createErrorResponse(res, 401, "User not authenticated");
-
-    const storeId = Number(req.params.storeId);
-    const result = await StoreService.deleteStore(storeId, req.user);
-    return createResponse(res, 200, "Store deleted successfully", result);
-    if (!req.user) {
-      return createErrorResponse(res, 401, "ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน");
-    }
-    const storeId = Number(req.params.storeId);
-    const result = await StoreService.getStoreById(storeId, req.user);
-    return createResponse(res, 201, "Store update successfully", result);
-  } catch (error: any) {
-    return createErrorResponse(res, 400, error.message);
-  }
-};
-
 /*
  * ฟังก์ชัน : getAllStoreDto
  * รายละเอียด :
