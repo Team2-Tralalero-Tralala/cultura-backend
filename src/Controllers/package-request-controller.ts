@@ -199,3 +199,81 @@ export const getDetailRequestForAdmin = async (req: Request, res: Response) => {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/* ===========================
+ * Handler : PATCH /api/admin/package-requests/:packageId/approve
+ * อธิบาย : อนุมัติคำขอแพ็กเกจโดย Admin → เปลี่ยนเป็น APPROVE (สำหรับคำขอสถานะ PENDING)
+ * =========================== */
+export const patchApprovePackageRequestForAdmin = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        if (!req.user) {
+            return createErrorResponse(res, 401, "User not authenticated");
+        }
+
+        const packageId = Number(req.params.packageId);
+        if (!Number.isFinite(packageId)) {
+            return createErrorResponse(res, 400, "packageId ต้องเป็นตัวเลข");
+        }
+
+        const result = await PackageRequestService.approvePackageRequestForAdmin( // ใช้ Service ใหม่
+            req.user,
+            packageId
+        );
+
+        return createResponse(
+            res,
+            200,
+            "Admin approved package request successfully",
+            result
+        );
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
+    }
+};
+
+/* ===========================
+ * Handler : PATCH /api/admin/package-requests/:packageId/reject
+ * อธิบาย : ปฏิเสธคำขอแพ็กเกจโดย Admin → บันทึกเหตุผลลง rejectReason (สำหรับคำขอสถานะ PENDING)
+ * Body: { reason: string }
+ * =========================== */
+export const patchRejectPackageRequestForAdmin: TypedHandlerFromDto<
+    typeof patchRejectPackageRequestDto // ใช้ DTO เดียวกัน
+> = async (req, res) => {
+    try {
+        if (!req.user) {
+            return createErrorResponse(res, 401, "User not authenticated");
+        }
+
+        const packageId = Number(req.params.packageId);
+        if (!Number.isFinite(packageId)) {
+            return createErrorResponse(res, 400, "packageId ต้องเป็นตัวเลข");
+        }
+
+        const reason = (req.body?.reason ?? "").toString();
+        if (!reason.trim()) {
+            return createErrorResponse(
+                res,
+                400,
+                "reason ต้องเป็นข้อความและห้ามว่าง"
+            );
+        }
+
+        const result = await PackageRequestService.rejectPackageRequestForAdmin( // ใช้ Service ใหม่
+            req.user,
+            packageId,
+            reason
+        );
+
+        return createResponse(
+            res,
+            200,
+            "Admin rejected package request successfully",
+            result
+        );
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
+    }
+}
