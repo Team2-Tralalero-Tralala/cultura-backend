@@ -28,10 +28,10 @@ export async function createStore(store: StoreDto, communityId: number) {
         community: { connect: { id: communityId } },
         location: { create: mapLocation(location) },
         storeImage: {
-          create: storeImage.map((img) => ({
+          create: storeImage?.map((img) => ({
             image: img.image,
             type: img.type,
-          })),
+          })) ?? [],
         },
       },
       include: {
@@ -53,26 +53,16 @@ export async function createStore(store: StoreDto, communityId: number) {
   });
 }
 
-/*
- * ฟังก์ชัน : editStore
- * รายละเอียด :
- *   แก้ไขข้อมูลร้านค้าตามรหัส โดยอัปเดตข้อมูลทั่วไป ที่ตั้ง รูปภาพ และป้ายกำกับ
- * Input :
- *   - storeId : รหัสร้านค้า
- *   - store : ข้อมูลร้านค้าที่แก้ไข (StoreDto)
- *   - user : ข้อมูลผู้ใช้ที่ร้องขอ (UserPayload)
- * Output :
- *   - ข้อมูลร้านค้าที่อัปเดตแล้ว
- */
+/* -------------------------------------------------------------------------- */
+/*                              EDIT STORE                                    */
+/* -------------------------------------------------------------------------- */
 export async function editStore(
   storeId: number,
   store: StoreDto,
   user: UserPayload
 ) {
-  const findStore = await prisma.store.findFirst({
-    where: {
-      id: storeId,
-    },
+  const findStore = await prisma.store.findUnique({
+    where: { id: storeId, isDeleted: false },
     include: { community: true },
   });
 
@@ -101,12 +91,8 @@ export async function editStore(
       },
       include: {
         storeImage: true,
-        tagStores: true,
         location: true,
       },
-    });
-    await transaction.tagStore.deleteMany({
-      where: { storeId },
     });
 
     await transaction.tagStore.createMany({
@@ -390,6 +376,59 @@ export async function getAllStoreForAdmin(
       totalPages,
     },
   };
+}
+
+/*
+ * ฟังก์ชัน : deleteStore
+ * คำอธิบาย :
+ *   ฟังก์ชันสำหรับลบร้านค้าแบบ Soft Delete (ตั้งค่า isDeleted = true)
+ *   โดยตรวจสอบสิทธิ์ของผู้ใช้ก่อนดำเนินการ
+ *   - superadmin : สามารถลบร้านค้าได้ทุกชุมชน
+ *   - admin      : สามารถลบร้านค้าได้เฉพาะร้านในชุมชนของตนเองเท่านั้น
+ *
+ * Input :
+ *   - storeId : หมายเลขรหัสร้านค้า (number)
+ *   - user    : ข้อมูลผู้ใช้งาน (UserPayload) ที่ส่งมาจาก Middleware
+ *
+ * Output :
+ *   - ข้อมูลร้านค้าที่ถูกลบ (แบบ soft delete)
+ *   - Error : หากไม่พบร้านค้าหรือผู้ใช้ไม่มีสิทธิ์
+ */
+export async function deleteStore(storeId: number, user: UserPayload) {
+  // 🔹 ตรวจสอบสิทธิ์ของผู้ใช้
+  if (
+    user.role.toLowerCase() !== "superadmin" &&
+    user.role.toLowerCase() !== "admin"
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์ลบร้านค้า");
+  }
+
+  // 🔹 ตรวจสอบว่ามีร้านค้านี้อยู่จริงหรือไม่
+  const findStore = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: { community: true },
+  });
+
+  if (!findStore) {
+    throw new Error("ไม่พบร้านค้าที่ต้องการลบ");
+  }
+
+  // 🔹 ตรวจสอบสิทธิ์ของ admin ว่ามีสิทธิ์ในชุมชนนี้หรือไม่
+  if (
+    user.role.toLowerCase() === "admin" &&
+    findStore.community.adminId !== user.id
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์ลบร้านค้าของชุมชนอื่น");
+  }
+
+  // 🔹 ลบแบบ Soft Delete
+  return prisma.store.update({
+    where: { id: storeId },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
 }
 
 /**
