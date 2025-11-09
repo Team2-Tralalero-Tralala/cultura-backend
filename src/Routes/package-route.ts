@@ -26,6 +26,7 @@ import {
     listCommunityHomestaysDto,
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
+    getHistoriesPackageAdmin
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -294,4 +295,17 @@ packageRoutes.get(
     allowRoles("member"),
     listCommunityHomestays
 );
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)
+ * Method : GET
+ * Path : /admin/package/histories/all
+ */
+packageRoutes.get(
+    "/admin/package/histories/all",
+    authMiddleware,
+    allowRoles("admin"),
+    getHistoriesPackageAdmin
+);
+
 export default packageRoutes;
