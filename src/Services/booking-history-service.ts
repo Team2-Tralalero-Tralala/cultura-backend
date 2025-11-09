@@ -1,6 +1,8 @@
 import prisma from "./database-service.js";
 import { BookingStatus } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
+import type { PaginationResponse } from "./pagination-dto.js";
+
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
@@ -181,4 +183,108 @@ export const getDetailBooking = async (id: number) => {
   }
 
   return booking;
+};
+
+
+/*  
+ * ฟังก์ชัน : getBookingsByAdmin
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
+ * Input :
+ *   - adminId (number) : รหัสผู้ดูแลที่ร้องขอ (ต้องเป็น Admin)
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการการจองทั้งหมดของแพ็กเกจในชุมชน พร้อม pagination
+ */
+export const getBookingsByAdmin = async (
+  adminId: number,
+  page = 1,
+  limit = 10
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(adminId)) throw new Error("ID must be Number");
+
+  // ตรวจสอบสิทธิ์ผู้ใช้
+  const user = await prisma.user.findUnique({
+    where: { id: adminId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "admin") {
+    return {
+      data: [],
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+    };
+  }
+
+  // ตรวจสอบว่าแอดมินมีชุมชนอยู่จริง
+  const community = await prisma.community.findFirst({
+    where: { adminId, isDeleted: false },
+    select: { id: true },
+  });
+  if (!community) throw new Error("ไม่พบชุมชนที่ผู้ดูแลนี้ดูแลอยู่");
+
+  // คำนวณ pagination
+  const skip = (page - 1) * limit;
+
+  // นับจำนวนทั้งหมดของการจองในชุมชนนี้
+  const totalCount = await prisma.bookingHistory.count({
+    where: {
+      package: {
+        communityId: community.id,
+        isDeleted: false,
+      },
+    },
+  });
+
+  // ดึงข้อมูลการจอง พร้อม tourist และ package
+  const bookings = await prisma.bookingHistory.findMany({
+    where: {
+      package: {
+        communityId: community.id,
+        isDeleted: false,
+      },
+    },
+    orderBy: { bookingAt: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      tourist: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
+      package: {
+        select: {
+          name: true,
+          price: true,
+        },
+      },
+      totalParticipant: true,
+      status: true,
+      transferSlip: true,
+    },
+  });
+
+  // คำนวณราคารวม = ราคาแพ็กเกจ * จำนวนผู้เข้าร่วม
+  const result = bookings.map((b) => ({
+    id: b.id,
+    tourist: b.tourist,
+    package: b.package,
+    totalPrice: (b.package?.price ?? 0) * (b.totalParticipant ?? 0),
+    status: b.status,
+    transferSlip: b.transferSlip,
+  }));
+
+  // ส่งผลลัพธ์พร้อม pagination
+  return {
+    data: result,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
 };
