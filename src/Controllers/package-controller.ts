@@ -6,10 +6,19 @@
  */
 
 import type { Request, Response } from "express";
-import * as PackageService from "../Services/package/package-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
-import { IdParamDto, MembersQueryDto, PackageDto, PackageIdParamDto, QueryHomestaysDto, QueryListHomestaysDto, updatePackageDto } from "~/Services/package/package-dto.js";
+import {
+  IdParamDto,
+  MembersQueryDto,
+  PackageDto,
+  PackageDuplicateParamDto,
+  PackageIdParamDto,
+  QueryHomestaysDto,
+  QueryListHomestaysDto,
+  updatePackageDto,
+} from "~/Services/package/package-dto.js";
+import * as PackageService from "../Services/package/package-service.js";
 
 /*
  * DTO: createPackageDto
@@ -134,6 +143,25 @@ export async function listPackagesMember(req: Request, res: Response) {
 }
 
 /*
+ * คำอธิบาย : Controller สำหรับดึงข้อมูล Package ตาม ID
+ * Input  : packageId (จาก params)
+ * Output : JSON response { status, message, data }
+ */
+export const getPackageById = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return createErrorResponse(res, 400, "Package ID ต้องเป็นตัวเลข");
+    }
+
+    const result = await PackageService.getPackageDetailById(id);
+    return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 404, (error as Error).message);
+  }
+};
+
+/*
  * คำอธิบาย : (Tourist) Handler สำหรับดึงรายการแพ็กเกจ (เฉพาะที่อนุมัติและเผยแพร่)
  * Input: req.user.id, req.query.{page, limit}
  * Output: 200 - ข้อมูลแพ็กเกจพร้อม Pagination
@@ -161,6 +189,41 @@ export async function listPackagesTourist(req: Request, res: Response) {
 export const editPackageDto = {
   body: updatePackageDto,
 } satisfies commonDto;
+
+/*
+ * DTO: duplicatePackageHistoryDto
+ * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (packageId)
+ * เมื่อมีการคัดลอกแพ็กเกจจากประวัติ
+ * Input: params.packageId
+ * Output: (Passed to handler)
+ */
+export const duplicatePackageHistoryDto = {
+  params: PackageDuplicateParamDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : (Admin) Handler สำหรับคัดลอกแพ็กเกจจากประวัติ
+ * Input: req.user.id, req.params.packageId
+ * Output: 201 - ข้อมูลแพ็กเกจฉบับร่างที่ถูกคัดลอก
+ * 400 - Error message
+ */
+export const duplicatePackageHistoryAdmin: TypedHandlerFromDto<
+  typeof duplicatePackageHistoryDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user?.id);
+    const packageId = Number(req.params.packageId);
+
+    const duplicatedPackage = await PackageService.duplicatePackageFromHistory({
+      packageId,
+      userId,
+    });
+
+    return createResponse(res, 201, "Duplicate Package Success", duplicatedPackage);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
 
 /*
  * คำอธิบาย : (SuperAdmin) Handler สำหรับแก้ไขแพ็กเกจ
@@ -480,7 +543,7 @@ export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
-  };
+};
 
 /*
  * ฟังก์ชัน : getAllFeedbacks
@@ -509,3 +572,51 @@ export const getAllFeedbacks = async (req: Request, res: Response) => {
     return createErrorResponse(res, 404, (error as Error).message);
   }
 };
+
+/*
+ * คำอธิบาย : (Admin) Handler สำหรับดึงรายละเอียดประวัติแพ็กเกจ
+ * Method : GET
+ * Endpoint : /api/admin/package/history/:packageId
+ * Input  : req.params.packageId (หมายเลขไอดีของแพ็กเกจ)
+ * Output : 200 - รายละเอียดแพ็กเกจพร้อมข้อมูลประวัติการใช้งาน Homestay และ Booking
+ *           404 - หากไม่พบแพ็กเกจ
+ *           400 - หากเกิดข้อผิดพลาดอื่น
+ * การทำงาน :
+ *   1. อ่านค่า packageId จากพารามิเตอร์ URL
+ *   2. เรียกใช้ Service ชั้น package-service เพื่อดึงข้อมูลแพ็กเกจและประวัติทั้งหมด
+ *   3. หากไม่พบข้อมูลให้ส่ง Response 404
+ *   4. หากพบให้จัดรูปแบบ Response และส่งกลับให้ Client
+ */
+
+export async function getPackageHistoryDetailAdmin(req: Request, res: Response) {
+  try {
+    const packageId = Number(req.params.packageId);
+    if (!packageId) return createErrorResponse(res, 400, "Invalid packageId");
+
+    const result = await PackageService.getPackageHistoryDetailById(packageId);
+    if (!result) return createErrorResponse(res, 404, "Package history not found");
+
+    return createResponse(res, 200, "Get Package History Detail Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}
+/*
+ * คำอธิบาย : (Admin) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * Input: req.user.id, req.query.{page, limit}
+ * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
+ * 400 - Error message
+ */
+export async function getHistoriesPackageAdmin(req: Request, res: Response) {
+  try {
+    const userId = Number((req as any).user?.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const result = await PackageService.getHistoriesPackageByAdmin(userId, page, limit);
+
+    return createResponse(res, 200, "Get History Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}

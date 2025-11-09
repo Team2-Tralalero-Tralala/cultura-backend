@@ -27,6 +27,12 @@ import {
     listCommunityHomestays,
     listAllHomestaysSuperAdmin,
     getAllFeedbacks,
+    duplicatePackageHistoryDto,
+    duplicatePackageHistoryAdmin,
+    getPackageHistoryDetailAdmin,
+    getHistoriesPackageAdmin,
+    getPackageByRole,
+    getPackageById
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -96,6 +102,19 @@ packageRoutes.post(
 );
 
 /*
+ * คำอธิบาย : (Admin) Route สำหรับคัดลอกแพ็กเกจจากประวัติ แล้วสร้างเป็นฉบับร่าง
+ * Method : POST
+ * Path : /admin/package/history/:packageId/duplicate
+ */
+packageRoutes.post(
+    "/admin/package/history/:packageId/duplicate",
+    authMiddleware,
+    allowRoles("admin"),
+    validateDto(duplicatePackageHistoryDto),
+    duplicatePackageHistoryAdmin
+);
+
+/*
  * คำอธิบาย : (Admin) Route สำหรับดึงรายการแพ็กเกจ (ในชุมชนของตน)
  * Method : GET
  * Path : /admin/packages
@@ -155,6 +174,12 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("superadmin"),
     listPackagesSuperAdmin
+);
+packageRoutes.get(
+  "/:id",
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member", "tourist"),
+  getPackageById
 );
 
 /*
@@ -309,4 +334,28 @@ packageRoutes.get(
     allowRoles("admin", "member"),
     getAllFeedbacks
 );
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดูรายละเอียดประวัติแพ็กเกจ
+ * Method : GET
+ * Path : /api/admin/package/history/:packageId
+ */
+packageRoutes.get(
+  "/admin/package/history/:packageId",
+  authMiddleware,
+  allowRoles("admin"),
+  getPackageHistoryDetailAdmin
+);
+
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)
+ * Method : GET
+ * Path : /admin/package/histories/all
+ */
+packageRoutes.get(
+    "/admin/package/histories/all",
+    authMiddleware,
+    allowRoles("admin"),
+    getHistoriesPackageAdmin
+);
+
 export default packageRoutes;

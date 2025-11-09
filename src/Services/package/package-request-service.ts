@@ -290,3 +290,80 @@ export const getDetailRequestByIdForAdmin = async (packageId: number) => {
     },
   });
 };
+
+
+export async function approvePackageRequestForAdmin(
+    user: UserPayload,
+    packageId: number
+) {
+    const roleLower = user.role?.toLowerCase();
+    if (roleLower !== "admin") {
+        throw new Error("Forbidden");
+    }
+
+    const pkg = await prisma.package.findUnique({ where: { id: packageId } });
+    if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
+
+    // ตรวจสอบว่าต้องเป็นสถานะ PENDING ก่อน Admin ถึงจะอนุมัติได้
+    if (pkg.statusApprove !== "PENDING") {
+        throw new Error(`ไม่สามารถอนุมัติได้: สถานะปัจจุบันคือ ${pkg.statusApprove}`);
+    }
+
+    // ตรวจสอบสิทธิ์ Admin (Admin ต้องเป็น adminId ของ community ที่เกี่ยวข้อง)
+    if (pkg.communityId) {
+        const community = await prisma.community.findUnique({ where: { id: pkg.communityId } });
+        if (!community || community.adminId !== user.id) {
+            throw new Error("คุณไม่มีสิทธิ์อนุมัติแพ็กเกจของชุมชนนี้");
+        }
+    }
+
+
+    return prisma.package.update({
+        where: { id: packageId },
+        data: { statusApprove: "APPROVE", rejectReason: null },
+        select: { id: true, name: true, statusApprove: true, rejectReason: true },
+    });
+}
+
+/**
+ * ฟังก์ชัน : rejectPackageRequestForAdmin
+ * คำอธิบาย : Admin ปฏิเสธคำขอ → ตรวจสอบต้องเป็นสถานะ PENDING แล้วบันทึกเหตุผล และตั้งสถานะเป็น REJECTED
+ * สิทธิ์ : admin
+ */
+export async function rejectPackageRequestForAdmin(
+    user: UserPayload,
+    packageId: number,
+    reason: string
+) {
+    const roleLower = user.role.toLowerCase();
+    if (roleLower !== "admin") {
+        throw new Error("คุณไม่มีสิทธิ์ดำเนินการ");
+    }
+
+    const pkg = await prisma.package.findUnique({ where: { id: packageId } });
+    if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
+
+    // ตรวจสอบว่าต้องเป็นสถานะ PENDING ก่อน Admin ถึงจะปฏิเสธได้
+    if (pkg.statusApprove !== "PENDING") {
+        throw new Error(`ไม่สามารถปฏิเสธได้: สถานะปัจจุบันคือ ${pkg.statusApprove}`);
+    }
+
+    // ตรวจสอบสิทธิ์ Admin (Admin ต้องเป็น adminId ของ community ที่เกี่ยวข้อง)
+    if (pkg.communityId) {
+        const community = await prisma.community.findUnique({ where: { id: pkg.communityId } });
+        if (!community || community.adminId !== user.id) {
+            throw new Error("คุณไม่มีสิทธิ์ปฏิเสธแพ็กเกจของชุมชนนี้");
+        }
+    }
+
+    const updated = await prisma.package.update({
+        where: { id: packageId },
+        data: {
+            rejectReason: reason.trim(),
+            statusApprove: PackageApproveStatus.REJECTED,
+        },
+        select: { id: true, name: true, statusApprove: true, rejectReason: true },
+    });
+
+    return updated;
+}
