@@ -100,5 +100,18 @@ storeRoute.get(
     allowRoles("admin"),
     StoreController.getAllStoreForAdmin
 );
+/*
+ * เส้นทาง : Delete /admin/community/stores/:id
+ * รายละเอียด :
+ *   ใช้สำหรับ "modal ลบร้านค้า" 
+ *   โดยจำกัดสิทธิ์ให้เฉพาะ admin เท่านั้น
+ */
+storeRoute.delete(
+    "/admin/community/stores/:id",
+    validateDto(StoreController.deleteStoreByAdminDto),
+    authMiddleware,
+    allowRoles("admin"),
+    StoreController.deleteStoreByAdmin
+);
 export default storeRoute;
 
