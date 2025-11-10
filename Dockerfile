@@ -16,28 +16,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Copy environment for Prisma generation
+COPY .env ./
+
 # Generate Prisma client and build TypeScript
+ENV NODE_ENV=production
 RUN npx prisma generate
 RUN npm run build
-
-
-# ===============================
-# 2️⃣ Production Stage
-# ===============================
-FROM node:20-alpine AS production
-
-# Set environment variables
-ENV NODE_ENV=production
-WORKDIR /app
-
-# Copy only needed files from builder
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/dist ./dist
-
-# Expose the backend port
-EXPOSE 3000
-
-# Run the built server
-CMD ["node", "dist/server.js"]
+RUN npx tsc-alias 
+CMD ["node", "dist/src/server.js"]
