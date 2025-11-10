@@ -58,7 +58,8 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
     const parsed = JSON.parse(req.body.data);
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) || []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
     ];
 
     const result = await StoreService.createStore(
@@ -126,7 +127,8 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     const parsed = JSON.parse(req.body.data);
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) || []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+        []),
     ];
 
     const storeId = Number(req.params.storeId);
@@ -157,7 +159,7 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
       return createErrorResponse(res, 401, "User not authenticated");
 
     const storeId = Number(req.params.storeId);
-    const result = await StoreService.getStoreById(storeId);
+    const result = await StoreService.getStoreById(storeId, req.user);
     return createResponse(res, 200, "Get store successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
@@ -268,7 +270,7 @@ export const createStoreByAdmin: TypedHandlerFromDto<
  * Output : รายการข้อมูลร้านค้าทั้งหมดของแอดมิน พร้อม pagination
  */
 export const getAllStoreForAdminDto = {
-    query: PaginationDto,
+  query: PaginationDto,
 } satisfies commonDto;
 
 /*
@@ -280,22 +282,21 @@ export const getAllStoreForAdminDto = {
  * Output :
  *   - ร้านค้าทั้งหมดของแอดมินภายในชุมชนที่เขาสังกัด พร้อมข้อมูล pagination
  */
-export const getAllStoreForAdmin: TypedHandlerFromDto<typeof getAllStoreForAdminDto> = async (
-  req, 
-  res
-) => {
-    try {
-        if (!req.user) {
-            return createErrorResponse(res, 401, "Unauthorized: User not found");
-        }
-        const userId = req.user.id;
-        const { page = 1, limit = 10 } = req.query;
-
-        const result = await StoreService.getAllStoreForAdmin(userId, page, limit);
-        return createResponse(res, 200, "All stores for admin", result);
-    } catch (error: any) {
-        return createErrorResponse(res, 400, error.message);
+export const getAllStoreForAdmin: TypedHandlerFromDto<
+  typeof getAllStoreForAdminDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "Unauthorized: User not found");
     }
+    const userId = req.user.id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const result = await StoreService.getAllStoreForAdmin(userId, page, limit);
+    return createResponse(res, 200, "All stores for admin", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
 };
 
 /*
@@ -344,34 +345,34 @@ export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
  * ✅ สร้าง class DTO สำหรับ params.id
  */
 class DeleteStoreParamsDto {
-    @IsNumberString()
-    id?: string;
+  @IsNumberString()
+  id?: string;
 }
 
 /*
  * ✅ สร้าง DTO object สำหรับ validateDto()
  */
 export const deleteStoreByAdminDto = {
-    params: DeleteStoreParamsDto,
+  params: DeleteStoreParamsDto,
 } satisfies commonDto;
 
 /*
  * ✅ Controller function
  */
 export const deleteStoreByAdmin: TypedHandlerFromDto<
-    typeof deleteStoreByAdminDto
+  typeof deleteStoreByAdminDto
 > = async (req, res) => {
-    try {
-        if (!req.user) {
-            return createErrorResponse(res, 401, "Unauthorized: User not found");
-        }
-
-        const userId = req.user.id;
-        const storeId = Number(req.params.id);
-
-        const result = await StoreService.deleteStoreByAdmin(userId, storeId);
-        return createResponse(res, 200, "Store deleted successfully", result);
-    } catch (error: any) {
-        return createErrorResponse(res, 400, error.message);
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "Unauthorized: User not found");
     }
+
+    const userId = req.user.id;
+    const storeId = Number(req.params.id);
+
+    const result = await StoreService.deleteStoreByAdmin(userId, storeId);
+    return createResponse(res, 200, "Store deleted successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
 };
