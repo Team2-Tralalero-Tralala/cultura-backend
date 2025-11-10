@@ -38,7 +38,7 @@ bookingRoutes.get(
  * สิทธิ์ที่เข้าถึงได้ : Admin, Member
  */
 bookingRoutes.get(
-  "/histories",
+  "/admin/booking/histories/all",
   authMiddleware,
   allowRoles("admin", "member"),
   BookingHistoryController.getByRole
