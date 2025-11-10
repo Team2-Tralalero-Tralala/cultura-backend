@@ -468,7 +468,7 @@ export const getHomestaysAllAdmin = async (
     throw new Error("User ID must be a number");
   }
 
-  // ===== ตรวจสอบสิทธิ์ผู้ใช้ =====
+  // ตรวจสอบสิทธิ์ผู้ใช้
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { role: true },
@@ -480,7 +480,7 @@ export const getHomestaysAllAdmin = async (
     throw new Error("Forbidden: Only Admin can access this route");
   }
 
-  // ===== หา community ที่ admin ดูแล =====
+  // หา community ที่ admin ดูแล
   const community = await prisma.community.findFirst({
     where: { adminId: userId, isDeleted: false },
   });
@@ -488,10 +488,10 @@ export const getHomestaysAllAdmin = async (
 
   const communityId = community.id;
 
-  // ===== Pagination =====
+  // Pagination 
   const skip = (page - 1) * limit;
 
-  // ===== ดึงข้อมูล homestay =====
+  // ดึงข้อมูล homestay
   const totalCount = await prisma.homestay.count({
     where: { communityId, isDeleted: false },
   });

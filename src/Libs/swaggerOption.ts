@@ -170,6 +170,60 @@ export default {
                         message: { type: "string", example: "Error message" },
                     },
                 },
+
+                CreateResponseBase: {
+                    type: "object",
+                    properties: {
+                        status: { type: "integer", example: 200 },
+                        error: { type: "boolean", example: false },
+                        message: { type: "string", example: "Success" },
+                    },
+                    },
+
+                    CreateErrorResponse: {
+                    type: "object",
+                    properties: {
+                        status: { type: "integer", example: 400 },
+                        error: { type: "boolean", example: true },
+                        message: { type: "string", example: "Invalid request" },
+                        errorId: { type: "string", example: "a4b2c3d4-e5f6-7g8h-9i10-j11k12l13m14" },
+                    },
+                    },
+
+                    CreateResponse_UserAccountList: {
+                    allOf: [
+                        { $ref: "#/components/schemas/CreateResponseBase" },
+                        {
+                        type: "object",
+                        properties: {
+                            data: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                id: { type: "string", example: "USR001" },
+                                fname: { type: "string", example: "John" },
+                                lname: { type: "string", example: "Doe" },
+                                email: { type: "string", example: "john@example.com" },
+                                role: { type: "string", example: "member" },
+                                status: { type: "string", example: "ACTIVE" },
+                                points: { type: "integer", example: 120 },
+                                },
+                            },
+                            },
+                            pagination: {
+                            type: "object",
+                            properties: {
+                                page: { type: "integer", example: 1 },
+                                pageSize: { type: "integer", example: 10 },
+                                totalPages: { type: "integer", example: 3 },
+                                totalItems: { type: "integer", example: 28 },
+                            },
+                            },
+                        },
+                        },
+                    ],
+                },
             },
         },
     },

@@ -51,6 +51,64 @@ homestayRoutes.post(
   createHomestaysBulk
 );
 
+/**
+ * @swagger
+ * /api/super/homestays/{homestayId}:
+ *   get:
+ *     summary: ดึงรายละเอียดข้อมูลโฮมสเตย์ตามรหัส (SuperAdmin)
+ *     description: |
+ *       ใช้สำหรับดึงรายละเอียดข้อมูลของโฮมสเตย์จากรหัส `homestayId`  
+ *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - SuperAdmin / Homestay
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: homestayId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสของโฮมสเตย์
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - คืนรายละเอียดโฮมสเตย์ตามรหัสที่ระบุ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       404:
+ *         description: ไม่พบข้อมูลโฮมสเตย์ตามที่ระบุ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+/*
+ * เส้นทาง : GET /super/homestays/:homestayId
+ * คำอธิบาย : (Super Admin) ดึงรายละเอียดข้อมูลโฮมสเตย์ตามรหัส (homestayId)
+ * Input : Path parameter homestayId
+ * Output : ข้อมูลรายละเอียดของโฮมสเตย์ในรูปแบบ JSON
+ */
 homestayRoutes.get(
   "/super/homestays/:homestayId",
   authMiddleware,
@@ -169,6 +227,64 @@ homestayRoutes.get(
   getHomestaysAll
 );
 
+/**
+ * @swagger
+ * /api/admin/community/homestays/all:
+ *   get:
+ *     summary: ดึงรายการโฮมสเตย์ทั้งหมดของชุมชน (Admin)
+ *     description: |
+ *       ใช้สำหรับดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ  
+ *       รองรับการแบ่งหน้า (Pagination)  
+ *       ต้องเป็น **Admin** เท่านั้น และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Admin / Homestay
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการดึงข้อมูล
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนรายการต่อหน้า
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - คืนรายการโฮมสเตย์ทั้งหมดของชุมชน
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+/*
+ * เส้นทาง : GET /admin/community/homestays/all
+ * คำอธิบาย : (Admin) ดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแลรับผิดชอบ (รองรับการแบ่งหน้า)
+ * Input : Query parameters เช่น page, limit
+ * Output : ข้อมูลรายการโฮมสเตย์ทั้งหมดของชุมชนนั้นในรูปแบบ JSON
+ */
 homestayRoutes.get(
   "/admin/community/homestays/all",
   authMiddleware,
