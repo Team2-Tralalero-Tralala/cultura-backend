@@ -180,4 +180,12 @@ userRoutes.post(
     UserController.changePassword
 );
 
+//  ดึงบัญชีผู้ใช้ทั้งหมด role Admin (พร้อม search / filterRole / pagination)
+userRoutes.get(
+  "/admin/accounts",
+  authMiddleware,                     // ตรวจสอบ token ก่อน
+  allowRoles("admin"),                // ตรวจสอบสิทธิ์
+  validateDto(getAccountsDto),        // ตรวจสอบ query parameters
+  getAccountAll
+
 export default userRoutes;
