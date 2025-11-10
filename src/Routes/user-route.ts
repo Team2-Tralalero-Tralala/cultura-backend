@@ -324,6 +324,63 @@ userRoutes.post(
     UserController.changePassword
 );
 
+/**
+ * @swagger
+ * /api/admin/member/{userId}:
+ *   patch:
+ *     tags:
+ *       - Admin - Members
+ *     summary: ลบสมาชิกชุมชนตามรหัส ID
+ *     description: >
+ *       ลบสมาชิกชุมชนตามรหัส ID ที่ส่งมาใน path parameter  
+ *       **ต้องเป็นผู้ใช้ที่ผ่านการยืนยันตัวตนและมีสิทธิ์ role: admin**  
+ *       สำเร็จจะคืนข้อมูลสมาชิกที่ถูกลบ, ถ้าไม่พบจะคืน 404
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: รหัสสมาชิกชุมชน (User ID) ที่ต้องการลบ
+ *         schema:
+ *           type: integer
+ *           example: 7
+ *     responses:
+ *       200:
+ *         description: ลบสมาชิกชุมชนสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Deleted community member successfully
+ *                 data:
+ *                   type: object
+ *                   description: ข้อมูลสมาชิกชุมชนที่ถูกลบ
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 7
+ *       404:
+ *         description: ไม่พบสมาชิกชุมชนตามรหัสที่ระบุ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Community member not found
+ */
+
 /*
  * เส้นทาง : PATCH /admin/member/:userId
  * คำอธิบาย : ลบ member ออกจาก Community แบบ Soft Delete
