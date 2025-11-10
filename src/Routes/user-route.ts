@@ -172,6 +172,150 @@ userRoutes.patch(
   UserController.resetPassword
 );
 
+/**
+ * @swagger
+ * /api/account/change-password/me:
+ *   post:
+ *     tags:
+ *       - Account
+ *     summary: Change password for current user
+ *     description: |
+ *       เปลี่ยนรหัสผ่านของผู้ใช้ที่ล็อกอินอยู่ (**me**) โดยต้องส่งรหัสผ่านเดิมและรหัสผ่านใหม่
+ *       รองรับ role: `superadmin`, `admin`, `member`, `tourist`
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *               - confirmNewPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: รหัสผ่านเดิมของผู้ใช้
+ *               newPassword:
+ *                 type: string
+ *                 description: รหัสผ่านใหม่
+ *               confirmNewPassword:
+ *                 type: string
+ *                 description: ยืนยันรหัสผ่านใหม่ ต้องตรงกับ newPassword
+ *           example:
+ *             currentPassword: "OldP@ssw0rd"
+ *             newPassword: "NewP@ssw0rd123"
+ *             confirmNewPassword: "NewP@ssw0rd123"
+ *     responses:
+ *       200:
+ *         description: เปลี่ยนรหัสผ่านสำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Change password successfully
+ *                 data:
+ *                   type: object
+ *                   nullable: true
+ *                   description: ผลลัพธ์จาก UserService.changePassword
+ *                 meta:
+ *                   type: object
+ *                   nullable: true
+ *       400:
+ *         description: Validation Error หรือข้อมูลไม่ถูกต้อง (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Validation Error!
+ *                 data:
+ *                   type: object
+ *                   nullable: true
+ *                 meta:
+ *                   type: object
+ *                   nullable: true
+ *                 errors:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *       401:
+ *         description: ไม่ได้ล็อกอินหรือ token ไม่ถูกต้อง (authMiddleware)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *       403:
+ *         description: ไม่มีสิทธิ์เรียกใช้ endpoint นี้ (allowRoles)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 403
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden
+ *       404:
+ *         description: ไม่พบผู้ใช้หรือเปลี่ยนรหัสผ่านไม่สำเร็จ (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 404
+ *                 message:
+ *                   type: string
+ *                   example: User not found or change password failed
+ */
+
+/*
+ * เส้นทาง : /account/change-password/me
+ * คำอธิบาย : เปลี่ยนรหัสผ่านบัยชี
+ * สิทธิ์ที่เข้าถึงได้ : "superadmin", "admin", "member", "tourist"
+ */
+
 userRoutes.post(
     "/account/change-password/me",
     authMiddleware,
