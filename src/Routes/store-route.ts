@@ -100,6 +100,78 @@ storeRoute.get(
     allowRoles("admin"),
     StoreController.getAllStoreForAdmin
 );
+
+/**
+ * @swagger
+ * /api/admin/community/stores/{id}:
+ *   delete:
+ *     summary: Delete a community store (Admin only)
+ *     description: ลบร้านค้าภายในชุมชนตามรหัสที่ระบุ (ต้องเป็น Admin เท่านั้น)
+ *     tags:
+ *       - Store (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: รหัสร้านค้าที่ต้องการลบ
+ *         schema:
+ *           type: string
+ *           example: "1"
+ *     responses:
+ *       200:
+ *         description: ลบร้านค้าเรียบร้อยแล้ว
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Store deleted successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "ร้านค้าชุมชนบ้านหนองรี"
+ *                     deletedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-11-10T10:30:00.000Z"
+ *       400:
+ *         description: Bad Request (validation failed or other errors)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized (token missing or invalid)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden (not allowed role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Store not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 /*
  * เส้นทาง : Delete /admin/community/stores/:id
  * รายละเอียด :
@@ -113,9 +185,76 @@ storeRoute.delete(
     allowRoles("admin"),
     StoreController.deleteStoreByAdmin
 );
-export default storeRoute;
 
 
+/**
+ * @swagger
+ * /api/shared/store/{storeId}/delete:
+ *   delete:
+ *     summary: Delete a store (SuperAdmin or Admin only)
+ *     description: ลบร้านค้าออกจากระบบ (เฉพาะ SuperAdmin และ Admin เท่านั้น)
+ *     tags:
+ *       - Store
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: storeId
+ *         required: true
+ *         description: รหัสของร้านค้าที่ต้องการลบ
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: ลบร้านค้าเรียบร้อยแล้ว
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Store deleted successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "ร้านค้าชุมชนบ้านหนองรี"
+ *                     isDeleted:
+ *                       type: boolean
+ *                       example: true
+ *       400:
+ *         description: Bad Request (invalid input or validation failed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized (token not provided or invalid)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden (user role not allowed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Store not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 /*
  * เส้นทาง : DELETE /shared/store/:storeId/delete
@@ -136,4 +275,4 @@ storeRoute.delete(
   allowRoles("superadmin", "admin"),
   StoreController.deleteStore
 );
-
+export default storeRoute;
