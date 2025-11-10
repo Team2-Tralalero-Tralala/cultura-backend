@@ -243,6 +243,59 @@ packageRoutes.get(
     getPackageDetail
 );
 
+/**
+ * @swagger
+ * /api/packages/{id}:
+ *   get:
+ *     summary: Get package detail (SuperAdmin only)
+ *     description: ดึงรายละเอียดของแพ็กเกจตาม ID (ต้องเป็น SuperAdmin เท่านั้น)
+ *     tags:
+ *       - Package
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Package ID
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Successful response with package detail
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Get package detail successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/PackageDetail'
+ *       401:
+ *         description: Unauthorized (missing or invalid token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden (not a superadmin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Package not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 /*
  * คำอธิบาย : (SuperAdmin) Route สำหรับดึงข้อมูลแพ็กเกจ 1 รายการ
  * Method : GET
@@ -333,6 +386,99 @@ packageRoutes.get(
     allowRoles("admin", "member"),
     getAllFeedbacks
 );
+
+/**
+ * @swagger
+ * /api/admin/package/history/{packageId}:
+ *   get:
+ *     summary: Get package history detail (Admin only)
+ *     description: ดึงข้อมูลรายละเอียดประวัติของแพ็กเกจตามรหัส (สำหรับผู้ดูแลระดับ Admin เท่านั้น)
+ *     tags:
+ *       - Package (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: packageId
+ *         required: true
+ *         description: รหัสของแพ็กเกจที่ต้องการดูประวัติ
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลประวัติของแพ็กเกจสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Get package history detail successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "แพ็กเกจท่องเที่ยวบ้านหนองรี"
+ *                     version:
+ *                       type: integer
+ *                       example: 3
+ *                     updatedBy:
+ *                       type: string
+ *                       example: "Admin1"
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-11-10T09:30:00.000Z"
+ *                     changes:
+ *                       type: array
+ *                       description: รายการรายละเอียดการเปลี่ยนแปลงของแพ็กเกจ
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           field:
+ *                             type: string
+ *                             example: "description"
+ *                           oldValue:
+ *                             type: string
+ *                             example: "รายละเอียดเก่า"
+ *                           newValue:
+ *                             type: string
+ *                             example: "รายละเอียดใหม่"
+ *       400:
+ *         description: Bad Request (invalid packageId or error occurred)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized (token missing or invalid)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden (not allowed role)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Package not found or no history
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 /*
  * คำอธิบาย : (Admin) Route สำหรับดูรายละเอียดประวัติแพ็กเกจ
  * Method : GET
@@ -344,6 +490,114 @@ packageRoutes.get(
   allowRoles("admin"),
   getPackageHistoryDetailAdmin
 );
+
+/**
+ * @swagger
+ * /api/admin/package/histories/all:
+ *   get:
+ *     summary: ดึงรายการประวัติแพ็กเกจที่สิ้นสุดแล้ว (สำหรับผู้ดูแลระบบ)
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูล "แพ็กเกจที่หมดอายุ" ทั้งหมดในชุมชนที่ผู้ดูแลระบบรับผิดชอบ  
+ *       ข้อมูลนี้จะรวมถึงสถานะการอนุมัติ, วันที่สิ้นสุด, และข้อมูลชุมชนที่เกี่ยวข้อง
+ *     tags: [Admin - Package]
+ *     security:
+ *       - bearerAuth: []    # ใช้ JWT สำหรับ Authentication
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: หน้าที่ต้องการ (เริ่มจาก 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: จำนวนรายการต่อหน้า
+ *     responses:
+ *       200:
+ *         description: ดึงรายการประวัติแพ็กเกจสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Get History Packages Success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 12
+ *                           name:
+ *                             type: string
+ *                             example: "Eco Adventure Package"
+ *                           community:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 3
+ *                               name:
+ *                                 type: string
+ *                                 example: "ชุมชนบ้านแม่กำปอง"
+ *                           overseerPackage:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 8
+ *                               fname:
+ *                                 type: string
+ *                                 example: "สมชาย"
+ *                               lname:
+ *                                 type: string
+ *                                 example: "ใจดี"
+ *                           statusPackage:
+ *                             type: string
+ *                             example: "EXPIRED"
+ *                           statusApprove:
+ *                             type: string
+ *                             example: "APPROVED"
+ *                           dueDate:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-10-30T23:59:59Z"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 5
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 42
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *       400:
+ *         description: Bad Request — การดึงข้อมูลล้มเหลว หรือ Parameter ไม่ถูกต้อง
+ *       401:
+ *         description: Unauthorized — ไม่ได้เข้าสู่ระบบ
+ *       403:
+ *         description: Forbidden — ต้องเป็นผู้ดูแลระบบเท่านั้น
+ *       500:
+ *         description: Internal Server Error
+ */
 
 /*
  * คำอธิบาย : (Admin) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)

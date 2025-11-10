@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
-import type { PasswordDto } from "../password-dto.js";
+import type { PasswordDto } from "../user/password-dto.js";
 import type { ChangePasswordDto } from "~/Controllers/user-controller.js";
 
 /**

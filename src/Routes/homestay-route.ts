@@ -51,6 +51,64 @@ homestayRoutes.post(
   createHomestaysBulk
 );
 
+/**
+ * @swagger
+ * /api/super/homestays/{homestayId}:
+ *   get:
+ *     summary: ดึงรายละเอียดข้อมูลโฮมสเตย์ตามรหัส (SuperAdmin)
+ *     description: |
+ *       ใช้สำหรับดึงรายละเอียดข้อมูลของโฮมสเตย์จากรหัส `homestayId`  
+ *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - SuperAdmin / Homestay
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: homestayId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสของโฮมสเตย์
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - คืนรายละเอียดโฮมสเตย์ตามรหัสที่ระบุ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       404:
+ *         description: ไม่พบข้อมูลโฮมสเตย์ตามที่ระบุ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+/*
+ * เส้นทาง : GET /super/homestays/:homestayId
+ * คำอธิบาย : (Super Admin) ดึงรายละเอียดข้อมูลโฮมสเตย์ตามรหัส (homestayId)
+ * Input : Path parameter homestayId
+ * Output : ข้อมูลรายละเอียดของโฮมสเตย์ในรูปแบบ JSON
+ */
 homestayRoutes.get(
   "/super/homestays/:homestayId",
   authMiddleware,
@@ -69,6 +127,97 @@ homestayRoutes.put(
   // validateDto(editHomestayDto),
   editHomestay
 );
+/**
+ * @swagger
+ * /api/super/community/{communityId}/homestays:
+ *   get:
+ *     summary: ดึงรายการที่พัก (Homestays) ทั้งหมดภายในชุมชน (สำหรับ Super Admin)
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูลที่พัก (Homestays) ทั้งหมดของชุมชนที่ระบุ  
+ *       พร้อม pagination และตรวจสอบสิทธิ์เฉพาะ SuperAdmin เท่านั้น
+ *     tags:
+ *       - Homestay (Super Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: communityId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสของชุมชนที่ต้องการดึงรายการที่พัก
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการ (ค่าเริ่มต้นคือ 1)
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนรายการต่อหน้า (ค่าเริ่มต้นคือ 10)
+ *     responses:
+ *       200:
+ *         description: ดึงรายการที่พักทั้งหมดสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Get Homestays List Success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 5
+ *                       name:
+ *                         type: string
+ *                         example: "โฮมสเตย์บ้านสวนริมคลอง"
+ *                       type:
+ *                         type: string
+ *                         example: "บ้านพักเดี่ยว"
+ *                       facility:
+ *                         type: string
+ *                         example: "Wi-Fi, ที่จอดรถ, เครื่องปรับอากาศ"
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                       example: 1
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 3
+ *                     totalCount:
+ *                       type: integer
+ *                       example: 25
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *       400:
+ *         description: communityId ไม่ถูกต้อง หรือข้อมูลไม่ครบถ้วน
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ SuperAdmin)
+ *       404:
+ *         description: ไม่พบชุมชนหรือไม่มีข้อมูลที่พักในระบบ
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ */
 
 homestayRoutes.get(
   "/super/community/:communityId/homestays",
@@ -78,6 +227,64 @@ homestayRoutes.get(
   getHomestaysAll
 );
 
+/**
+ * @swagger
+ * /api/admin/community/homestays/all:
+ *   get:
+ *     summary: ดึงรายการโฮมสเตย์ทั้งหมดของชุมชน (Admin)
+ *     description: |
+ *       ใช้สำหรับดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ  
+ *       รองรับการแบ่งหน้า (Pagination)  
+ *       ต้องเป็น **Admin** เท่านั้น และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Admin / Homestay
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการดึงข้อมูล
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนรายการต่อหน้า
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - คืนรายการโฮมสเตย์ทั้งหมดของชุมชน
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+/*
+ * เส้นทาง : GET /admin/community/homestays/all
+ * คำอธิบาย : (Admin) ดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแลรับผิดชอบ (รองรับการแบ่งหน้า)
+ * Input : Query parameters เช่น page, limit
+ * Output : ข้อมูลรายการโฮมสเตย์ทั้งหมดของชุมชนนั้นในรูปแบบ JSON
+ */
 homestayRoutes.get(
   "/admin/community/homestays/all",
   authMiddleware,
@@ -111,8 +318,120 @@ homestayRoutes.put(
   editHomestayAdmin
 );
 
+/**
+ * @swagger
+ * /api/admin/community/homestay/{homestayId}:
+ *   get:
+ *     summary: ดึงรายละเอียดของโฮมสเตย์ (Homestay) ในชุมชนของแอดมิน
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูลรายละเอียดของโฮมสเตย์ (Homestay) ภายในชุมชน  
+ *       ที่ผู้ดูแล (Admin) รับผิดชอบอยู่ โดยต้องระบุ `homestayId` ที่ต้องการค้นหา  
+ *       ข้อมูลที่ได้จะรวมรายละเอียดของที่พัก, ภาพประกอบ, สิ่งอำนวยความสะดวก และเจ้าของที่พัก
+ *     tags:
+ *       - Homestay (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: homestayId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 5
+ *         description: รหัสของโฮมสเตย์ที่ต้องการดึงรายละเอียด
+ *     responses:
+ *       200:
+ *         description: ดึงรายละเอียดของโฮมสเตย์สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Homestay detail retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 5
+ *                     name:
+ *                       type: string
+ *                       example: "โฮมสเตย์บ้านสวนริมคลอง"
+ *                     description:
+ *                       type: string
+ *                       example: "ที่พักบรรยากาศร่มรื่น ติดคลอง วิวธรรมชาติ"
+ *                     type:
+ *                       type: string
+ *                       example: "บ้านพักเดี่ยว"
+ *                     price:
+ *                       type: number
+ *                       example: 1200
+ *                     maxGuest:
+ *                       type: integer
+ *                       example: 4
+ *                     facility:
+ *                       type: string
+ *                       example: "Wi-Fi, เครื่องปรับอากาศ, อาหารเช้า"
+ *                     community:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         name:
+ *                           type: string
+ *                           example: "ชุมชนบ้านคลองตะเคียน"
+ *                     owner:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 18
+ *                         fname:
+ *                           type: string
+ *                           example: "สมหมาย"
+ *                         lname:
+ *                           type: string
+ *                           example: "ใจดี"
+ *                     images:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           image:
+ *                             type: string
+ *                             example: "uploads/homestay/homestay-5-cover.jpg"
+ *                           type:
+ *                             type: string
+ *                             enum: [COVER, GALLERY]
+ *                             example: "COVER"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-15T09:30:00.000Z"
+ *                     updatedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-02-10T10:45:00.000Z"
+ *       400:
+ *         description: รหัส homestayId ไม่ถูกต้อง หรือไม่พบข้อมูล
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Admin)
+ *       404:
+ *         description: ไม่พบโฮมสเตย์ในระบบ
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ */
+
 homestayRoutes.get(
-  "/admin/homestays/:homestayId",
+  "/admin/community/homestay/:homestayId",
   authMiddleware,
   allowRoles("admin"),
   getHomestayDetail
