@@ -9,7 +9,7 @@ export async function getStoreById(storeId: number) {
     where: { id: storeId },
     include: {
       // ชื่อ relation ต้องตรงกับ schema (storeImage)
-      storeImgae: {
+      storeImage: {
         select: {
           id: true,
           image: true,

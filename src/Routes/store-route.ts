@@ -100,5 +100,40 @@ storeRoute.get(
     allowRoles("admin"),
     StoreController.getAllStoreForAdmin
 );
+/*
+ * เส้นทาง : Delete /admin/community/stores/:id
+ * รายละเอียด :
+ *   ใช้สำหรับ "modal ลบร้านค้า" 
+ *   โดยจำกัดสิทธิ์ให้เฉพาะ admin เท่านั้น
+ */
+storeRoute.delete(
+    "/admin/community/stores/:id",
+    validateDto(StoreController.deleteStoreByAdminDto),
+    authMiddleware,
+    allowRoles("admin"),
+    StoreController.deleteStoreByAdmin
+);
 export default storeRoute;
+
+
+
+/*
+ * เส้นทาง : DELETE /shared/store/:storeId/delete
+ * รายละเอียด :
+ *   ใช้สำหรับ "ลบร้านค้า (Soft Delete)" โดยตั้งค่า isDeleted = true
+ *   จำกัดสิทธิ์ให้เฉพาะ superadmin และ admin ที่เกี่ยวข้องกับชุมชนเท่านั้น
+ * Middleware :
+ *   - validateDto(StoreController.deleteStoreDto) : ตรวจสอบข้อมูลที่ส่งมา
+ *   - authMiddleware : ตรวจสอบ token ของผู้ใช้
+ *   - allowRoles("superadmin", "admin") : ตรวจสอบสิทธิ์การลบ
+ * Controller :
+ *   - StoreController.deleteStore
+ */
+storeRoute.delete(
+  "/shared/store/:storeId/delete",
+  validateDto(StoreController.deleteStoreDto),
+  authMiddleware,
+  allowRoles("superadmin", "admin"),
+  StoreController.deleteStore
+);
 

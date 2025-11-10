@@ -1,4 +1,5 @@
 // Services/package/package-service.ts
+import { PackageApproveStatus, PackagePublishStatus } from "@prisma/client";
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
@@ -153,6 +154,143 @@ export const createPackage = async (data: PackageDto) => {
         include: { location: true, packageFile: true },
     });
 };
+
+type DuplicatePackageInput = {
+    packageId: number;
+    userId: number;
+};
+
+/*
+ * คำอธิบาย : คัดลอกแพ็กเกจจากประวัติ และสร้างแพ็กเกจใหม่ในสถานะ Draft
+ * Input: packageId - ID ของแพ็กเกจต้นฉบับ, userId - ID ของผู้ดูแล (Admin) ที่ดำเนินการ
+ * Output : ข้อมูลแพ็กเกจใหม่ที่ถูกคัดลอก
+ */
+export async function duplicatePackageFromHistory({
+    packageId,
+    userId,
+}: DuplicatePackageInput) {
+    if (!Number.isInteger(packageId) || packageId <= 0) {
+        throw new Error("Package ID must be a positive integer");
+    }
+    if (!Number.isInteger(userId) || userId <= 0) {
+        throw new Error("User ID must be a positive integer");
+    }
+
+    const adminUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            role: { select: { name: true } },
+            communityAdmin: { select: { id: true } },
+        },
+    });
+
+    if (!adminUser) {
+        throw new Error("User not found");
+    }
+    if (adminUser.role?.name !== "admin") {
+        throw new Error("เฉพาะผู้ดูแล (Admin) เท่านั้นที่สามารถคัดลอกแพ็กเกจได้");
+    }
+
+    const adminCommunityIds = adminUser.communityAdmin.map((community) => community.id);
+
+    return prisma.$transaction(async (transaction) => {
+        const sourcePackage = await transaction.package.findFirst({
+            where: { id: packageId, isDeleted: false },
+            include: {
+                location: true,
+                packageFile: true,
+                tagPackages: true,
+                homestayHistories: true,
+            },
+        });
+
+        if (!sourcePackage) {
+            throw new Error("ไม่พบแพ็กเกจที่ต้องการคัดลอก");
+        }
+        if (!adminCommunityIds.includes(sourcePackage.communityId)) {
+            throw new Error("คุณไม่มีสิทธิ์คัดลอกแพ็กเกจของชุมชนอื่น");
+        }
+
+        if (!sourcePackage.location) {
+            throw new Error("แพ็กเกจไม่มีข้อมูลสถานที่สำหรับคัดลอก");
+        }
+
+        const clonedLocation = await transaction.location.create({
+            data: {
+                houseNumber: sourcePackage.location.houseNumber,
+                villageNumber: toNull(sourcePackage.location.villageNumber),
+                alley: toNull(sourcePackage.location.alley),
+                subDistrict: sourcePackage.location.subDistrict,
+                district: sourcePackage.location.district,
+                province: sourcePackage.location.province,
+                postalCode: sourcePackage.location.postalCode,
+                detail: toNull(sourcePackage.location.detail),
+                latitude: sourcePackage.location.latitude,
+                longitude: sourcePackage.location.longitude,
+            },
+        });
+
+        const duplicatedPackage = await transaction.package.create({
+            data: {
+                communityId: sourcePackage.communityId,
+                locationId: clonedLocation.id,
+                overseerMemberId: sourcePackage.overseerMemberId,
+                createById: userId,
+                name: sourcePackage.name,
+                description: sourcePackage.description,
+                capacity: sourcePackage.capacity,
+                price: sourcePackage.price,
+                warning: sourcePackage.warning,
+                statusPackage: PackagePublishStatus.DRAFT,
+                statusApprove: PackageApproveStatus.PENDING,
+                startDate: sourcePackage.startDate,
+                dueDate: sourcePackage.dueDate,
+                bookingOpenDate: sourcePackage.bookingOpenDate,
+                bookingCloseDate: sourcePackage.bookingCloseDate,
+                facility: sourcePackage.facility,
+                ...(sourcePackage.packageFile.length
+                    ? {
+                        packageFile: {
+                            create: sourcePackage.packageFile.map((file) => ({
+                                filePath: file.filePath,
+                                type: file.type,
+                            })),
+                        },
+                    }
+                    : {}),
+                ...(sourcePackage.tagPackages.length
+                    ? {
+                        tagPackages: {
+                            create: sourcePackage.tagPackages.map((tag) => ({
+                                tagId: tag.tagId,
+                            })),
+                        },
+                    }
+                    : {}),
+                ...(sourcePackage.homestayHistories.length
+                    ? {
+                        homestayHistories: {
+                            create: sourcePackage.homestayHistories.map((history) => ({
+                                homestayId: history.homestayId,
+                                bookedRoom: history.bookedRoom,
+                                checkInTime: history.checkInTime,
+                                checkOutTime: history.checkOutTime,
+                            })),
+                        },
+                    }
+                    : {}),
+            },
+            include: {
+                location: true,
+                packageFile: true,
+                tagPackages: true,
+                homestayHistories: true,
+            },
+        });
+
+        return duplicatedPackage;
+    });
+}
 
 /* ============================================================================================
  * Edit (อัปเดตเฉพาะสิ่งที่ส่งมา, กัน undefined)
@@ -683,6 +821,7 @@ type ListAllHomestaysInput = {
     limit?: number;
 };
 
+
 /*
  * คำอธิบาย : [Super Admin] ดึง Homestays ทั้งหมดในระบบ
  * Input: { query, limit }
@@ -716,3 +855,166 @@ export async function listAllHomestaysSuperAdmin({ query = "", limit = 8 }: List
 
     return homestays;
 }
+
+/*
+ * ฟังก์ชัน : getAllFeedbacks
+ * คำอธิบาย : (Admin) ดึง Feedback ทั้งหมดของแพ็กเกจในชุมชนของผู้ใช้
+ * Input:
+ *   - userId : number (รหัสผู้ใช้จาก token)
+ * Output:
+ *   - Object communityData (ข้อมูลชุมชน + แพ็กเกจ + feedback ทั้งหมด)
+ */
+export const getAllFeedbacks = async (userId: number) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            communityId: true // 👈 เอาแค่ field `communityId` (จาก schema)
+        }
+    });
+
+    if (!user?.communityId) {
+        console.log("User not found or does not belong to a community.");
+        return []; // หรือ return ค่าว่างตามที่คุณต้องการ
+    }
+
+    const communityData = await prisma.community.findUnique({
+        where: {
+            id: user.communityId
+        },
+        include: {
+            packages: {
+                include: {
+                    bookingHistories: {
+                        include: {
+                            feedbacks: {
+                                include: {
+                                    feedbackImages: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!communityData) {
+        console.log("Community data not found.");
+        return [];
+    }
+
+    return communityData;
+};
+/*
+ * คำอธิบาย : ดึงรายละเอียดประวัติแพ็กเกจตามหมายเลข ID (สำหรับแอดมิน)
+ * Method : ใช้ Prisma query join ตารางที่เกี่ยวข้องทั้งหมด
+ * Input  : packageId (หมายเลขแพ็กเกจ)
+ * Output : Object รวมข้อมูลแพ็กเกจ, HomestayHistory, BookingHistory
+ * การทำงาน :
+ *   1. ตรวจสอบว่า packageId ถูกต้องและมีอยู่ในระบบ
+ *   2. ใช้ Prisma findUnique() เพื่อดึงข้อมูลหลักจากตาราง packages
+ *   3. include ตารางที่เกี่ยวข้อง เช่น HomestayHistory, BookingHistory, User, Community
+ *   4. ส่ง Object ที่จัดรูปแบบแล้วกลับไปยัง Controller
+ */
+export async function getPackageHistoryDetailById(packageId: number) {
+  const foundPackage = await prisma.package.findUnique({
+    where: { id: packageId, isDeleted: false },
+    include: {
+      community: { select: { id: true, name: true } },
+      createPackage: { select: { id: true, fname: true, lname: true } },
+      overseerPackage: { select: { id: true, fname: true, lname: true } },
+      location: true,
+      packageFile: true,
+      bookingHistories: {
+        select: {
+          id: true,
+          bookingAt: true,
+          totalParticipant: true,
+          status: true,
+          tourist: { select: { fname: true, lname: true } },
+        },
+      },
+      homestayHistories: {
+        include: {
+          homestay: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              guestPerRoom: true,
+              totalRoom: true,
+              facility: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!foundPackage) return null;
+  return foundPackage;
+}
+/*
+ * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin 
+ * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
+ * Output : ข้อมูลแพ็กเกจพร้อม Pagination
+ */
+export const getHistoriesPackageByAdmin = async (
+    userId: number,
+    page = 1,
+    limit = 10
+): Promise<PaginationResponse<any>> => {
+    // ตรวจสอบ user
+    const user = await prisma.user.findUnique({
+        where: { id: Number(userId) },
+        include: { role: true, communityAdmin: true },
+    });
+
+    if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
+    if (user.role?.name !== "admin") throw new Error("อนุญาตเฉพาะผู้ดูแล (Admin) เท่านั้น");
+
+    // ดึงรายการชุมชนที่ admin ดูแล
+    const adminCommunityIds = user.communityAdmin.map((c: any) => c.id);
+    if (adminCommunityIds.length === 0) throw new Error("คุณยังไม่ได้สังกัดชุมชนใดในฐานะผู้ดูแล");
+
+    // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
+    const now = new Date();
+
+    const whereCondition = {
+        isDeleted: false,
+        communityId: { in: adminCommunityIds },
+        dueDate: { lt: now },
+    };
+
+    // pagination
+    const skip = (page - 1) * limit;
+    const totalCount = await prisma.package.count({ where: whereCondition });
+
+    const packages = await prisma.package.findMany({
+        where: whereCondition,
+        include: {
+            community: { select: { id: true, name: true } },
+            overseerPackage: {
+                select: { id: true, fname: true, lname: true},
+            },
+        },
+        orderBy: { dueDate: "desc" },
+        skip,
+        take: limit,
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
+    return {
+        data: packages.map(pkg => ({
+            id: pkg.id,
+            name: pkg.name,
+            community: pkg.community,
+            overseerPackage: pkg.overseerPackage,
+            statusPackage: pkg.statusPackage,
+            dueDate: pkg.dueDate,
+        })),
+        pagination: { currentPage: page, totalPages, totalCount, limit },
+    };
+};

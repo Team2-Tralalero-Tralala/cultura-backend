@@ -8,12 +8,8 @@ import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto, StoreImageDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
-/*
- * ฟังก์ชัน : CommunityIdParamDto
- * รายละเอียด :
- *   ใช้ตรวจสอบค่าพารามิเตอร์ communityId จาก URL
- *   เพื่อให้แน่ใจว่าเป็นตัวเลขเท่านั้น
- */
+/* ----------------------------- DTO ----------------------------- */
+
 export class CommunityIdParamDto {
   @IsNumberString()
   communityId?: string;
@@ -54,7 +50,6 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
   try {
     const communityId = Number(req.params.communityId);
 
-    // รับไฟล์จาก multer
     const files = req.files as {
       cover?: Express.Multer.File[];
       gallery?: Express.Multer.File[];
@@ -66,8 +61,7 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
     // รวมไฟล์พร้อม type
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
-        []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) || []),
     ];
 
     const result = await StoreService.createStore(
@@ -138,21 +132,23 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     // รวมไฟล์พร้อม type
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
-        []),
+      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) || []),
     ];
-    console.log(files);
+
     const storeId = Number(req.params.storeId);
     const result = await StoreService.editStore(
       storeId,
       { ...parsed, storeImage: storeImage as StoreImageDto[] },
       req.user
     );
-    return createResponse(res, 201, "Store update successfully", result);
+
+    return createResponse(res, 200, "Store updated successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
 };
+
+/* ----------------------------- GET STORE BY ID ----------------------------- */
 
 export const getStoreByIdDto = {
   params: IdParamDto,
@@ -163,12 +159,12 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
   res
 ) => {
   try {
-    if (!req.user) {
-      return createErrorResponse(res, 401, "ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน");
-    }
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+
     const storeId = Number(req.params.storeId);
-    const result = await StoreService.getStoreById(storeId, req.user);
-    return createResponse(res, 201, "Store update successfully", result);
+    const result = await StoreService.getStoreById(storeId);
+    return createResponse(res, 200, "Get store successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
@@ -308,3 +304,80 @@ export const getAllStoreForAdmin: TypedHandlerFromDto<typeof getAllStoreForAdmin
     }
 };
 
+/*
+ * ฟังก์ชัน : deleteStore
+ * คำอธิบาย :
+ *   ลบร้านค้าออกจากระบบ (แบบ Soft Delete)
+ *   โดยจำกัดสิทธิ์เฉพาะผู้ใช้ที่เป็น superadmin หรือ admin เท่านั้น
+ *   ตรวจสอบสิทธิ์ผ่าน middleware ก่อนดำเนินการ
+ *
+ * Input :
+ *   - req.params.storeId : หมายเลขรหัสร้านค้า (string → number)
+ *   - req.user            : ข้อมูลผู้ใช้จาก token (UserPayload)
+ *
+ * Output :
+ *   - 200 : ลบร้านค้าสำเร็จ พร้อมส่งข้อมูลร้านที่ถูกลบกลับ
+ *   - 400 : ไม่พบร้านค้าหรือผู้ใช้ไม่มีสิทธิ์
+ *   - 401 : ผู้ใช้ไม่ได้รับการยืนยันตัวตน
+ */
+export const deleteStoreDto = {
+  params: IdParamDto,
+} satisfies commonDto;
+
+export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
+  req,
+  res
+) => {
+  try {
+    // 🔹 ตรวจสอบสิทธิ์ผู้ใช้งาน
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+
+    // 🔹 แปลง storeId จากพารามิเตอร์เป็นตัวเลข
+    const storeId = Number(req.params.storeId);
+
+    // 🔹 เรียกใช้ Service สำหรับลบร้านค้า
+    const result = await StoreService.deleteStore(storeId, req.user);
+
+    // 🔹 ตอบกลับผลลัพธ์สำเร็จ
+    return createResponse(res, 200, "Store deleted successfully", result);
+  } catch (error: any) {
+    // 🔹 ส่งข้อความ error กลับในกรณีล้มเหลว
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+/*
+ * ✅ สร้าง class DTO สำหรับ params.id
+ */
+class DeleteStoreParamsDto {
+    @IsNumberString()
+    id?: string;
+}
+
+/*
+ * ✅ สร้าง DTO object สำหรับ validateDto()
+ */
+export const deleteStoreByAdminDto = {
+    params: DeleteStoreParamsDto,
+} satisfies commonDto;
+
+/*
+ * ✅ Controller function
+ */
+export const deleteStoreByAdmin: TypedHandlerFromDto<
+    typeof deleteStoreByAdminDto
+> = async (req, res) => {
+    try {
+        if (!req.user) {
+            return createErrorResponse(res, 401, "Unauthorized: User not found");
+        }
+
+        const userId = req.user.id;
+        const storeId = Number(req.params.id);
+
+        const result = await StoreService.deleteStoreByAdmin(userId, storeId);
+        return createResponse(res, 200, "Store deleted successfully", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
+    }
+};

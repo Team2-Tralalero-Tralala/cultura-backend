@@ -4,8 +4,20 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from 'path';
 import rootRouter from "./Routes/index-route.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsDoc from "swagger-jsdoc";
 
 const app = express();
+
+import swaggerOptions from "./Libs/swaggerOption.js";
+
+const swaggerSpec = swaggerJsDoc(swaggerOptions);
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, { explorer: true })
+);
+
 app.use(cookieParser());
 app.use(
   cors({
