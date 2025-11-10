@@ -163,7 +163,7 @@ export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
       return createErrorResponse(res, 401, "User not authenticated");
 
     const storeId = Number(req.params.storeId);
-    const result = await StoreService.getStoreById(storeId);
+    const result = await StoreService.getStoreById(storeId, req.user);
     return createResponse(res, 200, "Get store successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
