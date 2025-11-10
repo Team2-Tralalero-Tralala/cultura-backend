@@ -185,7 +185,8 @@ userRoutes.get(
   "/admin/accounts",
   authMiddleware,                     // ตรวจสอบ token ก่อน
   allowRoles("admin"),                // ตรวจสอบสิทธิ์
-  validateDto(getAccountsDto),        // ตรวจสอบ query parameters
-  getAccountAll
+  validateDto(UserController.getAccountsDto),        // ตรวจสอบ query parameters
+  UserController.getAccountAll
+);
 
 export default userRoutes;
