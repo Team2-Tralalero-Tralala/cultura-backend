@@ -491,6 +491,114 @@ packageRoutes.get(
   getPackageHistoryDetailAdmin
 );
 
+/**
+ * @swagger
+ * /api/admin/package/histories/all:
+ *   get:
+ *     summary: ดึงรายการประวัติแพ็กเกจที่สิ้นสุดแล้ว (สำหรับผู้ดูแลระบบ)
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูล "แพ็กเกจที่หมดอายุ" ทั้งหมดในชุมชนที่ผู้ดูแลระบบรับผิดชอบ  
+ *       ข้อมูลนี้จะรวมถึงสถานะการอนุมัติ, วันที่สิ้นสุด, และข้อมูลชุมชนที่เกี่ยวข้อง
+ *     tags: [Admin - Package]
+ *     security:
+ *       - bearerAuth: []    # ใช้ JWT สำหรับ Authentication
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: หน้าที่ต้องการ (เริ่มจาก 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: จำนวนรายการต่อหน้า
+ *     responses:
+ *       200:
+ *         description: ดึงรายการประวัติแพ็กเกจสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Get History Packages Success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 12
+ *                           name:
+ *                             type: string
+ *                             example: "Eco Adventure Package"
+ *                           community:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 3
+ *                               name:
+ *                                 type: string
+ *                                 example: "ชุมชนบ้านแม่กำปอง"
+ *                           overseerPackage:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 8
+ *                               fname:
+ *                                 type: string
+ *                                 example: "สมชาย"
+ *                               lname:
+ *                                 type: string
+ *                                 example: "ใจดี"
+ *                           statusPackage:
+ *                             type: string
+ *                             example: "EXPIRED"
+ *                           statusApprove:
+ *                             type: string
+ *                             example: "APPROVED"
+ *                           dueDate:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-10-30T23:59:59Z"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 5
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 42
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *       400:
+ *         description: Bad Request — การดึงข้อมูลล้มเหลว หรือ Parameter ไม่ถูกต้อง
+ *       401:
+ *         description: Unauthorized — ไม่ได้เข้าสู่ระบบ
+ *       403:
+ *         description: Forbidden — ต้องเป็นผู้ดูแลระบบเท่านั้น
+ *       500:
+ *         description: Internal Server Error
+ */
+
 /*
  * คำอธิบาย : (Admin) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)
  * Method : GET
