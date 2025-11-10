@@ -35,12 +35,12 @@ accountRoutes.get(
 );
 
 /**
- * @route POST /super/account
- * @description สร้างบัญชีผู้ใช้ใหม่ (เฉพาะ SuperAdmin)
+ * @route POST /super/account/admin
+ * @description สร้างบัญชีผู้ใช้ Role: Admin
  * @access SuperAdmin
-*/
+ */
 accountRoutes.post(
-  "/super/account",
+  "/super/account/admin",
   validateDto(createAccountDto),
   authMiddleware,
   allowRoles("superadmin"),
@@ -48,11 +48,37 @@ accountRoutes.post(
 );
 
 /**
- * @route PATCH /super/account/:id
+ * @route POST /super/account/member
+ * @description สร้างบัญชีผู้ใช้ Role: Member
+ * @access SuperAdmin
+ */
+accountRoutes.post(
+  "/super/account/member",
+  validateDto(createAccountDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  createAccount
+);
+
+/**
+ * @route POST /super/account/tourist
+ * @description สร้างบัญชีผู้ใช้ Role: Tourist
+ * @access SuperAdmin
+ */
+accountRoutes.post(
+  "/super/account/tourist",
+  validateDto(createAccountDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  createAccount
+);
+
+/**
+ * @route PUT /super/account/:id
  * @description แก้ไขข้อมูลบัญชีผู้ใช้ตาม ID (เฉพาะ SuperAdmin)
  * @access SuperAdmin
 */
-accountRoutes.patch(
+accountRoutes.put(
   "/super/account/:id",
   validateDto(editAccountDto),
   authMiddleware,
@@ -97,25 +123,25 @@ accountRoutes.get(
 );
 
 /** 
- * @route PATCH /super/account/:role/:id
+ * @route PUT /super/account/:role/:id
  * @description อัปเดตข้อมูลบัญชีผู้ใช้ตามบทบาท (Admin / Member / Tourist)
  * @access SuperAdmin
   */
-accountRoutes.patch(
+accountRoutes.put(
   "/super/account/admin/:id",
   validateDto(editAccountDto),
   authMiddleware,
   allowRoles("superadmin"),
   editAccount
 );
-accountRoutes.patch(
+accountRoutes.put(
   "/super/account/member/:id",
   validateDto(editAccountDto),
   authMiddleware,
   allowRoles("superadmin"),
   editAccount
 );
-accountRoutes.patch(
+accountRoutes.put(
   "/super/account/tourist/:id",
   validateDto(editAccountDto),
   authMiddleware,
