@@ -6,6 +6,111 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const storeRoute = Router();
 
+/**
+ * @swagger
+ * /api/super/community/{communityId}/store:
+ *   get:
+ *     summary: ดึงข้อมูลร้านค้าทั้งหมดในชุมชน (เฉพาะ superadmin)
+ *     description: ดึงข้อมูลร้านค้าทั้งหมดในชุมชนตาม communityId พร้อม pagination (ต้องมีสิทธิ์เป็น superadmin)
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: communityId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสชุมชน
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: หน้าที่ต้องการ
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: จำนวนข้อมูลต่อหน้า
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลร้านค้าสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: All stores in Community
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           name:
+ *                             type: string
+ *                             example: ร้านค้าชุมชน A
+ *                           detail:
+ *                             type: string
+ *                             example: ร้านค้าขายสินค้าในท้องถิ่น
+ *                           tagStores:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 tag:
+ *                                   type: object
+ *                                   properties:
+ *                                     id:
+ *                                       type: integer
+ *                                     name:
+ *                                       type: string
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 25
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 3
+ *       400:
+ *         description: คำขอไม่ถูกต้อง (Bad Request)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: ข้อมูลไม่ถูกต้อง
+ *       401:
+ *         description: ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (ต้องเป็น superadmin เท่านั้น)
+ */
+
 /*
  * เส้นทาง : get /super/community/:communityId/store
  * รายละเอียด :
@@ -87,6 +192,106 @@ storeRoute.post(
   allowRoles("admin"),
   StoreController.createStoreByAdmin
 );
+
+/**
+ * @swagger
+ * /api/admin/community/own/stores/all:
+ *   get:
+ *     summary: ดึงข้อมูลร้านค้าทั้งหมดในชุมชนของแอดมิน
+ *     description: >
+ *       ใช้สำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนของผู้ใช้ที่มี role เป็น **admin**  
+ *       รองรับการแบ่งหน้า (pagination) ผ่าน query parameters
+ *     tags:
+ *       - Store (Admin)
+ *     security:
+ *       - bearerAuth: []        # 🔐 ต้องส่ง JWT Token
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการ (ค่าเริ่มต้นคือ 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนรายการต่อหน้า (ค่าเริ่มต้นคือ 10)
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลร้านค้าสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: All stores for admin
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 12
+ *                           name:
+ *                             type: string
+ *                             example: ร้านครัวบ้านสวน
+ *                           detail:
+ *                             type: string
+ *                             example: ร้านอาหารพื้นบ้านและของฝาก
+ *                           tagStores:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 tag:
+ *                                   type: object
+ *                                   properties:
+ *                                     id:
+ *                                       type: integer
+ *                                       example: 1
+ *                                     name:
+ *                                       type: string
+ *                                       example: อาหาร
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 50
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 5
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้องหรือเกิดข้อผิดพลาด
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: ไม่ได้รับอนุญาต (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 /*
  * เส้นทาง : get /admin/community/stores/all
  * รายละเอียด :
