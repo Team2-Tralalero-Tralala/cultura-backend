@@ -5,7 +5,7 @@ import {
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
-import { StoreDto } from "~/Services/store/store-dto.js";
+import { StoreDto, StoreImageDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
 /*
@@ -61,7 +61,7 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = JSON.parse(req.body.data);
+    const parsed = req.body;
 
     // รวมไฟล์พร้อม type
     const storeImage = [
@@ -71,7 +71,7 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
     ];
 
     const result = await StoreService.createStore(
-      { ...parsed, storeImage },
+      { ...parsed, storeImage: storeImage as StoreImageDto[] },
       communityId
     );
 
@@ -133,7 +133,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = JSON.parse(req.body.data);
+    const parsed = req.body;
 
     // รวมไฟล์พร้อม type
     const storeImage = [
@@ -145,7 +145,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     const storeId = Number(req.params.storeId);
     const result = await StoreService.editStore(
       storeId,
-      { ...parsed, storeImage },
+      { ...parsed, storeImage: storeImage as StoreImageDto[] },
       req.user
     );
     return createResponse(res, 201, "Store update successfully", result);
@@ -252,7 +252,7 @@ export const createStoreByAdmin: TypedHandlerFromDto<
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = JSON.parse(req.body.data);
+    const parsed = req.body;
 
     // รวมไฟล์พร้อม type
     const storeImage = [
@@ -262,7 +262,7 @@ export const createStoreByAdmin: TypedHandlerFromDto<
     ];
 
     const result = await StoreService.createStoreByAdmin(
-      { ...parsed, storeImage },
+      { ...parsed, storeImage: storeImage as StoreImageDto[] },
       req.user
     );
 

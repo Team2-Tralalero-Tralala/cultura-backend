@@ -1,7 +1,7 @@
 import { IsNumberString } from "class-validator";
 
 import * as CommunityService from "~/Services/community/community-service.js";
-import { CommunityDto } from "~/Services/community/community-dto.js";
+import { CommunityDto, CommunityImageDto } from "~/Services/community/community-dto.js";
 
 import {
   commonDto,
@@ -40,7 +40,7 @@ export const createCommunity: TypedHandlerFromDto<
       gallery?: Express.Multer.File[];
       video?: Express.Multer.File[];
     };
-    const parsed = JSON.parse(req.body.data);
+    const parsed = req.body;
 
     const communityImage = [
       ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
@@ -55,8 +55,8 @@ export const createCommunity: TypedHandlerFromDto<
     ];
     const result = await CommunityService.createCommunity({
       ...parsed,
-      communityImage,
-    });
+      communityImage: communityImage as CommunityImageDto[],
+    } as CommunityDto);
     return createResponse(res, 201, "Community created successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message, error.invalidMembers);
@@ -103,7 +103,7 @@ export const editCommunity: TypedHandlerFromDto<
       gallery?: Express.Multer.File[];
       video?: Express.Multer.File[];
     };
-    const parsed = JSON.parse(req.body.data);
+    const parsed = req.body;
 
     const communityImage = [
       ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
@@ -118,8 +118,8 @@ export const editCommunity: TypedHandlerFromDto<
     ];
     const result = await CommunityService.editCommunity(communityId, {
       ...parsed,
-      communityImage,
-    });
+      communityImage: communityImage as CommunityImageDto[],
+    } as CommunityDto);
     return createResponse(res, 200, "Update community successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message, error.invalidMembers);
@@ -320,7 +320,7 @@ export const editCommunityByAdmin: TypedHandlerFromDto<
       gallery?: Express.Multer.File[];
       video?: Express.Multer.File[];
     };
-    const parsed = JSON.parse(req.body.data);
+    const parsed = req.body;
 
     const communityImage = [
       ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
@@ -335,8 +335,8 @@ export const editCommunityByAdmin: TypedHandlerFromDto<
     ];
     const result = await CommunityService.editCommunityByAdmin(req.user, {
       ...parsed,
-      communityImage,
-    });
+      communityImage: communityImage as CommunityImageDto[],
+    } as CommunityDto);
     return createResponse(res, 200, "Update community successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message, error.invalidMembers);

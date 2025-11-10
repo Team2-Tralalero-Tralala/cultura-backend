@@ -83,7 +83,7 @@ export async function getUserLogs(
             // เห็น logs ของสมาชิกในชุมชนที่เป็น admin
             const communityMembers = await prisma.user.findMany({
                 where: { 
-                    memberOfCommunity: { in: communityIds } 
+                    Community: { id: { in: communityIds } } 
                 },
                 select: { id: true },
             });
