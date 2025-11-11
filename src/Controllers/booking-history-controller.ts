@@ -104,3 +104,39 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/*
+ * ฟังก์ชัน : updateBookingStatusController
+ * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง (เฉพาะ Admin)
+ * Route : PATCH /admin/bookings/:id/status
+ * Input :
+ *   - req.params.id : รหัสของการจอง (bookingId)
+ *   - req.body.status : สถานะใหม่ที่ต้องการอัปเดต
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองที่ถูกอัปเดต
+ * หมายเหตุ :
+ *   - รองรับเฉพาะสถานะต่อไปนี้:
+ *       • BOOKED (จองสำเร็จ)
+ *       • REJECTED (ปฏิเสธจอง)
+ *       • REFUNDED (คืนเงินแล้ว)
+ *       • REFUND_REJECTED (ปฏิเสธการคืนเงิน)
+ *   - เฉพาะผู้ใช้ role "admin" เท่านั้นที่เข้าถึงได้
+ */
+
+import * as BookingHistoryService from "~/Services/booking-history-service.js";
+
+export const updateBookingStatus: TypedHandlerFromDto<any> = async (req, res) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const { status } = req.body;
+
+    if (!bookingId || !status) {
+      return createErrorResponse(res, 400, "Missing booking ID or status");
+    }
+
+    const updated = await BookingHistoryService.updateBookingStatus(bookingId, status);
+    return createResponse(res, 200, "update booking status successfully", updated);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
