@@ -41,7 +41,7 @@ rootRouter.use(packageRequestsRoutes);
 rootRouter.use(storeRoute);
 rootRouter.use("/super/backups", backupRoutes);
 rootRouter.use(dashboardRoutes);
-rootRouter.use("/banner", bannerRoutes);
+rootRouter.use("/super/banner", bannerRoutes);
 rootRouter.use(bankRoutes);
 rootRouter.use("/admin/stores", storeAdminRoutes);
 rootRouter.use(bookingRoutes);
