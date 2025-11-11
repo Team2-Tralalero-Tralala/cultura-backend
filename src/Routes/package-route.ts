@@ -477,6 +477,105 @@ packageRoutes.get(
     allowRoles("superadmin"),
     listPackagesSuperAdmin
 );
+
+/**
+ * @swagger
+ * /api/packages/{id}:
+ *   get:
+ *     tags: [Package]
+ *     summary: ดึงรายละเอียดแพ็กเกจตามรหัส (ทุกบทบาท)
+ *     description: >
+ *       ดึงรายละเอียดของแพ็กเกจตามรหัส โดยสามารถเข้าถึงได้ทุกบทบาท  
+ *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์อย่างน้อย `superadmin`, `admin`, `member`, หรือ `tourist`.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: รหัสแพ็กเกจที่ต้องการดึงข้อมูล
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: สำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             examples:
+ *               success:
+ *                 summary: ดึงรายละเอียดแพ็กเกจสำเร็จ
+ *                 value:
+ *                   error: false
+ *                   message: "Get package detail successfully"
+ *                   data:
+ *                     id: 1
+ *                     name: "แพ็กเกจท่องเที่ยววัฒนธรรมบ้านหนองรี"
+ *                     description: "ท่องเที่ยวเชิงวัฒนธรรมและธรรมชาติ"
+ *                     duration: "3 วัน 2 คืน"
+ *                     price: 2500
+ *                     province: "ชลบุรี"
+ *                     location:
+ *                       detail: "เลขที่ 12 หมู่ 4"
+ *                       subDistrict: "หนองรี"
+ *                       district: "เมืองชลบุรี"
+ *                       province: "ชลบุรี"
+ *                       latitude: 13.291
+ *                       longitude: 101.123
+ *                     createPackage:
+ *                       fname: "ธันวา"
+ *                       lname: "อ่อนสุวรรณ"
+ *                     overseerPackage:
+ *                       fname: "ณัฏฐนันท์"
+ *                       lname: "สิริสุรยุทธ"
+ *                     tagPackages:
+ *                       - tag:
+ *                           id: 3
+ *                           name: "วัฒนธรรม"
+ *                       - tag:
+ *                           id: 5
+ *                           name: "ธรรมชาติ"
+ *       400:
+ *         description: ผิดพลาด (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             examples:
+ *               invalidId:
+ *                 summary: Invalid package ID
+ *                 value:
+ *                   error: true
+ *                   message: "Invalid package ID"
+ *       401:
+ *         description: ไม่ได้รับอนุญาต (ไม่มีหรือ Token ไม่ถูกต้อง)
+ *         content:
+ *           application/json:
+ *             examples:
+ *               unauthorized:
+ *                 summary: Unauthorized access
+ *                 value:
+ *                   error: true
+ *                   message: "Unauthorized: Token invalid or missing"
+ *       403:
+ *         description: ห้ามเข้าถึง (Role ไม่อนุญาต)
+ *         content:
+ *           application/json:
+ *             examples:
+ *               forbidden:
+ *                 summary: Role not allowed
+ *                 value:
+ *                   error: true
+ *                   message: "Forbidden: Role not allowed"
+ *       404:
+ *         description: ไม่พบแพ็กเกจ
+ *         content:
+ *           application/json:
+ *             examples:
+ *               notFound:
+ *                 summary: Package not found
+ *                 value:
+ *                   error: true
+ *                   message: "Package not found"
+ */
 packageRoutes.get(
   "/:id",
   authMiddleware,
