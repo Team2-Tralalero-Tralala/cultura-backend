@@ -226,13 +226,14 @@ export const getBookingsByAdmin = async (
   // คำนวณ pagination
   const skip = (page - 1) * limit;
 
-  // นับจำนวนทั้งหมดของการจองในชุมชนนี้
+  // นับจำนวนทั้งหมดของการจองในชุมชนนี้ (PENDING หรือ REFUND_PENDING)
   const totalCount = await prisma.bookingHistory.count({
     where: {
       package: {
         communityId: community.id,
         isDeleted: false,
       },
+      status: { in: ["PENDING", "REFUND_PENDING"] }, // เพิ่ม filter
     },
   });
 
@@ -243,6 +244,7 @@ export const getBookingsByAdmin = async (
         communityId: community.id,
         isDeleted: false,
       },
+       status: { in: ["PENDING", "REFUND_PENDING"] },
     },
     orderBy: { bookingAt: "asc" },
     skip,
@@ -288,3 +290,40 @@ export const getBookingsByAdmin = async (
     },
   };
 };
+
+
+/*  
+ * ฟังก์ชัน : getBookingsByAdmin
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
+ * เงื่อนไข :
+ *   - แสดงเฉพาะรายการที่มีสถานะ "PENDING" (รอตรวจสอบ)
+ *     หรือ "REFUND_PENDING" (รอคืนเงิน) เท่านั้น
+ * Input :
+ *   - adminId (number) : รหัสผู้ดูแลที่ร้องขอ (ต้องเป็น Admin)
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการการจองทั้งหมดของแพ็กเกจในชุมชน
+ *     (เฉพาะสถานะที่อนุญาต) พร้อมข้อมูลแบ่งหน้า (pagination)
+ */
+
+export const updateBookingStatus = async (id: number, newStatus: string) => {
+  const validStatuses = [
+    "BOOKED",
+    "REJECTED",
+    "REFUNDED",
+    "REFUND_REJECTED",
+  ];
+
+  if (!validStatuses.includes(newStatus)) {
+    throw new Error("Invalid booking status");
+  }
+
+  const booking = await prisma.bookingHistory.update({
+    where: { id },
+    data: { status: newStatus as BookingStatus },
+  });
+
+  return booking;
+};
+

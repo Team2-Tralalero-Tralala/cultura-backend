@@ -23,11 +23,11 @@ const bookingRoutes = Router();
  * @swagger
  * /api/admin/bookings/all:
  *   get:
- *     summary: ดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล
+ *     summary: ดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล (เฉพาะสถานะรอดำเนินการ)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลการจอง (BookingHistory) ของแพ็กเกจทั้งหมด  
- *       ภายในชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ โดยรองรับ pagination  
- *       และจะแสดงข้อมูลนักท่องเที่ยว แพ็กเกจ ราคา รวมถึงสถานะการจอง
+ *       ใช้สำหรับดึงรายการการจอง (BookingHistory) ของแพ็กเกจทั้งหมด  
+ *       ภายในชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ โดยจะแสดงเฉพาะการจองที่มีสถานะ  
+ *       **PENDING** หรือ **REFUND_PENDING** เท่านั้น พร้อมข้อมูลนักท่องเที่ยว แพ็กเกจ และราคารวม
  *     tags:
  *       - Booking (Admin)
  *     security:
@@ -49,7 +49,7 @@ const bookingRoutes = Router();
  *         description: จำนวนข้อมูลต่อหน้า (ค่าเริ่มต้น 10)
  *     responses:
  *       200:
- *         description: ดึงรายการการจองทั้งหมดสำเร็จ
+ *         description: ดึงรายการการจองทั้งหมดสำเร็จ (เฉพาะสถานะ PENDING หรือ REFUND_PENDING)
  *         content:
  *           application/json:
  *             schema:
@@ -68,35 +68,35 @@ const bookingRoutes = Router();
  *                     properties:
  *                       id:
  *                         type: integer
- *                         example: 15
+ *                         example: 23
  *                       tourist:
  *                         type: object
  *                         properties:
  *                           fname:
  *                             type: string
- *                             example: "ศิริพร"
+ *                             example: "กนกพร"
  *                           lname:
  *                             type: string
- *                             example: "พงษ์เพียร"
+ *                             example: "สุขใจ"
  *                       package:
  *                         type: object
  *                         properties:
  *                           name:
  *                             type: string
- *                             example: "แพ็กเกจท่องเที่ยววิถีชุมชน"
+ *                             example: "แพ็กเกจท่องเที่ยวบ้านโนนสะอาด"
  *                           price:
  *                             type: number
  *                             example: 1500
  *                       totalPrice:
  *                         type: number
- *                         example: 4500
+ *                         example: 3000
  *                       status:
  *                         type: string
- *                         enum: [BOOKED, PENDING, REJECTED, REFUNDED]
- *                         example: "BOOKED"
+ *                         enum: [PENDING, REFUND_PENDING]
+ *                         example: "PENDING"
  *                       transferSlip:
  *                         type: string
- *                         example: "uploads/slips/slip_2025-01-12.png"
+ *                         example: "uploads/slips/slip_2025-02-11.png"
  *                 pagination:
  *                   type: object
  *                   properties:
@@ -105,24 +105,25 @@ const bookingRoutes = Router();
  *                       example: 1
  *                     totalPages:
  *                       type: integer
- *                       example: 5
+ *                       example: 2
  *                     totalCount:
  *                       type: integer
- *                       example: 42
+ *                       example: 17
  *                     limit:
  *                       type: integer
  *                       example: 10
  *       400:
- *         description: ไม่สามารถดึงข้อมูลได้ หรือข้อมูลไม่ถูกต้อง
+ *         description: การดึงข้อมูลล้มเหลวหรือไม่พบชุมชนที่แอดมินดูแล
  *       401:
  *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
  *       403:
  *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Admin)
  *       404:
- *         description: ไม่พบชุมชนหรือไม่มีข้อมูลการจองในระบบ
+ *         description: ไม่พบข้อมูลการจองในสถานะที่ระบุ
  *       500:
  *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
  */
+
 
 /*
  * path : GET /admin/bookings/all
@@ -136,6 +137,96 @@ bookingRoutes.get(
   allowRoles("admin"),
   BookingHistoryController.getBookingsByAdmin
 );
+
+/**
+ * @swagger
+ * /api/admin/bookings/{id}/status:
+ *   post:
+ *     summary: อัปเดตสถานะของรายการการจอง (Admin)
+ *     description: |
+ *       ใช้สำหรับอัปเดตสถานะของรายการการจองภายในชุมชน  
+ *       สามารถอัปเดตสถานะได้เฉพาะรายการที่อยู่ในสถานะ **PENDING** (รอตรวจสอบ)  
+ *       หรือ **REFUND_PENDING** (รอคืนเงิน) เท่านั้น  
+ *       
+ *       สถานะที่สามารถอัปเดตได้:
+ *       - **BOOKED** → จองสำเร็จ  
+ *       - **REJECTED** → ปฏิเสธการจอง  
+ *       - **REFUNDED** → คืนเงินแล้ว  
+ *       - **REFUND_REJECTED** → ปฏิเสธการคืนเงิน  
+ *       
+ *       ต้องเป็นผู้ใช้ Role: **Admin** และต้องแนบ JWT Token ใน Header  
+ *       ใช้ HTTP Method **POST** เพื่อส่งคำขอเปลี่ยนสถานะของการจอง
+ *     tags:
+ *       - Admin / Booking
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสของการจองที่ต้องการอัปเดตสถานะ
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [BOOKED, REJECTED, REFUNDED, REFUND_REJECTED]
+ *                 example: BOOKED
+ *             required:
+ *               - status
+ *     responses:
+ *       200:
+ *         description: อัปเดตสถานะการจองสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Booking status updated successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     status:
+ *                       type: string
+ *                       example: BOOKED
+ *       400:
+ *         description: อัปเดตสถานะล้มเหลว (เช่น สถานะไม่ถูกต้อง หรือ booking ไม่พบ)
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ */
+
+
+/*
+ * path : POST /admin/bookings/:id/status
+ * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง
+ * เงื่อนไข :
+ *   - สามารถอัปเดตสถานะได้เฉพาะ (PENDING, REFUND_PENDING)
+ *   - รองรับการเปลี่ยนเป็น BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+
+bookingRoutes.post(
+  "/admin/bookings/:id/status",
+  authMiddleware,
+  allowRoles("admin"),
+  BookingHistoryController.updateBookingStatus
+);
+
 
 /**
  * @swagger
