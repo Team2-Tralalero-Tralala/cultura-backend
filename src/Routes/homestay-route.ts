@@ -163,17 +163,6 @@ homestayRoutes.post(
   createHomestay
 );
 
-homestayRoutes.post(
-  "/super/community/:communityId/homestay/bulk",
-  authMiddleware,
-  allowRoles("superadmin"),
-  upload.fields([
-    { name: "cover", maxCount: 1 },
-    { name: "gallery", maxCount: 10 },
-  ]),
-  createHomestaysBulk
-);
-
 /**
  * @swagger
  * /api/super/homestays/{homestayId}:
