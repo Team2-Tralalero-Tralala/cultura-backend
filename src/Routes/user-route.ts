@@ -737,6 +737,7 @@ userRoutes.post(
  *                   example: Community member not found
  */
 
+
 /*
  * เส้นทาง : PATCH /admin/member/:userId
  * คำอธิบาย : ลบ member ออกจาก Community แบบ Soft Delete
@@ -748,6 +749,15 @@ userRoutes.patch(
   allowRoles("admin"),
   validateDto(UserController.deleteCommunityMemberByIdDto),
   UserController.deleteCommunityMemberById
+);
+
+//  ดึงบัญชีผู้ใช้ทั้งหมด role Admin (พร้อม search / filterRole / pagination)
+userRoutes.get(
+  "/admin/accounts",
+  authMiddleware,                     // ตรวจสอบ token ก่อน
+  allowRoles("admin"),                // ตรวจสอบสิทธิ์
+  validateDto(UserController.getAccountsDto),        // ตรวจสอบ query parameters
+  UserController.getAccountAll
 );
 
 export default userRoutes;
