@@ -459,13 +459,6 @@ packageRequestRoutes.patch(
  *                   type: string
  *                   example: requestId must be a number
  */
-packageRequestRoutes.get(
-    "/super/package-requests/:requestId", 
-    authMiddleware, 
-    allowRoles("superadmin"), 
-    getDetailRequest
-);
-
 /**
  * รายละเอียดแพ็กเกจจากหน้าคำขอแพ็กเกจ (สำหรับ superadmin)
  */
