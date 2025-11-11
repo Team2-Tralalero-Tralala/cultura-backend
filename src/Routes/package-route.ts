@@ -704,6 +704,96 @@ packageRoutes.get(
     getPackageDetail
 );
 
+/**
+ * @swagger
+ * /api/super/homestay-select/{id}:
+ *   get:
+ *     tags: [Homestays - SuperAdmin]
+ *     summary: ดึงรายการที่พักที่อยู่ในชุมชนเดียวกับ "แพ็กเกจ" ที่ระบุ (เฉพาะ SuperAdmin)
+ *     description: >
+ *       คืนรายการ **Homestays** ตามชุมชนของแพ็กเกจ `id` ที่ระบุ  
+ *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์ `superadmin`.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *         description: Package ID
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: ค้นหาชื่อที่พัก (partial, case-insensitive)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 8
+ *         description: จำนวนรายการ (1–50)
+ *     responses:
+ *       200:
+ *         description: สำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: boolean, example: true }
+ *                 message: { type: string, example: "fetch homestays successfully" }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: integer, example: 101 }
+ *                       name: { type: string, example: "โฮมสเตย์ริมน้ำ" }
+ *                       facility: { type: string, example: "แอร์, น้ำอุ่น, Wi-Fi" }
+ *                       homestayImage:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             image: { type: string, example: "/uploads/homestays/cover-101.jpg" }
+ *             examples:
+ *               success:
+ *                 value:
+ *                   status: true
+ *                   message: "fetch homestays successfully"
+ *                   data:
+ *                     - id: 101
+ *                       name: "โฮมสเตย์ริมน้ำ"
+ *                       facility: "แอร์, น้ำอุ่น, Wi-Fi"
+ *                       homestayImage: [{ image: "/uploads/homestays/cover-101.jpg" }]
+ *                     - id: 102
+ *                       name: "บ้านพักสุขใจ"
+ *                       facility: "พัดลม, จักรยานให้ยืม"
+ *                       homestayImage: []
+ *       400:
+ *         description: คำขอไม่ถูกต้อง / ตรวจสอบไม่ผ่าน (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidId: { value: { status: false, message: "Invalid packageId" } }
+ *               notFound: { value: { status: false, message: "Package not found" } }
+ *       401:
+ *         description: ไม่ได้รับอนุญาต (ไม่มี/Token ไม่ถูกต้อง)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (ต้องเป็น superadmin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 /*
  * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายการที่พัก (เพื่อใช้เลือก)
  * ที่อยู่ในชุมชนเดียวกับแพ็กเกจ
@@ -717,6 +807,116 @@ packageRoutes.get(
     allowRoles("superadmin"),
     listHomestaysByPackage
 );
+
+/**
+ * @swagger
+ * /api/super/list-homestays:
+ *   get:
+ *     tags: [Homestays - SuperAdmin]
+ *     summary: ดึงรายการที่พักทั้งหมด (เฉพาะ SuperAdmin)
+ *     description: |
+ *       คืนรายการ **Homestay** ทุกแห่งในระบบ พร้อมข้อมูลชุมชนและรูปหน้าปก (ถ้ามี)  
+ *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์ `superadmin`.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: คำค้นหาชื่อที่พัก (case-insensitive, partial match)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 8
+ *         description: จำนวนรายการสูงสุดที่ต้องการ (1–50)
+ *     responses:
+ *       200:
+ *         description: สำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Fetch all homestays successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 12
+ *                       name:
+ *                         type: string
+ *                         example: "บ้านพักสุขใจ"
+ *                       facility:
+ *                         type: string
+ *                         example: "แอร์, น้ำอุ่น, Wi-Fi"
+ *                       homestayImage:
+ *                         type: array
+ *                         description: แสดงเฉพาะภาพประเภท COVER (ถ้ามี) สูงสุด 1 รายการ
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             image:
+ *                               type: string
+ *                               example: "/uploads/homestays/cover-12.jpg"
+ *                       community:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 3
+ *                           name:
+ *                             type: string
+ *                             example: "ชุมชนบางกะเจ้า"
+ *             examples:
+ *               success:
+ *                 summary: ตัวอย่างข้อมูลสำเร็จ
+ *                 value:
+ *                   status: true
+ *                   message: "Fetch all homestays successfully"
+ *                   data:
+ *                     - id: 12
+ *                       name: "บ้านพักสุขใจ"
+ *                       facility: "แอร์, น้ำอุ่น, Wi-Fi"
+ *                       homestayImage: [{ image: "/uploads/homestays/cover-12.jpg" }]
+ *                       community: { id: 3, name: "ชุมชนบางกะเจ้า" }
+ *                     - id: 18
+ *                       name: "โฮมสเตย์ริมน้ำ"
+ *                       facility: "พัดลม, จักรยานให้ยืม"
+ *                       homestayImage: []
+ *                       community: { id: 5, name: "ชุมชนเกาะยอ" }
+ *       400:
+ *         description: คำขอไม่ถูกต้อง (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidLimit:
+ *                 value: { status: false, message: "limit ต้องอยู่ระหว่าง 1 ถึง 50" }
+ *       401:
+ *         description: ไม่ได้รับอนุญาต (ไม่มี/Token ไม่ถูกต้อง)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (ต้องเป็น superadmin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
 /*
  * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายการที่พักทั้งหมดในระบบ
