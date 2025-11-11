@@ -23,18 +23,6 @@ import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
 const accountRoutes = Router();
 
 /**
- * @route GET /admin/communities/members
- * @description ดึงข้อมูลสมาชิกในชุมชนของตนเอง (เฉพาะ Admin)
- * @access Admin
-*/
-accountRoutes.get(
-  "/admin/communities/members",
-  authMiddleware,
-  allowRoles("admin"),
-  getMemberByAdmin
-);
-
-/**
  * @swagger
  * /api/super/account/admin:
  *   post:
@@ -224,47 +212,156 @@ accountRoutes.post(
 );
 
 /**
- * @route PUT /super/account/:id
- * @description แก้ไขข้อมูลบัญชีผู้ใช้ตาม ID (เฉพาะ SuperAdmin)
- * @access SuperAdmin
-*/
-accountRoutes.put(
-  "/super/account/:id",
-  validateDto(editAccountDto),
-  authMiddleware,
-  allowRoles("superadmin"),
-  editAccount
-);
-
-/**
- * @route GET /super/account/users
- * @description ดึงข้อมูลผู้ใช้ทั้งหมดในระบบ (เฉพาะ SuperAdmin)
- * @access SuperAdmin
- */
-accountRoutes.get(
-  "/super/account/users",
-  authMiddleware,
-  allowRoles("superadmin"),
-  getAll
-);
-
-/**
  * @route GET /super/account/:role/:id
  * @description ดึงข้อมูลผู้ใช้ตามบทบาท (Admin / Member / Tourist)
  * @access SuperAdmin
 */
+/**
+ * @swagger
+ * /api/super/account/admin/{id}:
+ *   get:
+ *     summary: ดึงข้อมูลบัญชีผู้ใช้ (ประเภท Admin)
+ *     description: ใช้สำหรับ SuperAdmin เพื่อดึงรายละเอียดข้อมูลบัญชีผู้ใช้ประเภท Admin ตาม ID
+ *     tags:
+ *       - Account (SuperAdmin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: รหัสบัญชีผู้ใช้ (Admin) ที่ต้องการดึงข้อมูล
+ *         schema:
+ *           type: integer
+ *           example: 43
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลบัญชีผู้ใช้สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AccountDetailResponse'
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบ หรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (เฉพาะ SuperAdmin เท่านั้น)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: ไม่พบบัญชีผู้ใช้ที่ต้องการ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 accountRoutes.get(
   "/super/account/admin/:id",
   authMiddleware,
   allowRoles("superadmin"),
   getAccountById
 );
+
+/**
+ * @swagger
+ * /api/super/account/member/{id}:
+ *   get:
+ *     summary: ดึงข้อมูลบัญชีผู้ใช้ (ประเภท Member)
+ *     description: ใช้สำหรับ SuperAdmin เพื่อดึงรายละเอียดข้อมูลบัญชีผู้ใช้ประเภท Member ตาม ID
+ *     tags:
+ *       - Account (SuperAdmin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: รหัสบัญชีผู้ใช้ (Member) ที่ต้องการดึงข้อมูล
+ *         schema:
+ *           type: integer
+ *           example: 41
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลบัญชีผู้ใช้สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AccountDetailResponse'
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบ หรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (เฉพาะ SuperAdmin เท่านั้น)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: ไม่พบบัญชีผู้ใช้ที่ต้องการ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 accountRoutes.get(
   "/super/account/member/:id",
   authMiddleware,
   allowRoles("superadmin"),
   getAccountById
 );
+
+/**
+ * @swagger
+ * /api/super/account/tourist/{id}:
+ *   get:
+ *     summary: ดึงข้อมูลบัญชีผู้ใช้ (ประเภท Tourist)
+ *     description: ใช้สำหรับ SuperAdmin เพื่อดึงรายละเอียดข้อมูลบัญชีผู้ใช้ประเภท Tourist ตาม ID
+ *     tags:
+ *       - Account (SuperAdmin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: รหัสบัญชีผู้ใช้ (Tourist) ที่ต้องการดึงข้อมูล
+ *         schema:
+ *           type: integer
+ *           example: 42
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลบัญชีผู้ใช้สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AccountDetailResponse'
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบ หรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (เฉพาะ SuperAdmin เท่านั้น)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: ไม่พบบัญชีผู้ใช้ที่ต้องการ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 accountRoutes.get(
   "/super/account/tourist/:id",
   authMiddleware,
