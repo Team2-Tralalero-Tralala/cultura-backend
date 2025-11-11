@@ -71,8 +71,8 @@ userRoutes.put(
  *   get:
  *     summary: ดึงรายการบัญชีผู้ใช้งานทั้งหมด (Super Admin)
  *     description: |
- *       ใช้สำหรับดึงรายการบัญชีผู้ใช้งานทั้งหมดในระบบ  
- *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header  
+ *       ใช้สำหรับดึงรายการบัญชีผู้ใช้งานทั้งหมดในระบบ
+ *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *       รองรับการค้นหา (Search) และแบ่งหน้า (Pagination)
  *     tags:
  *       - SuperAdmin / Account
@@ -149,8 +149,8 @@ userRoutes.get(
  *   get:
  *     summary: ดึงรายการบัญชีผู้ใช้งานตามสถานะ (Super Admin)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลบัญชีผู้ใช้งานทั้งหมดตามสถานะที่ระบุ  
- *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header  
+ *       ใช้สำหรับดึงข้อมูลบัญชีผู้ใช้งานทั้งหมดตามสถานะที่ระบุ
+ *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *       รองรับการแบ่งหน้า (Pagination)
  *     tags:
  *       - SuperAdmin / Account
@@ -223,7 +223,7 @@ userRoutes.get(
  *   get:
  *     summary: ดึงรายละเอียดของผู้ใช้ (SuperAdmin)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลรายละเอียดของผู้ใช้ตาม userId  
+ *       ใช้สำหรับดึงข้อมูลรายละเอียดของผู้ใช้ตาม userId
  *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - SuperAdmin / User
@@ -282,7 +282,7 @@ userRoutes.get(
  *   get:
  *     summary: ดึงรายละเอียดของสมาชิกในชุมชน (Admin)
  *     description: |
- *       ใช้สำหรับดึงรายละเอียดของสมาชิกในชุมชนที่ Admin ดูแลอยู่  
+ *       ใช้สำหรับดึงรายละเอียดของสมาชิกในชุมชนที่ Admin ดูแลอยู่
  *       ต้องเป็น **Admin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - Admin / Member
@@ -341,7 +341,7 @@ userRoutes.get(
  *   patch:
  *     summary: ลบบัญชีผู้ใช้แบบ Soft Delete (SuperAdmin)
  *     description: |
- *       ใช้สำหรับลบบัญชีผู้ใช้โดยไม่ลบข้อมูลออกจากฐานข้อมูลจริง (Soft Delete)  
+ *       ใช้สำหรับลบบัญชีผู้ใช้โดยไม่ลบข้อมูลออกจากฐานข้อมูลจริง (Soft Delete)
  *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - SuperAdmin / User
@@ -400,7 +400,7 @@ userRoutes.patch(
  *   put:
  *     summary: ระงับบัญชีผู้ใช้ (SuperAdmin)
  *     description: |
- *       ใช้สำหรับระงับบัญชีผู้ใช้ที่กำหนดตาม userId  
+ *       ใช้สำหรับระงับบัญชีผู้ใช้ที่กำหนดตาม userId
  *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - SuperAdmin / User
@@ -459,7 +459,7 @@ userRoutes.put(
  *   put:
  *     summary: ปลดการระงับบัญชีผู้ใช้ (SuperAdmin)
  *     description: |
- *       ใช้สำหรับปลดสถานะระงับของบัญชีผู้ใช้ตาม userId  
+ *       ใช้สำหรับปลดสถานะระงับของบัญชีผู้ใช้ตาม userId
  *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - SuperAdmin / User
@@ -512,14 +512,102 @@ userRoutes.put(
   UserController.unblockAccountById
 );
 
-/** เส้นทาง API : PATCH /super/account/:userId/reset-password
+/**
  * คำอธิบาย : สำหรับให้ Super Admin รีเซ็ตรหัสผ่านของผู้ใช้ตามรหัส userId ที่กำหนด
- * Middleware :
- *   - validateDto(forgetPasswordDto) : ตรวจสอบความถูกต้องของข้อมูลที่ส่งมา (รหัสผ่านใหม่ต้องเป็นข้อความและไม่ว่าง)
- *   - authMiddleware : ตรวจสอบการยืนยันตัวตนของผู้ใช้ที่ส่งคำขอ
- *   - allowRoles("superadmin") : อนุญาตเฉพาะผู้ใช้ที่มีสิทธิ์ Super Admin เท่านั้น
- * Handler : forgetPassword — ทำการเข้ารหัสรหัสผ่านใหม่และอัปเดตลงฐานข้อมูล
  */
+/**
+ * @swagger
+ * /api/super/account/{userId}/reset-password:
+ *   patch:
+ *     summary: รีเซ็ตรหัสผ่านของผู้ใช้ (เฉพาะ Super Admin)
+ *     description: Super Admin สามารถรีเซ็ตรหัสผ่านใหม่ให้ผู้ใช้ที่กำหนด โดยต้องระบุ userId ผ่าน path parameter และส่งข้อมูลรหัสผ่านใหม่ใน body
+ *     tags:
+ *       - Super - Account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: รหัส ID ของผู้ใช้ที่ต้องการรีเซ็ตรหัสผ่าน
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 maxLength: 80
+ *                 description: รหัสผ่านใหม่ของผู้ใช้ (ต้องไม่เกิน 80 ตัวอักษร)
+ *                 example: "NewP@ssword123"
+ *     responses:
+ *       200:
+ *         description: รีเซ็ตรหัสผ่านสำเร็จ
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 200
+ *               error: false
+ *               message: "Reset new password successfully"
+ *               data:
+ *                 id: 1
+ *                 email: "super@demo.com"
+ *                 role:
+ *                   id: 1
+ *                   name: "superadmin"
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง (Validation Error)
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 400
+ *               error: true
+ *               message: "Validation Error!"
+ *               errorId: "7896c1d3-8985-460c-8caf-5746fe9f085d"
+ *               errors:
+ *                 newPassword:
+ *                   - "รหัสผ่านต้องไม่เกิน 80 ตัวอักษร"
+ *                   - "รหัสผ่านห้ามว่าง"
+ *                   - "รหัสผ่านต้องเป็นข้อความ"
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (token ไม่ถูกต้อง)
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 401
+ *               error: true
+ *               message: "Unauthorized"
+ *       403:
+ *         description: ไม่มีสิทธิ์ดำเนินการ (เฉพาะ superadmin เท่านั้น)
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 403
+ *               error: true
+ *               message: "Forbidden"
+ *       404:
+ *         description: ไม่พบบัญชีผู้ใช้ตาม userId
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 404
+ *               error: true
+ *               message: "User not found"
+ */
+userRoutes.patch(
+  "/super/account/:userId/reset-password",
+  validateDto(UserController.resetPasswordDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  UserController.resetPassword
+);
 userRoutes.patch(
   "/super/account/:userId/reset-password",
   validateDto(UserController.resetPasswordDto),
@@ -673,11 +761,11 @@ userRoutes.patch(
  */
 
 userRoutes.post(
-    "/account/change-password/me",
-    authMiddleware,
-    allowRoles("superadmin", "admin", "member", "tourist"),
-    validateDto(UserController.changePasswordDto),
-    UserController.changePassword
+  "/account/change-password/me",
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member", "tourist"),
+  validateDto(UserController.changePasswordDto),
+  UserController.changePassword
 );
 
 /**
@@ -688,8 +776,8 @@ userRoutes.post(
  *       - Admin - Members
  *     summary: ลบสมาชิกชุมชนตามรหัส ID
  *     description: >
- *       ลบสมาชิกชุมชนตามรหัส ID ที่ส่งมาใน path parameter  
- *       **ต้องเป็นผู้ใช้ที่ผ่านการยืนยันตัวตนและมีสิทธิ์ role: admin**  
+ *       ลบสมาชิกชุมชนตามรหัส ID ที่ส่งมาใน path parameter
+ *       **ต้องเป็นผู้ใช้ที่ผ่านการยืนยันตัวตนและมีสิทธิ์ role: admin**
  *       สำเร็จจะคืนข้อมูลสมาชิกที่ถูกลบ, ถ้าไม่พบจะคืน 404
  *     security:
  *       - bearerAuth: []
@@ -737,7 +825,6 @@ userRoutes.post(
  *                   example: Community member not found
  */
 
-
 /*
  * เส้นทาง : PATCH /admin/member/:userId
  * คำอธิบาย : ลบ member ออกจาก Community แบบ Soft Delete
@@ -754,9 +841,9 @@ userRoutes.patch(
 //  ดึงบัญชีผู้ใช้ทั้งหมด role Admin (พร้อม search / filterRole / pagination)
 userRoutes.get(
   "/admin/accounts",
-  authMiddleware,                     // ตรวจสอบ token ก่อน
-  allowRoles("admin"),                // ตรวจสอบสิทธิ์
-  validateDto(UserController.getAccountsDto),        // ตรวจสอบ query parameters
+  authMiddleware, // ตรวจสอบ token ก่อน
+  allowRoles("admin"), // ตรวจสอบสิทธิ์
+  validateDto(UserController.getAccountsDto), // ตรวจสอบ query parameters
   UserController.getAccountAll
 );
 
