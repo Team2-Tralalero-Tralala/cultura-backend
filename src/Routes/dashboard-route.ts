@@ -4,6 +4,135 @@ import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const dashboardRoutes = Router();
+/**
+ * @swagger
+ * tags:
+ *   - name: Dashboard
+ *     description: Super Admin dashboard data
+ *
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *   schemas:
+ *     StandardSuccess:
+ *       type: object
+ *       properties:
+ *         status: { type: integer, example: 200 }
+ *         error: { type: boolean, example: false }
+ *         message: { type: string, example: "Dashboard data retrieved successfully" }
+ *         data: { nullable: true }
+ *     StandardError:
+ *       type: object
+ *       properties:
+ *         status: { type: integer, example: 400 }
+ *         error: { type: boolean, example: true }
+ *         message: { type: string, example: "Bad Request" }
+ *         data: { nullable: true }
+ *         errorId: { type: string, example: "de305d54-75b4-431b-adb2-eb6b9e546014" }
+ *         errors: { nullable: true }
+ *     DashboardSummary:
+ *       type: object
+ *       properties:
+ *         totalPackages: { type: integer, example: 125 }
+ *         totalCommunities: { type: integer, example: 42 }
+ *         successBookingCount: { type: integer, example: 980 }
+ *         cancelledBookingCount: { type: integer, example: 120 }
+ *     SuperDashboardData:
+ *       type: object
+ *       properties:
+ *         summary:
+ *           $ref: '#/components/schemas/DashboardSummary'
+ *         graph:
+ *           type: array
+ *           description: Data points grouped by the requested interval
+ *           items:
+ *             type: object
+ *             properties:
+ *               key:
+ *                 type: string
+ *                 example: "2025-11-01"
+ *               value:
+ *                 type: number
+ *                 example: 123
+ *
+ * paths:
+ *   /api/super/dashboard:
+ *     get:
+ *       tags: [Dashboard]
+ *       summary: Get Super Admin dashboard data
+ *       description: |
+ *         Returns summary KPIs and grouped graph data across all communities. Requires Super Admin role.
+ *       security:
+ *         - bearerAuth: []
+ *       parameters:
+ *         - in: query
+ *           name: dateStart
+ *           required: true
+ *           schema: { type: string, example: "2025-10-01" }
+ *           description: Start date (yyyy-MM-dd)
+ *         - in: query
+ *           name: dateEnd
+ *           required: true
+ *           schema: { type: string, example: "2025-11-01" }
+ *           description: End date (yyyy-MM-dd)
+ *         - in: query
+ *           name: page
+ *           schema: { type: integer, minimum: 1, example: 1 }
+ *           description: Page number (pagination)
+ *         - in: query
+ *           name: limit
+ *           schema: { type: integer, minimum: 1, maximum: 100, example: 10 }
+ *           description: Page size (pagination)
+ *         - in: query
+ *           name: groupBy
+ *           schema:
+ *             type: string
+ *             enum: [hour, day, week, month, year]
+ *             example: "day"
+ *           description: Grouping interval for graph data
+ *         - in: query
+ *           name: province
+ *           schema: { type: string }
+ *           description: Optional province filter
+ *         - in: query
+ *           name: region
+ *           schema: { type: string }
+ *           description: Optional region filter
+ *         - in: query
+ *           name: search
+ *           schema: { type: string }
+ *           description: Optional search keyword
+ *       responses:
+ *         200:
+ *           description: Dashboard data retrieved successfully
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/StandardSuccess'
+ *                   - type: object
+ *                     properties:
+ *                       data:
+ *                         $ref: '#/components/schemas/SuperDashboardData'
+ *         400:
+ *           description: Bad Request
+ *           content:
+ *             application/json:
+ *               schema: { $ref: '#/components/schemas/StandardError' }
+ *         401:
+ *           description: Unauthorized (missing/invalid token)
+ *           content:
+ *             application/json:
+ *               schema: { $ref: '#/components/schemas/StandardError' }
+ *         403:
+ *           description: Forbidden (not superadmin)
+ *           content:
+ *             application/json:
+ *               schema: { $ref: '#/components/schemas/StandardError' }
+ */
 
 dashboardRoutes.get(
   "/super/dashboard",
