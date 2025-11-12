@@ -1,0 +1,75 @@
+# Compose will create (or reuse) a network named "cultura-net"
+# so you don't need to run `docker network create` manually.
+networks:
+  default:
+    name: cultura-net
+
+volumes:
+  db_data: {}
+
+services:
+  db:
+    container_name: cultura_db
+    build:
+      context: ../cultura-backend/prisma
+      dockerfile: Dockerfile
+    ports:
+      - "3306:3306"
+    environment:
+      # These mirror your DB Dockerfile ENV values (kept here for clarity/override)
+      MYSQL_DATABASE: cultura_data
+      MYSQL_USER: cultura
+      MYSQL_PASSWORD: team2
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      # ⚠️ Consider using MYSQL_ROOT_PASSWORD instead of allowing empty passwords in non-dev environments.
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: "3306"
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  backend:
+    container_name: cultura-backend
+    build:
+      context: ../cultura-backend
+      dockerfile: Dockerfile
+    # If your .env is at repo root, this path is likely ../.env relative to /dockercompose
+    # Adjust if your backend's env file lives elsewhere (e.g., ../cultura-backend/.env)
+    env_file:
+      - ../cultura-backend/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    container_name: cultura-frontend
+    build:
+      context: ../cultura-frontend     # <-- adjust if your frontend lives elsewhere
+      dockerfile: Dockerfile
+      args:
+        # Vite needs this at **build time**. This pulls from the Compose
+        # environment (.env beside this file or your shell env).
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    ports:
+      - "4000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
