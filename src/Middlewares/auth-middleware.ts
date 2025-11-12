@@ -22,7 +22,6 @@ export function authMiddleware(
   next: NextFunction
 ) {
   const token = req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
-  console.log(token, req.headers, req.cookies);
 
   if (!token) return createErrorResponse(res, 401, "Missing token");
 
@@ -30,7 +29,6 @@ export function authMiddleware(
     req.user = verifyToken(token);
     next();
   } catch (error) {
-    console.log(error);
     return createErrorResponse(res, 401, "Invalid Token");
   }
 }
