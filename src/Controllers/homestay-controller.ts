@@ -286,6 +286,13 @@ export const createHomestayAdmin = async (req: Request, res: Response) => {
     }
 };
 
+/*
+ * Controller: getHomestaysAllAdmin
+ * วัตถุประสงค์ : ดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ
+ * Input : req.user.id (รหัสผู้ดูแลที่เข้าสู่ระบบ)
+ * Output : ส่งกลับรายการโฮมสเตย์ทั้งหมดของชุมชนในรูปแบบ JSON (status 200)
+ * Error : หากเกิดข้อผิดพลาดระหว่างดึงข้อมูล จะส่งสถานะ 400 พร้อมข้อความ error
+ */
 export const getHomestaysAllAdmin: TypedHandlerFromDto<
   typeof getHomestaysAllDto
 > = async (req, res) => {

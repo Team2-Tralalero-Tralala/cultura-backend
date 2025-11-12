@@ -20,6 +20,58 @@ import { validateDto } from "~/Libs/validateDto.js";
 
 const refundRoutes = Router();
 
+/**
+ * @swagger
+ * /api/admin/booking/refunds/all:
+ *   get:
+ *     summary: ดึงรายการคำขอคืนเงินทั้งหมดของชุมชน (Admin)
+ *     description: |
+ *       ใช้สำหรับดึงรายการคำขอคืนเงินทั้งหมดของชุมชนที่ Admin ดูแลอยู่  
+ *       รองรับการแบ่งหน้า (Pagination) และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Admin / Refund
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการดึงข้อมูล
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนรายการต่อหน้า
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - คืนรายการคำขอคืนเงินทั้งหมด
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+
 /*
  * เส้นทาง : GET /admin/refunds
  * คำอธิบาย : ดึงรายการคำขอคืนเงินทั้งหมดของชุมชนที่ admin ดูแล (รองรับ pagination)
@@ -32,6 +84,53 @@ refundRoutes.get(
   RefundController.getRefundRequestsByAdmin
 );
 
+/**
+ * @swagger
+ * /api/admin/booking/refunds/{id}/approve:
+ *   patch:
+ *     summary: อนุมัติคำขอคืนเงิน (Admin)
+ *     description: |
+ *       ใช้สำหรับอนุมัติคำขอคืนเงินที่ได้รับจากนักท่องเที่ยว  
+ *       ต้องเป็น **Admin** เท่านั้น และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Admin / Refund
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสคำขอคืนเงิน
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - อนุมัติคำขอคืนเงินเรียบร้อย
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+
 /*
  * เส้นทาง : PATCH /admin/refunds/:id/approve
  * คำอธิบาย : อนุมัติคำขอคืนเงิน
@@ -43,6 +142,53 @@ refundRoutes.patch(
   allowRoles("admin"),
   RefundController.approveRefundByAdmin
 );
+
+/**
+ * @swagger
+ * /api/admin/booking/refunds/{id}/reject:
+ *   patch:
+ *     summary: ปฏิเสธคำขอคืนเงิน (Admin)
+ *     description: |
+ *       ใช้สำหรับปฏิเสธคำขอคืนเงินที่ได้รับจากนักท่องเที่ยว  
+ *       ต้องเป็น **Admin** เท่านั้น และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Admin / Refund
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสคำขอคืนเงิน
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - ปฏิเสธคำขอคืนเงินเรียบร้อย
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Missing or Invalid Token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
 
 /*
  * เส้นทาง : PATCH /admin/refunds/:id/reject

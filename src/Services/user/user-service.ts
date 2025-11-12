@@ -5,6 +5,7 @@ import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PasswordDto } from "~/Services/user/password-dto.js";
 import type { ChangePasswordDto } from "~/Controllers/user-controller.js";
+import { createErrorResponse } from "~/Libs/createResponse.js";
 
 /**
  * ฟังก์ชัน: getAccountAll
@@ -14,67 +15,67 @@ import type { ChangePasswordDto } from "~/Controllers/user-controller.js";
  *   - Admin → เห็นเฉพาะสมาชิกในชุมชนตัวเอง
  *   - Member/Tourist → เห็นเฉพาะบัญชีตัวเอง
  */
-export async function getAccountAll(
-  user: UserPayload,
-  page: number = 1,
-  limit: number = 10
-): Promise<PaginationResponse<any>> {
-  const skip = (page - 1) * limit;
-  const whereCondition: any = {};
+// export async function getAccountAll(
+//   user: UserPayload,
+//   page: number = 1,
+//   limit: number = 10
+// ): Promise<PaginationResponse<any>> {
+//   const skip = (page - 1) * limit;
+//   const whereCondition: any = {};
 
-  // Role-based condition
-  if (user.role.toLowerCase() === "superadmin") {
-    whereCondition.id = { not: user.id };
-  } else if (user.role.toLowerCase() === "admin") {
-    const adminCommunities = await prisma.community.findMany({
-      where: { adminId: user.id },
-      select: { id: true },
-    });
+//   // Role-based condition
+//   if (user.role.toLowerCase() === "superadmin") {
+//     whereCondition.id = { not: user.id };
+//   } else if (user.role.toLowerCase() === "admin") {
+//     const adminCommunities = await prisma.community.findMany({
+//       where: { adminId: user.id },
+//       select: { id: true },
+//     });
 
-    const communityIds = adminCommunities.map((community) => community.id);
+//     const communityIds = adminCommunities.map((community) => community.id);
 
-    if (communityIds.length === 0) {
-      whereCondition.id = { not: user.id };
-    } else {
-      whereCondition.memberOfCommunity = { in: communityIds };
-      whereCondition.id = { not: user.id };
-    }
-  } else {
-    whereCondition.id = user.id; // Member / Tourist เห็นเฉพาะบัญชีตัวเอง
-  }
+//     if (communityIds.length === 0) {
+//       whereCondition.id = { not: user.id };
+//     } else {
+//       whereCondition.memberOfCommunity = { in: communityIds };
+//       whereCondition.id = { not: user.id };
+//     }
+//   } else {
+//     whereCondition.id = user.id; // Member / Tourist เห็นเฉพาะบัญชีตัวเอง
+//   }
 
-  whereCondition.status = "ACTIVE";
-  whereCondition.isDeleted = false;
+//   whereCondition.status = "ACTIVE";
+//   whereCondition.isDeleted = false;
 
-  const totalCount = await prisma.user.count({ where: whereCondition });
+//   const totalCount = await prisma.user.count({ where: whereCondition });
 
-  const users = await prisma.user.findMany({
-    where: whereCondition,
-    select: {
-      id: true,
-      fname: true,
-      lname: true,
-      username: true,
-      email: true,
-      status: true,
-      role: { select: { name: true } },
-      communityAdmin: { select: { name: true } },
-      communityMembers: {
-        select: { Community: { select: { name: true } } },
-      },
-    },
-    orderBy: { id: "asc" },
-    skip,
-    take: limit,
-  });
+//   const users = await prisma.user.findMany({
+//     where: whereCondition,
+//     select: {
+//       id: true,
+//       fname: true,
+//       lname: true,
+//       username: true,
+//       email: true,
+//       status: true,
+//       role: { select: { name: true } },
+//       communityAdmin: { select: { name: true } },
+//       communityMembers: {
+//         select: { Community: { select: { name: true } } },
+//       },
+//     },
+//     orderBy: { id: "asc" },
+//     skip,
+//     take: limit,
+//   });
 
-  const totalPages = Math.ceil(totalCount / limit);
+//   const totalPages = Math.ceil(totalCount / limit);
 
-  return {
-    data: users,
-    pagination: { currentPage: page, totalPages, totalCount, limit },
-  };
-}
+//   return {
+//     data: users,
+//     pagination: { currentPage: page, totalPages, totalCount, limit },
+//   };
+// }
 
 /**
  * ฟังก์ชัน: getUserByStatus
@@ -395,6 +396,85 @@ export async function changePassword(userId: number, payload: any) {
   return user;
 }
 
+
+/*
+ * ฟังก์ชัน : getAccountAll
+ * คำอธิบาย : ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
+ * รองรับ:
+ *   - SuperAdmin → เห็นทุกคน
+ *   - Admin → เห็นเฉพาะสมาชิกในชุมชนตัวเอง
+ *   - Member/Tourist → เห็นเฉพาะบัญชีตัวเอง
+ * พร้อมรองรับ searchName และ filterRole
+ */
+export async function getAccountAll(
+  user: UserPayload,
+  page: number = 1,
+  limit: number = 10,
+  searchName?: string,
+  filterRole?: string
+): Promise<PaginationResponse<any>> {
+  const skip = (page - 1) * limit;
+  const whereCondition: any = {};
+  // Role-based condition
+  if (user.role.toLowerCase() === "superadmin") {
+    // เห็นทุกคน
+  } else if (user.role.toLowerCase() === "admin") {
+    const adminCommunities = await prisma.community.findMany({
+      where: { adminId: user.id },
+      select: { id: true },
+    });
+    const communityIds = adminCommunities.map((c) => c.id);
+    if (communityIds.length === 0) {
+      whereCondition.id = user.id; // ไม่มีชุมชน → เห็นเฉพาะตัวเอง
+    } else {
+      whereCondition.communityMembers = {
+        some: {
+          communityId: { in: communityIds }
+        }
+      };
+    }
+  } else {
+    whereCondition.id = user.id; // member / tourist
+  }
+  // ดึงเฉพาะผู้ใช้ที่มีสถานะ ACTIVE เท่านั้น
+  whereCondition.status = "ACTIVE";
+  whereCondition.isDeleted = false;
+  whereCondition.deleteAt = null;
+  // Search ชื่อ
+  if (searchName) {
+    whereCondition.OR = [
+      { fname: { contains: searchName } },
+      { lname: { contains: searchName } },
+      { username: { contains: searchName } },
+    ];
+  }
+  // Filter Role
+  if (filterRole && filterRole.toLowerCase() !== "all") {
+    whereCondition.role = { name: filterRole };
+  }
+  const totalCount = await prisma.user.count({ where: whereCondition });
+  const users = await prisma.user.findMany({
+    where: whereCondition,
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+      username: true,
+      email: true,
+      status: true,
+      role: { select: { name: true } },
+      Community: { select: { name: true } },
+    },
+    orderBy: { id: "desc" },
+    skip,
+    take: limit,
+  });
+  const totalPages = Math.ceil(totalCount / limit);
+  return {
+    data: users,
+    pagination: { currentPage: page, totalPages, totalCount, limit },
+  };
+}
 /**
  * ฟังก์ชัน : deleteCommunityMember
  * คำอธิบาย : ลบสมาชิกชุมชนแบบ Soft Delete (ไม่ลบข้อมูลออกจากฐานข้อมูลจริง)
