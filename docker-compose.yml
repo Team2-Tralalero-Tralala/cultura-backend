@@ -1,5 +1,3 @@
-# Compose will create (or reuse) a network named "cultura-net"
-# so you don't need to run `docker network create` manually.
 networks:
   default:
     name: cultura-net
@@ -14,14 +12,12 @@ services:
       context: ../cultura-backend/prisma
       dockerfile: Dockerfile
     ports:
-      - "3306:3306"
+      - "4336:3306"         # host 4336 -> container 3306
     environment:
-      # These mirror your DB Dockerfile ENV values (kept here for clarity/override)
       MYSQL_DATABASE: cultura_data
       MYSQL_USER: cultura
       MYSQL_PASSWORD: team2
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      # ⚠️ Consider using MYSQL_ROOT_PASSWORD instead of allowing empty passwords in non-dev environments.
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -35,10 +31,10 @@ services:
     image: phpmyadmin/phpmyadmin:latest
     container_name: phpmyadmin
     environment:
-      PMA_HOST: db
-      PMA_PORT: "3306"
+      PMA_HOST: db        # or cultura_db (service/container name)
+      PMA_PORT: "3306"    # use container port, not host port
     ports:
-      - "8080:80"
+      - "4880:80"         # host 4880 -> container 80
     depends_on:
       - db
     restart: unless-stopped
@@ -49,10 +45,11 @@ services:
       context: ../cultura-backend
       dockerfile: Dockerfile
     environment:
+      # use container port 3306 here as well
       DATABASE_URL: ${DATABASE_URL:-mysql://cultura:team2@cultura_db:3306/cultura_data}
-      PORT: ${PORT:-3000}
+      PORT: ${PORT:-3000}   # app listens on 3000 inside container
     ports:
-      - "3000:3000"
+      - "4100:3000"         # host 4100 -> container 3000
     depends_on:
       db:
         condition: service_healthy
@@ -61,14 +58,12 @@ services:
   frontend:
     container_name: cultura-frontend
     build:
-      context: ../cultura-frontend     # <-- adjust if your frontend lives elsewhere
+      context: ../cultura-frontend
       dockerfile: Dockerfile
       args:
-        # Vite needs this at **build time**. This pulls from the Compose
-        # environment (.env beside this file or your shell env).
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+        VITE_API_URL: ${VITE_API_URL:-http://dekdee2.informatics.buu.ac.th:4100/api}
     ports:
-      - "4000:80"
+      - "4080:80"           # host 4080 -> container 80 (nginx)
     depends_on:
       - backend
     restart: unless-stopped
