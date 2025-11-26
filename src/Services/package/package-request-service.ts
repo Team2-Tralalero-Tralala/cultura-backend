@@ -196,6 +196,7 @@ export const getDetailRequestById = async (packageId: number) => {
     where: { id: packageId, statusApprove: PackageApproveStatus.PENDING_SUPER },
     select: {
       name: true,
+      statusPackage: true,
       description: true,
       capacity: true,
       price: true,
