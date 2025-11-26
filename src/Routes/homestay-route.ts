@@ -17,6 +17,7 @@ import {
   getHomestaysAllAdmin,
   createHomestayAdmin,
   editHomestayAdmin,
+  deleteHomestayAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -790,4 +791,13 @@ homestayRoutes.get(
   allowRoles("admin"),
   getHomestayDetail
 );
+
+homestayRoutes.patch(
+  "/admin/community/homestay/:homestayId", 
+  authMiddleware,
+  allowRoles("admin"),
+  deleteHomestayAdmin
+);
+
 export default homestayRoutes;
+

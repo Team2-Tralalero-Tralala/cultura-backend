@@ -656,3 +656,44 @@ export async function editHomestayByAdmin(
     // (เราส่ง data ไปตามเดิม เพราะเรารู้แล้วว่า communityId ที่ส่งไป (ถ้ามี) ปลอดภัย)
     return editHomestayCore(Number(homestayId), data);
 }
+
+/**
+ * ฟังก์ชัน : deleteHomestayByAdmin
+ * อธิบาย : ลบ homestay ที่อยู่ในชุมชนที่ admin คนนั้นดูแล (soft delete)
+ */
+
+export const deleteHomestayByAdmin = async (
+  userId: number,
+  homestayId: number
+) => {
+  // ดึงชุมชนที่ admin คนนั้นเป็นเจ้าของโดยตรง
+  const community = await prisma.community.findFirst({
+    where: { adminId: userId, isDeleted: false },
+  });
+
+  if (!community) {
+    throw new Error("ผู้ดูแลระบบไม่มีชุมชนที่ได้รับมอบหมาย");
+  }
+  // ตรวจสอบว่า homestay อยู่ใน community นั้น
+  const homestay = await prisma.homestay.findFirst({
+    where: {
+      id: homestayId,
+      communityId: community.id,
+      isDeleted: false,
+    },
+  });
+    
+  if (!homestay) {
+    throw new Error("ไม่พบโฮมสเตย์หรือไม่เป็นของผู้ดูแลระบบนี้");
+  }
+
+  // Soft delete
+  await prisma.homestay.update({
+    where: { id: homestayId },
+    data: { isDeleted: true, 
+    deleteAt: new Date()
+ },
+});
+
+return { deletedId: homestayId };
+};

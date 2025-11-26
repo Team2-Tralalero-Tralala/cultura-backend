@@ -359,3 +359,28 @@ export const editHomestayAdmin = async (req: Request, res: Response) => {
         return createErrorResponse(res, 400, error.message);
     }
 };
+/*
+ * Controller: deleteHomestayAdmin
+ * วัตถุประสงค์ : ลบ Homestay ที่อยู่ในชุมชนที่ Admin ดูแล
+ * Input : req.user.id (adminId), req.params.homestayId
+ */
+
+export const deleteHomestayAdmin = async (req: Request, res: Response) => {
+  try {
+    const adminId = Number((req.user as { id: number }).id);
+    const homestayId = Number(req.params.homestayId);
+
+    if (isNaN(adminId) || isNaN(homestayId)) {
+      return createErrorResponse(res, 400, "Invalid ID values");
+    }
+
+    const result = await HomestayService.deleteHomestayByAdmin(
+      adminId,
+      homestayId
+    );
+
+    return createResponse(res, 200, "Delete homestay successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

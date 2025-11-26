@@ -47,8 +47,6 @@ rootRouter.use("/admin/stores", storeAdminRoutes);
 rootRouter.use(bookingRoutes);
 
 rootRouter.use(bookingRefund);
-
-
 rootRouter.use(feedbackRoutes);
 
 export default rootRouter;
