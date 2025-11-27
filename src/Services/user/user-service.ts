@@ -351,13 +351,11 @@ export async function resetPassword(userId: number, newPassword: PasswordDto) {
   return user;
 }
 
-
-
-/* 
+/*
  * คำอธิบาย: Service สำหรับเปลี่ยนรหัสผ่านของผู้ใช้งาน
  * ตรวจสอบรหัสผ่านปัจจุบัน เปรียบเทียบรหัสใหม่ และอัปเดตข้อมูลในฐานข้อมูล
  */
-/* 
+/*
  * Function: changePassword
  * Input : userId (number) → รหัสผู้ใช้ที่ต้องการเปลี่ยนรหัสผ่าน
  *         payload (ChangePasswordDto) → ข้อมูลรหัสผ่านปัจจุบันและรหัสใหม่
@@ -365,21 +363,25 @@ export async function resetPassword(userId: number, newPassword: PasswordDto) {
  */
 
 export async function changePassword(userId: number, payload: any) {
-  const { currentPassword, newPassword, confirmNewPassword} = payload
+  const { currentPassword, newPassword, confirmNewPassword } = payload;
 
-  if (!currentPassword || !newPassword || !confirmNewPassword) throw new Error("Bad payload");
+  if (!currentPassword || !newPassword || !confirmNewPassword)
+    throw new Error("Bad payload");
   if (newPassword !== confirmNewPassword) throw new Error("Password mismatch");
 
   const dataInDb = await prisma.user.findUnique({
     where: { id: userId },
-    select: { 
+    select: {
       password: true,
     },
   });
 
   if (!dataInDb) throw new Error("User not found");
 
-  const isPasswordCorrect = await bcrypt.compare(currentPassword, dataInDb.password)
+  const isPasswordCorrect = await bcrypt.compare(
+    currentPassword,
+    dataInDb.password
+  );
   if (!isPasswordCorrect) throw new Error("Invalid current password");
 
   if (await bcrypt.compare(newPassword, dataInDb.password))
@@ -389,13 +391,12 @@ export async function changePassword(userId: number, payload: any) {
 
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { password: newHash, },
+    data: { password: newHash },
     select: { username: true },
   });
 
   return user;
 }
-
 
 /*
  * ฟังก์ชัน : getAccountAll
@@ -429,8 +430,8 @@ export async function getAccountAll(
     } else {
       whereCondition.communityMembers = {
         some: {
-          communityId: { in: communityIds }
-        }
+          communityId: { in: communityIds },
+        },
       };
     }
   } else {
@@ -463,7 +464,7 @@ export async function getAccountAll(
       email: true,
       status: true,
       role: { select: { name: true } },
-      Community: { select: { name: true } },
+      communityMembers: { select: { Community: { select: { name: true } } } },
     },
     orderBy: { id: "desc" },
     skip,
@@ -497,10 +498,3 @@ export async function deleteCommunityMember(memberId: number) {
     },
   });
 }
-
-
-
-
-
-
-

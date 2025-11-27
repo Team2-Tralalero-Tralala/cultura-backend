@@ -1,7 +1,10 @@
 import { IsNumberString } from "class-validator";
 
 import * as CommunityService from "~/Services/community/community-service.js";
-import { CommunityDto, CommunityImageDto } from "~/Services/community/community-dto.js";
+import {
+  CommunityDto,
+  CommunityImageDto,
+} from "~/Services/community/community-dto.js";
 
 import {
   commonDto,
@@ -40,7 +43,7 @@ export const createCommunity: TypedHandlerFromDto<
       gallery?: Express.Multer.File[];
       video?: Express.Multer.File[];
     };
-    const parsed = req.body;
+    const parsed = JSON.parse((req.body as any).data);
 
     const communityImage = [
       ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
@@ -103,7 +106,7 @@ export const editCommunity: TypedHandlerFromDto<
       gallery?: Express.Multer.File[];
       video?: Express.Multer.File[];
     };
-    const parsed = req.body;
+    const parsed = JSON.parse((req.body as any).data);
 
     const communityImage = [
       ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),
@@ -320,7 +323,7 @@ export const editCommunityByAdmin: TypedHandlerFromDto<
       gallery?: Express.Multer.File[];
       video?: Express.Multer.File[];
     };
-    const parsed = req.body;
+    const parsed = JSON.parse((req.body as any).data);
 
     const communityImage = [
       ...(files.logo?.[0] ? [{ image: files.logo[0].path, type: "LOGO" }] : []),

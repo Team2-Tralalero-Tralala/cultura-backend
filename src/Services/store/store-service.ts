@@ -28,10 +28,11 @@ export async function createStore(store: StoreDto, communityId: number) {
         community: { connect: { id: communityId } },
         location: { create: mapLocation(location) },
         storeImage: {
-          create: storeImage?.map((img) => ({
-            image: img.image,
-            type: img.type,
-          })) ?? [],
+          create:
+            storeImage?.map((img) => ({
+              image: img.image,
+              type: img.type,
+            })) ?? [],
         },
       },
       include: {
@@ -314,7 +315,7 @@ export async function getAllStoreForAdmin(
     where: { id: userId },
     include: {
       role: true,
-      Community: true,
+      communityMembers: { include: { Community: true } },
     },
   });
 
@@ -460,7 +461,6 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     },
   });
 
-
   if (!user) throw new Error("User not found");
   if (user.role?.name?.toLowerCase() !== "admin") {
     throw new Error("Forbidden: Only admin can delete stores");
@@ -480,7 +480,9 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     throw new Error("Store not found or already deleted");
   }
   if (store.communityId !== communityId) {
-    throw new Error("Forbidden: You can only delete stores in your own community");
+    throw new Error(
+      "Forbidden: You can only delete stores in your own community"
+    );
   }
 
   // 🔹 ลบแบบ soft delete
@@ -492,7 +494,5 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     },
   });
 
-
   return deletedStore;
 }
-

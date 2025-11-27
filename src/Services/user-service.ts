@@ -32,10 +32,14 @@ export const getAllUsersService = async () => {
             name: true, // SUPERADMIN / ADMIN / MEMBER / TOURIST
           },
         },
-        Community: {
+        communityMembers: {
           select: {
-            id: true,
-            name: true, // ชื่อชุมชนที่เป็นสมาชิก
+            Community: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         status: true,
@@ -78,8 +82,15 @@ export const getUserByIdService = async (userId: number) => {
         role: {
           select: { id: true, name: true },
         },
-        Community: {
-          select: { id: true, name: true },
+        communityMembers: {
+          select: {
+            Community: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         },
         status: true,
       },

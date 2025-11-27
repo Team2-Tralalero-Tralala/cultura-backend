@@ -55,10 +55,7 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
       gallery?: Express.Multer.File[];
     };
 
-    // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = req.body;
-
-    // รวมไฟล์พร้อม type
+    const parsed = JSON.parse((req.body as any).data);
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
       ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
@@ -127,10 +124,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
       gallery?: Express.Multer.File[];
     };
 
-    // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = req.body;
-
-    // รวมไฟล์พร้อม type
+    const parsed = JSON.parse((req.body as any).data);
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
       ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
@@ -250,7 +244,7 @@ export const createStoreByAdmin: TypedHandlerFromDto<
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = req.body;
+    const parsed = JSON.parse((req.body as any).data);
 
     // รวมไฟล์พร้อม type
     const storeImage = [
