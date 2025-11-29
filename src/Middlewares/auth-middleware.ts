@@ -21,7 +21,7 @@ export function authMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.headers.authorization?.split(" ")[1] || req.cookies.accessToken;
+  const token = req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
 
   if (!token) return createErrorResponse(res, 401, "Missing token");
 

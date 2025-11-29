@@ -5,7 +5,7 @@ import {
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
-import { StoreDto } from "~/Services/store/store-dto.js";
+import { StoreDto, StoreImageDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
 /* ----------------------------- DTO ----------------------------- */
@@ -55,7 +55,7 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
       gallery?: Express.Multer.File[];
     };
 
-    const parsed = JSON.parse(req.body.data);
+    const parsed = JSON.parse((req.body as any).data);
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
       ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
@@ -63,7 +63,7 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
     ];
 
     const result = await StoreService.createStore(
-      { ...parsed, storeImage },
+      { ...parsed, storeImage: storeImage as StoreImageDto[] },
       communityId
     );
 
@@ -124,7 +124,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
       gallery?: Express.Multer.File[];
     };
 
-    const parsed = JSON.parse(req.body.data);
+    const parsed = JSON.parse((req.body as any).data);
     const storeImage = [
       ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
       ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
@@ -134,7 +134,7 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
     const storeId = Number(req.params.storeId);
     const result = await StoreService.editStore(
       storeId,
-      { ...parsed, storeImage },
+      { ...parsed, storeImage: storeImage as StoreImageDto[] },
       req.user
     );
 
@@ -244,7 +244,7 @@ export const createStoreByAdmin: TypedHandlerFromDto<
     };
 
     // แปลง body JSON ที่แนบมาใน "data"
-    const parsed = JSON.parse(req.body.data);
+    const parsed = JSON.parse((req.body as any).data);
 
     // รวมไฟล์พร้อม type
     const storeImage = [
@@ -254,7 +254,7 @@ export const createStoreByAdmin: TypedHandlerFromDto<
     ];
 
     const result = await StoreService.createStoreByAdmin(
-      { ...parsed, storeImage },
+      { ...parsed, storeImage: storeImage as StoreImageDto[] },
       req.user
     );
 

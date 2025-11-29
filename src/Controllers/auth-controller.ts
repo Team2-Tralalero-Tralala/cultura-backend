@@ -66,9 +66,8 @@ export const login: TypedHandlerFromDto<typeof loginDto> = async (req, res) => {
   try {
     const result = await AuthService.login(req.body, req.ip ?? "", JWT_EXPIRATION_SECONDS);
     res.cookie("accessToken", result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production" || false, // ใช้ secure cookie ใน production
-      sameSite: "strict",
+      secure: false,
+      sameSite: "lax",
       maxAge: 60 * 60 * 1000, // อายุ 1 ชั่วโมง
     });
     return createResponse(res, 201, "Login successful", result);

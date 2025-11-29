@@ -167,8 +167,8 @@ model HomestayImage {
  */
 model Homestay {
   id           Int       @id @default(autoincrement()) @map("ht_id")
-  communityId  Int       @map("st_community_id")
-  locationId   Int       @map("st_location_id")
+  communityId  Int       @map("ht_community_id")
+  locationId   Int       @map("ht_location_id")
   name         String    @map("ht_name") @db.VarChar(60)
   type         String    @map("ht_room_type") @db.VarChar(45)
   guestPerRoom Int       @map("ht_guest_per_room")
@@ -229,6 +229,7 @@ model Community {
   status                  CommunityStatus? @default(CLOSED) @map("ct_status")
   phone                   String           @unique @map("ct_phone") @db.VarChar(10)
   rating                  Float            @map("ct_rating") @db.Double
+  isRatingVisible         Boolean          @default(false) @map("ct_is_rating_visible")
   email                   String           @unique @map("ct_email") @db.VarChar(65)
   mainAdmin               String           @map("ct_main_admin") @db.VarChar(100)
   mainAdminPhone          String           @map("ct_main_admin_phone") @db.VarChar(10)
@@ -250,7 +251,6 @@ model Community {
   homestays        Homestay[]
   communityImage   CommunityImage[]
   communityMembers communityMembers[]
-  User             User[]
 
   @@index([locationId])
   @@index([adminId])
@@ -370,18 +370,17 @@ model User {
   createdPackages  Package[]          @relation("createPackage")
   communityId      Int?
   communityMembers communityMembers[]
-  Community        Community?         @relation(fields: [communityId], references: [id])
 
   @@index([roleId])
   @@map("users")
 }
 
 model communityMembers {
-  id          Int @id @default(autoincrement()) @map("cm_id")
-  communityId Int @map("cm_community_id")
-  memberId    Int @map("cm_member_id")
+  id          Int       @id @default(autoincrement()) @map("cm_id")
+  communityId Int       @map("cm_community_id")
+  memberId    Int       @map("cm_member_id")
   isDeleted   Boolean   @default(false) @map("cm_is_deleted")
-  deleteAt    DateTime?   @map("cm_delete_at") @db.Timestamp(0)
+  deleteAt    DateTime? @map("cm_delete_at") @db.Timestamp(0)
 
   user      User      @relation(fields: [memberId], references: [id])
   Community Community @relation(fields: [communityId], references: [id])

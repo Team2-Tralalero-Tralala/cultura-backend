@@ -1,11 +1,10 @@
-import "reflect-metadata";
-import express from "express";
-import cors from "cors";
 import cookieParser from "cookie-parser";
-import path from 'path';
-import rootRouter from "./Routes/index-route.js";
-import swaggerUi from "swagger-ui-express";
+import cors from "cors";
+import express from "express";
+import "reflect-metadata";
 import swaggerJsDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+import rootRouter from "./Routes/index-route.js";
 
 const app = express();
 
@@ -21,7 +20,10 @@ app.use(
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:4000", // origin ของ front-end
+    origin: [
+      "http://localhost:4000",
+      "http://dekdee2.informatics.buu.ac.th:4080"
+    ], // origin ของ front-end
     credentials: true, // อนุญาตให้ส่ง cookie/header credentials
   })
 );
