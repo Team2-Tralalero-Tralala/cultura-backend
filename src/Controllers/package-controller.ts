@@ -619,4 +619,6 @@ export async function getHistoriesPackageAdmin(req: Request, res: Response) {
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
+
+  
 }

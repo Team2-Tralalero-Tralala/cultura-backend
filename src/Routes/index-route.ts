@@ -19,6 +19,7 @@ import storeAdminRoutes  from "./storeAdmin-route.js";
 import bookingRefund from "./booking-route.js"
 import feedbackRoutes from "./feedback-routes.js";
 import bookingRoutes from "./booking-history-route.js";
+import packagesDraft from "./packagesDraft-route.js";
 
 const rootRouter: Router = Router();
 
@@ -47,6 +48,7 @@ rootRouter.use("/admin/stores", storeAdminRoutes);
 rootRouter.use(bookingRoutes);
 
 rootRouter.use(bookingRefund);
+rootRouter.use(packagesDraft);
 
 
 rootRouter.use(feedbackRoutes);
