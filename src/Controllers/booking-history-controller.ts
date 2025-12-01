@@ -46,7 +46,7 @@ export const getDetailBooking = async (req: Request, res: Response) => {
     const bookingId = Number(req.params.id);
     
     // ฟังก์ชัน getDetailBookingById จาก bookingService เพื่อดึงข้อมูลการจอง
-    const detailBooking = await bookingService.getDetailBookingById(bookingId);
+    const detailBooking = await bookingService.getDetailBooking(bookingId);
     return createResponse(
       res,
       200,
