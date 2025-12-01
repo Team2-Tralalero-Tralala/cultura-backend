@@ -293,21 +293,19 @@ export const getBookingsByAdmin = async (
 
 
 /*  
- * ฟังก์ชัน : getBookingsByAdmin
- * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
+ * ฟังก์ชัน : updateBookingStatus
+ * คำอธิบาย : อัปเดตสถานะของการจอง + จัดการเหตุผลการปฏิเสธ (rejectReason)
  * เงื่อนไข :
- *   - แสดงเฉพาะรายการที่มีสถานะ "PENDING" (รอตรวจสอบ)
- *     หรือ "REFUND_PENDING" (รอคืนเงิน) เท่านั้น
- * Input :
- *   - adminId (number) : รหัสผู้ดูแลที่ร้องขอ (ต้องเป็น Admin)
- *   - page (number) : หน้าปัจจุบัน
- *   - limit (number) : จำนวนต่อหน้า
- * Output :
- *   - PaginationResponse : ข้อมูลรายการการจองทั้งหมดของแพ็กเกจในชุมชน
- *     (เฉพาะสถานะที่อนุญาต) พร้อมข้อมูลแบ่งหน้า (pagination)
+ *   - สถานะที่อนุญาต: BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
+ *   - ถ้าเป็นสถานะปฏิเสธ (REJECTED, REFUND_REJECTED) → สามารถเซต rejectReason ได้
+ *   - ถ้าไม่ใช่สถานะปฏิเสธ → ล้าง rejectReason ให้เป็น null
  */
 
-export const updateBookingStatus = async (id: number, newStatus: string) => {
+export const updateBookingStatus = async (
+  id: number,
+  newStatus: string,
+  rejectReason?: string
+) => {
   const validStatuses = [
     "BOOKED",
     "REJECTED",
@@ -319,11 +317,29 @@ export const updateBookingStatus = async (id: number, newStatus: string) => {
     throw new Error("Invalid booking status");
   }
 
+  const isRejectStatus =
+    newStatus === "REJECTED" || newStatus === "REFUND_REJECTED";
+
+  // ถ้าเป็นสถานะปฏิเสธ → ต้องมีเหตุผล และห้ามเป็นสตริงว่าง
+  let rejectReasonValue: string | null = null;
+  if (isRejectStatus) {
+    const trimmed = (rejectReason ?? "").trim();
+    if (!trimmed) {
+      throw new Error("Reject reason is required");
+    }
+    rejectReasonValue = trimmed;
+  } else {
+    // ถ้าไม่ใช่สถานะปฏิเสธ → ล้าง reason ทิ้ง
+    rejectReasonValue = null;
+  }
+
   const booking = await prisma.bookingHistory.update({
     where: { id },
-    data: { status: newStatus as BookingStatus },
+    data: {
+      status: newStatus as BookingStatus,
+      rejectReason: rejectReasonValue,
+    },
   });
 
   return booking;
 };
-
