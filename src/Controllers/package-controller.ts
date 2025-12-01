@@ -244,6 +244,7 @@ export async function editPackageSuperAdmin(req: Request, res: Response) {
     const files = req.files as {
       cover?: Express.Multer.File[];
       gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
     };
 
     // ② ตรวจชนิด content-type (ตาม homestay)
@@ -275,6 +276,7 @@ export async function editPackageSuperAdmin(req: Request, res: Response) {
     const packageFile = [
       ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
       ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
     ];
 
     // ⑤ อัปเดตแพ็กเกจ (service รองรับ replace เมื่อมี packageFile)
