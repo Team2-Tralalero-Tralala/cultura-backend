@@ -119,7 +119,8 @@ export const me: TypedHandlerFromDto<typeof checkLoginDto> = async (
 ) => {
   try {
     const token = req.cookies.accessToken;
-    const user = await verifyToken(token);
+    const decoded = await verifyToken(token);
+    const user = await AuthService.getProfile(decoded.id);
     return createResponse(res, 200, "check successful", user);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
