@@ -17,6 +17,7 @@ import {
   getAll,
   getMemberByAdmin,
 } from "../Controllers/account-controller.js";
+import * as AccountController from "../Controllers/account-controller.js";
 import { validateDto } from "../Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
 
@@ -215,7 +216,7 @@ accountRoutes.post(
  * @route GET /super/account/:role/:id
  * @description ดึงข้อมูลผู้ใช้ตามบทบาท (Admin / Member / Tourist)
  * @access SuperAdmin
-*/
+ */
 /**
  * @swagger
  * /api/super/account/admin/{id}:
@@ -369,11 +370,11 @@ accountRoutes.get(
   getAccountById
 );
 
-/** 
+/**
  * @route PUT /super/account/:role/:id
  * @description อัปเดตข้อมูลบัญชีผู้ใช้ตามบทบาท (Admin / Member / Tourist)
  * @access SuperAdmin
-  */
+ */
 /**
  * @swagger
  * /api/super/account/admin/{id}:
@@ -564,6 +565,90 @@ accountRoutes.put(
   authMiddleware,
   allowRoles("superadmin"),
   editAccount
+);
+/**
+ * @swagger
+ * /api/super/community/{communityId}/accounts:
+ *   get:
+ *     summary: ดึงข้อมูลบัญชีผู้ใช้ในชุมชน
+ *     description: ใช้สำหรับ SuperAdmin เพื่อดึงข้อมูลบัญชีผู้ใช้ในชุมชนตามรหัส `communityId`
+ *     tags: [Account]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: communityId
+ *         required: true
+ *         description: รหัสชุมชน
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: หน้าที่ต้องการแสดง
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: จำนวนรายการต่อหน้า
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลบัญชีผู้ใช้ในชุมชนสำเร็จ
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 200
+ *               error: false
+ *               message: "get account in community successfully"
+ *               data:
+ *                 - id: 1
+ *                   fname: "Somchai"
+ *                   lname: "Jaidee"
+ *                   email: "somchai@example.com"
+ *                   activityRole: "Volunteer"
+ *               pagination:
+ *                 currentPage: 1
+ *                 totalPages: 5
+ *                 totalCount: 50
+ *                 limit: 10
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง หรือ DTO ตรวจสอบไม่ผ่าน
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 400
+ *               error: true
+ *               message: "ข้อมูลไม่ถูกต้อง"
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบ หรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 401
+ *               error: true
+ *               message: "Unauthorized"
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (เฉพาะ SuperAdmin เท่านั้น)
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: 403
+ *               error: true
+ *               message: "Forbidden"
+ */
+/*
+ * คำอธิบาย : ดึงข้อมูลบัญชีผู้ใช้ในชุมชน
+ */
+accountRoutes.get(
+  "/super/community/:communityId/accounts",
+  validateDto(AccountController.getAccountInCommunityDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  AccountController.getAccountInCommunity
 );
 
 
