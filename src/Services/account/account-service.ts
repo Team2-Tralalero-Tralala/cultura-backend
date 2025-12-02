@@ -93,7 +93,7 @@ export async function createAccount(body: CreateAccountDto) {
     await prisma.communityMembers.create({
       data: {
         communityId: body.memberOfCommunity, // id ของชุมชนจากฟรอนต์เอนด์
-        memberId: created.id,                // id ของ user ที่เพิ่งสร้าง
+        memberId: created.id, // id ของ user ที่เพิ่งสร้าง
       },
     });
   }
@@ -205,7 +205,7 @@ export async function getAccountById(userId: number) {
       role: { select: { name: true } },
     },
   });
-  
+
   if (!user) throw new Error("user_not_found");
   const allowedRoles = ["admin", "member", "tourist"];
 
@@ -323,3 +323,80 @@ export const getAccountAll = async (id: number) => {
 
   return accounts;
 };
+/**
+ * ประเภทข้อมูล: AccountInCommunity
+ * คำอธิบาย: ประเภทข้อมูลสำหรับบัญชีผู้ใช้ที่อยู่ในชุมชน
+ */
+export type AccountInCommunity = {
+  id: number;
+  fname: string;
+  lname: string;
+  email: string;
+  activityRole: string | null;
+};
+/**
+ * ฟังก์ชัน: getAccountInCommunity
+ * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ที่อยู่ในชุมชน
+ * Input: communityId, page, limit, searchName
+ * Output: รายการบัญชีผู้ใช้ที่อยู่ในชุมชน
+ */
+export async function getAccountInCommunity(
+  communityId: number,
+  page: number = 1,
+  limit: number = 10,
+  searchName?: string
+): Promise<PaginationResponse<AccountInCommunity>> {
+  const skip = (page - 1) * limit;
+  const whereCondition: any = {};
+  whereCondition.communityId = communityId;
+  whereCondition.isDeleted = false;
+  whereCondition.deleteAt = null;
+  if (searchName) {
+    whereCondition.OR = {
+      user: {
+        fname: {
+          contains: searchName,
+        },
+        lname: {
+          contains: searchName,
+        },
+        email: {
+          contains: searchName,
+        },
+        activityRole: {
+          contains: searchName,
+        },
+      },
+    };
+  }
+  const accountInCommunity = await prisma.communityMembers.findMany({
+    where: whereCondition,
+    select: {
+      user: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          activityRole: true,
+          role: true,
+        },
+      },
+    },
+    skip,
+    take: limit,
+  });
+  const totalCount = await prisma.communityMembers.count({
+    where: whereCondition,
+  });
+  const totalPages = Math.ceil(totalCount / limit);
+  return {
+    data: accountInCommunity.map((item) => item.user),
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      limit,
+    },
+  };
+}
