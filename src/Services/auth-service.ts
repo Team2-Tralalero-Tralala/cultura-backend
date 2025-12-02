@@ -37,7 +37,7 @@ async function findRoleIdByName(name: string) {
  */
 async function handleExpiredSessions(userId: number, expirationSeconds: number) {
   const expirationTimeAgo = new Date(Date.now() - expirationSeconds * 1000);
-  
+
   const expiredLogs = await prisma.log.findMany({
     where: {
       userId: userId,
@@ -183,10 +183,10 @@ export async function login(data: loginDto, ipAddress: string, expirationSeconds
   };
 
   const token = generateToken(payload, expirationSeconds);
-  
+
   // จัดการ session ที่หมดอายุก่อนสร้าง log ใหม่
   await handleExpiredSessions(user.id, expirationSeconds);
-  
+
   await prisma.log.create({
     data: {
       user: {
@@ -244,4 +244,27 @@ export async function logout(user: UserPayload | undefined, ipAddress: string) {
   }
 
   return;
+}
+
+/*
+ * ฟังก์ชัน : getProfile
+ * คำอธิบาย : ดึงข้อมูลโปรไฟล์ของผู้ใช้จากฐานข้อมูล
+ * Input : userId (number) - รหัสผู้ใช้
+ * Output : ข้อมูลผู้ใช้ (fname, lname, email, role)
+ * Error : throw error ถ้าไม่พบผู้ใช้
+ */
+export async function getProfile(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  return {
+    fname: user.fname,
+    lname: user.lname,
+    email: user.email,
+    role: user.role.name,
+  };
 }
