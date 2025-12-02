@@ -2,7 +2,7 @@
  * Service: Account
  * Description: บริการจัดการบัญชีผู้ใช้ (สร้าง แก้ไข ดึงข้อมูล)
  * Author: Team 2 (Cultura)
- * Last Modified: 21 ตุลาคม 2568
+ * Last Modified: 2 ธันวาคม 2568
  */
 import prisma from "../database-service.js";
 import bcrypt from "bcrypt";
@@ -29,6 +29,7 @@ const selectSafe = {
   district: true,
   subDistrict: true,
   postalCode: true,
+  activityRole: true,
 } as const;
 
 /*
@@ -37,7 +38,6 @@ const selectSafe = {
  * Input: CreateAccountDto
  * Output: ข้อมูลผู้ใช้ที่สร้างสำเร็จ (เฉพาะฟิลด์ที่ปลอดภัย)
  */
-
 export async function createAccount(body: CreateAccountDto) {
   const role = await prisma.role.findUnique({
     where: { id: body.roleId },
@@ -72,6 +72,7 @@ export async function createAccount(body: CreateAccountDto) {
       phone: body.phone,
       password: await bcrypt.hash(body.password, 10),
       ...(body.profileImage && { profileImage: body.profileImage }),
+      ...(body.communityRole && { activityRole: body.communityRole }),
       ...(body.gender && {
         gender:
           body.gender.toUpperCase() === "MALE"
@@ -88,17 +89,21 @@ export async function createAccount(body: CreateAccountDto) {
     },
     select: selectSafe,
   });
+
   //  เพิ่มการบันทึกสมาชิกเข้าชุมชน (เฉพาะ Role = member)
   if (role.name.toLowerCase() === "member" && body.memberOfCommunity) {
     await prisma.communityMembers.create({
       data: {
-        communityId: body.memberOfCommunity, // id ของชุมชนจากฟรอนต์เอนด์
-        memberId: created.id,                // id ของ user ที่เพิ่งสร้าง
+        communityId: body.memberOfCommunity,
+        memberId: created.id,
       },
     });
   }
 
-  return created;
+  return {
+    ...created,
+    memberOfCommunity: body.memberOfCommunity || null,
+  };
 }
 
 /*
@@ -144,6 +149,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     ...(body.email && { email: body.email }),
     ...(body.phone && { phone: body.phone }),
     ...(body.profileImage && { profileImage: body.profileImage }),
+    ...(body.communityRole && { activityRole: body.communityRole }),
     ...(body.gender && { gender: body.gender as any }),
     ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
     ...(body.province && { province: body.province }),
@@ -157,6 +163,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     data.password = await bcrypt.hash(body.password, 10);
   }
 
+  // Logic เคลียร์ข้อมูลที่ไม่จำเป็นเมื่อเปลี่ยน Role
   if (body.roleId) {
     const role = await prisma.role.findUnique({
       where: { id: body.roleId },
@@ -179,6 +186,23 @@ export async function editAccount(userId: number, body: EditAccountDto) {
       data.postalCode = null;
     }
   }
+
+  // อัปเดตตาราง CommunityMembers ถ้ามีการเปลี่ยนชุมชน (สำหรับ Member)
+  if (targetUser.role.name.toLowerCase() === "member" && body.memberOfCommunity) {
+    // 1. ลบชุมชนเก่าออก (ถ้ามี)
+    await prisma.communityMembers.deleteMany({
+      where: { memberId: userId }
+    });
+
+    // 2. เพิ่มเข้าชุมชนใหม่
+    await prisma.communityMembers.create({
+      data: {
+        communityId: body.memberOfCommunity,
+        memberId: userId
+      }
+    });
+  }
+
   const updated = await prisma.user.update({
     where: { id: userId },
     data,
@@ -212,10 +236,24 @@ export async function getAccountById(userId: number) {
   if (!allowedRoles.includes(user.role?.name.toLowerCase())) {
     throw new Error("forbidden_role_access");
   }
+
+  // ดึงข้อมูลชุมชนที่ User อยู่ (จากตาราง communityMembers)
+  let memberOfCommunity = null;
+  if (user.role?.name.toLowerCase() === "member") {
+    const communityMember = await prisma.communityMembers.findFirst({
+      where: { memberId: userId },
+      select: { communityId: true }
+    });
+    if (communityMember) {
+      memberOfCommunity = communityMember.communityId;
+    }
+  }
+
   const baseUrl = process.env.BASE_URL || "http://localhost:3000";
 
   return {
     ...user,
+    memberOfCommunity, // ส่งค่านี้กลับไปเพื่อให้ Frontend แสดงผลใน Selector
     profileImageUrl: user.profileImage
       ? `${baseUrl}/uploads/${user.profileImage}`
       : null,
@@ -263,6 +301,7 @@ export const getAllUser = async (
     },
   };
 };
+
 /*
  * ฟังก์ชัน: getMemberByAdmin
  * คำอธิบาย: ดึงข้อมูลสมาชิกในชุมชนของแอดมิน
@@ -288,6 +327,7 @@ export const getMemberByAdmin = async (adminId: number) => {
 
   return members.map(({ user }) => user);
 };
+
 /*
  * ฟังก์ชัน: getAccountAll
  * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ทั้งหมด (เฉพาะ SuperAdmin)
