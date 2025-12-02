@@ -59,10 +59,45 @@ export async function createPackageSuperAdmin(req: Request, res: Response) {
 export async function createPackageAdmin(req: Request, res: Response) {
   try {
     const userId = Number((req as any).user?.id);
+
+    // 1. ตรวจสอบว่ามีการส่งไฟล์มาหรือไม่ (เพื่อแยกแยะว่าเป็น Multipart หรือ JSON ปกติ)
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+
+    // 2. แกะข้อมูล JSON จาก req.body.data
+    let parsedBody: any;
+    if (req.body.data) {
+        try {
+            parsedBody = JSON.parse(req.body.data);
+        } catch (e) {
+            return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+        }
+    } else {
+        // Fallback: เผื่อส่งมาเป็น JSON ล้วนๆ (กรณีไม่มีรูป)
+        parsedBody = req.body;
+    }
+
+    // 3. รวมไฟล์เข้ากับข้อมูล (Mapping ไฟล์ให้ตรงกับโครงสร้าง PackageFileDto)
+    const packageFile = [
+      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
+      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+    ];
+
+    // 4. ส่งเข้า Service (รวมร่างข้อมูล)
+    // ตรงนี้เราต้อง cast types ให้ตรง หรือส่งไปแบบ object รวม
     const result = await PackageService.createPackageByAdmin(
-      { ...req.body, createById: userId },
+      { 
+        ...parsedBody, 
+        packageFile, // แนบไฟล์ที่ map แล้วเข้าไป
+        createById: userId 
+      },
       userId
     );
+
     return createResponse(res, 200, "Create Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -312,8 +347,38 @@ export async function editPackageAdmin(req: Request, res: Response) {
   try {
     const userId = Number((req as any).user?.id);
     const packageId = Number(req.params.id);
-    const result = await PackageService.editPackageByAdmin(packageId, req.body, userId);
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+    let parsedBody: any;
+    if (req.body.data) {
+      try {
+        parsedBody = JSON.parse(req.body.data);
+      } catch {
+        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+      }
+    const packageFile = [
+      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
+      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+    ];
+    const result = await PackageService.editPackageByAdmin(
+        packageId, 
+        { ...parsedBody, packageFile }, 
+        userId
+    );
+    if (Array.isArray(parsedBody?.tagIds)) {
+      await PackageService.updatePackageTags(
+        packageId,
+        parsedBody.tagIds
+          .map((tagIdNumber: any) => Number(tagIdNumber))
+          .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+      );
+    }
     return createResponse(res, 200, "Package Updated", result);
+  }
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
