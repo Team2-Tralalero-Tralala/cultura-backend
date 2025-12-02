@@ -14,6 +14,7 @@ export async function getDraftPackages(createById: number) {
       createById: createById,
     },
     select: {
+      id: true,
       name: true, // ชื่อแพ็กเกจ
       statusPackage: true, // สถานะแพ็กเกจ
       community: {
