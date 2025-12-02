@@ -31,9 +31,12 @@ import {
     duplicatePackageHistoryAdmin,
     getPackageHistoryDetailAdmin,
     getHistoriesPackageAdmin,
-    getPackageById
+    getPackageById,
+    getDraftPackages,
+    getDraftPackagesDto,
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
+import { get } from "http";
 
 const packageRoutes = Router();
 
@@ -1193,6 +1196,101 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("admin"),
     getHistoriesPackageAdmin
+);
+/**
+ * @swagger
+ * /api/admin/packages/draft:
+ *   get:
+ *     summary: Get draft packages (admin only)
+ *     description: Returns a paginated list of draft packages. Requires admin authentication.
+ *     tags:
+ *       - Admin - Packages
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Draft packages retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         description: Draft package record
+ *                     total:
+ *                       type: integer
+ *                       example: 25
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *
+ *       400:
+ *         description: Invalid request (DTO validation error)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid query parameters"
+ *
+ *       401:
+ *         description: Unauthorized - missing or invalid token
+ *
+ *       403:
+ *         description: Forbidden - admin role required
+ *
+ *       500:
+ *         description: Server error
+ */
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการแพ็กเกจสถานะร่าง (Draft)
+ * Method : GET
+ * Path : /admin/packages/draft
+ */
+packageRoutes.get(
+  "/admin/packages/draft",
+  validateDto(getDraftPackagesDto),
+  authMiddleware,
+  allowRoles("admin"),
+  getDraftPackages
 );
 
 export default packageRoutes;

@@ -1115,3 +1115,29 @@ export const getHistoriesPackageByAdmin = async (
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
 };
+
+export async function getDraftPackages(createById: number) {
+  const draftPackages = await prisma.package.findMany({
+    where: {
+      statusPackage: PackagePublishStatus.DRAFT,
+      createById: createById,
+    },
+    select: {
+      id: true,
+      name: true,
+      statusPackage: true, 
+      community: {
+        select: {
+          name: true, 
+        },
+      },
+      overseerPackage: {
+        select: {
+          username: true, 
+        },
+      },
+    },
+  });
+
+  return draftPackages;
+}

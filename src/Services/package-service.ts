@@ -1,5 +1,5 @@
 import prisma from "./database-service.js";
-
+import { PackagePublishStatus } from "@prisma/client";
 export const createPackage = async (data: any) => {
     return await prisma.package.create({ data });
 };
@@ -21,3 +21,6 @@ export const deletePackage = async (id: number) => {
         where: { id: id }
     });
 };
+
+
+

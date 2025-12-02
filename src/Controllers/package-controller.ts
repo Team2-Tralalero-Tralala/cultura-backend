@@ -622,3 +622,23 @@ export async function getHistoriesPackageAdmin(req: Request, res: Response) {
 
   
 }
+
+export const getDraftPackagesDto = {} satisfies commonDto;
+
+export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> = async (
+  req,
+  res
+) => {
+  try {
+    const myId = req.user?.id;
+    const result = await PackageService.getDraftPackages(Number(myId));
+    return createResponse(
+      res,
+      200,
+      "Fetched draft package successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
