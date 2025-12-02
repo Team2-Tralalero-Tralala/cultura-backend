@@ -25,8 +25,8 @@ const bookingRoutes = Router();
  *   get:
  *     summary: ดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล (เฉพาะสถานะรอดำเนินการ)
  *     description: |
- *       ใช้สำหรับดึงรายการการจอง (BookingHistory) ของแพ็กเกจทั้งหมด  
- *       ภายในชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ โดยจะแสดงเฉพาะการจองที่มีสถานะ  
+ *       ใช้สำหรับดึงรายการการจอง (BookingHistory) ของแพ็กเกจทั้งหมด
+ *       ภายในชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ โดยจะแสดงเฉพาะการจองที่มีสถานะ
  *       **PENDING** หรือ **REFUND_PENDING** เท่านั้น พร้อมข้อมูลนักท่องเที่ยว แพ็กเกจ และราคารวม
  *     tags:
  *       - Booking (Admin)
@@ -124,7 +124,6 @@ const bookingRoutes = Router();
  *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
  */
 
-
 /*
  * path : GET /admin/bookings/all
  * คำอธิบาย : ใช้สำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล
@@ -144,22 +143,22 @@ bookingRoutes.get(
  *   post:
  *     summary: อัปเดตสถานะของรายการการจอง (Admin)
  *     description: |
- *       ใช้สำหรับอัปเดตสถานะของรายการการจองในชุมชน  
- *       
- *       **อนุญาตให้เปลี่ยนสถานะได้เฉพาะรายการที่อยู่ในสถานะ:**  
- *       - `PENDING` (รอตรวจสอบ)  
- *       - `REFUND_PENDING` (รอคืนเงิน)  
- * 
- *       **สถานะที่สามารถเปลี่ยนได้:**  
- *       - `BOOKED` — จองสำเร็จ  
- *       - `REJECTED` — ปฏิเสธการจอง  
- *       - `REFUNDED` — คืนเงินแล้ว  
- *       - `REFUND_REJECTED` — ปฏิเสธการคืนเงิน  
- * 
- *       **กรณีที่ต้องส่ง rejectReason (จำเป็น)**  
- *       - เมื่อส่งสถานะ `REJECTED`  
- *       - เมื่อส่งสถานะ `REFUND_REJECTED`  
- *       
+ *       ใช้สำหรับอัปเดตสถานะของรายการการจองในชุมชน
+ *
+ *       **อนุญาตให้เปลี่ยนสถานะได้เฉพาะรายการที่อยู่ในสถานะ:**
+ *       - `PENDING` (รอตรวจสอบ)
+ *       - `REFUND_PENDING` (รอคืนเงิน)
+ *
+ *       **สถานะที่สามารถเปลี่ยนได้:**
+ *       - `BOOKED` — จองสำเร็จ
+ *       - `REJECTED` — ปฏิเสธการจอง
+ *       - `REFUNDED` — คืนเงินแล้ว
+ *       - `REFUND_REJECTED` — ปฏิเสธการคืนเงิน
+ *
+ *       **กรณีที่ต้องส่ง rejectReason (จำเป็น)**
+ *       - เมื่อส่งสถานะ `REJECTED`
+ *       - เมื่อส่งสถานะ `REFUND_REJECTED`
+ *
  *       ต้องเป็นผู้ใช้ Role: **Admin** และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - Admin / Booking
@@ -227,7 +226,6 @@ bookingRoutes.get(
  *         description: ไม่พบรายการการจอง
  */
 
-
 /*
  * path : POST /admin/bookings/:id/status
  * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง
@@ -244,7 +242,6 @@ bookingRoutes.post(
   BookingHistoryController.updateBookingStatus
 );
 
-
 /**
  * @swagger
  * /api/admin/booking/histories:
@@ -253,9 +250,9 @@ bookingRoutes.post(
  *       - Booking Histories (Admin)
  *     summary: Get bookings (admin)
  *     description: >
- *       ดึงรายการการจองทั้งหมดที่อยู่ภายใต้ความรับผิดชอบของ **admin**  
- *       รองรับการแบ่งหน้า (pagination) ผ่าน query parameter `page` และ `limit`  
- *       ทุก response อยู่ในรูปแบบ `createResponse` / `createErrorResponse`  
+ *       ดึงรายการการจองทั้งหมดที่อยู่ภายใต้ความรับผิดชอบของ **admin**
+ *       รองรับการแบ่งหน้า (pagination) ผ่าน query parameter `page` และ `limit`
+ *       ทุก response อยู่ในรูปแบบ `createResponse` / `createErrorResponse`
  *       ต้องแนบ **Bearer JWT Token** ใน header (`Authorization: Bearer <token>`)
  *     security:
  *       - bearerAuth: []
@@ -421,20 +418,16 @@ bookingRoutes.get(
  */
 
 /*
- * path : GET /:id
+ * path : GET /admin/booking/:id
  * คำอธิบาย : ดึงรายละเอียดการจองตาม Booking ID
  * สิทธิ์ที่เข้าถึงได้ : ทุก role ที่มีสิทธิ์ดูรายละเอียด
  */
 
 bookingRoutes.get(
-  "/:id",
+  "/admin/booking/:id",
   authMiddleware,
   allowRoles("admin", "member", "tourist"),
   BookingHistoryController.getDetailBooking
 );
 
 export default bookingRoutes;
-
-
-
-
