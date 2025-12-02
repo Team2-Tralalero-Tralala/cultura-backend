@@ -127,6 +127,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     throw new Error("forbidden_role_edit");
   }
 
+  // Check Duplicate
   if (body.username || body.email || body.phone) {
     const dup = await prisma.user.findFirst({
       where: {
@@ -142,6 +143,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     if (dup) throw new Error("duplicate");
   }
 
+  // Prepare Data
   const data: any = {
     ...(body.fname && { fname: body.fname }),
     ...(body.lname && { lname: body.lname }),
@@ -163,7 +165,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     data.password = await bcrypt.hash(body.password, 10);
   }
 
-  // Logic เคลียร์ข้อมูลที่ไม่จำเป็นเมื่อเปลี่ยน Role
+  // Logic เคลียร์ข้อมูลเมื่อเปลี่ยน Role
   if (body.roleId) {
     const role = await prisma.role.findUnique({
       where: { id: body.roleId },
@@ -189,7 +191,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
 
   // อัปเดตตาราง CommunityMembers ถ้ามีการเปลี่ยนชุมชน (สำหรับ Member)
   if (targetUser.role.name.toLowerCase() === "member" && body.memberOfCommunity) {
-    // 1. ลบชุมชนเก่าออก (ถ้ามี)
+    // 1. ลบชุมชนเก่าออก
     await prisma.communityMembers.deleteMany({
       where: { memberId: userId }
     });
@@ -209,7 +211,10 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     select: selectSafe,
   });
 
-  return updated;
+  return {
+    ...updated,
+    memberOfCommunity: body.memberOfCommunity || null, 
+  };
 }
 
 /*
