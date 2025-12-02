@@ -131,6 +131,23 @@ export const createPackage = async (data: PackageDto) => {
     ? composeDateTimeIso(data.bookingCloseDate, (data as any).closeTime, true)
     : null;
 
+    const homestayCheckIn =
+    data.homestayId && data.homestayCheckInDate
+      ? composeDateTimeIso(data.homestayCheckInDate, data.homestayCheckInTime)
+      : undefined;
+
+  const homestayCheckOut =
+    data.homestayId && data.homestayCheckOutDate
+      ? composeDateTimeIso(
+          data.homestayCheckOutDate,
+          data.homestayCheckOutTime,
+          true
+        )
+      : undefined;
+
+  const hasHomestayLink =
+    data.homestayId && homestayCheckIn && homestayCheckOut;
+
   return prisma.package.create({
     data: {
       communityId: Number(resolvedCommunityId),
@@ -160,8 +177,20 @@ export const createPackage = async (data: PackageDto) => {
             },
           }
         : {}),
+        ...(hasHomestayLink
+        ? {
+            homestayHistories: {
+              create: {
+                homestayId: Number(data.homestayId),
+                bookedRoom: Number((data as any).bookedRoom || 1), // ถ้าไม่มีค่าให้เป็น 1 ห้อง
+                checkInTime: homestayCheckIn!,
+                checkOutTime: homestayCheckOut!,
+              },
+            },
+          }
+        : {}),
     },
-    include: { location: true, packageFile: true },
+    include: { location: true, packageFile: true, homestayHistories: true },
   });
 };
 
@@ -813,6 +842,8 @@ type ListHomestaysInput = { userId: number; query?: string; limit?: number };
  * Input: { userId, query, limit }
  * Output : Array ของข้อมูลที่พัก
  */
+// Services/package/package-service.ts
+
 export async function listCommunityHomestays({
   userId,
   query = "",
@@ -820,19 +851,39 @@ export async function listCommunityHomestays({
 }: ListHomestaysInput) {
   if (!Number.isInteger(userId) || userId <= 0) throw new Error("Invalid user");
 
+  // 1. ดึงข้อมูล User พร้อมเช็คว่าเป็น Admin ของชุมชนไหน
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: { select: { name: true } }, communityId: true },
+    select: { 
+        role: { select: { name: true } }, 
+        communityId: true,
+        // [เพิ่ม] ดึงชุมชนที่ User นี้เป็น Admin
+        communityAdmin: { 
+            select: { id: true },
+            take: 1 // เอามาอันแรกก่อน (สมมติ 1 คนดูแล 1 ชุมชน)
+        }
+    },
   });
+
   if (!currentUser) throw new Error("User not found");
-  if (!currentUser.communityId) throw new Error("User has no community");
+
+  // 2. หา Community ID ที่ถูกต้อง (รองรับทั้ง Member และ Admin)
+  let targetCommunityId = currentUser.communityId;
+
+  // ถ้าไม่มี communityId ติดตัว ให้ดูว่าเป็น Admin ของชุมชนไหนไหม
+  if (!targetCommunityId && currentUser.communityAdmin.length > 0) {
+      targetCommunityId = currentUser.communityAdmin[0]!.id;
+  }
+
+  // ถ้าหาไม่เจอทั้งคู่ -> Error
+  if (!targetCommunityId) throw new Error("User has no community");
 
   const trimmedQuery = query.trim();
   const orFilter = trimmedQuery ? [{ name: { contains: trimmedQuery } }] : [];
 
   const homestays = await prisma.homestay.findMany({
     where: {
-      communityId: currentUser.communityId,
+      communityId: targetCommunityId,
       isDeleted: false,
       ...(orFilter.length ? { OR: orFilter } : {}),
     },
@@ -895,7 +946,11 @@ export async function getCommunityMembersAndAdmin(
     where: {
       isDeleted: false,
       role: { name: "member" },
-      communityId: communityId,
+      communityMembers: {
+        some: {
+          communityId: communityId
+        }
+      },
       ...nameFilter,
     },
     select: { id: true, fname: true, lname: true },

@@ -136,7 +136,11 @@ packageRoutes.post(
     "/admin/package",
     authMiddleware,
     allowRoles("admin"),
-    validateDto(createPackageDto),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "gallery", maxCount: 5 },
+        { name: "video", maxCount: 5 },
+    ]),
     createPackageAdmin
 );
 
@@ -287,7 +291,11 @@ packageRoutes.put(
     "/admin/package/:id",
     authMiddleware,
     allowRoles("admin"),
-    validateDto(editPackageDto),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "gallery", maxCount: 5 },
+        { name: "video", maxCount: 5 }
+    ]),
     editPackageAdmin
 );
 
@@ -478,10 +486,10 @@ packageRoutes.get(
     listPackagesSuperAdmin
 );
 packageRoutes.get(
-  "/:id",
-  authMiddleware,
-  allowRoles("superadmin", "admin", "member", "tourist"),
-  getPackageById
+    "/:id",
+    authMiddleware,
+    allowRoles("superadmin", "admin", "member", "tourist"),
+    getPackageById
 );
 
 /**
@@ -546,7 +554,7 @@ packageRoutes.put(
     "/super/package/:id",
     authMiddleware,
     allowRoles("superadmin"),
-    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 5 },]),
+    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 5 }, { name: "video", maxCount: 5 },]),
     // validateDto(editPackageDto),
     editPackageSuperAdmin
 );
@@ -931,6 +939,14 @@ packageRoutes.get(
     listAllHomestaysSuperAdmin
 );
 
+packageRoutes.get(
+    "/admin/list-homestays",
+    validateDto(listCommunityHomestaysDto),
+    authMiddleware,
+    allowRoles("admin"),
+    listCommunityHomestays
+);
+
 /*
  * คำอธิบาย : (SuperAdmin) Route สำหรับดึงรายชื่อสมาชิก/แอดมินในชุมชน
  * Method : GET
@@ -940,7 +956,7 @@ packageRoutes.get(
     "/super/community/:communityId/members",
     validateDto(getCommunityMembersDto),
     authMiddleware,
-    allowRoles("superadmin"),
+    allowRoles("superadmin", "admin"),
     getCommunityMembers
 );
 
@@ -1069,10 +1085,10 @@ packageRoutes.get(
  * Path : /api/admin/package/history/:packageId
  */
 packageRoutes.get(
-  "/admin/package/history/:packageId",
-  authMiddleware,
-  allowRoles("admin"),
-  getPackageHistoryDetailAdmin
+    "/admin/package/history/:packageId",
+    authMiddleware,
+    allowRoles("admin"),
+    getPackageHistoryDetailAdmin
 );
 
 /**

@@ -7,6 +7,7 @@ import {
   commonDto,
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
+import * as BookingHistoryService from "~/Services/booking-history-service.js";
 /*
  * ฟังก์ชัน : getByRole
  * คำอธิบาย : Handler สำหรับดึงประวัติการจองตามสิทธิ์ของผู้ใช้งาน
@@ -45,7 +46,7 @@ export const getDetailBooking = async (req: Request, res: Response) => {
     const bookingId = Number(req.params.id);
     
     // ฟังก์ชัน getDetailBookingById จาก bookingService เพื่อดึงข้อมูลการจอง
-    const detailBooking = await bookingService.getDetailBookingById(bookingId);
+    const detailBooking = await bookingService.getDetailBooking(bookingId);
     return createResponse(
       res,
       200,
@@ -122,20 +123,40 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
  *       • REFUND_REJECTED (ปฏิเสธการคืนเงิน)
  *   - เฉพาะผู้ใช้ role "admin" เท่านั้นที่เข้าถึงได้
  */
-
-import * as BookingHistoryService from "~/Services/booking-history-service.js";
-
 export const updateBookingStatus: TypedHandlerFromDto<any> = async (req, res) => {
   try {
     const bookingId = Number(req.params.id);
-    const { status } = req.body;
+    const { status, rejectReason } = req.body as {
+      status?: string;
+      rejectReason?: string;
+    };
 
     if (!bookingId || !status) {
       return createErrorResponse(res, 400, "Missing booking ID or status");
     }
 
-    const updated = await BookingHistoryService.updateBookingStatus(bookingId, status);
-    return createResponse(res, 200, "update booking status successfully", updated);
+    const isRejectStatus =
+      status === "REJECTED" || status === "REFUND_REJECTED";
+
+    // ถ้าเป็นสถานะปฏิเสธ → บังคับต้องมีเหตุผล และห้ามเป็น string ว่าง
+    if (isRejectStatus) {
+      if (!rejectReason || String(rejectReason).trim() === "") {
+        return createErrorResponse(res, 400, "กรุณากรอกเหตุผลการปฏิเสธ");
+      }
+    }
+
+    const updated = await BookingHistoryService.updateBookingStatus(
+      bookingId,
+      status,
+      rejectReason
+    );
+
+    return createResponse(
+      res,
+      200,
+      "update booking status successfully",
+      updated
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

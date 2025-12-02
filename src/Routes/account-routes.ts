@@ -651,4 +651,149 @@ accountRoutes.get(
   AccountController.getAccountInCommunity
 );
 
+
+/** --------------------------------------------------------------------------
+ * @route GET /admin/communities/members
+ * @description ดึงข้อมูลสมาชิกในชุมชนของตนเอง (เฉพาะ Admin)
+ * @access Admin
+ * -------------------------------------------------------------------------- */
+
+/**
+ * @swagger
+ * /api/admin/communities/members:
+ *   get:
+ *     tags:
+ *       - Admin - Communities
+ *     summary: Get list of community members
+ *     description: |
+ *       ดึงรายการสมาชิกในชุมชน (Communities Members) สำหรับผู้ใช้ที่มีสิทธิ์ **admin** เท่านั้น  
+ *       Endpoint นี้รองรับการแบ่งหน้า (pagination) ผ่าน query parameter `page` และ `limit`  
+ *       Response ทั้งหมดอยู่ในรูปแบบ `createResponse` หรือ `createErrorResponse`.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         required: false
+ *         description: หน้าปัจจุบันของข้อมูล (ค่าเริ่มต้นคือ 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         required: false
+ *         description: จำนวนรายการต่อหน้า (ค่าเริ่มต้นคือ 10)
+ *     responses:
+ *       200:
+ *         description: ดึงรายการสมาชิกสำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Get community members successfully
+ *                 data:
+ *                   type: array
+ *                   description: รายชื่อสมาชิกในชุมชน
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 101
+ *                       name:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       email:
+ *                         type: string
+ *                         example: "john@example.com"
+ *                       role:
+ *                         type: string
+ *                         example: "member"
+ *                       joinedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-10-05T12:30:00Z"
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 57
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *       401:
+ *         description: ไม่ได้ส่ง JWT Bearer token หรือ token ไม่ถูกต้อง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *       403:
+ *         description: Forbidden – ผู้ใช้ไม่มีสิทธิ์ admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 403
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden resource
+ *       500:
+ *         description: Internal server error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ */
+
+accountRoutes.get(
+  "/admin/communities/members",
+  authMiddleware,
+  allowRoles("admin"),
+  getMemberByAdmin
+);
+
+
+
 export default accountRoutes;

@@ -144,18 +144,23 @@ bookingRoutes.get(
  *   post:
  *     summary: อัปเดตสถานะของรายการการจอง (Admin)
  *     description: |
- *       ใช้สำหรับอัปเดตสถานะของรายการการจองภายในชุมชน  
- *       สามารถอัปเดตสถานะได้เฉพาะรายการที่อยู่ในสถานะ **PENDING** (รอตรวจสอบ)  
- *       หรือ **REFUND_PENDING** (รอคืนเงิน) เท่านั้น  
+ *       ใช้สำหรับอัปเดตสถานะของรายการการจองในชุมชน  
  *       
- *       สถานะที่สามารถอัปเดตได้:
- *       - **BOOKED** → จองสำเร็จ  
- *       - **REJECTED** → ปฏิเสธการจอง  
- *       - **REFUNDED** → คืนเงินแล้ว  
- *       - **REFUND_REJECTED** → ปฏิเสธการคืนเงิน  
+ *       **อนุญาตให้เปลี่ยนสถานะได้เฉพาะรายการที่อยู่ในสถานะ:**  
+ *       - `PENDING` (รอตรวจสอบ)  
+ *       - `REFUND_PENDING` (รอคืนเงิน)  
+ * 
+ *       **สถานะที่สามารถเปลี่ยนได้:**  
+ *       - `BOOKED` — จองสำเร็จ  
+ *       - `REJECTED` — ปฏิเสธการจอง  
+ *       - `REFUNDED` — คืนเงินแล้ว  
+ *       - `REFUND_REJECTED` — ปฏิเสธการคืนเงิน  
+ * 
+ *       **กรณีที่ต้องส่ง rejectReason (จำเป็น)**  
+ *       - เมื่อส่งสถานะ `REJECTED`  
+ *       - เมื่อส่งสถานะ `REFUND_REJECTED`  
  *       
- *       ต้องเป็นผู้ใช้ Role: **Admin** และต้องแนบ JWT Token ใน Header  
- *       ใช้ HTTP Method **POST** เพื่อส่งคำขอเปลี่ยนสถานะของการจอง
+ *       ต้องเป็นผู้ใช้ Role: **Admin** และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - Admin / Booking
  *     security:
@@ -166,8 +171,7 @@ bookingRoutes.get(
  *         required: true
  *         schema:
  *           type: integer
- *           example: 1
- *         description: รหัสของการจองที่ต้องการอัปเดตสถานะ
+ *         description: รหัสของรายการการจอง
  *     requestBody:
  *       required: true
  *       content:
@@ -177,13 +181,22 @@ bookingRoutes.get(
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [BOOKED, REJECTED, REFUNDED, REFUND_REJECTED]
- *                 example: BOOKED
+ *                 enum:
+ *                   - BOOKED
+ *                   - REJECTED
+ *                   - REFUNDED
+ *                   - REFUND_REJECTED
+ *                 example: REJECTED
+ *               rejectReason:
+ *                 type: string
+ *                 maxLength: 100
+ *                 description: เหตุผลการปฏิเสธ (ต้องมีเมื่อสถานะเป็น REJECTED หรือ REFUND_REJECTED)
+ *                 example: เอกสารการชำระเงินไม่ถูกต้อง
  *             required:
  *               - status
  *     responses:
  *       200:
- *         description: อัปเดตสถานะการจองสำเร็จ
+ *         description: อัปเดตสถานะรายการการจองสำเร็จ
  *         content:
  *           application/json:
  *             schema:
@@ -194,20 +207,24 @@ bookingRoutes.get(
  *                   example: 200
  *                 message:
  *                   type: string
- *                   example: Booking status updated successfully
+ *                   example: update booking status successfully
  *                 data:
  *                   type: object
  *                   properties:
  *                     id:
  *                       type: integer
- *                       example: 1
  *                     status:
  *                       type: string
- *                       example: BOOKED
+ *                       example: REJECTED
+ *                     rejectReason:
+ *                       type: string
+ *                       example: เอกสารการชำระเงินไม่ถูกต้อง
  *       400:
- *         description: อัปเดตสถานะล้มเหลว (เช่น สถานะไม่ถูกต้อง หรือ booking ไม่พบ)
+ *         description: คำขอไม่ถูกต้อง เช่น สถานะใหม่ไม่ถูกต้อง หรือห้ามเว้นเหตุผลเมื่อปฏิเสธ
  *       401:
- *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ *         description: ไม่ได้แนบ JWT Token หรือสิทธิ์ไม่ถูกต้อง
+ *       404:
+ *         description: ไม่พบรายการการจอง
  */
 
 
