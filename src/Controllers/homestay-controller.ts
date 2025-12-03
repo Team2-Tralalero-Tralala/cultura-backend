@@ -294,15 +294,15 @@ export const createHomestayAdmin = async (req: Request, res: Response) => {
  * Error : หากเกิดข้อผิดพลาดระหว่างดึงข้อมูล จะส่งสถานะ 400 พร้อมข้อความ error
  */
 export const getHomestaysAllAdmin: TypedHandlerFromDto<
-  typeof getHomestaysAllDto
+    typeof getHomestaysAllDto
 > = async (req, res) => {
-  try {
-    const userId = Number(req.user!.id);
-    const result = await HomestayService.getHomestaysAllAdmin(userId);
-    return createResponse(res, 200, "get homestay successfully", result);
-  } catch (error) {
-    return createErrorResponse(res, 400, (error as Error).message);
-  }
+    try {
+        const userId = Number(req.user!.id);
+        const result = await HomestayService.getHomestaysAllAdmin(userId);
+        return createResponse(res, 200, "get homestay successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
+    }
 };
 /*
  * PUT /admin/homestay/edit/:homestayId
@@ -357,5 +357,31 @@ export const editHomestayAdmin = async (req: Request, res: Response) => {
         return createResponse(res, 200, "Homestay Updated", result);
     } catch (error: any) {
         return createErrorResponse(res, 400, error.message);
+    }
+};
+
+/*
+* Controller: deleteHomestayAdmin
+* วัตถุประสงค์ : ลบ Homestay ที่อยู่ในชุมชนที่ Admin ดูแล
+* Input : req.user.id (adminId), req.params.homestayId
+* */
+
+export const deleteHomestayAdmin = async (req: Request, res: Response) => {
+    try {
+        const adminId = Number((req.user as { id: number }).id);
+        const homestayId = Number(req.params.homestayId);
+
+        if (isNaN(adminId) || isNaN(homestayId)) {
+            return createErrorResponse(res, 400, "Invalid ID values");
+        }
+
+        const result = await HomestayService.deleteHomestayByAdmin(
+            adminId,
+            homestayId
+        );
+
+        return createResponse(res, 200, "Delete homestay successfully", result);
+    } catch (error) {
+        return createErrorResponse(res, 400, (error as Error).message);
     }
 };
