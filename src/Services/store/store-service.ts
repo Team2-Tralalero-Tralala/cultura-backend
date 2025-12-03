@@ -95,7 +95,9 @@ export async function editStore(
         location: true,
       },
     });
-
+    await transaction.tagStore.deleteMany({
+      where: { storeId },
+    });
     await transaction.tagStore.createMany({
       data: tagStores.map((tagId) => ({
         tagId,
@@ -135,9 +137,11 @@ export async function getStoreById(storeId: number, user: UserPayload) {
       deleteAt: null,
     },
     select: {
+      id: true,
       name: true,
       detail: true,
       storeImage: true,
+      communityId: true,
       tagStores: {
         select: {
           tag: {

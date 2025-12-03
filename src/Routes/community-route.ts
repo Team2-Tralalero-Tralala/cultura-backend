@@ -1,22 +1,3 @@
-/*
- * คำอธิบาย : Router สำหรับจัดการเส้นทาง (Route) ของข้อมูลวิสาหกิจชุมชน (Community)
- * ใช้สำหรับเชื่อมโยงเส้นทาง API เข้ากับ Controller ที่เกี่ยวข้องกับการจัดการชุมชน
- * โดยรองรับการทำงานของ SuperAdmin และ Admin
- *
- * ฟังก์ชันหลักที่รองรับ :
- *   - สร้างชุมชนใหม่ (POST /super/community)
- *   - แก้ไขข้อมูลชุมชน (PUT /super/community/:communityId)
- *   - ลบข้อมูลชุมชนแบบ Soft Delete (PATCH /super/community/:communityId)
- *   - ดึงข้อมูลชุมชนตาม ID (GET /super/community/:communityId)
- *   - ดึงรายชื่อผู้ดูแลและสมาชิกที่ยังไม่ถูกผูกกับชุมชน
- *   - ดึงข้อมูลชุมชนทั้งหมด และรายละเอียดชุมชนแบบละเอียด
- *
- * Middleware ที่ใช้ :
- *   - authMiddleware : ตรวจสอบสิทธิ์การเข้าสู่ระบบ
- *   - allowRoles : จำกัดสิทธิ์เฉพาะบทบาทที่กำหนด (เช่น superadmin, admin)
- *   - upload.fields : รองรับการอัปโหลดไฟล์หลายประเภท (logo, cover, gallery, video)
- */
-
 import { Router } from "express";
 import * as CommunityController from "~/Controllers/community-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
@@ -823,7 +804,7 @@ communityRoutes.get(
  *   get:
  *     summary: ดึงข้อมูลรายชื่อชุมชนทั้งหมด (สำหรับ Super Admin)
  *     description: |
- *       ดึงข้อมูลชุมชนทั้งหมดจากระบบ พร้อม pagination และข้อมูลผู้ดูแล (Admin) ของแต่ละชุมชน  
+ *       ดึงข้อมูลชุมชนทั้งหมดจากระบบ พร้อม pagination และข้อมูลผู้ดูแล (Admin) ของแต่ละชุมชน
  *       ใช้ได้เฉพาะผู้ใช้ที่มีบทบาท **SuperAdmin**
  *     tags:
  *       - Community (Super Admin)
@@ -916,7 +897,6 @@ communityRoutes.get(
  *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
  */
 
-
 /*
  * คำอธิบาย : ดึงรายชื่อชุมชนทั้งหมด (พร้อมข้อมูลพื้นฐาน)
  */
@@ -934,8 +914,8 @@ communityRoutes.get(
  *   get:
  *     summary: ดึงรายละเอียดชุมชนแบบเต็ม (สำหรับ Super Admin)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลรายละเอียดของชุมชนตามรหัส `communityId`  
- *       โดยจะแสดงข้อมูลครบทุกความสัมพันธ์ เช่น พิกัด, สมาชิก, ร้านค้า, ที่พัก, และรูปภาพทั้งหมด  
+ *       ใช้สำหรับดึงข้อมูลรายละเอียดของชุมชนตามรหัส `communityId`
+ *       โดยจะแสดงข้อมูลครบทุกความสัมพันธ์ เช่น พิกัด, สมาชิก, ร้านค้า, ที่พัก, และรูปภาพทั้งหมด
  *       รองรับเฉพาะผู้ใช้ที่มีสิทธิ์ **SuperAdmin**
  *     tags:
  *       - Community (Super Admin)
@@ -1081,8 +1061,8 @@ communityRoutes.get(
  *   get:
  *     summary: ดึงข้อมูลรายละเอียดของชุมชนที่แอดมินรับผิดชอบ (สำหรับ Admin)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลชุมชนที่ผู้ดูแล (Admin) ปัจจุบันดูแลอยู่  
- *       ระบบจะตรวจสอบจาก JWT token และคืนค่ารายละเอียดชุมชนพร้อมข้อมูลที่เกี่ยวข้อง  
+ *       ใช้สำหรับดึงข้อมูลชุมชนที่ผู้ดูแล (Admin) ปัจจุบันดูแลอยู่
+ *       ระบบจะตรวจสอบจาก JWT token และคืนค่ารายละเอียดชุมชนพร้อมข้อมูลที่เกี่ยวข้อง
  *       เช่น location, รูปภาพ, สมาชิก, ร้านค้า, ที่พัก และแพ็กเกจ
  *     tags:
  *       - Community (Admin)
@@ -1218,7 +1198,7 @@ communityRoutes.get(
  * คำอธิบาย : ใช้สำหรับดึงข้อมูลรายละเอียดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบอยู่
  */
 communityRoutes.get(
-  "/admin/community",
+  "/admin/community/own",
   validateDto(CommunityController.getCommunityOwnDto),
   authMiddleware,
   allowRoles("admin"),

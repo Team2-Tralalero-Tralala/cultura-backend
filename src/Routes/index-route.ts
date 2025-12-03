@@ -15,8 +15,8 @@ import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
 import bannerRoutes from "./banner-route.js";
 import bankRoutes from "./bank-route.js";
-import storeAdminRoutes  from "./storeAdmin-route.js";
-import bookingRefund from "./booking-route.js"
+import storeAdminRoutes from "./storeAdmin-route.js";
+import bookingRefund from "./booking-route.js";
 import feedbackRoutes from "./feedback-routes.js";
 import bookingRoutes from "./booking-history-route.js";
 import storeSuperAdminRoutes from "./storeSuperAdmin-route.js";
@@ -24,9 +24,8 @@ import storeSuperAdminRoutes from "./storeSuperAdmin-route.js";
 const rootRouter: Router = Router();
 
 rootRouter.use("/auth", authRoutes);
-rootRouter.use("/booking", bookingHistoriesRoutes);
+rootRouter.use(bookingHistoriesRoutes);
 rootRouter.use(packageRoutes);
-rootRouter.use("/admin/booking", bookingHistoriesRoutes);
 rootRouter.use("/packages", packageRoutes);
 rootRouter.use(userRoutes);
 rootRouter.use(communityRoutes);
@@ -49,7 +48,6 @@ rootRouter.use("/super/stores", storeSuperAdminRoutes);
 rootRouter.use(bookingRoutes);
 
 rootRouter.use(bookingRefund);
-
 
 rootRouter.use(feedbackRoutes);
 
