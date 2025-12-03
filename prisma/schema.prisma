@@ -368,7 +368,6 @@ model User {
   logs             Log[]
   overseerPackages Package[]          @relation("OverseerMember")
   createdPackages  Package[]          @relation("createPackage")
-  communityId      Int?
   communityMembers communityMembers[]
 
   @@index([roleId])
