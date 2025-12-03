@@ -316,21 +316,16 @@ export async function getAllStoreForAdmin(
 
   // ดึงข้อมูล user พร้อม role และชุมชนที่สังกัด
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, role: { name: "admin" } },
     include: {
-      role: true,
-      communityMembers: { include: { Community: true } },
+      communityAdmin: true,
     },
   });
 
   if (!user) throw new Error("User not found");
 
-  if (user.role?.name?.toLowerCase() !== "admin") {
-    throw new Error("Forbidden: only admin can access this resource");
-  }
-
   // ใช้ communityId จาก user โดยตรง
-  const communityId = user.communityId;
+  const communityId = user.communityAdmin[0]?.id;
   if (!communityId) {
     throw new Error("User is not assigned to any community");
   }
@@ -458,7 +453,8 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     where: { id: userId },
     select: {
       id: true,
-      communityId: true,
+      communityMembers: { select: { communityId: true }, take: 1 },
+      communityAdmin: { select: { id: true }, take: 1 },
       role: {
         select: { name: true },
       },
@@ -470,7 +466,8 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
     throw new Error("Forbidden: Only admin can delete stores");
   }
 
-  const communityId = user.communityId;
+  const communityId =
+    user.communityMembers[0]?.communityId ?? user.communityAdmin[0]?.id;
   if (!communityId) {
     throw new Error("User is not assigned to any community");
   }
