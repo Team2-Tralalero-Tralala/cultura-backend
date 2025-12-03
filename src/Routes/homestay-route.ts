@@ -17,6 +17,7 @@ import {
   getHomestaysAllAdmin,
   createHomestayAdmin,
   editHomestayAdmin,
+  deleteHomestayAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -789,5 +790,101 @@ homestayRoutes.get(
   authMiddleware,
   allowRoles("admin"),
   getHomestayDetail
+);
+
+/**
+ * @swagger
+ * /api/admin/community/homestay/{homestayId}:
+ *   patch:
+ *     summary: Soft delete a homestay (Admin only)
+ *     description: ทำการลบโฮมสเตย์แบบ Soft Delete โดยผู้ดูแลระบบเท่านั้น
+ *     tags:
+ *       - Homestay (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: homestayId
+ *         in: path
+ *         required: true
+ *         description: รหัสโฮมสเตย์ที่ต้องการลบ
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: ลบโฮมสเตย์สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Homestay deleted successfully
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Invalid request
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (ต้องมี JWT)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ *       403:
+ *         description: ไม่อนุญาต (เฉพาะ Admin เท่านั้น)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden
+ *       404:
+ *         description: ไม่พบโฮมสเตย์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Homestay not found
+ *       500:
+ *         description: เซิร์ฟเวอร์ผิดพลาด
+ */
+
+homestayRoutes.patch(
+  "/admin/community/homestay/:homestayId", 
+  authMiddleware,
+  allowRoles("admin"),
+  deleteHomestayAdmin
 );
 export default homestayRoutes;
