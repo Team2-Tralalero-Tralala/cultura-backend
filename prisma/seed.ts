@@ -12,7 +12,6 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-// ข้อมูลจำลองสำหรับวิสาหกิจชุมชน (อิงจาก SMCE)
 const communityNames = [
   "วิสาหกิจชุมชนท่องเที่ยวเชิงเกษตรบ้านร่องกล้า",
   "วิสาหกิจชุมชนกลุ่มแม่บ้านเกษตรกรมหาสวัสดิ์",
@@ -161,13 +160,68 @@ const realLocations = [
   },
 ];
 
-// Helper สำหรับสุ่มข้อมูล
-const getRandom = <T>(arr: T[]): T =>
-  arr[Math.floor(Math.random() * arr.length)]!;
-const getRandomInt = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-const getRandomDate = () => new Date(Date.now() - getRandomInt(0, 10000000000));
+const packageNames = [
+  "เที่ยวชมสวนผลไม้",
+  "ล่องแพชมธรรมชาติ",
+  "เรียนรู้วิถีชุมชน",
+  "ดำนาปลูกข้าว",
+  "ทำผ้ามัดย้อม",
+  "เดินป่าศึกษาธรรมชาติ",
+  "ปั่นจักรยานรอบหมู่บ้าน",
+  "ทำอาหารพื้นบ้าน",
+  "เก็บเห็ดในป่าชุมชน",
+  "ชมหิ่งห้อยยามค่ำคืน",
+  "ไหว้พระ 9 วัด",
+  "ล่องเรือชมวิถีริมน้ำ",
+  "พักโฮมสเตย์สัมผัสธรรมชาติ",
+  "เรียนรู้การจักสาน",
+  "ทำขนมไทยโบราณ",
+  "ชมทะเลหมอกยามเช้า",
+  "ดูนกและผีเสื้อ",
+  "ปลูกป่าชายเลน",
+  "เที่ยวเกาะดำน้ำดูปะการัง",
+  "สัมผัสวิถีประมงพื้นบ้าน",
+];
 
+// Helper สำหรับสุ่มข้อมูล
+/**
+ * ชื่อฟังก์ชัน: getRandom
+ * คำอธิบาย: สุ่มเลือกข้อมูล 1 รายการจากอาเรย์ที่กำหนด
+ * Input: arr (อาเรย์ของข้อมูลชนิด T)
+ * Output: ข้อมูลชนิด T ที่สุ่มได้
+ */
+const getRandom = <T>(items: T[]): T =>
+  items[Math.floor(Math.random() * items.length)]!;
+/**
+ * ชื่อฟังก์ชัน: getRandomInt
+ * คำอธิบาย: สุ่มตัวเลขจำนวนเต็มในช่วงที่กำหนด
+ * Input: min (ค่าน้อยสุด), max (ค่ามากสุด)
+ * Output: ตัวเลขจำนวนเต็มที่สุ่มได้
+ */
+const getRandomInt = (minimum: number, maximum: number) =>
+  Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+/**
+ * ชื่อฟังก์ชัน: getRandomDate
+ * คำอธิบาย: สุ่มวันที่ย้อนหลังไม่เกินประมาณ 115 วัน
+ * Input: -
+ * Output: วันที่ (Date) ที่สุ่มได้
+ */
+const getRandomDate = () => new Date(Date.now() - getRandomInt(0, 10000000000));
+/**
+ * ชื่อฟังก์ชัน: getRandomRecentDate
+ * คำอธิบาย: สุ่มวันที่ย้อนหลังไม่เกิน 7 วัน
+ * Input: -
+ * Output: วันที่ (Date) ที่สุ่มได้
+ */
+const getRandomRecentDate = () =>
+  new Date(Date.now() - getRandomInt(0, 7 * 24 * 60 * 60 * 1000));
+
+/**
+ * ชื่อฟังก์ชัน: main
+ * คำอธิบาย: ฟังก์ชันหลักสำหรับรันกระบวนการ Seed ข้อมูลลงฐานข้อมูล
+ * Input: -
+ * Output: Promise<void>
+ */
 async function main() {
   console.log("Start seeding ...");
 
@@ -181,10 +235,10 @@ async function main() {
     prisma.role.create({ data: { name: "tourist" } }),
   ]);
   const roleMap = {
-    superadmin: roles.find((r) => r.name === "superadmin")!.id,
-    admin: roles.find((r) => r.name === "admin")!.id,
-    member: roles.find((r) => r.name === "member")!.id,
-    tourist: roles.find((r) => r.name === "tourist")!.id,
+    superadmin: roles.find((role) => role.name === "superadmin")!.id,
+    admin: roles.find((role) => role.name === "admin")!.id,
+    member: roles.find((role) => role.name === "member")!.id,
+    tourist: roles.find((role) => role.name === "tourist")!.id,
   };
 
   // Tags (20+)
@@ -203,34 +257,28 @@ async function main() {
     })),
   });
 
-  // --- 3. Users & Locations (Foundation for Communities) ---
-
-  // Locations (100+ เพื่อกระจายใช้)
   const locationInputs = Array.from({ length: 100 }).map((_, i) => {
-    const loc = getRandom(realLocations);
+    const location = getRandom(realLocations);
     return {
       detail: `รายละเอียดที่อยู่จำลอง ${i + 1}`,
       houseNumber: `${getRandomInt(1, 999)}/${getRandomInt(1, 20)}`,
-      subDistrict: loc.subDistrict,
-      district: loc.district,
-      province: loc.province,
-      postalCode: loc.postalCode,
+      subDistrict: location.subDistrict,
+      district: location.district,
+      province: location.province,
+      postalCode: location.postalCode,
       latitude: 13.0 + Math.random() * 5,
       longitude: 100.0 + Math.random() * 5,
     };
   });
-  // createMany does not return IDs easily in all DBs, so loop create or findMany after
-  // แต่เพื่อความง่ายในการ link ID เราจะ create ทีละอันหรือ query กลับมา
-  // เนื่องจาก createMany ของ prisma ไม่ return ids ใน mysql เราจะใช้วิธีวน loop create
-  // (อาจจะช้าหน่อยแต่ชัวร์เรื่อง ID สำหรับ seed file)
+
   const locationIds: number[] = [];
-  for (const loc of locationInputs) {
-    const l = await prisma.location.create({ data: loc });
-    locationIds.push(l.id);
+  for (const locationInput of locationInputs) {
+    const createdLocation = await prisma.location.create({
+      data: locationInput,
+    });
+    locationIds.push(createdLocation.id);
   }
 
-  // Users (30+ คน ครบทุก Role)
-  // Thai Names Data
   const thaiFirstNames = [
     "สมชาย",
     "สมศรี",
@@ -296,15 +344,13 @@ async function main() {
     "ณฐพร",
   ];
 
-  // Generate all possible unique name combinations
-  const allNameCombinations: { fname: string; lname: string }[] = [];
-  for (const fname of thaiFirstNames) {
-    for (const lname of thaiLastNames) {
-      allNameCombinations.push({ fname, lname });
+  const allNameCombinations: { firstName: string; lastName: string }[] = [];
+  for (const firstName of thaiFirstNames) {
+    for (const lastName of thaiLastNames) {
+      allNameCombinations.push({ firstName, lastName });
     }
   }
 
-  // Shuffle the combinations (Fisher-Yates shuffle)
   for (let i = allNameCombinations.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allNameCombinations[i], allNameCombinations[j]] = [
@@ -320,20 +366,27 @@ async function main() {
     tourist: [] as number[],
   };
   const hashPassword = bcrypt.hashSync("hashedpw", 10);
-  for (let i = 0; i < 40; i++) {
-    const roleKey = Object.keys(roleMap)[i % 4] as keyof typeof userIds;
+  const roleCounters = {
+    superadmin: 0,
+    admin: 0,
+    member: 0,
+    tourist: 0,
+  };
 
-    // Select unique Thai names from the shuffled list
-    const { fname, lname } = allNameCombinations[i]!;
+  for (let i = 0; i < 10; i++) {
+    const roleKey = Object.keys(roleMap)[i % 4] as keyof typeof userIds;
+    roleCounters[roleKey]++;
+
+    const { firstName, lastName } = allNameCombinations[i]!;
 
     const user = await prisma.user.create({
       data: {
         roleId: roleMap[roleKey],
-        username: `user${i + 1}`,
-        email: `user${i + 1}@example.com`,
+        username: `${roleKey}_${roleCounters[roleKey]}`,
+        email: `${roleKey}_${roleCounters[roleKey]}@example.com`,
         password: hashPassword, // ตามโจทย์
-        fname: fname,
-        lname: lname,
+        fname: firstName,
+        lname: lastName,
         phone: `08${getRandomInt(10000000, 99999999)}`,
         gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
         status: getRandom(Object.values(UserStatus)),
@@ -343,17 +396,36 @@ async function main() {
     userIds[roleKey].push(user.id);
   }
 
-  // --- 4. Communities (20+) ---
+  const communityAdminIds: number[] = [];
+  for (let i = 0; i < communityNames.length; i++) {
+    const { firstName, lastName } = allNameCombinations[10 + i]!; // Continue from previous loop
+    const user = await prisma.user.create({
+      data: {
+        roleId: roleMap.admin,
+        username: `comm_admin_${i + 1}`,
+        email: `comm_admin_${i + 1}@example.com`,
+        password: hashPassword,
+        fname: firstName,
+        lname: lastName,
+        phone: `08${getRandomInt(10000000, 99999999)}`,
+        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+        status: UserStatus.ACTIVE,
+        birthDate: getRandomDate(),
+      },
+    });
+    communityAdminIds.push(user.id);
+  }
+
   const communities = [];
   for (let i = 0; i < communityNames.length; i++) {
-    const adminId = getRandom(userIds.admin); // สุ่ม admin มาดูแล
-    const locId = locationIds[i]!; // ใช้ location ตามลำดับ
+    const adminId = communityAdminIds[i]!; // Unique admin for this community
+    const locationId = locationIds[i]!; // ใช้ location ตามลำดับ
 
-    const comm = await prisma.community.create({
+    const community = await prisma.community.create({
       data: {
         name: communityNames[i]!,
         type: "วิสาหกิจชุมชน",
-        locationId: locId,
+        locationId: locationId,
         adminId: adminId,
         registerNumber: `SMCE-${getRandomInt(1000, 9999)}-${i}`,
         registerDate: getRandomDate(),
@@ -370,7 +442,6 @@ async function main() {
         email: `contact${i}@smce.com`,
         mainAdmin: `admin ${i}`,
         mainAdminPhone: `08${getRandomInt(10000000, 99999999)}`,
-        // Relations
         communityImage: {
           create: [
             { image: "uploads/store1.jpg", type: ImageType.COVER },
@@ -385,18 +456,15 @@ async function main() {
         },
       },
     });
-    communities.push(comm);
+    communities.push(community);
   }
 
-  // --- 5. Stores (20+) ---
-  // กระจาย Store ไปยัง Community ต่างๆ
-  for (let i = 0; i < 25; i++) {
-    const comm = getRandom(communities);
+  for (const community of communities) {
     await prisma.store.create({
       data: {
-        name: `ร้านค้าชุมชน ${i + 1} ของ ${comm.name}`,
+        name: `ร้านค้าชุมชน ของ ${community.name}`,
         detail: "จำหน่ายสินค้า OTOP และของที่ระลึกประจำท้องถิ่น",
-        communityId: comm.id,
+        communityId: community.id,
         locationId: getRandom(locationIds),
         storeImage: {
           create: { image: "uploads/store1.jpg", type: ImageType.COVER },
@@ -408,14 +476,12 @@ async function main() {
     });
   }
 
-  // --- 6. Homestays (20+) ---
   const homestays = [];
-  for (let i = 0; i < 25; i++) {
-    const comm = getRandom(communities);
-    const hs = await prisma.homestay.create({
+  for (const community of communities) {
+    const homestay = await prisma.homestay.create({
       data: {
-        name: `โฮมสเตย์บ้าน ${i + 1}`,
-        communityId: comm.id,
+        name: `โฮมสเตย์บ้าน ของ ${community.name}`,
+        communityId: community.id,
         locationId: getRandom(locationIds),
         type: getRandom(["เรือนไทย", "บ้านปูน", "กระท่อมไม้ไผ่"]),
         guestPerRoom: getRandomInt(2, 4),
@@ -432,92 +498,127 @@ async function main() {
         },
       },
     });
-    homestays.push(hs);
+    homestays.push(homestay);
   }
 
-  // --- 7. Packages (20+) ---
   const packages = [];
-  for (let i = 0; i < 25; i++) {
-    const comm = getRandom(communities);
-    const creator = userIds.admin[0]!; // สมมติให้ admin คนแรกสร้าง
+  for (const community of communities) {
+    const creator = community.adminId; // Use the community's admin
     const overseer = getRandom(userIds.member); // ให้ member สักคนดูแล
 
-    const pk = await prisma.package.create({
+    for (const status of Object.values(PackageApproveStatus)) {
+      const createdPackage = await prisma.package.create({
+        data: {
+          name: getRandom(packageNames),
+          communityId: community.id,
+          locationId: getRandom(locationIds),
+          createById: creator!,
+          overseerMemberId: overseer,
+          description: "สัมผัสวิถีชีวิต ดำนา เกี่ยวข้าว ทานอาหารพื้นถิ่น",
+          capacity: getRandomInt(10, 30),
+          price: getRandomInt(500, 3000),
+          warning: "ควรเตรียมชุดลุยโคลนมาด้วย",
+          statusPackage: PackagePublishStatus.PUBLISH,
+          statusApprove: status,
+          rejectReason:
+            status === PackageApproveStatus.REJECTED
+              ? "ข้อมูลไม่ครบถ้วน"
+              : null,
+          startDate: new Date(),
+          dueDate: new Date(
+            new Date().setFullYear(new Date().getFullYear() + 1)
+          ),
+          facility: "รถรับส่ง, อาหาร 3 มื้อ, วิทยากร",
+          packageFile: {
+            create: [
+              { filePath: "uploads/store1.jpg", type: ImageType.COVER },
+              { filePath: "uploads/store1.jpg", type: ImageType.VIDEO },
+            ],
+          },
+          tagPackages: {
+            create: { tagId: getRandom(allTags).id },
+          },
+        },
+      });
+      packages.push(createdPackage);
+    }
+
+    const draftPackage = await prisma.package.create({
       data: {
-        name: `แพ็คเกจท่องเที่ยว ${comm.name} ${i + 1} วัน`,
-        communityId: comm.id,
+        name: getRandom(packageNames),
+        communityId: community.id,
         locationId: getRandom(locationIds),
-        createById: creator,
+        createById: creator!,
         overseerMemberId: overseer,
-        description: "สัมผัสวิถีชีวิต ดำนา เกี่ยวข้าว ทานอาหารพื้นถิ่น",
+        description: "แพ็กเกจร่าง ยังไม่เผยแพร่",
         capacity: getRandomInt(10, 30),
         price: getRandomInt(500, 3000),
-        warning: "ควรเตรียมชุดลุยโคลนมาด้วย",
-        statusPackage: getRandom(Object.values(PackagePublishStatus)),
-        statusApprove: getRandom(Object.values(PackageApproveStatus)),
+        warning: null,
+        statusPackage: PackagePublishStatus.DRAFT,
+        statusApprove: null,
         startDate: new Date(),
         dueDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-        facility: "รถรับส่ง, อาหาร 3 มื้อ, วิทยากร",
+        facility: "รถรับส่ง",
         packageFile: {
-          create: [
-            { filePath: "uploads/store1.jpg", type: ImageType.COVER },
-            { filePath: "uploads/store1.jpg", type: ImageType.VIDEO },
-          ],
+          create: [{ filePath: "uploads/store1.jpg", type: ImageType.COVER }],
         },
         tagPackages: {
           create: { tagId: getRandom(allTags).id },
         },
       },
     });
-    packages.push(pk);
+    packages.push(draftPackage);
   }
 
-  // --- 8. Bookings & History & Feedback (20+) ---
-  for (let i = 0; i < 30; i++) {
-    const touristId = getRandom(userIds.tourist);
-    const pkg = getRandom(packages);
-    const status = getRandom(Object.values(BookingStatus));
+  for (const packageItem of packages) {
+    for (const status of Object.values(BookingStatus)) {
+      const touristId = getRandom(userIds.tourist);
 
-    // สร้าง Booking
-    const booking = await prisma.bookingHistory.create({
-      data: {
-        touristId: touristId,
-        packageId: pkg.id,
-        bookingAt: getRandomDate(),
-        status: status,
-        totalParticipant: getRandomInt(1, 5),
-        transferSlip: status === BookingStatus.BOOKED ? "slip.jpg" : null,
-      },
-    });
-
-    // ถ้าจองสำเร็จ ให้สร้าง HomestayHistory ด้วย (สมมติว่าแพ็คเกจนี้มีโฮมสเตย์)
-    if (status === BookingStatus.BOOKED) {
-      await prisma.homestayHistory.create({
+      const booking = await prisma.bookingHistory.create({
         data: {
-          packageId: pkg.id,
-          homestayId: getRandom(homestays).id,
-          bookedRoom: 1,
-          checkInTime: new Date(),
-          checkOutTime: new Date(new Date().setDate(new Date().getDate() + 1)),
+          touristId: touristId,
+          packageId: packageItem.id,
+          bookingAt: getRandomRecentDate(),
+          status: status,
+          totalParticipant: getRandomInt(1, 5),
+          transferSlip: ["PENDING", "REJECTED"].includes(status)
+            ? null
+            : "slip.jpg",
+          rejectReason: ["REJECTED", "REFUND_REJECTED"].includes(status)
+            ? "สลิปไม่ถูกต้อง"
+            : null,
         },
       });
 
-      // สร้าง Feedback สำหรับ Booking ที่สำเร็จ
-      await prisma.feedback.create({
-        data: {
-          bookingHistoryId: booking.id,
-          createdAt: new Date(),
-          message: "ประทับใจมากครับ อาหารอร่อย บรรยากาศดี",
-          rating: getRandomInt(4, 5),
-          feedbackImages: {
-            create: { image: "/uploads/store1.jpg" },
+      if (status === BookingStatus.BOOKED) {
+        await prisma.homestayHistory.create({
+          data: {
+            packageId: packageItem.id,
+            homestayId: getRandom(homestays).id,
+            bookedRoom: 1,
+            checkInTime: new Date(),
+            checkOutTime: new Date(
+              new Date().setDate(new Date().getDate() + 1)
+            ),
           },
-          // จำลองการตอบกลับ
-          responderId: userIds.admin[0]!,
-          replyMessage: "ขอบคุณมากครับ โอกาสหน้าเชิญใหม่นะครับ",
-          replyAt: new Date(),
-        },
-      });
+        });
+
+        await prisma.feedback.create({
+          data: {
+            bookingHistoryId: booking.id,
+            createdAt: new Date(),
+            message: "ประทับใจมากครับ อาหารอร่อย บรรยากาศดี",
+            rating: getRandomInt(4, 5),
+            feedbackImages: {
+              create: { image: "/uploads/store1.jpg" },
+            },
+            // จำลองการตอบกลับ
+            responderId: userIds.admin[0]!,
+            replyMessage: "ขอบคุณมากครับ โอกาสหน้าเชิญใหม่นะครับ",
+            replyAt: new Date(),
+          },
+        });
+      }
     }
   }
 
