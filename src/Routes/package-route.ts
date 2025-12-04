@@ -31,7 +31,8 @@ import {
     duplicatePackageHistoryAdmin,
     getPackageHistoryDetailAdmin,
     getHistoriesPackageAdmin,
-    getPackageById
+    getPackageById,
+    getHistoriesPackageByMember
 } from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 
@@ -1209,6 +1210,18 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("admin"),
     getHistoriesPackageAdmin
+);
+
+/*
+ * คำอธิบาย : (Member) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)
+ * Method : GET
+ * Path : /member/packages/histories/all
+ */
+packageRoutes.get(
+    "/member/packages/histories/all",
+    authMiddleware,
+    allowRoles("member"),
+    getHistoriesPackageByMember
 );
 
 export default packageRoutes;
