@@ -1292,5 +1292,100 @@ packageRoutes.get(
   allowRoles("admin"),
   getDraftPackages
 );
-
+/**
+ * @swagger
+ * /api/member/packages/draft:
+ *   get:
+ *     summary: Get draft packages (member only)
+ *     description: Returns a paginated list of the member's draft packages. Requires member authentication.
+ *     tags:
+ *       - Member - Packages
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Draft packages retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         description: Draft package record
+ *                     total:
+ *                       type: integer
+ *                       example: 12
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *
+ *       400:
+ *         description: Invalid request (DTO validation error)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid query parameters"
+ *
+ *       401:
+ *         description: Unauthorized – missing or invalid token
+ *
+ *       403:
+ *         description: Forbidden – member role required
+ *
+ *       500:
+ *         description: Server error
+ */
+/*
+ * คำอธิบาย : (Member) Route สำหรับดึงรายการแพ็กเกจสถานะร่าง (Draft)
+ * Method : GET
+ * Path : /member/packages/draft
+ */
+packageRoutes.get(
+  "/member/packages/draft",
+  validateDto(getDraftPackagesDto),
+  authMiddleware,
+  allowRoles("member"),
+  getDraftPackages
+);
 export default packageRoutes;

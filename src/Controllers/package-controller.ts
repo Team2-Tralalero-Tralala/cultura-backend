@@ -623,8 +623,13 @@ export async function getHistoriesPackageAdmin(req: Request, res: Response) {
   
 }
 
+/*
+ * คำอธิบาย : (Admin,Member) Handler สำหรับดึงรายการ "แพ็กเกจสถานะ Draft"
+ * Input: req.user.id
+ * Output: 200 - ข้อมูลแพ็กเกจสถานะ Draft
+ * 400 - Error message
+ */
 export const getDraftPackagesDto = {} satisfies commonDto;
-
 export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> = async (
   req,
   res

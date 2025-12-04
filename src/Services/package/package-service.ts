@@ -1115,7 +1115,11 @@ export const getHistoriesPackageByAdmin = async (
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
 };
-
+/*
+ * คำอธิบาย : ดึงรายการแพ็กเกจสถานะ Draft ของผู้ใช้
+ * Input: createById - ID ของผู้ใช้ที่สร้างแพ็กเกจ
+ * Output : Array ของแพ็กเกจสถานะ Draft
+ */
 export async function getDraftPackages(createById: number) {
   const draftPackages = await prisma.package.findMany({
     where: {
