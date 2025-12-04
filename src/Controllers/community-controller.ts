@@ -363,3 +363,33 @@ export const getCommunityOwn: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนของสมาชิก(ไม่ต้องมี params/query)
+ * Input : ไม่มี (ใช้ req.user.id)
+ * Output : รายละเอียดชุมชนของสมาชิกคนนั้น
+ */
+export const getCommunityDetailByMemberDto = {} satisfies commonDto;
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดชุมชนของสมาชิก
+ * Route : GET /member/community
+ * Input : req.user.id
+ * Output : JSON response พร้อมรายละเอียดชุมชน
+ */
+export const getCommunityDetailByMember: TypedHandlerFromDto<
+  typeof getCommunityDetailByMemberDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user!.id);
+    const result = await CommunityService.getCommunityDetailByMember(userId);
+    return createResponse(
+      res,
+      200,
+      `Get Community detail member ${userId} successfully`,
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
