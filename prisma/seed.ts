@@ -416,6 +416,26 @@ async function main() {
     communityAdminIds.push(user.id);
   }
 
+  const communityMemberIds: number[] = [];
+  for (let i = 0; i < communityNames.length; i++) {
+    const { firstName, lastName } = allNameCombinations[35 + i]!;
+    const user = await prisma.user.create({
+      data: {
+        roleId: roleMap.member,
+        username: `comm_member_${i + 1}`,
+        email: `comm_member_${i + 1}@example.com`,
+        password: hashPassword,
+        fname: firstName,
+        lname: lastName,
+        phone: `08${getRandomInt(10000000, 99999999)}`,
+        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+        status: UserStatus.ACTIVE,
+        birthDate: getRandomDate(),
+      },
+    });
+    communityMemberIds.push(user.id);
+  }
+
   const communities = [];
   for (let i = 0; i < communityNames.length; i++) {
     const adminId = communityAdminIds[i]!; // Unique admin for this community
@@ -450,8 +470,7 @@ async function main() {
         },
         communityMembers: {
           create: [
-            { memberId: getRandom(userIds.member) },
-            { memberId: getRandom(userIds.member) },
+            { memberId: communityMemberIds[i]! }, // Assign the unique member
           ],
         },
       },
