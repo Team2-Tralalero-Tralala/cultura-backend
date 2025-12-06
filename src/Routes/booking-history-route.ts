@@ -430,4 +430,85 @@ bookingRoutes.get(
   BookingHistoryController.getDetailBooking
 );
 
+/**
+ * @swagger
+ * /api/member/booking-history/{bookingId}:
+ *   get:
+ *     tags:
+ *       - BookingHistory (Member)
+ *     summary: Get booking detail for the member
+ *     description: สมาชิกสามารถดูรายละเอียดประวัติการจองของตนเองได้
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID to fetch
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Booking detail fetched successfully
+ *                 data:
+ *                   type: object
+ *                   description: Booking detail object for the member
+ *       400:
+ *         description: Bad request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       403:
+ *         description: Forbidden - Member role required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       404:
+ *         description: Booking not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+
+/**
+ * Route: GET /member/booking-history/:id
+ * คำอธิบาย:
+ *   - ใช้สำหรับดึงรายละเอียดการจอง (Booking) ตาม bookingId
+ *   - รองรับเฉพาะผู้ใช้งานที่มี role = "member"
+ */
+bookingRoutes.get(
+  "/member/booking-history/:bookingId",
+  authMiddleware,
+  allowRoles("member"),
+  BookingHistoryController.getDetailBookingByMember
+);
+
+
+
 export default bookingRoutes;
