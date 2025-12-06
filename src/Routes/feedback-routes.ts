@@ -100,6 +100,68 @@ feedbackRoutes.get(
   getPackageFeedbacks
 );
 
+/**
+ * @swagger
+ * /api/member/feedback/{feedbackId}/reply:
+ *   post:
+ *     summary: ส่งคำตอบกลับ Feedback ของสมาชิก
+ *     description: สมาชิกสามารถส่งข้อความตอบกลับบน Feedback ของตนเองได้
+ *     tags:
+ *       - Feedback (Member)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         description: ID ของ Feedback
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/replyFeedbackDto'
+ *
+ *     responses:
+ *       200:
+ *         description: ตอบกลับ Feedback สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FeedbackReply'
+ *
+ *       400:
+ *         description: ส่งข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบหรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       403:
+ *         description: ไม่มีสิทธิ์ตอบกลับ Feedback นี้
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
 feedbackRoutes.get(
   "/member/feedback/:packageId",
   authMiddleware,
