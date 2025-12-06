@@ -8,7 +8,7 @@ import type { UserPayload } from "~/Libs/Types/index.js";
  * Output : Feedback ทั้งหมดของแพ็กเกจนั้น
  * เฉพาะกรณีที่แพ็กเกจอยู่ใน community ของแอดมินเท่านั้น
  */
-export const getPackageFeedbacksByPackageId = async (
+export const getPackageFeedbacksByPackageIdAdmin = async (
   packageId: number,
   user: UserPayload
 ) => {
@@ -56,4 +56,4 @@ export const getPackageFeedbacksByPackageId = async (
   return feedbacks;
 };
 
-export default getPackageFeedbacksByPackageId;
+export default getPackageFeedbacksByPackageIdAdmin;

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getPackageFeedbacksByPackageId } from "~/Services/feedback/feedback-service.js";
+import { getPackageFeedbacksByPackageIdAdmin } from "~/Services/feedback/feedback-service.js";
 
 /*
  * ฟังก์ชัน : getPackageFeedbacks
@@ -14,7 +14,7 @@ export const getPackageFeedbacks = async (req: Request, res: Response) => {
     }
 
     const packageId = Number(req.params.packageId);
-    const data = await getPackageFeedbacksByPackageId(packageId, req.user);
+    const data = await getPackageFeedbacksByPackageIdAdmin(packageId, req.user);
 
     return createResponse(res, 200, "Get package feedbacks successfully", data);
   } catch (error) {
