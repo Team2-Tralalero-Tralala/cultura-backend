@@ -1,8 +1,11 @@
 import { Router } from "express";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
-import { getPackageFeedbacks } from "~/Controllers/feedback-controller.js";
+import {  getPackageFeedbacks,
+  replyFeedback,
+  replyFeedbackDto} from "~/Controllers/feedback-controller.js";
+import { validateDto } from "~/Libs/validateDto.js";
 
-const packageFeedbackAdminRoutes = Router();
+const feedbackRoutes = Router();
 /**
  * @swagger
  * /api/admin/package/feedback/{packageId}:
@@ -93,11 +96,20 @@ const packageFeedbackAdminRoutes = Router();
  * Access : admin
  */
 
-packageFeedbackAdminRoutes.get(
+feedbackRoutes.get(
   "/admin/package/feedback/:packageId",
   authMiddleware,
   allowRoles("admin"),
   getPackageFeedbacks
 );
 
-export default packageFeedbackAdminRoutes;
+feedbackRoutes.post(
+  "/member/feedback/:feedbackId/reply",
+  authMiddleware,
+  allowRoles("member"),
+  validateDto(replyFeedbackDto),
+  replyFeedback
+);
+
+
+export default feedbackRoutes;

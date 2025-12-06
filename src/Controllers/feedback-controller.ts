@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getPackageFeedbacksByPackageId } from "~/Services/feedback/feedback-service.js";
+import { getPackageFeedbacksByPackageId, replyFeedbackService} from "~/Services/feedback/feedback-service.js";
+import {
+  commonDto,
+  type TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
+import { ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
+
 
 /*
  * ฟังก์ชัน : getPackageFeedbacks
@@ -17,6 +23,33 @@ export const getPackageFeedbacks = async (req: Request, res: Response) => {
     const data = await getPackageFeedbacksByPackageId(packageId, req.user);
 
     return createResponse(res, 200, "Get package feedbacks successfully", data);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * DTO สำหรับ replyFeedback — ใช้ตรวจสอบ replyMessage
+ */
+export const replyFeedbackDto = {
+  body: ReplyFeedbackDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : replyFeedback
+ * คำอธิบาย : ตอบกลับรีวิว — controller ไม่มีการดักเงื่อนไขใด ๆ
+ * หมายเหตุ : validation และ business logic ทำใน DTO + Service แล้ว
+ */
+export const replyFeedback: TypedHandlerFromDto<
+  typeof replyFeedbackDto
+> = async (req, res) => {
+  try {
+    const { feedbackId } = req.params as { feedbackId: string };
+    const { replyMessage } = req.body as ReplyFeedbackDto;
+
+    const data = await replyFeedbackService(Number(feedbackId), replyMessage, req.user);
+
+    return createResponse(res, 200, "Reply feedback successfully", data);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
