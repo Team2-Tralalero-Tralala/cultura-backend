@@ -69,7 +69,7 @@ export async function getPackageFeedbacksByPackageIdMember(
   packageId: number,
   user: UserPayload
 ) {
-  if (user.role !== "MEMBER") {
+  if (user.role !== "member") {
     throw new Error("ผู้ใช้ไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
   }
 

@@ -35,7 +35,7 @@ export async function getPackageFeedbacksForMember(
     const packageId = Number(req.params.packageId);
     const data = await getPackageFeedbacksByPackageIdMember(packageId, req.user!);
 
-    return createResponse(res, 200, "ดึงรายการฟีดแบ็กสำเร็จ", data);
+    return createResponse(res, 200, "Get package feedbacks successfully", data);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
