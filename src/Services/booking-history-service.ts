@@ -343,3 +343,72 @@ export const updateBookingStatus = async (
 
   return booking;
 };
+
+/**
+ * ฟังก์ชัน: getDetailBookingByMember
+ * คำอธิบาย:
+ *   ใช้สำหรับดึงรายละเอียดการจอง (bookingHistory) โดยจำกัดสิทธิ์เฉพาะผู้ใช้ที่เป็น Member
+ *   และต้องเป็นการจองภายในชุมชนของผู้ใช้เท่านั้น
+ *
+ * Input:
+ *   - id: number
+ *       • รหัสการจอง (BookingID)
+ *       • ต้องเป็นตัวเลข หากไม่ใช่จะ throw Error "ID ไม่ถูกต้อง"
+ *   - user: any
+ *       • ข้อมูลผู้ใช้ที่ถูก decode จาก Token
+ *       • ต้องมีค่าดังนี้เมื่อเป็น role "member"
+ *           - user.role = "member"
+ *           - user.communityId ต้องมีค่า
+ * Output:
+ *   - คืนค่ารายละเอียดการจอง (booking object)
+ *   - กรณีเกิดข้อผิดพลาดจะ throw Error พร้อมข้อความภาษาไทย
+ */
+
+export const getDetailBookingByMember = async (id: number, user: any) => {
+  const bookingId = Number(id);
+   
+  const booking = await prisma.bookingHistory.findUnique({
+    where: { id: bookingId },
+    include: {
+      package: {
+        select: {
+          name: true,
+          startDate: true,
+          dueDate: true,
+          price: true,
+          capacity: true,
+          communityId: true,
+        },
+      },
+      tourist: {
+        select: {
+          fname: true,
+          lname: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
+  });
+
+ if (!booking) {
+  throw new Error("ไม่พบข้อมูลการจอง");
+}
+
+if (user.role === "member") {
+  if (!user.communityId) {
+    throw new Error("ไม่มีสิทธิ์เข้าถึง: ผู้ใช้ Member ไม่มีชุมชน");
+  }
+
+  if (!booking.package) {
+    throw new Error("ไม่พบข้อมูลแพ็กเกจที่เชื่อมกับการจองนี้");
+  }
+
+  if (booking.package.communityId !== user.communityId) {
+    throw new Error("ไม่มีสิทธิ์เข้าถึง: การจองนี้ไม่ได้อยู่ในชุมชนของคุณ");
+    }
+  }
+
+  return booking;
+};
+
