@@ -138,7 +138,7 @@ export class EditAccountDto {
 
   @IsOptional()
   @IsString()
-  subdistrict?: string;
+  subDistrict?: string;
 
   @IsOptional()
   @IsString()

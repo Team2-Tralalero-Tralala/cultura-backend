@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { IsNumberString } from "class-validator";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { getHistoriesByRole } from "../Services/booking-history-service.js";
 import * as bookingService from "../Services/booking-history-service.js";
@@ -161,3 +162,57 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (req, res) =>
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/**
+ * DTO : BookingIdParamDto
+ * คำอธิบาย :
+ *  - ใช้สำหรับตรวจสอบพารามิเตอร์ bookingId ที่ส่งมาผ่าน URL
+ *  - ต้องเป็นค่า Number ในรูปแบบ string เท่านั้น
+ */
+export class BookingIdParamDto {
+  @IsNumberString()
+  bookingId?: number;
+}
+
+/**
+ * DTO สำหรับ "ดึงข้อมูลรายละเอียดการจองตามรหัส"
+ * ใช้ validate params ก่อนเข้า controller
+ */
+export const getDetailBookingByMemberDto = {
+  params: BookingIdParamDto,
+} satisfies commonDto;
+
+
+/**
+ * ฟังก์ชัน : getDetailBookingByMember
+ * คำอธิบาย :
+ *  - สำหรับดึงรายละเอียดการจองเฉพาะของสมาชิก (role = member)
+ *  - สมาชิกจะเห็นเฉพาะ booking ที่ตนเองเป็นผู้จองหรืออยู่ในชุมชนที่เกี่ยวข้อง
+ *
+ * Input :
+ *  - req.user.id          : รหัสผู้ใช้ (มาจาก authMiddleware)
+ *  - req.params.bookingId : รหัสการจองที่ต้องการดูรายละเอียด (ผ่าน DTO ตรวจสอบเลขแล้ว)
+ *
+ * Output :
+ *  - 200 OK : ส่งกลับรายละเอียดการจองแบบเต็ม
+ *  - 400 Bad Request : หาก bookingId ไม่ถูกต้อง หรือเกิด error อื่น ๆ
+ *
+ * สิทธิ์ในการเข้าถึง :
+ *  - เฉพาะผู้ใช้ role "member" ที่เกี่ยวข้องกับ booking เท่านั้น
+ */
+export const getDetailBookingByMember: TypedHandlerFromDto<
+  typeof getDetailBookingByMemberDto
+> = async (req, res) => {
+  try {
+    const bookingId = Number(req.params.bookingId);
+    const userId = Number(req.user!.id);
+    const result = await bookingService.getDetailBookingByMember(
+      bookingId,
+      userId
+    );
+    return createResponse(res, 200, "Get booking detail successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+

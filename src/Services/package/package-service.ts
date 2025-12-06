@@ -131,7 +131,7 @@ export const createPackage = async (data: PackageDto) => {
     ? composeDateTimeIso(data.bookingCloseDate, (data as any).closeTime, true)
     : null;
 
-    const homestayCheckIn =
+  const homestayCheckIn =
     data.homestayId && data.homestayCheckInDate
       ? composeDateTimeIso(data.homestayCheckInDate, data.homestayCheckInTime)
       : undefined;
@@ -177,7 +177,7 @@ export const createPackage = async (data: PackageDto) => {
             },
           }
         : {}),
-        ...(hasHomestayLink
+      ...(hasHomestayLink
         ? {
             homestayHistories: {
               create: {
@@ -854,25 +854,25 @@ export async function listCommunityHomestays({
   // 1. ดึงข้อมูล User พร้อมเช็คว่าเป็น Admin ของชุมชนไหน
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { 
-        role: { select: { name: true } }, 
-        communityId: true,
-        // [เพิ่ม] ดึงชุมชนที่ User นี้เป็น Admin
-        communityAdmin: { 
-            select: { id: true },
-            take: 1 // เอามาอันแรกก่อน (สมมติ 1 คนดูแล 1 ชุมชน)
-        }
+    select: {
+      role: { select: { name: true } },
+      communityMembers: { select: { communityId: true }, take: 1 },
+      // [เพิ่ม] ดึงชุมชนที่ User นี้เป็น Admin
+      communityAdmin: {
+        select: { id: true },
+        take: 1, // เอามาอันแรกก่อน (สมมติ 1 คนดูแล 1 ชุมชน)
+      },
     },
   });
 
   if (!currentUser) throw new Error("User not found");
 
   // 2. หา Community ID ที่ถูกต้อง (รองรับทั้ง Member และ Admin)
-  let targetCommunityId = currentUser.communityId;
+  let targetCommunityId = currentUser.communityMembers[0]?.communityId;
 
   // ถ้าไม่มี communityId ติดตัว ให้ดูว่าเป็น Admin ของชุมชนไหนไหม
   if (!targetCommunityId && currentUser.communityAdmin.length > 0) {
-      targetCommunityId = currentUser.communityAdmin[0]!.id;
+    targetCommunityId = currentUser.communityAdmin[0]!.id;
   }
 
   // ถ้าหาไม่เจอทั้งคู่ -> Error
@@ -948,8 +948,8 @@ export async function getCommunityMembersAndAdmin(
       role: { name: "member" },
       communityMembers: {
         some: {
-          communityId: communityId
-        }
+          communityId: communityId,
+        },
       },
       ...nameFilter,
     },
@@ -1018,18 +1018,22 @@ export const getAllFeedbacks = async (userId: number) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      communityId: true, // 👈 เอาแค่ field `communityId` (จาก schema)
+      communityMembers: { select: { communityId: true }, take: 1 },
+      communityAdmin: { select: { id: true }, take: 1 },
     },
   });
 
-  if (!user?.communityId) {
+  const communityId =
+    user?.communityMembers[0]?.communityId ?? user?.communityAdmin[0]?.id;
+
+  if (!communityId) {
     console.log("User not found or does not belong to a community.");
     return []; // หรือ return ค่าว่างตามที่คุณต้องการ
   }
 
   const communityData = await prisma.community.findUnique({
     where: {
-      id: user.communityId,
+      id: communityId,
     },
     include: {
       packages: {

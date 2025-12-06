@@ -282,30 +282,30 @@ model PackageFile {
 model Package {
   id               Int                   @id @default(autoincrement()) @map("pk_id")
   communityId      Int                   @map("pk_community_id")
-  locationId       Int                   @map("pk_location_id")
-  overseerMemberId Int                   @map("pk_overseer_member_id")
+  locationId       Int?                   @map("pk_location_id")
+  overseerMemberId Int?                   @map("pk_overseer_member_id")
   createById       Int                   @map("pk_create_by")
-  name             String                @map("pk_name") @db.VarChar(100)
-  description      String                @map("pk_description") @db.VarChar(500)
-  capacity         Int                   @map("pk_capacity")
-  price            Float                 @map("pk_price") @db.Double
-  warning          String                @map("pk_warning") @db.VarChar(200)
+  name             String?                @map("pk_name") @db.VarChar(100)
+  description      String?                @map("pk_description") @db.VarChar(500)
+  capacity         Int?                   @map("pk_capacity")
+  price            Float?                 @map("pk_price") @db.Double
+  warning          String?                @map("pk_warning") @db.VarChar(200)
   statusPackage    PackagePublishStatus  @map("pk_status_package")
   statusApprove    PackageApproveStatus? @map("pk_status_approve")
-  startDate        DateTime              @map("pk_start_date") @db.DateTime
-  dueDate          DateTime              @map("pk_due_date") @db.DateTime
-  bookingOpenDate  DateTime?             @map("pk_booking_open_date") @db.DateTime
-  bookingCloseDate DateTime?             @map("pk_booking_close_date") @db.DateTime
-  facility         String                @map("pk_facility") @db.VarChar(200)
+  startDate        DateTime?              @map("pk_start_date") @db.DateTime
+  dueDate          DateTime?              @map("pk_due_date") @db.DateTime
+  bookingOpenDate  DateTime?              @map("pk_booking_open_date") @db.DateTime
+  bookingCloseDate DateTime?              @map("pk_booking_close_date") @db.DateTime
+  facility         String?                @map("pk_facility") @db.VarChar(200)
   rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
   isDeleted        Boolean               @default(false) @map("pk_is_deleted")
   deleteAt         DateTime?             @map("pk_delete_at") @db.Timestamp(0)
 
   // Relations
   community       Community @relation(fields: [communityId], references: [id])
-  location        Location  @relation(fields: [locationId], references: [id])
+  location        Location?  @relation(fields: [locationId], references: [id])
   createPackage   User      @relation("createPackage", fields: [createById], references: [id])
-  overseerPackage User      @relation("OverseerMember", fields: [overseerMemberId], references: [id])
+  overseerPackage User?      @relation("OverseerMember", fields: [overseerMemberId], references: [id])
 
   bookingHistories  BookingHistory[]
   homestayHistories HomestayHistory[]
@@ -368,7 +368,6 @@ model User {
   logs             Log[]
   overseerPackages Package[]          @relation("OverseerMember")
   createdPackages  Package[]          @relation("createPackage")
-  communityId      Int?
   communityMembers communityMembers[]
 
   @@index([roleId])
