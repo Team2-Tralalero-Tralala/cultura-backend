@@ -63,7 +63,7 @@ export default getPackageFeedbacksByPackageId;
 /*
  * ฟังก์ชัน : replyFeedbackService
  * คำอธิบาย : ฟังก์ชันสำหรับรตอบกลับ Feedback
- * โดยจะอัปเดตฟิลด์ replyMessage, replyAt และ responderId
+ * โดยจะอัปเดตเฉพาะฟิลด์ replyMessage, replyAt และ responderId
  *
  * Input :
  *   - feedbackId : Feedback ที่ต้องการตอบกลับ
@@ -73,7 +73,7 @@ export default getPackageFeedbacksByPackageId;
  * Output :
  *   - ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
  */
-export const replyFeedbackService = async (
+export const replyFeedbackMember = async (
   feedbackId: number,
   replyMessage: string,
   user: UserPayload | undefined
@@ -103,7 +103,7 @@ export const replyFeedbackService = async (
       replyMessage: true,
       replyAt: true,
       responderId: true,
-
+      
       responder: {
         select: {
           fname: true,

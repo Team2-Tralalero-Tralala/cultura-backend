@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getPackageFeedbacksByPackageId, replyFeedbackService} from "~/Services/feedback/feedback-service.js";
+import { getPackageFeedbacksByPackageId, replyFeedbackMember} from "~/Services/feedback/feedback-service.js";
 import {
   commonDto,
   type TypedHandlerFromDto,
@@ -47,7 +47,7 @@ export const replyFeedback: TypedHandlerFromDto<
     const { feedbackId } = req.params as { feedbackId: string };
     const { replyMessage } = req.body as ReplyFeedbackDto;
 
-    const data = await replyFeedbackService(Number(feedbackId), replyMessage, req.user);
+    const data = await replyFeedbackMember(Number(feedbackId), replyMessage, req.user);
 
     return createResponse(res, 200, "Reply feedback successfully", data);
   } catch (error) {
