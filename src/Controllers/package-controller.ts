@@ -70,14 +70,14 @@ export async function createPackageAdmin(req: Request, res: Response) {
     // 2. แกะข้อมูล JSON จาก req.body.data
     let parsedBody: any;
     if (req.body.data) {
-        try {
-            parsedBody = JSON.parse(req.body.data);
-        } catch (e) {
-            return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
-        }
+      try {
+        parsedBody = JSON.parse(req.body.data);
+      } catch (e) {
+        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+      }
     } else {
-        // Fallback: เผื่อส่งมาเป็น JSON ล้วนๆ (กรณีไม่มีรูป)
-        parsedBody = req.body;
+      // Fallback: เผื่อส่งมาเป็น JSON ล้วนๆ (กรณีไม่มีรูป)
+      parsedBody = req.body;
     }
 
     // 3. รวมไฟล์เข้ากับข้อมูล (Mapping ไฟล์ให้ตรงกับโครงสร้าง PackageFileDto)
@@ -90,10 +90,10 @@ export async function createPackageAdmin(req: Request, res: Response) {
     // 4. ส่งเข้า Service (รวมร่างข้อมูล)
     // ตรงนี้เราต้อง cast types ให้ตรง หรือส่งไปแบบ object รวม
     const result = await PackageService.createPackageByAdmin(
-      { 
-        ...parsedBody, 
+      {
+        ...parsedBody,
         packageFile, // แนบไฟล์ที่ map แล้วเข้าไป
-        createById: userId 
+        createById: userId
       },
       userId
     );
@@ -359,26 +359,26 @@ export async function editPackageAdmin(req: Request, res: Response) {
       } catch {
         return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
       }
-    const packageFile = [
-      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
-    ];
-    const result = await PackageService.editPackageByAdmin(
-        packageId, 
-        { ...parsedBody, packageFile }, 
-        userId
-    );
-    if (Array.isArray(parsedBody?.tagIds)) {
-      await PackageService.updatePackageTags(
+      const packageFile = [
+        ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
+        ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+        ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+      ];
+      const result = await PackageService.editPackageByAdmin(
         packageId,
-        parsedBody.tagIds
-          .map((tagIdNumber: any) => Number(tagIdNumber))
-          .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+        { ...parsedBody, packageFile },
+        userId
       );
+      if (Array.isArray(parsedBody?.tagIds)) {
+        await PackageService.updatePackageTags(
+          packageId,
+          parsedBody.tagIds
+            .map((tagIdNumber: any) => Number(tagIdNumber))
+            .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+        );
+      }
+      return createResponse(res, 200, "Package Updated", result);
     }
-    return createResponse(res, 200, "Package Updated", result);
-  }
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -683,6 +683,51 @@ export async function getHistoriesPackageAdmin(req: Request, res: Response) {
     const result = await PackageService.getHistoriesPackageByAdmin(userId, page, limit);
 
     return createResponse(res, 200, "Get History Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}
+
+/*
+ * คำอธิบาย : (Member) Handler สำหรับดึงรายละเอียดแพ็กเกจที่ตนเองมีสิทธิ์ดู
+ * Input: req.user.id (memberId), req.params.id (packageId)
+ * Output:
+ *   200 - ข้อมูลแพ็กเกจ (โครงเดียวกับ getPackageDetailById)
+ *   404 - ไม่พบหรือไม่มีสิทธิ์เข้าถึง
+ *   400 - Error message
+ */
+export async function getPackageDetailByMember(req: Request, res: Response) {
+  try {
+    const memberId = Number((req as any).user?.id);
+    if (!memberId) {
+      return createErrorResponse(res, 401, "Unauthorized");
+    }
+
+    const packageId = Number(req.params.id);
+    if (isNaN(packageId)) {
+      return createErrorResponse(res, 400, "Package ID ต้องเป็นตัวเลข");
+    }
+
+    const result = await PackageService.getPackageDetailByMember(
+      memberId,
+      packageId
+    );
+
+    if (!result) {
+      // ไม่เจอแพ็กเกจ หรือ member ไม่มีสิทธิ์เข้าถึง
+      return createErrorResponse(
+        res,
+        404,
+        "ไม่พบแพ็กเกจนี้ หรือคุณไม่มีสิทธิ์เข้าถึง"
+      );
+    }
+
+    return createResponse(
+      res,
+      200,
+      "Get Package Detail Success",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
