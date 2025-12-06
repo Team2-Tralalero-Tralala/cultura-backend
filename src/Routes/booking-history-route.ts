@@ -430,4 +430,238 @@ bookingRoutes.get(
   BookingHistoryController.getDetailBooking
 );
 
+/**
+ * @swagger
+ * /api/member/booking-histories:
+ *   get:
+ *     summary: ดึงประวัติการจองของตนเอง (Member)
+ *     description: |
+ *       ใช้สำหรับดึงรายการประวัติการจอง (BookingHistory)
+ *       **เฉพาะของผู้ใช้ Member ที่ล็อกอินอยู่**
+ *       พร้อมข้อมูลแพ็กเกจ ชุมชน ราคารวม และสถานะการจอง
+ *       รองรับการแบ่งหน้า (Pagination)
+ *
+ *     tags:
+ *       - Booking (Member)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการดึงข้อมูล (ค่าเริ่มต้น 1)
+ *
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนข้อมูลต่อหน้า (ค่าเริ่มต้น 10)
+ *
+ *     responses:
+ *       200:
+ *         description: ดึงประวัติการจองของสมาชิกสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Booking histories retrieved successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 12
+ *                       community:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                             example: "ชุมชนบ้านโนนสะอาด"
+ *                       package:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                             example: "แพ็กเกจท่องเที่ยวเชิงวัฒนธรรม"
+ *                           price:
+ *                             type: number
+ *                             example: 1500
+ *                       quantity:
+ *                         type: integer
+ *                         example: 2
+ *                       totalPrice:
+ *                         type: number
+ *                         example: 3000
+ *                       status:
+ *                         type: string
+ *                         example: "BOOKED"
+ *                         enum:
+ *                           - PENDING
+ *                           - BOOKED
+ *                           - REJECTED
+ *                           - REFUND_PENDING
+ *                           - REFUNDED
+ *                           - REFUND_REJECTED
+ *                       transferSlip:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "uploads/slips/slip_2025-02-11.png"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-02-11T10:12:45.000Z"
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                       example: 1
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 3
+ *                     totalCount:
+ *                       type: integer
+ *                       example: 21
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *
+ *       400:
+ *         description: การดึงข้อมูลล้มเหลวหรือ query ไม่ถูกต้อง
+ *
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Member)
+ *
+ *       404:
+ *         description: ไม่พบประวัติการจอง
+ *
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ */
+
+/*
+ * path : GET /member/booking-histories
+ * คำอธิบาย : ใช้สำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่สมาชิก
+ * สิทธิ์ที่เข้าถึงได้ : member
+ */
+bookingRoutes.get(
+  "/member/booking-histories",
+  validateDto(BookingHistoryController.getBookingsByMemberDto),
+  authMiddleware,
+  allowRoles("member"),
+  BookingHistoryController.getBookingsByMember
+);
+
+/**
+ * @swagger
+ * /api/member/booking/{id}/status:
+ *   post:
+ *     summary: อัปเดตสถานะของรายการการจอง (Member)
+ *     description: |
+ *       ใช้สำหรับอัปเดตสถานะของรายการการจองที่เป็นของผู้ใช้ Member เองเท่านั้น  
+ *
+ *       **ตัวอย่างการใช้งานทั่วไปของ Member เช่น**
+ *       - ขอคืนเงินจากการจองที่ชำระเงินแล้ว
+ *       - ยกเลิกการจอง (ตามเงื่อนไขที่ระบบกำหนด)
+ *
+ *       **สถานะที่สมาชิกสามารถส่งได้ (ตัวอย่าง):**
+ *       - `CANCELLED` — ยกเลิกการจอง
+ *       - `REFUND_PENDING` — ขอคืนเงิน รอการตรวจสอบจากแอดมิน
+ *
+ *       ต้องเป็นผู้ใช้ Role: **Member** และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Member / Booking
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสของรายการการจอง (BookingHistory ID)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum:
+ *                   - CANCELLED
+ *                   - REFUND_PENDING
+ *                 example: REFUND_PENDING
+ *             required:
+ *               - status
+ *     responses:
+ *       200:
+ *         description: อัปเดตสถานะรายการการจองสำเร็จ (Member)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: update booking status by member successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 15
+ *                     status:
+ *                       type: string
+ *                       example: REFUND_PENDING
+ *       400:
+ *         description: คำขอไม่ถูกต้อง เช่น สถานะใหม่ไม่ถูกต้อง หรือไม่สามารถอัปเดตสถานะได้
+ *       401:
+ *         description: ไม่ได้แนบ JWT Token หรือสิทธิ์ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Member)
+ *       404:
+ *         description: ไม่พบรายการการจอง
+ */
+
+/*
+ * path : POST /member/bookings/:id/status
+ * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง
+ * เงื่อนไข :
+ *   - สามารถอัปเดตสถานะได้เฉพาะ (PENDING, REFUND_PENDING)
+ *   - รองรับการเปลี่ยนเป็น BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
+ * สิทธิ์ที่เข้าถึงได้ : member
+ */
+bookingRoutes.post(
+  "/member/booking/:id/status",
+  authMiddleware,
+  allowRoles("member"),
+  BookingHistoryController.updateBookingStatusByMember
+);
+
+
+
+ 
 export default bookingRoutes;

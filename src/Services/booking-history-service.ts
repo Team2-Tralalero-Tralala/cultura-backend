@@ -343,3 +343,211 @@ export const updateBookingStatus = async (
 
   return booking;
 };
+
+
+/*  
+ * ฟังก์ชัน : getBookingsByMember
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองเฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (เฉพาะ Member)
+ * Input :
+ *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น PENDING, REFUND_PENDING หรือ PENDING,REFUND_PENDING)
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการการจองเฉพาะแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
+ */
+export const getBookingsByMember = async (
+  memberId: number,
+  page = 1,
+  limit = 10,
+  status?: string
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(memberId)) throw new Error("ID must be Number");
+
+  // ตรวจสอบสิทธิ์ผู้ใช้
+  const user = await prisma.user.findUnique({
+    where: { id: memberId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+
+  if (user.role?.name?.toLowerCase() !== "member") {
+    return {
+      data: [],
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+    };
+  }
+
+  // คำนวณ pagination
+  const skip = (page - 1) * limit;
+
+  // filter
+  let statusFilter: BookingStatus | { in: BookingStatus[] } | undefined;
+
+  if (status) {
+    // รองรับหลายค่า เช่น ?status=PENDING,REFUND_PENDING
+    const statuses = status
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) as BookingStatus[];
+
+    if (statuses.length === 1) {
+      statusFilter = statuses[0]; // status: "PENDING"
+    } else if (statuses.length > 1) {
+      statusFilter = { in: statuses }; // status: { in: ["PENDING", "REFUND_PENDING"] }
+    }
+  } else {
+    // ถ้าไม่ส่ง status มาเลย → ใช้ค่าเดิม PENDING + REFUND_PENDING
+    statusFilter = {
+      in: ["PENDING", "REFUND_PENDING"] as BookingStatus[],
+    };
+  }
+
+  const baseWhere: any = {
+    package: {
+      overseerMemberId: memberId,
+      isDeleted: false,
+    },
+  };
+
+  if (statusFilter) {
+    baseWhere.status = statusFilter;
+  }
+
+  // นับจำนวนทั้งหมดของการจอง
+  const totalCount = await prisma.bookingHistory.count({
+    where: baseWhere,
+  });
+
+  // ดึงข้อมูลการจอง พร้อม tourist และ package
+  const bookings = await prisma.bookingHistory.findMany({
+    where: baseWhere,
+    orderBy: { bookingAt: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      tourist: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
+      package: {
+        select: {
+          name: true,
+          price: true,
+        },
+      },
+      totalParticipant: true,
+      status: true,
+      transferSlip: true,
+    },
+  });
+
+  // คำนวณราคารวม = ราคาแพ็กเกจ * จำนวนผู้เข้าร่วม
+  const result = bookings.map((b) => ({
+    id: b.id,
+    tourist: b.tourist,
+    package: b.package,
+    totalPrice: (b.package?.price ?? 0) * (b.totalParticipant ?? 0),
+    status: b.status,
+    transferSlip: b.transferSlip,
+  }));
+
+  // ส่งผลลัพธ์พร้อม pagination
+  return {
+    data: result,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
+};
+
+/*
+ * ฟังก์ชัน : updateBookingStatusByMember
+ * คำอธิบาย : อัปเดตสถานะของการจอง + จัดการเหตุผลการปฏิเสธ (rejectReason)
+ * เฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
+ * เงื่อนไข :
+ *   - สถานะที่อนุญาต: BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
+ *   - ถ้าเป็นสถานะปฏิเสธ (REJECTED, REFUND_REJECTED) → ต้องมี rejectReason (ห้ามสตริงว่าง)
+ *   - ถ้าไม่ใช่สถานะปฏิเสธ → ล้าง rejectReason เป็น null
+ *   - อัปเดตได้เฉพาะ booking ที่ผูกกับ package ที่ overseerMemberId = memberId
+ */
+export const updateBookingStatusByMember = async (
+  memberId: number,
+  bookingId: number,
+  newStatus: string,
+  rejectReason?: string
+) => {
+  if (!Number.isInteger(memberId) || memberId <= 0) {
+    throw new Error("memberId must be Number");
+  }
+  if (!Number.isInteger(bookingId) || bookingId <= 0) {
+    throw new Error("bookingId must be Number");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: memberId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "member") {
+    throw new Error("Forbidden: only member can update booking status");
+  }
+
+  const validStatuses: BookingStatus[] = [
+    "BOOKED",
+    "REJECTED",
+    "REFUNDED",
+    "REFUND_REJECTED",
+  ];
+
+  if (!validStatuses.includes(newStatus as BookingStatus)) {
+    throw new Error("Invalid booking status");
+  }
+
+  const isRejectStatus =
+    newStatus === "REJECTED" || newStatus === "REFUND_REJECTED";
+
+  let rejectReasonValue: string | null = null;
+  if (isRejectStatus) {
+    const trimmed = (rejectReason ?? "").trim();
+    if (!trimmed) {
+      throw new Error("Reject reason is required");
+    }
+    rejectReasonValue = trimmed;
+  } else {
+    rejectReasonValue = null;
+  }
+
+  const booking = await prisma.bookingHistory.findFirst({
+    where: {
+      id: bookingId,
+      package: {
+        overseerMemberId: memberId,
+        isDeleted: false,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!booking) {
+    throw new Error(
+      "Booking not found or not belong to this member's packages"
+    );
+  }
+
+  const updated = await prisma.bookingHistory.update({
+    where: { id: booking.id },
+    data: {
+      status: newStatus as BookingStatus,
+      rejectReason: rejectReasonValue,
+    },
+  });
+
+  return updated;
+};
