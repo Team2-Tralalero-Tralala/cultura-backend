@@ -63,7 +63,7 @@ export default getPackageFeedbacksByPackageId;
 /*
  * ฟังก์ชัน : replyFeedbackService
  * คำอธิบาย : ฟังก์ชันสำหรับรตอบกลับ Feedback
- * โดยจะอัปเดตเฉพาะฟิลด์ replyMessage, replyAt และ responderId
+ * โดยจะอัปเดตฟิลด์ replyMessage, replyAt และ responderId
  *
  * Input :
  *   - feedbackId : Feedback ที่ต้องการตอบกลับ
@@ -73,7 +73,11 @@ export default getPackageFeedbacksByPackageId;
  * Output :
  *   - ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
  */
-export const replyFeedbackService = async ( feedbackId: number, replyMessage: string, user: UserPayload | undefined ) => {
+export const replyFeedbackService = async (
+  feedbackId: number,
+  replyMessage: string,
+  user: UserPayload | undefined
+) => {
 
   if (!user || user.role !== "member") {
     throw new Error("อนุญาตเฉพาะผู้ใช้ที่มีบทบาทเป็น Member เท่านั้น");
@@ -99,14 +103,11 @@ export const replyFeedbackService = async ( feedbackId: number, replyMessage: st
       replyMessage: true,
       replyAt: true,
       responderId: true,
-      bookingHistory: {
+
+      responder: {
         select: {
-          tourist: {
-            select: {
-              fname: true,
-              lname: true,
-            },
-          },
+          fname: true,
+          lname: true,
         },
       },
     },
@@ -114,3 +115,4 @@ export const replyFeedbackService = async ( feedbackId: number, replyMessage: st
 
   return updatedFeedback;
 };
+
