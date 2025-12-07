@@ -8,7 +8,7 @@ import { validateDto } from "~/Libs/validateDto.js";
 const feedbackRoutes = Router();
 /**
  * @swagger
- * /api/admin/package/feedback/{packageId}:
+ * /api/admin/package/feedbacks/{packageId}:
  *   get:
  *     summary: ดึงรายการ feedback ของแพ็กเกจ (สำหรับผู้ดูแลระบบ)
  *     description: แสดงข้อมูล feedback ทั้งหมดของแพ็กเกจที่เลือก โดยต้องเป็นผู้ดูแลระบบเท่านั้น
@@ -97,7 +97,7 @@ const feedbackRoutes = Router();
  */
 
 feedbackRoutes.get(
-  "/admin/package/feedback/:packageId",
+  "/admin/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("admin"),
   getPackageFeedbacks
