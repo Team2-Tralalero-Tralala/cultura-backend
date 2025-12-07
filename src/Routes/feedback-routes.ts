@@ -163,7 +163,7 @@ feedbackRoutes.get(
  */
 
 feedbackRoutes.get(
-  "/member/feedback/:packageId",
+  "/member/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("member"),
   getPackageFeedbacksForMember
