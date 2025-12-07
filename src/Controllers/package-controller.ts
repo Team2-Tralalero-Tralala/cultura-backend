@@ -732,3 +732,30 @@ export async function getPackageDetailByMember(req: Request, res: Response) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 }
+export const getHistoriesPackageByMemberDto = {
+    params: IdParamDto,
+    query: MembersQueryDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : (Member) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * Input: req.user.id, req.query.{page, limit}
+ * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
+ * 400 - Error message
+ */
+export const getHistoriesPackageByMember: TypedHandlerFromDto<
+  typeof getHistoriesPackageByMemberDto
+> = async (req, res) => {
+  try {
+    const page = Number((req.query as any).page) || 1;
+    const limit = Number((req.query as any).limit) || 10;
+    const result = await PackageService.getHistoriesPackageByMember(
+      Number(req.user?.id),
+      page,
+      limit
+    );
+    return createResponse(res, 200, "Get History Packages Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
