@@ -1174,3 +1174,65 @@ export const getHistoriesPackageByAdmin = async (
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
 };
+
+/*
+ * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ member
+ * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
+ * Output : ข้อมูลแพ็กเกจพร้อม Pagination
+ */
+export const getHistoriesPackageByMember = async (
+  userId: number,
+  page = 1,
+  limit = 10
+): Promise<PaginationResponse<any>> => {
+  // ตรวจสอบ user
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    include: { role: true },
+  });
+
+  if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
+  if (user.role?.name !== "member")
+    throw new Error("อนุญาตเฉพาะผู้ดูแล (Member) เท่านั้น");
+
+  // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
+  const now = new Date();
+
+  const whereCondition = {
+    isDeleted: false,
+    overseerMemberId: user.id, // กรองเฉพาะที่ member คนนี้ดูแล
+    dueDate: { lt: now },
+  };
+
+  // pagination
+  const skip = (page - 1) * limit;
+  const totalCount = await prisma.package.count({ where: whereCondition });
+
+  const packages = await prisma.package.findMany({
+    where: whereCondition,
+    include: {
+      community: { select: { id: true, name: true } },
+      overseerPackage: {
+        select: { id: true, fname: true, lname: true },
+      },
+    },
+    orderBy: { dueDate: "desc" },
+    skip,
+    take: limit,
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
+  return {
+    data: packages.map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+      community: pkg.community,
+      overseerPackage: pkg.overseerPackage,
+      statusPackage: pkg.statusPackage,
+      dueDate: pkg.dueDate,
+    })),
+    pagination: { currentPage: page, totalPages, totalCount, limit },
+  };
+};
