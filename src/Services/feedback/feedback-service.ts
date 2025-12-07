@@ -33,6 +33,7 @@ export const getPackageFeedbacksByPackageIdAdmin = async (
       },
     },
     select: {
+      id: true,
       createdAt: true,
       rating: true,
       message: true,
@@ -83,6 +84,7 @@ export async function getPackageFeedbacksByPackageIdMember(
       },
     },
     select: {
+      id: true,
       createdAt: true,
       rating: true,
       message: true,
