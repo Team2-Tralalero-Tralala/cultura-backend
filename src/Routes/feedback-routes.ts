@@ -94,7 +94,7 @@ const feedbackRoutes = Router();
  */
 
 feedbackRoutes.get(
-  "/admin/package/feedback/:packageId",
+  "/admin/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("admin"),
   getPackageFeedbacks
