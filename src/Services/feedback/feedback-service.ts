@@ -56,4 +56,69 @@ export const getPackageFeedbacksByPackageId = async (
   return feedbacks;
 };
 
+/**
+ * ฟังก์ชัน : getMemberPackageFeedbacks
+ * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจ (เฉพาะ Member เจ้าของแพ็กเกจ)
+ * Input : packageId, user (UserPayload)
+ * Output : Feedback ทั้งหมดของแพ็กเกจนั้น
+ * เงื่อนไข : ต้องเป็นแพ็กเกจที่ user คนนั้นเป็นคนสร้าง (createBy)
+ */
+export const getAllMemberFeedbacks = async (user: UserPayload) => {
+  // query เริ่มจาก Package ของ user คนนั้น
+  const myPackages = await prisma.package.findMany({
+    where: {
+      OR: [
+        { createById: user.id },       // เงื่อนไข 1: เป็นคนสร้าง
+        { overseerMemberId: user.id }  // เงื่อนไข 2: เป็นผู้รับผิดชอบ 
+      ]
+    },
+    select: {
+      id: true,
+      name: true,
+      // ดึง BookingHistory -> Feedback
+      bookingHistories: {
+        select: {
+          id: true,
+          touristId: true,
+          packageId: true,
+          status: true,
+          totalParticipant: true,
+          feedbacks: {
+            select: {
+              id: true,
+              bookingHistoryId: true,
+              createdAt: true,
+              message: true,
+              rating: true,
+              responderId: true,
+              replyAt: true,
+              replyMessage: true,
+              feedbackImages: {
+                select: { id: true, feedbackId: true, image: true },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc' // เรียง feedback ล่าสุดขึ้นก่อน
+            }
+          },
+        },
+        // กรองเฉพาะ Booking ที่มี Feedback แล้ว (Optional: ถ้าอยากได้เฉพาะที่มีรีวิว)
+        where: {
+          feedbacks: {
+            some: {}
+          }
+        }
+      },
+    },
+    orderBy: {
+      id: 'desc'
+    }
+  });
+
+  // จัดโครงสร้างส่งกลับให้ Frontend (ให้เหมือนกับที่ FE รอรับ)
+  return {
+    packages: myPackages
+  };
+};
+
 export default getPackageFeedbacksByPackageId;
