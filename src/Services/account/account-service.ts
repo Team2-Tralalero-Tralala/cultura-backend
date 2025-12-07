@@ -445,3 +445,30 @@ export async function getAccountInCommunity(
     },
   };
 }
+
+/*
+ * ฟังก์ชัน: getCommunityIdByAdminId
+ * คำอธิบาย: ช่วยหาว่า Admin คนนี้ดูแลชุมชน ID อะไร
+ */
+export async function getCommunityIdByAdminId(adminId: number) {
+  const community = await prisma.community.findFirst({
+    where: { adminId: adminId },
+    select: { id: true },
+  });
+
+  if (!community) throw new Error("community_not_found_for_admin");
+  return community.id;
+}
+
+/*
+ * ฟังก์ชัน: getMemberRoleId
+ * คำอธิบาย: ช่วยหา ID ของ Role 'MEMBER'
+ */
+export async function getMemberRoleId() {
+  const role = await prisma.role.findUnique({
+    where: { name: "MEMBER" }, // ตรวจสอบใน DB ว่าใช้ชื่อ "MEMBER" หรือ "member"
+    select: { id: true },
+  });
+  if (!role) throw new Error("role_member_not_found");
+  return role.id;
+}

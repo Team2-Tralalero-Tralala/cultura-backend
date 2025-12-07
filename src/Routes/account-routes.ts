@@ -14,13 +14,13 @@ import {
   editAccount,
   editAccountDto,
   getAccountById,
-  getAll,
   getMemberByAdmin,
+  createMemberByAdmin,
+  editMemberByAdmin
 } from "../Controllers/account-controller.js";
 import * as AccountController from "../Controllers/account-controller.js";
 import { validateDto } from "../Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
-
 const accountRoutes = Router();
 
 /**
@@ -794,6 +794,231 @@ accountRoutes.get(
   getMemberByAdmin
 );
 
+/**
+ * @swagger
+ * /api/admin/member:
+ *   post:
+ *     summary: Create new member by admin
+ *     description: Admin creates a new member account
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roleId
+ *               - fname
+ *               - lname
+ *               - username
+ *               - email
+ *               - phone
+ *               - password
+ *             properties:
+ *               profileImage:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "https://img.com/profile.jpg"
+ *               roleId:
+ *                 type: number
+ *                 example: 2
+ *               fname:
+ *                 type: string
+ *                 example: "John"
+ *               lname:
+ *                 type: string
+ *                 example: "Doe"
+ *               username:
+ *                 type: string
+ *                 example: "johndoe"
+ *               email:
+ *                 type: string
+ *                 example: "john@email.com"
+ *               phone:
+ *                 type: string
+ *                 example: "0812345678"
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *               memberOfCommunity:
+ *                 type: number
+ *                 nullable: true
+ *                 example: 1
+ *               communityRole:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "LEADER"
+ *               gender:
+ *                 type: string
+ *                 enum: [MALE, FEMALE, NONE]
+ *                 nullable: true
+ *               birthDate:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "2000-01-01"
+ *               province:
+ *                 type: string
+ *                 nullable: true
+ *               district:
+ *                 type: string
+ *                 nullable: true
+ *               subDistrict:
+ *                 type: string
+ *                 nullable: true
+ *               postalCode:
+ *                 type: string
+ *                 nullable: true
+ *     responses:
+ *       201:
+ *         description: Member created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 success: true
+ *                 message: "Create member success"
+ *                 data:
+ *                   id: 10
+ *                   username: "johndoe"
+ *       400:
+ *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 success: false
+ *                 message: "Validation failed"
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 
+accountRoutes.post(
+  "/admin/member",
+  validateDto(createAccountDto), 
+  authMiddleware,
+  allowRoles("admin"),          
+  createMemberByAdmin            
+);
+
+/**
+ * @swagger
+ * /api/admin/member/{userId}:
+ *   put:
+ *     summary: Edit member by admin
+ *     description: Admin updates member account information
+ *     tags:
+ *       - Admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: number
+ *         example: 15
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profileImage:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "https://img.com/new.jpg"
+ *               fname:
+ *                 type: string
+ *                 example: "Jane"
+ *               lname:
+ *                 type: string
+ *                 example: "Doe"
+ *               username:
+ *                 type: string
+ *                 example: "janedoe"
+ *               email:
+ *                 type: string
+ *                 example: "jane@email.com"
+ *               phone:
+ *                 type: string
+ *                 example: "0899999999"
+ *               password:
+ *                 type: string
+ *                 example: "newpassword123"
+ *               roleId:
+ *                 type: number
+ *                 example: 2
+ *               memberOfCommunity:
+ *                 type: number
+ *                 nullable: true
+ *                 example: 3
+ *               communityRole:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "MODERATOR"
+ *               gender:
+ *                 type: string
+ *                 nullable: true
+ *                 enum: [MALE, FEMALE, NONE]
+ *               birthDate:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "1999-05-10"
+ *               province:
+ *                 type: string
+ *                 nullable: true
+ *               district:
+ *                 type: string
+ *                 nullable: true
+ *               subDistrict:
+ *                 type: string
+ *                 nullable: true
+ *               postalCode:
+ *                 type: string
+ *                 nullable: true
+ *     responses:
+ *       200:
+ *         description: Member updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 success: true
+ *                 message: "Update member success"
+ *                 data:
+ *                   id: 15
+ *                   username: "janedoe"
+ *       400:
+ *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 success: false
+ *                 message: "Validation failed"
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+
+accountRoutes.put(
+  "/admin/member/:id",
+  validateDto(editAccountDto),
+  authMiddleware,
+  allowRoles("admin"),
+  editMemberByAdmin 
+);
 
 export default accountRoutes;
