@@ -67,8 +67,10 @@ export const getAllMemberFeedbacks = async (user: UserPayload) => {
   // query เริ่มจาก Package ของ user คนนั้น
   const myPackages = await prisma.package.findMany({
     where: {
-      createById: user.id, // กรองเฉพาะแพ็กเกจที่ user นี้สร้าง
-      // อาจจะเพิ่มเงื่อนไขอื่นๆ เช่น isDeleted: false ถ้ามี
+      OR: [
+        { createById: user.id },       // เงื่อนไข 1: เป็นคนสร้าง
+        { overseerMemberId: user.id }  // เงื่อนไข 2: เป็นผู้รับผิดชอบ 
+      ]
     },
     select: {
       id: true,
