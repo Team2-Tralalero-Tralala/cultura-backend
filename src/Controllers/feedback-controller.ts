@@ -1,7 +1,5 @@
 import { IsNumberString } from "class-validator";
-
 import * as FeedbackService from "~/Services/feedback/feedback-service.js";
-
 import {
   commonDto,
   type TypedHandlerFromDto,
@@ -17,7 +15,7 @@ import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
  */
 export class PackageIdParamDto {
   @IsNumberString()
-  packageId?: string;
+  packageId?: Number;
 }
 
 /*
