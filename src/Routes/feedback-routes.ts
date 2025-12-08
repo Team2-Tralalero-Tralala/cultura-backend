@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
-import { getPackageFeedbacks } from "~/Controllers/feedback-controller.js";
+import * as middlewares from "~/Middlewares/auth-middleware.js";
+import * as feedbackController from "~/Controllers/feedback-controller.js";
 
-const packageFeedbackAdminRoutes = Router();
+const packageFeedbackRoutes = Router();
 /**
  * @swagger
  * /api/admin/package/feedback/{packageId}:
@@ -92,12 +92,128 @@ const packageFeedbackAdminRoutes = Router();
  * Path : /api/admin/package/feedback/:packageId
  * Access : admin
  */
-
-packageFeedbackAdminRoutes.get(
+packageFeedbackRoutes.get(
   "/admin/package/feedback/:packageId",
-  authMiddleware,
-  allowRoles("admin"),
-  getPackageFeedbacks
+  middlewares.authMiddleware,
+  middlewares.allowRoles("admin"),
+  feedbackController.getPackageFeedbacks
 );
 
-export default packageFeedbackAdminRoutes;
+/**
+ * @swagger
+ * /api/member/feedbacks/all:
+ *   get:
+ *     tags:
+ *       - Member - Feedbacks
+ *     summary: Get all feedbacks submitted by the logged-in member
+ *     description: |
+ *       ดึงรายการ Feedback ทั้งหมดที่สมาชิก (role: **member**) เคยส่ง  
+ *       ทุก response อยู่ในรูปแบบ `createResponse` หรือ `createErrorResponse`
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงรายการ Feedback สำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Get all feedbacks successfully
+ *                 data:
+ *                   type: array
+ *                   description: รายการ feedback ทั้งหมดของ member
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 12
+ *                       packageId:
+ *                         type: integer
+ *                         example: 5
+ *                       rating:
+ *                         type: integer
+ *                         example: 4
+ *                       comment:
+ *                         type: string
+ *                         example: "ที่พักดีมาก บริการเยี่ยม"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-01-12T14:30:00Z"
+ *                 meta:
+ *                   type: object
+ *                   nullable: true
+ *       401:
+ *         description: ไม่ได้ส่ง JWT Bearer token หรือ token ไม่ถูกต้อง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *       403:
+ *         description: Forbidden – ผู้ใช้ไม่มีสิทธิ์ member
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 403
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden resource
+ *       500:
+ *         description: Internal server error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ */
+
+/*
+ * คำอธิบาย : Routes สำหรับดึงฟีดแบ็กทั้งหมดของแพ็กเกจ (เฉพาะสมาชิก)
+ * Path : /api/member/feedbacks/all
+ * Access : member
+ */
+
+packageFeedbackRoutes.get(
+  "/member/feedbacks/all",
+  middlewares.authMiddleware,
+  middlewares.allowRoles("member"),
+  feedbackController.getMemberAllFeedbacks
+);
+
+export default packageFeedbackRoutes;

@@ -509,6 +509,4 @@ bookingRoutes.get(
   BookingHistoryController.getDetailBookingByMember
 );
 
-
-
 export default bookingRoutes;
