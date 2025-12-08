@@ -33,6 +33,7 @@ export const getPackageFeedbacksByPackageIdAdmin = async (
       },
     },
     select: {
+      id: true,
       createdAt: true,
       rating: true,
       message: true,
@@ -174,3 +175,54 @@ export const replyFeedbackMember = async (
 
   return updatedFeedback;
 };
+
+/*
+ * ฟังก์ชัน : getPackageFeedbacksByPackageIdMember
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อเสนอแนะของแพ็กเกจ
+ *             สำหรับสมาชิก (Member) ที่ต้องการดูข้อเสนอแนะของแพ็กเกจของตน
+ * Input : packageId (หมายเลขแพ็กเกจ), user (ข้อมูลผู้ใช้ที่ร้องขอ)
+ * Output : รายการข้อเสนอแนะของแพ็กเกจ
+ */
+export async function getPackageFeedbacksByPackageIdMember(
+  packageId: number,
+  user: UserPayload
+) {
+  if (user.role !== "member") {
+    throw new Error("ผู้ใช้ไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
+  }
+
+  return prisma.feedback.findMany({
+    where: {
+      bookingHistory: {
+        packageId: packageId,
+        package: {
+          overseerMemberId: user.id,
+        },
+      },
+    },
+    select: {
+      id: true,
+      createdAt: true,
+      rating: true,
+      message: true,
+      feedbackImages: {
+        select: { image: true },
+      },
+      bookingHistory: {
+        select: {
+          tourist: { select: { fname: true, lname: true } },
+          package: { select: { name: true } },
+        },
+      },
+      replyMessage: true,
+      replyAt: true,
+      responder: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}

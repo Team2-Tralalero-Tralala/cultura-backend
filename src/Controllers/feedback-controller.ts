@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import * as response from "~/Libs/createResponse.js";
-import * as packageFeedbacks from "~/Services/feedback/feedback-service.js";
 import * as FeedbackService from "~/Services/feedback/feedback-service.js";
 import { ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
 import {
@@ -47,7 +46,7 @@ export const getMemberAllFeedbacks = async (req: Request, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
-    const data = await packageFeedbacks.getAllMemberFeedbacks(req.user);
+    const data = await FeedbackService.getAllMemberFeedbacks(req.user);
 
     return response.createResponse(
       res,
@@ -95,3 +94,30 @@ export const replyFeedback: TypedHandlerFromDto<
     return response.createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/*
+ * ฟังก์ชัน : getPackageFeedbacksForMember
+ * คำอธิบาย : ดึงรายการฟีดแบ็กของแพ็กเกจจาก packageId สำหรับสมาชิก (Member)
+ * หมายเหตุ : ตรวจสอบสิทธิ์และความเป็นผู้ดูแลแพ็กเกจทำใน Service แล้ว
+ */
+export async function getPackageFeedbacksForMember(
+  req: Request,
+  res: Response
+) {
+  try {
+    const packageId = Number(req.params.packageId);
+    const data = await FeedbackService.getPackageFeedbacksByPackageIdMember(
+      packageId,
+      req.user!
+    );
+
+    return response.createResponse(
+      res,
+      200,
+      "Get package feedbacks successfully",
+      data
+    );
+  } catch (error) {
+    return response.createErrorResponse(res, 400, (error as Error).message);
+  }
+}
