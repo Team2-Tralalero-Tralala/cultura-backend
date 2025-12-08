@@ -14,11 +14,11 @@ import type { Prisma } from "@prisma/client";
 
 /** Payload ที่ส่งให้หน้าลิสต์ */
 export type PackageRequestListItem = {
-    id: number;
-    name: string;
-    statusApprove: string | null;
-    community: { id: number; name: string };
-    overseer: { id: number; username: string };
+  id: number;
+  name: string | null;
+  statusApprove: string | null;
+  community: { id: number; name: string };
+  overseer: { id: number; username: string } | null;
 };
 
 /**
@@ -37,84 +37,86 @@ export type PackageRequestListItem = {
  *  - admin      : เห็นเฉพาะคำขอของชุมชนที่ตนดูแล (community.adminId = user.id)
  */
 export async function getPackageRequestAll(
-    user: UserPayload,
-    page = 1,
-    limit = 10,
-    search?: string,
-    statusApprove?: string
+  user: UserPayload,
+  page = 1,
+  limit = 10,
+  search?: string,
+  statusApprove?: string
 ): Promise<PaginationResponse<PackageRequestListItem>> {
-    const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-    // ค่าสถานะดีฟอลต์ (เมื่อไม่ส่งหรือส่ง "all" ให้แสดงเฉพาะที่รออนุมัติ)
-    const DEFAULT_STATUSES = ["PENDING_SUPER"] as const;
-    const approveFilter =
-        statusApprove && statusApprove.toLowerCase() !== "all"
-            ? [statusApprove]
-            : [...DEFAULT_STATUSES];
+  // ค่าสถานะดีฟอลต์ (เมื่อไม่ส่งหรือส่ง "all" ให้แสดงเฉพาะที่รออนุมัติ)
+  const DEFAULT_STATUSES = ["PENDING_SUPER"] as const;
+  const approveFilter =
+    statusApprove && statusApprove.toLowerCase() !== "all"
+      ? [statusApprove]
+      : [...DEFAULT_STATUSES];
 
-    // whereBase : เงื่อนไขหลักของการค้นหา
-    const whereBase: Prisma.PackageWhereInput = {
-        // prisma type แคบกว่า array of string บางกรณี จึงคงรูปแบบ cast เดิมไว้เพื่อไม่เปลี่ยนพฤติกรรม
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        statusApprove: { in: approveFilter as any },
-    };
+  // whereBase : เงื่อนไขหลักของการค้นหา
+  const whereBase: Prisma.PackageWhereInput = {
+    // prisma type แคบกว่า array of string บางกรณี จึงคงรูปแบบ cast เดิมไว้เพื่อไม่เปลี่ยนพฤติกรรม
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    statusApprove: { in: approveFilter as any },
+  };
 
-    const roleLower = user.role.toLowerCase();
+  const roleLower = user.role.toLowerCase();
 
-    if (roleLower === "superadmin") {
-        // superadmin : เห็นทั้งหมด → ไม่ต้องเติมเงื่อนไขเพิ่ม
-    } else if (roleLower === "admin") {
-        // admin : เห็นเฉพาะแพ็กเกจของชุมชนที่ตนเป็นผู้ดูแล
-        whereBase.community = { adminId: user.id };
-    } else {
-        // บทบาทอื่น : ไม่อนุญาต → ให้ where ไม่ตรงกับใครเลย
-        whereBase.id = -1;
-    }
+  if (roleLower === "superadmin") {
+    // superadmin : เห็นทั้งหมด → ไม่ต้องเติมเงื่อนไขเพิ่ม
+  } else if (roleLower === "admin") {
+    // admin : เห็นเฉพาะแพ็กเกจของชุมชนที่ตนเป็นผู้ดูแล
+    whereBase.community = { adminId: user.id };
+  } else {
+    // บทบาทอื่น : ไม่อนุญาต → ให้ where ไม่ตรงกับใครเลย
+    whereBase.id = -1;
+  }
 
-    // คำค้นหา (optional)
-    if (search && search.trim()) {
-        whereBase.OR = [
-            { name: { contains: search } },
-            { community: { name: { contains: search } } },
-        ];
-    }
+  // คำค้นหา (optional)
+  if (search && search.trim()) {
+    whereBase.OR = [
+      { name: { contains: search } },
+      { community: { name: { contains: search } } },
+    ];
+  }
 
-    // นับจำนวนทั้งหมดเพื่อทำ pagination
-    const totalCount = await prisma.package.count({ where: whereBase });
+  // นับจำนวนทั้งหมดเพื่อทำ pagination
+  const totalCount = await prisma.package.count({ where: whereBase });
 
-    // ดึงข้อมูลรายการตามหน้า
-    const rows = await prisma.package.findMany({
-        where: whereBase,
-        select: {
-            id: true,
-            name: true,
-            statusApprove: true,
-            community: { select: { id: true, name: true, adminId: true } },
-            overseerPackage: { select: { id: true, username: true } },
-        },
-        orderBy: { id: "desc" },
-        skip,
-        take: limit,
-    });
+  // ดึงข้อมูลรายการตามหน้า
+  const rows = await prisma.package.findMany({
+    where: whereBase,
+    select: {
+      id: true,
+      name: true,
+      statusApprove: true,
+      community: { select: { id: true, name: true, adminId: true } },
+      overseerPackage: { select: { id: true, username: true } },
+    },
+    orderBy: { id: "desc" },
+    skip,
+    take: limit,
+  });
 
-    // map เฉพาะฟิลด์ที่หน้าลิสต์ต้องใช้
-    const data: PackageRequestListItem[] = rows.map((p) => ({
-        id: p.id,
-        name: p.name,
-        statusApprove: p.statusApprove ?? null,
-        community: { id: p.community.id, name: p.community.name },
-        overseer: { id: p.overseerPackage.id, username: p.overseerPackage.username },
-    }));
+  // map เฉพาะฟิลด์ที่หน้าลิสต์ต้องใช้
+  const data: PackageRequestListItem[] = rows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    statusApprove: p.statusApprove ?? null,
+    community: { id: p.community.id, name: p.community.name },
+    overseer: p.overseerPackage
+      ? { id: p.overseerPackage.id, username: p.overseerPackage.username }
+      : null,
+  }));
 
-    return {
-        data,
-        pagination: {
-            currentPage: page,
-            totalPages: Math.ceil(totalCount / limit),
-            totalCount,
-            limit,
-        },
-    };
+  return {
+    data,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
 }
 
 /**
@@ -123,19 +125,19 @@ export async function getPackageRequestAll(
  * สิทธิ์ : superadmin, admin
  */
 export async function approvePackageRequest(
-    user: UserPayload,
-    packageId: number
+  user: UserPayload,
+  packageId: number
 ) {
-    const roleLower = user.role?.toLowerCase();
-    if (roleLower !== "superadmin" && roleLower !== "admin") {
-        throw new Error("Forbidden");
-    }
+  const roleLower = user.role?.toLowerCase();
+  if (roleLower !== "superadmin" && roleLower !== "admin") {
+    throw new Error("Forbidden");
+  }
 
-    return prisma.package.update({
-        where: { id: packageId },
-        data: { statusApprove: "APPROVE", rejectReason: null },
-        select: { id: true, name: true, statusApprove: true, rejectReason: true },
-    });
+  return prisma.package.update({
+    where: { id: packageId },
+    data: { statusApprove: "APPROVE", rejectReason: null },
+    select: { id: true, name: true, statusApprove: true, rejectReason: true },
+  });
 }
 
 /**
@@ -144,28 +146,28 @@ export async function approvePackageRequest(
  * สิทธิ์ : superadmin, admin
  */
 export async function rejectPackageRequest(
-    user: UserPayload,
-    packageId: number,
-    reason: string
+  user: UserPayload,
+  packageId: number,
+  reason: string
 ) {
-    const roleLower = user.role.toLowerCase();
-    if (roleLower !== "superadmin" && roleLower !== "admin") {
-        throw new Error("คุณไม่มีสิทธิ์ดำเนินการ");
-    }
+  const roleLower = user.role.toLowerCase();
+  if (roleLower !== "superadmin" && roleLower !== "admin") {
+    throw new Error("คุณไม่มีสิทธิ์ดำเนินการ");
+  }
 
-    const pkg = await prisma.package.findUnique({ where: { id: packageId } });
-    if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
+  const pkg = await prisma.package.findUnique({ where: { id: packageId } });
+  if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
 
-    const updated = await prisma.package.update({
-        where: { id: packageId },
-        data: {
-            rejectReason: reason.trim(),
-            statusApprove: "REJECTED",
-        },
-        select: { id: true, name: true, statusApprove: true, rejectReason: true },
-    });
+  const updated = await prisma.package.update({
+    where: { id: packageId },
+    data: {
+      rejectReason: reason.trim(),
+      statusApprove: "REJECTED",
+    },
+    select: { id: true, name: true, statusApprove: true, rejectReason: true },
+  });
 
-    return updated;
+  return updated;
 }
 import { PackageApproveStatus } from "@prisma/client";
 
@@ -207,7 +209,7 @@ export const getDetailRequestById = async (packageId: number) => {
       facility: true,
 
       overseerPackage: { select: { fname: true, lname: true } },
-      createPackage:   { select: { fname: true, lname: true } },
+      createPackage: { select: { fname: true, lname: true } },
 
       tagPackages: {
         select: { tag: { select: { name: true } } },
@@ -268,7 +270,7 @@ export const getDetailRequestByIdForAdmin = async (packageId: number) => {
       facility: true,
 
       overseerPackage: { select: { fname: true, lname: true } },
-      createPackage:   { select: { fname: true, lname: true } },
+      createPackage: { select: { fname: true, lname: true } },
 
       tagPackages: {
         select: { tag: { select: { name: true } } },
@@ -292,38 +294,40 @@ export const getDetailRequestByIdForAdmin = async (packageId: number) => {
   });
 };
 
-
 export async function approvePackageRequestForAdmin(
-    user: UserPayload,
-    packageId: number
+  user: UserPayload,
+  packageId: number
 ) {
-    const roleLower = user.role?.toLowerCase();
-    if (roleLower !== "admin") {
-        throw new Error("Forbidden");
-    }
+  const roleLower = user.role?.toLowerCase();
+  if (roleLower !== "admin") {
+    throw new Error("Forbidden");
+  }
 
-    const pkg = await prisma.package.findUnique({ where: { id: packageId } });
-    if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
+  const pkg = await prisma.package.findUnique({ where: { id: packageId } });
+  if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
 
-    // ตรวจสอบว่าต้องเป็นสถานะ PENDING ก่อน Admin ถึงจะอนุมัติได้
-    if (pkg.statusApprove !== "PENDING") {
-        throw new Error(`ไม่สามารถอนุมัติได้: สถานะปัจจุบันคือ ${pkg.statusApprove}`);
-    }
+  // ตรวจสอบว่าต้องเป็นสถานะ PENDING ก่อน Admin ถึงจะอนุมัติได้
+  if (pkg.statusApprove !== "PENDING") {
+    throw new Error(
+      `ไม่สามารถอนุมัติได้: สถานะปัจจุบันคือ ${pkg.statusApprove}`
+    );
+  }
 
-    // ตรวจสอบสิทธิ์ Admin (Admin ต้องเป็น adminId ของ community ที่เกี่ยวข้อง)
-    if (pkg.communityId) {
-        const community = await prisma.community.findUnique({ where: { id: pkg.communityId } });
-        if (!community || community.adminId !== user.id) {
-            throw new Error("คุณไม่มีสิทธิ์อนุมัติแพ็กเกจของชุมชนนี้");
-        }
-    }
-
-
-    return prisma.package.update({
-        where: { id: packageId },
-        data: { statusApprove: "APPROVE", rejectReason: null },
-        select: { id: true, name: true, statusApprove: true, rejectReason: true },
+  // ตรวจสอบสิทธิ์ Admin (Admin ต้องเป็น adminId ของ community ที่เกี่ยวข้อง)
+  if (pkg.communityId) {
+    const community = await prisma.community.findUnique({
+      where: { id: pkg.communityId },
     });
+    if (!community || community.adminId !== user.id) {
+      throw new Error("คุณไม่มีสิทธิ์อนุมัติแพ็กเกจของชุมชนนี้");
+    }
+  }
+
+  return prisma.package.update({
+    where: { id: packageId },
+    data: { statusApprove: "APPROVE", rejectReason: null },
+    select: { id: true, name: true, statusApprove: true, rejectReason: true },
+  });
 }
 
 /**
@@ -332,39 +336,43 @@ export async function approvePackageRequestForAdmin(
  * สิทธิ์ : admin
  */
 export async function rejectPackageRequestForAdmin(
-    user: UserPayload,
-    packageId: number,
-    reason: string
+  user: UserPayload,
+  packageId: number,
+  reason: string
 ) {
-    const roleLower = user.role.toLowerCase();
-    if (roleLower !== "admin") {
-        throw new Error("คุณไม่มีสิทธิ์ดำเนินการ");
-    }
+  const roleLower = user.role.toLowerCase();
+  if (roleLower !== "admin") {
+    throw new Error("คุณไม่มีสิทธิ์ดำเนินการ");
+  }
 
-    const pkg = await prisma.package.findUnique({ where: { id: packageId } });
-    if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
+  const pkg = await prisma.package.findUnique({ where: { id: packageId } });
+  if (!pkg) throw new Error("ไม่พบแพ็กเกจที่ระบุ");
 
-    // ตรวจสอบว่าต้องเป็นสถานะ PENDING ก่อน Admin ถึงจะปฏิเสธได้
-    if (pkg.statusApprove !== "PENDING") {
-        throw new Error(`ไม่สามารถปฏิเสธได้: สถานะปัจจุบันคือ ${pkg.statusApprove}`);
-    }
+  // ตรวจสอบว่าต้องเป็นสถานะ PENDING ก่อน Admin ถึงจะปฏิเสธได้
+  if (pkg.statusApprove !== "PENDING") {
+    throw new Error(
+      `ไม่สามารถปฏิเสธได้: สถานะปัจจุบันคือ ${pkg.statusApprove}`
+    );
+  }
 
-    // ตรวจสอบสิทธิ์ Admin (Admin ต้องเป็น adminId ของ community ที่เกี่ยวข้อง)
-    if (pkg.communityId) {
-        const community = await prisma.community.findUnique({ where: { id: pkg.communityId } });
-        if (!community || community.adminId !== user.id) {
-            throw new Error("คุณไม่มีสิทธิ์ปฏิเสธแพ็กเกจของชุมชนนี้");
-        }
-    }
-
-    const updated = await prisma.package.update({
-        where: { id: packageId },
-        data: {
-            rejectReason: reason.trim(),
-            statusApprove: PackageApproveStatus.REJECTED,
-        },
-        select: { id: true, name: true, statusApprove: true, rejectReason: true },
+  // ตรวจสอบสิทธิ์ Admin (Admin ต้องเป็น adminId ของ community ที่เกี่ยวข้อง)
+  if (pkg.communityId) {
+    const community = await prisma.community.findUnique({
+      where: { id: pkg.communityId },
     });
+    if (!community || community.adminId !== user.id) {
+      throw new Error("คุณไม่มีสิทธิ์ปฏิเสธแพ็กเกจของชุมชนนี้");
+    }
+  }
 
-    return updated;
+  const updated = await prisma.package.update({
+    where: { id: packageId },
+    data: {
+      rejectReason: reason.trim(),
+      statusApprove: PackageApproveStatus.REJECTED,
+    },
+    select: { id: true, name: true, statusApprove: true, rejectReason: true },
+  });
+
+  return updated;
 }

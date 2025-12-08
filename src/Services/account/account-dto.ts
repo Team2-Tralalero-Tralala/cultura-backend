@@ -9,7 +9,6 @@ import {
 } from "class-validator";
 
 export class CreateAccountDto {
-
   @IsOptional()
   @IsString()
   profileImage?: string | null;
@@ -41,14 +40,14 @@ export class CreateAccountDto {
   @MinLength(6)
   password!: string;
 
-  /** ===== ฟิลด์เพิ่มเติมเฉพาะ Role ===== */
-
-  // Member
   @IsOptional()
   @IsInt()
   memberOfCommunity?: number;
 
-  // Tourist
+  @IsOptional()
+  @IsString()
+  communityRole?: string;
+
   @IsOptional()
   @IsString()
   gender?: "MALE" | "FEMALE" | "NONE";
@@ -113,14 +112,14 @@ export class EditAccountDto {
   @IsPositive()
   roleId?: number;
 
-  /** ===== ฟิลด์เพิ่มเติมเฉพาะ Role ===== */
-
-  // Member
   @IsOptional()
   @IsInt()
   memberOfCommunity?: number;
 
-  // Tourist
+  @IsOptional()
+  @IsString()
+  communityRole?: string;
+
   @IsOptional()
   @IsString()
   gender?: string;
@@ -139,7 +138,7 @@ export class EditAccountDto {
 
   @IsOptional()
   @IsString()
-  subdistrict?: string;
+  subDistrict?: string;
 
   @IsOptional()
   @IsString()
