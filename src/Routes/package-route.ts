@@ -46,7 +46,12 @@ packageRoutes.post(
     "/member/package",
     authMiddleware,
     allowRoles("member"),
-    validateDto(createPackageDto),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "gallery", maxCount: 5 },
+        { name: "video", maxCount: 5 },
+    ]),
+    // validateDto(createPackageDto),
     createPackageMember
 );
 
@@ -71,7 +76,12 @@ packageRoutes.put(
     "/member/package/:id",
     authMiddleware,
     allowRoles("member"),
-    validateDto(editPackageDto),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "gallery", maxCount: 5 },
+        { name: "video", maxCount: 5 },
+    ]),
+    // validateDto(editPackageDto),
     editPackageMember
 );
 

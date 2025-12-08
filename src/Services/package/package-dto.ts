@@ -53,8 +53,8 @@ export class PackageDto {
     @IsNotEmpty({ message: "location ห้ามว่าง" })
     location: LocationDto;
 
+    @IsOptional()
     @IsNumber()
-    @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
     overseerMemberId: number;
 
     @IsNumber()
