@@ -202,18 +202,126 @@ refundRoutes.patch(
   RefundController.rejectRefundByAdmin
 );
 
+/**
+ * @swagger
+ * /api/member/booking-history:
+ *   get:
+ *     summary: ดึงรายการคำขอคืนเงินที่ member ดูแล
+ *     description: ดึงรายการคำขอคืนเงินของสมาชิก (รองรับ pagination)
+ *     tags:
+ *       - Member / Refund
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *     responses:
+ *       200:
+ *         description: สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
 /*
  * เส้นทาง : GET /member/booking-history/refunds
  * คำอธิบาย : ดึงรายการคำขอคืนเงินที่ member ดูแล (รองรับ pagination)
  */
 refundRoutes.get(
-  "/member/booking-history/refunds",
+  "/member/booking-history",
   validateDto(RefundController.getRefundRequestsByMemberDto),
   authMiddleware,
   allowRoles("member"),
   RefundController.getRefundRequestsByMember
 );
 
+/**
+ * @swagger
+ * /api/member/booking-history/{id}/approve-refund:
+ *   patch:
+ *     summary: อนุมัติคำขอคืนเงิน (Member)
+ *     description: Member อนุมัติคำขอคืนเงิน
+ *     tags:
+ *       - Member / Refund
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: อนุมัติสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
 /*
  * เส้นทาง : PATCH /member/booking-history/:id/approve-refund
  * คำอธิบาย : อนุมัติคำขอคืนเงิน
@@ -226,6 +334,61 @@ refundRoutes.patch(
   RefundController.approveRefundByMember
 );
 
+/**
+ * @swagger
+ * /api/member/booking-history/{id}/reject-refund:
+ *   patch:
+ *     summary: ปฏิเสธคำขอคืนเงิน (Member)
+ *     description: Member ปฏิเสธคำขอคืนเงิน
+ *     tags:
+ *       - Member / Refund
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: ปฏิเสธสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
 /*
  * เส้นทาง : PATCH /member/booking-history/:id/reject-refund
  * คำอธิบาย : ปฏิเสธคำขอคืนเงิน
