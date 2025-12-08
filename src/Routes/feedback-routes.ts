@@ -1,8 +1,6 @@
 import { Router } from "express";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
-import {  getPackageFeedbacks,
-  replyFeedback,
-  replyFeedbackDto} from "~/Controllers/feedback-controller.js";
+import * as FeedbackController from "~/Controllers/feedback-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 
 const feedbackRoutes = Router();
@@ -100,7 +98,7 @@ feedbackRoutes.get(
   "/admin/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("admin"),
-  getPackageFeedbacks
+  FeedbackController.getPackageFeedbacksForAdmin
 );
 
 /**
@@ -167,12 +165,18 @@ feedbackRoutes.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+
+/*
+ * คำอธิบาย : Routes สำหรับตอบกลับรีวิว (เฉพาะ member)
+ * Path : /api/member/feedback/:feedbackId/reply"
+ * Access : member
+ */
 feedbackRoutes.post(
   "/member/feedback/:feedbackId/reply",
   authMiddleware,
   allowRoles("member"),
-  validateDto(replyFeedbackDto),
-  replyFeedback
+  validateDto(FeedbackController.replyFeedbackDto),
+  FeedbackController.replyFeedback
 );
 
 export default feedbackRoutes;

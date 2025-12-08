@@ -1,26 +1,25 @@
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getPackageFeedbacksByPackageIdAdmin, replyFeedbackMember} from "~/Services/feedback/feedback-service.js";
+import * as FeedbackService from "~/Services/feedback/feedback-service.js";
+import { ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
 import {
   commonDto,
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
-import { ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
-
 
 /*
  * ฟังก์ชัน : getPackageFeedbacks
  * คำอธิบาย : ดึงรายการฟีดแบ็กของแพ็กเกจจาก packageId
  * หมายเหตุ : ตรวจสอบสิทธิ์/ความเป็นเจ้าของ community ทำใน service แล้ว
  */
-export const getPackageFeedbacks = async (req: Request, res: Response) => {
+export const getPackageFeedbacksForAdmin = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const packageId = Number(req.params.packageId);
-    const data = await getPackageFeedbacksByPackageIdAdmin(packageId, req.user);
+    const data = await FeedbackService.getPackageFeedbacksByPackageIdAdmin(packageId, req.user);
 
     return createResponse(res, 200, "Get package feedbacks successfully", data);
   } catch (error) {
@@ -47,7 +46,7 @@ export const replyFeedback: TypedHandlerFromDto<
     const { feedbackId } = req.params as { feedbackId: string };
     const { replyMessage } = req.body as ReplyFeedbackDto;
 
-    const data = await replyFeedbackMember(Number(feedbackId), replyMessage, req.user);
+    const data = await FeedbackService.replyFeedbackMember(Number(feedbackId), replyMessage, req.user);
 
     return createResponse(res, 200, "Reply feedback successfully", data);
   } catch (error) {
