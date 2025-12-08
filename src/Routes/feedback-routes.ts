@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
-import { getPackageFeedbacksForAdmin, getPackageFeedbacksForMember } from "~/Controllers/feedback-controller.js";
+import * as FeedbackController from "~/Controllers/feedback-controller.js";
 
 const feedbackRoutes = Router();
 /**
@@ -97,7 +97,7 @@ feedbackRoutes.get(
   "/admin/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("admin"),
-  getPackageFeedbacksForAdmin
+  FeedbackController.getPackageFeedbacksForAdmin
 );
 
 /**
@@ -166,6 +166,6 @@ feedbackRoutes.get(
   "/member/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("member"),
-  getPackageFeedbacksForMember
+  FeedbackController.getPackageFeedbacksForMember
 )
 export default feedbackRoutes;
