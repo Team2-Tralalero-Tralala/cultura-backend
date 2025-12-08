@@ -1,3 +1,4 @@
+import { IsNumberString } from "class-validator";
 import type { Request, Response } from "express";
 import { IsNumberString } from "class-validator";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
@@ -22,11 +23,20 @@ import * as BookingHistoryService from "~/Services/booking-history-service.js";
 export const getByRole = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
     const { page = 1, limit = 10 } = req.query;
-    const data = await getHistoriesByRole(req.user, Number(page), Number(limit));
-    return createResponse(res, 200, "Get booking histories by role successfully", data);
+    const data = await getHistoriesByRole(
+      req.user,
+      Number(page),
+      Number(limit)
+    );
+    return createResponse(
+      res,
+      200,
+      "Get booking histories by role successfully",
+      data
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -45,7 +55,7 @@ export const getByRole = async (req: Request, res: Response) => {
 export const getDetailBooking = async (req: Request, res: Response) => {
   try {
     const bookingId = Number(req.params.id);
-    
+
     // ฟังก์ชัน getDetailBookingById จาก bookingService เพื่อดึงข้อมูลการจอง
     const detailBooking = await bookingService.getDetailBooking(bookingId);
     return createResponse(
@@ -124,7 +134,10 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
  *       • REFUND_REJECTED (ปฏิเสธการคืนเงิน)
  *   - เฉพาะผู้ใช้ role "admin" เท่านั้นที่เข้าถึงได้
  */
-export const updateBookingStatus: TypedHandlerFromDto<any> = async (req, res) => {
+export const updateBookingStatus: TypedHandlerFromDto<any> = async (
+  req,
+  res
+) => {
   try {
     const bookingId = Number(req.params.id);
     const { status, rejectReason } = req.body as {
@@ -162,7 +175,6 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (req, res) =>
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
 /**
  * DTO : BookingIdParamDto
  * คำอธิบาย :
@@ -181,7 +193,6 @@ export class BookingIdParamDto {
 export const getDetailBookingByMemberDto = {
   params: BookingIdParamDto,
 } satisfies commonDto;
-
 
 /**
  * ฟังก์ชัน : getDetailBookingByMember
@@ -215,4 +226,3 @@ export const getDetailBookingByMember: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
