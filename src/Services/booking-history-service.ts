@@ -411,4 +411,3 @@ if (user.role === "member") {
 
   return booking;
 };
-

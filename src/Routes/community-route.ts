@@ -1376,4 +1376,191 @@ communityRoutes.put(
   ]),
   CommunityController.editCommunityByAdmin
 );
+
+/**
+ * @swagger
+ * /api/member/community:
+ *   get:
+ *     summary: ดึงข้อมูลรายละเอียดของชุมชนที่สมาชิกสังกัดอยู่ (สำหรับ Member)
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูลชุมชนที่ผู้ใช้ Role: **Member** ปัจจุบันสังกัดอยู่  
+ *       ระบบจะตรวจสอบจาก JWT Token (req.user.id) และคืนค่ารายละเอียดชุมชนพร้อมข้อมูลที่เกี่ยวข้อง  
+ *       เช่น location, รูปภาพ, รายชื่อสมาชิก, ร้านค้า และที่พักในชุมชน
+ *     tags:
+ *       - Community (Member)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลรายละเอียดของชุมชนของสมาชิกสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Get Community detail member 12 successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 3
+ *                     name:
+ *                       type: string
+ *                       example: "ชุมชนบ้านคลองตะเคียน"
+ *                     description:
+ *                       type: string
+ *                       example: "ชุมชนท่องเที่ยวเชิงเกษตรอินทรีย์"
+ *                     status:
+ *                       type: string
+ *                       enum: [OPEN, CLOSED]
+ *                       example: "OPEN"
+ *                     rating:
+ *                       type: number
+ *                       example: 4.6
+ *                     isRatingVisible:
+ *                       type: boolean
+ *                       example: true
+ *                     location:
+ *                       type: object
+ *                       properties:
+ *                         province:
+ *                           type: string
+ *                           example: "ชลบุรี"
+ *                         district:
+ *                           type: string
+ *                           example: "เมืองชลบุรี"
+ *                         subDistrict:
+ *                           type: string
+ *                           example: "แสนสุข"
+ *                         postalCode:
+ *                           type: string
+ *                           example: "20130"
+ *                         latitude:
+ *                           type: number
+ *                           example: 13.123456
+ *                         longitude:
+ *                           type: number
+ *                           example: 100.987654
+ *                     communityMembers:
+ *                       type: array
+ *                       description: รายชื่อสมาชิกในชุมชน (เฉพาะข้อมูลพื้นฐานของ user)
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 22
+ *                           fname:
+ *                             type: string
+ *                             example: "กนกพร"
+ *                           lname:
+ *                             type: string
+ *                             example: "สุขใจ"
+ *                           email:
+ *                             type: string
+ *                             example: "kanokporn@example.com"
+ *                           roleId:
+ *                             type: integer
+ *                             example: 3
+ *                     stores:
+ *                       type: array
+ *                       description: รายการร้านค้าในชุมชน
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 10
+ *                           name:
+ *                             type: string
+ *                             example: "ร้านของฝากชุมชนคลองตะเคียน"
+ *                           detail:
+ *                             type: string
+ *                             example: "จำหน่ายของฝากและผลิตภัณฑ์ชุมชน"
+ *                           storeImage:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 image:
+ *                                   type: string
+ *                                   example: "uploads/store/store-001.jpg"
+ *                                 type:
+ *                                   type: string
+ *                                   enum: [LOGO, COVER, GALLERY, VIDEO]
+ *                                   example: "COVER"
+ *                     homestays:
+ *                       type: array
+ *                       description: รายการที่พักโฮมสเตย์ในชุมชน
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 5
+ *                           name:
+ *                             type: string
+ *                             example: "โฮมสเตย์คุณยายสมหมาย"
+ *                           type:
+ *                             type: string
+ *                             example: "ห้องพักรวม"
+ *                           guestPerRoom:
+ *                             type: integer
+ *                             example: 4
+ *                           totalRoom:
+ *                             type: integer
+ *                             example: 6
+ *                           facility:
+ *                             type: string
+ *                             example: "เครื่องปรับอากาศ, Wi-Fi, อาหารเช้า"
+ *                           homestayImage:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 image:
+ *                                   type: string
+ *                                   example: "uploads/homestay/ht-001-cover.jpg"
+ *                                 type:
+ *                                   type: string
+ *                                   enum: [LOGO, COVER, GALLERY, VIDEO]
+ *                                   example: "GALLERY"
+ *                     communityImage:
+ *                       type: array
+ *                       description: รูปภาพประกอบของชุมชน
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           image:
+ *                             type: string
+ *                             example: "uploads/community/cover-003.jpg"
+ *                           type:
+ *                             type: string
+ *                             enum: [LOGO, COVER, GALLERY, VIDEO]
+ *                             example: "COVER"
+ *       400:
+ *         description: ไม่พบข้อมูลชุมชนของสมาชิก หรือเกิดข้อผิดพลาดขณะประมวลผล
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Member)
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ */
+
+communityRoutes.get(
+  "/member/community",
+  validateDto(CommunityController.getCommunityDetailByMemberDto),
+  authMiddleware,
+  allowRoles("member"),
+  CommunityController.getCommunityDetailByMember
+);
+
+
 export default communityRoutes;
