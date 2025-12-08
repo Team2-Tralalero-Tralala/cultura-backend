@@ -2,10 +2,14 @@ import { Router } from "express";
 import * as middlewares from "~/Middlewares/auth-middleware.js";
 import * as feedbackController from "~/Controllers/feedback-controller.js";
 
-const packageFeedbackRoutes = Router();
+import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
+import * as FeedbackController from "~/Controllers/feedback-controller.js";
+import { validateDto } from "~/Libs/validateDto.js";
+
+const feedbackRoutes = Router();
 /**
  * @swagger
- * /api/admin/package/feedback/{packageId}:
+ * /api/admin/package/feedbacks/{packageId}:
  *   get:
  *     summary: ดึงรายการ feedback ของแพ็กเกจ (สำหรับผู้ดูแลระบบ)
  *     description: แสดงข้อมูล feedback ทั้งหมดของแพ็กเกจที่เลือก โดยต้องเป็นผู้ดูแลระบบเท่านั้น
@@ -92,11 +96,12 @@ const packageFeedbackRoutes = Router();
  * Path : /api/admin/package/feedback/:packageId
  * Access : admin
  */
-packageFeedbackRoutes.get(
-  "/admin/package/feedback/:packageId",
-  middlewares.authMiddleware,
-  middlewares.allowRoles("admin"),
-  feedbackController.getPackageFeedbacks
+
+feedbackRoutes.get(
+  "/admin/package/feedbacks/:packageId",
+  authMiddleware,
+  allowRoles("admin"),
+  FeedbackController.getPackageFeedbacksForAdmin
 );
 
 /**
@@ -107,7 +112,7 @@ packageFeedbackRoutes.get(
  *       - Member - Feedbacks
  *     summary: Get all feedbacks submitted by the logged-in member
  *     description: |
- *       ดึงรายการ Feedback ทั้งหมดที่สมาชิก (role: **member**) เคยส่ง  
+ *       ดึงรายการ Feedback ทั้งหมดที่สมาชิก (role: **member**) เคยส่ง
  *       ทุก response อยู่ในรูปแบบ `createResponse` หรือ `createErrorResponse`
  *     security:
  *       - bearerAuth: []
@@ -209,11 +214,87 @@ packageFeedbackRoutes.get(
  * Access : member
  */
 
-packageFeedbackRoutes.get(
+feedbackRoutes.get(
   "/member/feedbacks/all",
   middlewares.authMiddleware,
   middlewares.allowRoles("member"),
   feedbackController.getMemberAllFeedbacks
 );
+/*
+ * /api/member/feedback/{feedbackId}/reply:
+ *   post:
+ *     summary: ส่งคำตอบกลับ Feedback ของสมาชิก
+ *     description: สมาชิกสามารถส่งข้อความตอบกลับบน Feedback ของตนเองได้
+ *     tags:
+ *       - Feedback (Member)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         description: ID ของ Feedback
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/replyFeedbackDto'
+ *             example:
+ *                     {
+ *                       "replyMessage": "ขอบคุณ"
+ *                     }
+ *     responses:
+ *       200:
+ *         description: ตอบกลับ Feedback สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FeedbackReply'
+ *
+ *       400:
+ *         description: ส่งข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบหรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       403:
+ *         description: ไม่มีสิทธิ์ตอบกลับ Feedback นี้
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 
-export default packageFeedbackRoutes;
+/*
+ * คำอธิบาย : Routes สำหรับตอบกลับรีวิว (เฉพาะ member)
+ * Path : /api/member/feedback/:feedbackId/reply"
+ * Access : member
+ */
+feedbackRoutes.post(
+  "/member/feedback/:feedbackId/reply",
+  authMiddleware,
+  allowRoles("member"),
+  validateDto(FeedbackController.replyFeedbackDto),
+  FeedbackController.replyFeedback
+);
+
+export default feedbackRoutes;
