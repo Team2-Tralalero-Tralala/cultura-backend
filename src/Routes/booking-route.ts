@@ -202,4 +202,39 @@ refundRoutes.patch(
   RefundController.rejectRefundByAdmin
 );
 
+/*
+ * เส้นทาง : GET /member/booking-history/refunds
+ * คำอธิบาย : ดึงรายการคำขอคืนเงินที่ member ดูแล (รองรับ pagination)
+ */
+refundRoutes.get(
+  "/member/booking-history/refunds",
+  validateDto(RefundController.getRefundRequestsByMemberDto),
+  authMiddleware,
+  allowRoles("member"),
+  RefundController.getRefundRequestsByMember
+);
+
+/*
+ * เส้นทาง : PATCH /member/booking-history/:id/approve-refund
+ * คำอธิบาย : อนุมัติคำขอคืนเงิน
+ */
+refundRoutes.patch(
+  "/member/booking-history/:id/approve-refund",
+  validateDto(RefundController.approveRefundByMemberDto),
+  authMiddleware,
+  allowRoles("member"),
+  RefundController.approveRefundByMember
+);
+
+/*
+ * เส้นทาง : PATCH /member/booking-history/:id/reject-refund
+ * คำอธิบาย : ปฏิเสธคำขอคืนเงิน
+ */
+refundRoutes.patch(
+  "/member/booking-history/:id/reject-refund",
+  validateDto(RefundController.rejectRefundByMemberDto),
+  authMiddleware,
+  allowRoles("member"),
+  RefundController.rejectRefundByMember
+);
 export default refundRoutes;
