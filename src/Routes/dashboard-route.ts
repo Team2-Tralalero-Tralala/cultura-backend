@@ -295,4 +295,181 @@ dashboardRoutes.get(
   DashboardController.getAdminDashboard
 );
 
+/**
+ * @swagger
+ * /api/member/dashboard:
+ *   get:
+ *     summary: แสดงข้อมูล Dashboard ของสมาชิก (Member)
+ *     description: |
+ *       ดึงข้อมูลสรุป (summary), กราฟ (graph) และแพ็กเกจยอดนิยม (top packages) ของสมาชิก
+ *       สามารถกรองข้อมูลตามช่วงเวลาสำหรับ Booking, Revenue และ Top Packages ได้แยกกัน
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: bookingPeriodType
+ *         schema:
+ *           type: string
+ *           enum: [weekly, monthly, yearly]
+ *         description: ประเภทช่วงเวลาสำหรับกราฟการจอง (booking)
+ *       - in: query
+ *         name: bookingDates
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: วันที่สำหรับกราฟการจอง (YYYY-MM-DD)
+ *       - in: query
+ *         name: revenuePeriodType
+ *         schema:
+ *           type: string
+ *           enum: [weekly, monthly, yearly]
+ *         description: ประเภทช่วงเวลาสำหรับกราฟรายได้ (revenue)
+ *       - in: query
+ *         name: revenueDates
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: วันที่สำหรับกราฟรายได้ (YYYY-MM-DD)
+ *       - in: query
+ *         name: packagePeriodType
+ *         schema:
+ *           type: string
+ *           enum: [weekly, monthly, yearly]
+ *         description: ประเภทช่วงเวลาสำหรับแพ็กเกจยอดนิยม (top packages)
+ *       - in: query
+ *         name: packageDates
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         style: form
+ *         explode: true
+ *         description: วันที่สำหรับแพ็กเกจยอดนิยม (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูล Dashboard สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Dashboard data retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     summary:
+ *                       type: object
+ *                       properties:
+ *                         totalPackages:
+ *                           type: integer
+ *                           example: 5
+ *                         totalRevenue:
+ *                           type: number
+ *                           example: 15000
+ *                         successBookingCount:
+ *                           type: integer
+ *                           example: 20
+ *                         cancelledBookingCount:
+ *                           type: integer
+ *                           example: 2
+ *                     graph:
+ *                       type: object
+ *                       properties:
+ *                         bookingCountGraph:
+ *                           type: object
+ *                           properties:
+ *                             labels:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                               example: ["01/01", "02/01"]
+ *                             data:
+ *                               type: array
+ *                               items:
+ *                                 type: number
+ *                               example: [5, 10]
+ *                         revenueGraph:
+ *                           type: object
+ *                           properties:
+ *                             labels:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                               example: ["01/01", "02/01"]
+ *                             data:
+ *                               type: array
+ *                               items:
+ *                                 type: number
+ *                               example: [5000, 10000]
+ *                     package:
+ *                       type: object
+ *                       properties:
+ *                         topPackages:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               rank:
+ *                                 type: integer
+ *                                 example: 1
+ *                               name:
+ *                                 type: string
+ *                                 example: "Package A"
+ *                               bookingCount:
+ *                                 type: integer
+ *                                 example: 15
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 401
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (สิทธิ์ไม่เพียงพอ)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden
+ */
+dashboardRoutes.get(
+  "/member/dashboard",
+  validateDto(DashboardController.getMemberDashboardDto),
+  authMiddleware,
+  allowRoles("member"),
+  DashboardController.getMemberDashboard
+);
+
 export default dashboardRoutes;
