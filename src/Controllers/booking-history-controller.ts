@@ -1,4 +1,3 @@
-import { IsNumberString } from "class-validator";
 import type { Request, Response } from "express";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { getHistoriesByRole } from "../Services/booking-history-service.js";
@@ -174,53 +173,127 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-/**
- * DTO : BookingIdParamDto
- * คำอธิบาย :
- *  - ใช้สำหรับตรวจสอบพารามิเตอร์ bookingId ที่ส่งมาผ่าน URL
- *  - ต้องเป็นค่า Number ในรูปแบบ string เท่านั้น
- */
-export class BookingIdParamDto {
-  @IsNumberString()
-  bookingId?: number;
-}
 
-/**
- * DTO สำหรับ "ดึงข้อมูลรายละเอียดการจองตามรหัส"
- * ใช้ validate params ก่อนเข้า controller
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายการการจองทั้งหมดของ Member (รองรับ pagination)
+ * Input :
+ *   - query (page, limit)
+ * Output :
+ *   - รายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นดูแล + pagination metadata
  */
-export const getDetailBookingByMemberDto = {
-  params: BookingIdParamDto,
+export const getBookingsByMemberDto = {
+  query: PaginationDto,
 } satisfies commonDto;
 
-/**
- * ฟังก์ชัน : getDetailBookingByMember
- * คำอธิบาย :
- *  - สำหรับดึงรายละเอียดการจองเฉพาะของสมาชิก (role = member)
- *  - สมาชิกจะเห็นเฉพาะ booking ที่ตนเองเป็นผู้จองหรืออยู่ในชุมชนที่เกี่ยวข้อง
- *
+/*
+ * ฟังก์ชัน : getBookingsByMember
+ * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
+ * Route : GET /member/bookings/all
  * Input :
- *  - req.user.id          : รหัสผู้ใช้ (มาจาก authMiddleware)
- *  - req.params.bookingId : รหัสการจองที่ต้องการดูรายละเอียด (ผ่าน DTO ตรวจสอบเลขแล้ว)
- *
+ *   - req.user.id
+ *   - req.query.page, req.query.limit, req.query.status (ไม่บังคับ)
  * Output :
- *  - 200 OK : ส่งกลับรายละเอียดการจองแบบเต็ม
- *  - 400 Bad Request : หาก bookingId ไม่ถูกต้อง หรือเกิด error อื่น ๆ
- *
- * สิทธิ์ในการเข้าถึง :
- *  - เฉพาะผู้ใช้ role "member" ที่เกี่ยวข้องกับ booking เท่านั้น
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
+ * หมายเหตุ :
+ *   - ใช้ข้อมูล memberId จาก token (req.user)
+ *   - เฉพาะผู้ใช้ role "member" เท่านั้นที่เข้าถึงได้
  */
-export const getDetailBookingByMember: TypedHandlerFromDto<
-  typeof getDetailBookingByMemberDto
+export const getBookingsByMember: TypedHandlerFromDto<
+  typeof getBookingsByMemberDto
 > = async (req, res) => {
   try {
-    const bookingId = Number(req.params.bookingId);
-    const userId = Number(req.user!.id);
-    const result = await bookingService.getDetailBookingByMember(
-      bookingId,
-      userId
+    const memberId = Number(req.user!.id);
+    // const { page = 1, limit = 10, status } = req.query as any;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+    } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+    };
+    const result = await bookingService.getBookingsByMember(
+      memberId,
+      Number(page),
+      Number(limit),
+      status as string | undefined
     );
-    return createResponse(res, 200, "Get booking detail successfully", result);
+
+    return createResponse(
+      res,
+      200,
+      "Bookings (member) retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * ฟังก์ชัน : updateBookingStatusByMember
+ * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง (เฉพาะ Member)
+ * Route : POST /member/bookings/:id/status
+ * Input :
+ *   - req.user.id    : รหัสของ Member (ใช้เช็คว่าเป็นเจ้าของแพ็กเกจจริงไหม)
+ *   - req.params.id  : รหัสของการจอง (bookingId)
+ *   - req.body.status : สถานะใหม่ที่ต้องการอัปเดต
+ *   - req.body.rejectReason : เหตุผลการปฏิเสธ (ถ้ามี)
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองที่ถูกอัปเดต
+ * หมายเหตุ :
+ *   - รองรับเฉพาะสถานะต่อไปนี้:
+ *       • BOOKED (จองสำเร็จ)
+ *       • REJECTED (ปฏิเสธจอง)
+ *       • REFUNDED (คืนเงินแล้ว)
+ *       • REFUND_REJECTED (ปฏิเสธการคืนเงิน)
+ *   - เฉพาะผู้ใช้ role "member" และต้องเป็นผู้ดูแลแพ็กเกจ (overseerMember) ของ booking นั้นเท่านั้น
+ */
+export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
+  req,
+  res
+) => {
+  try {
+    const memberId = Number(req.user!.id);
+    const bookingId = Number(req.params.id);
+
+    const { status, rejectReason } = req.body as {
+      status?: string;
+      rejectReason?: string;
+    };
+
+    if (!Number.isInteger(bookingId) || bookingId <= 0) {
+      return createErrorResponse(res, 400, "Invalid booking ID");
+    }
+
+    if (!status) {
+      return createErrorResponse(res, 400, "Missing booking status");
+    }
+
+    const isRejectStatus =
+      status === "REJECTED" || status === "REFUND_REJECTED";
+
+    // ถ้าเป็นสถานะปฏิเสธ → บังคับต้องมีเหตุผล และห้ามเป็น string ว่าง
+    if (isRejectStatus) {
+      if (!rejectReason || String(rejectReason).trim() === "") {
+        return createErrorResponse(res, 400, "กรุณากรอกเหตุผลการปฏิเสธ");
+      }
+    }
+
+    const updated = await BookingHistoryService.updateBookingStatusByMember(
+      memberId,
+      bookingId,
+      status,
+      rejectReason
+    );
+
+    return createResponse(
+      res,
+      200,
+      "update booking status (member) successfully",
+      updated
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

@@ -88,17 +88,18 @@ export const createPackage = async (data: PackageDto) => {
       throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
   }
 
-  // ตรวจ overseer
+const targetOverseerId = data.overseerMemberId ?? data.createById;
+
+  if (!targetOverseerId) {
+    throw new Error("ไม่สามารถระบุตัวตนผู้ดูแลแพ็กเกจได้ (Missing ID)");
+  }
   const overseer = await prisma.user.findUnique({
-    where: { id: Number(data.overseerMemberId) },
+    where: { id: Number(targetOverseerId) }, // ใช้ตัวแปร targetOverseerId แทน
     include: { communityMembers: { include: { Community: true } } },
   });
   if (!overseer)
-    throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
-
-  // ถ้าไม่ได้ส่ง communityId ให้อนุมานจากชุมชนของ overseer
-  const resolvedCommunityId =
-    data.communityId ?? overseer.communityMembers[0]?.Community?.id ?? null;
+    throw new Error(`Member ID ${targetOverseerId} ไม่พบในระบบ`);
+  const resolvedCommunityId = data.communityId ?? overseer.communityMembers[0]?.Community?.id ?? null;
   if (!resolvedCommunityId) {
     throw new Error("ไม่พบชุมชนของผู้ดูแล แพ็กเกจต้องสังกัดชุมชน");
   }
@@ -152,8 +153,8 @@ export const createPackage = async (data: PackageDto) => {
     data: {
       communityId: Number(resolvedCommunityId),
       locationId: location.id,
-      overseerMemberId: Number(data.overseerMemberId),
-      createById: data.createById ?? Number(data.overseerMemberId),
+      overseerMemberId: Number(targetOverseerId),
+      createById: data.createById ?? Number(targetOverseerId),
       name: data.name,
       description: data.description,
       capacity: data.capacity,
