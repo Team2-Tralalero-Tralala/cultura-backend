@@ -234,12 +234,12 @@ export const createMemberByAdmin: TypedHandlerFromDto<
 
     const result = await AccountService.createAccount(payload);
 
-    return createResponse(res, 201, "Member account created successfully", result);
+    return createResponse(res, 201, "สร้างบัญชีสมาชิกสำเร็จ", result);
   } catch (error) {
     console.error(error);
     const message = (error as Error).message;
     if (message === "community_not_found_for_admin") {
-         return createErrorResponse(res, 403, "You do not own any community");
+         return createErrorResponse(res, 403, "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้");
     }
     return createErrorResponse(res, 400, message);
   }
@@ -268,20 +268,20 @@ export const editMemberByAdmin: TypedHandlerFromDto<typeof editAccountDto> = asy
       return createErrorResponse(
         res,
         403,
-        "You do not have permission to edit this user (User is not in your community)"
+        "คุณไม่มีสิทธิ์แก้ไขข้อมูลสมาชิกรายนี้ (เนื่องจากสมาชิกไม่ได้อยู่ในชุมชนของคุณ)"
       );
     }
 
     const result = await AccountService.editAccount(targetUserId, body);
 
-    return createResponse(res, 200, "Member updated successfully", result);
+    return createResponse(res, 200, "แก้ไขข้อมูลสมาชิกสำเร็จ", result);
   } catch (error) {
     const message = (error as Error).message;
     if (message === "community_not_found_for_admin") {
-      return createErrorResponse(res, 403, "You do not own any community");
+      return createErrorResponse(res, 403, "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ");
     }
     if (message === "user_not_found") {
-        return createErrorResponse(res, 404, "User not found");
+        return createErrorResponse(res, 404, "ไม่พบข้อมูลสมาชิกนี้ในระบบ");
     }
     return createErrorResponse(res, 400, message);
   }
