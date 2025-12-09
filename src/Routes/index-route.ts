@@ -20,6 +20,7 @@ import bookingRefund from "./booking-route.js";
 import feedbackRoutes from "./feedback-routes.js";
 import bookingRoutes from "./booking-history-route.js";
 import storeSuperAdminRoutes from "./storeSuperAdmin-route.js";
+import homeRoutes from "./home-route.js";
 
 const rootRouter: Router = Router();
 
@@ -50,5 +51,6 @@ rootRouter.use(bookingRoutes);
 rootRouter.use(bookingRefund);
 
 rootRouter.use(feedbackRoutes);
+rootRouter.use(homeRoutes);
 
 export default rootRouter;

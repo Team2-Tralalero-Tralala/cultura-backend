@@ -752,6 +752,175 @@ export const getPackagesByMember = (userId: number, page = 1, limit = 10) =>
 export const getPackagesByTourist = (userId: number, page = 1, limit = 10) =>
   getPackageByRole(userId, page, limit);
 
+/*
+ * คำอธิบาย : ดึงรายการแพ็กเกจใหม่ 40 อัน (Public API)
+ * Input: -
+ * Output : Array ของข้อมูลแพ็กเกจใหม่ 40 อัน (เรียงตาม id มากไปน้อย)
+ */
+export async function getNewestPackages() {
+  const packages = await prisma.package.findMany({
+    where: {
+      isDeleted: false,
+      statusPackage: PackagePublishStatus.PUBLISH,
+      statusApprove: PackageApproveStatus.APPROVE,
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      capacity: true,
+      startDate: true,
+      dueDate: true,
+      facility: true,
+      community: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          province: true,
+          district: true,
+          subDistrict: true,
+        },
+      },
+      packageFile: {
+        where: {
+          type: "COVER",
+        },
+        select: {
+          filePath: true,
+        },
+        take: 1,
+      },
+      tagPackages: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      id: "desc",
+    },
+    take: 40,
+  });
+
+  return packages.map((pkg) => ({
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description,
+    price: pkg.price,
+    capacity: pkg.capacity,
+    startDate: pkg.startDate,
+    dueDate: pkg.dueDate,
+    facility: pkg.facility,
+    community: pkg.community,
+    location: pkg.location,
+    coverImage: pkg.packageFile[0]?.filePath || null,
+    tags: pkg.tagPackages.map((tp) => tp.tag),
+  }));
+}
+
+/*
+ * คำอธิบาย : ดึงรายการแพ็กเกจยอดนิยม 40 อัน (Public API)
+ * Input: -
+ * Output : Array ของข้อมูลแพ็กเกจยอดนิยม 40 อัน (เรียงตามจำนวนการจองที่สำเร็จ)
+ */
+export async function getPopularPackages() {
+  // ดึงแพ็กเกจทั้งหมดที่เผยแพร่และอนุมัติแล้ว
+  const packages = await prisma.package.findMany({
+    where: {
+      isDeleted: false,
+      statusPackage: PackagePublishStatus.PUBLISH,
+      statusApprove: PackageApproveStatus.APPROVE,
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      capacity: true,
+      startDate: true,
+      dueDate: true,
+      facility: true,
+      community: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          province: true,
+          district: true,
+          subDistrict: true,
+        },
+      },
+      packageFile: {
+        where: {
+          type: "COVER",
+        },
+        select: {
+          filePath: true,
+        },
+        take: 1,
+      },
+      tagPackages: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      bookingHistories: {
+        where: {
+          status: "BOOKED",
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  // นับจำนวนการจองที่สำเร็จและเรียงลำดับ
+  const packagesWithBookingCount = packages.map((pkg) => ({
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description,
+    price: pkg.price,
+    capacity: pkg.capacity,
+    startDate: pkg.startDate,
+    dueDate: pkg.dueDate,
+    facility: pkg.facility,
+    community: pkg.community,
+    location: pkg.location,
+    coverImage: pkg.packageFile[0]?.filePath || null,
+    tags: pkg.tagPackages.map((tp) => tp.tag),
+    bookingCount: pkg.bookingHistories.length,
+  }));
+
+  // เรียงตามจำนวนการจอง (มากไปน้อย) แล้วเลือก 40 อันแรก
+  const popularPackages = packagesWithBookingCount
+    .sort((a, b) => b.bookingCount - a.bookingCount)
+    .slice(0, 40)
+    .map(({ bookingCount, ...pkg }) => pkg); // ลบ bookingCount ออกจากผลลัพธ์
+
+  return popularPackages;
+}
+
 type ListByPackageInput = {
   userId: number;
   packageId: number;
