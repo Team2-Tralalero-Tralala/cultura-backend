@@ -70,14 +70,14 @@ export async function createPackageAdmin(req: Request, res: Response) {
     // 2. แกะข้อมูล JSON จาก req.body.data
     let parsedBody: any;
     if (req.body.data) {
-        try {
-            parsedBody = JSON.parse(req.body.data);
-        } catch (e) {
-            return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
-        }
+      try {
+        parsedBody = JSON.parse(req.body.data);
+      } catch (error) {
+        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+      }
     } else {
-        // Fallback: เผื่อส่งมาเป็น JSON ล้วนๆ (กรณีไม่มีรูป)
-        parsedBody = req.body;
+      // Fallback: เผื่อส่งมาเป็น JSON ล้วนๆ (กรณีไม่มีรูป)
+      parsedBody = req.body;
     }
 
     // 3. รวมไฟล์เข้ากับข้อมูล (Mapping ไฟล์ให้ตรงกับโครงสร้าง PackageFileDto)
@@ -90,10 +90,10 @@ export async function createPackageAdmin(req: Request, res: Response) {
     // 4. ส่งเข้า Service (รวมร่างข้อมูล)
     // ตรงนี้เราต้อง cast types ให้ตรง หรือส่งไปแบบ object รวม
     const result = await PackageService.createPackageByAdmin(
-      { 
-        ...parsedBody, 
+      {
+        ...parsedBody,
         packageFile, // แนบไฟล์ที่ map แล้วเข้าไป
-        createById: userId 
+        createById: userId
       },
       userId
     );
@@ -110,15 +110,47 @@ export async function createPackageAdmin(req: Request, res: Response) {
  * Output: 200 - ข้อมูลแพ็กเกจที่สร้างสำเร็จ
  * 400 - Error message
  */
+// Controllers/package-controller.ts
+
+/*
+ * คำอธิบาย : (Member) Handler สำหรับสร้างแพ็กเกจใหม่
+ * Input: req.body - (FormData: data string + files), req.user.id
+ * Output: 200 - ข้อมูลแพ็กเกจที่สร้างสำเร็จ
+ */
 export async function createPackageMember(req: Request, res: Response) {
   try {
     const userId = Number((req as any).user?.id);
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+    let parsedBody: any;
+    if (req.body.data) {
+      try {
+        parsedBody = JSON.parse(req.body.data);
+      } catch (error) {
+        return createErrorResponse(res, 400, "รูปแบบข้อมูล JSON ใน field 'data' ไม่ถูกต้อง");
+      }
+    } else {
+      parsedBody = req.body;
+    }
+    const packageFile = [
+      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
+      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+    ];
     const result = await PackageService.createPackageByMember(
-      { ...req.body, createById: userId },
+      {
+        ...parsedBody,
+        packageFile,
+        createById: userId,
+      },
       userId
     );
     return createResponse(res, 200, "Create Packages Success", result);
   } catch (error) {
+    console.error(error); // log error ไว้ดูที่ server console ด้วย
     return createErrorResponse(res, 400, (error as Error).message);
   }
 }
@@ -359,26 +391,26 @@ export async function editPackageAdmin(req: Request, res: Response) {
       } catch {
         return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
       }
-    const packageFile = [
-      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
-    ];
-    const result = await PackageService.editPackageByAdmin(
-        packageId, 
-        { ...parsedBody, packageFile }, 
-        userId
-    );
-    if (Array.isArray(parsedBody?.tagIds)) {
-      await PackageService.updatePackageTags(
+      const packageFile = [
+        ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
+        ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+        ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+      ];
+      const result = await PackageService.editPackageByAdmin(
         packageId,
-        parsedBody.tagIds
-          .map((tagIdNumber: any) => Number(tagIdNumber))
-          .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+        { ...parsedBody, packageFile },
+        userId
       );
+      if (Array.isArray(parsedBody?.tagIds)) {
+        await PackageService.updatePackageTags(
+          packageId,
+          parsedBody.tagIds
+            .map((tagIdNumber: any) => Number(tagIdNumber))
+            .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+        );
+      }
+      return createResponse(res, 200, "Package Updated", result);
     }
-    return createResponse(res, 200, "Package Updated", result);
-  }
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -394,7 +426,40 @@ export async function editPackageMember(req: Request, res: Response) {
   try {
     const userId = Number((req as any).user?.id);
     const packageId = Number(req.params.id);
-    const result = await PackageService.editPackageByMember(packageId, req.body, userId);
+    const files = req.files as {
+      cover?: Express.Multer.File[];
+      gallery?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    };
+    let parsedBody: any;
+    if (req.body.data) {
+      try {
+        parsedBody = JSON.parse(req.body.data);
+      } catch (error) {
+        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+      }
+    } else {
+      parsedBody = req.body;
+    }
+    let packageFile = undefined;
+    if (files?.cover || files?.gallery || files?.video || parsedBody.packageFile) {
+      packageFile = [
+        ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
+        ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
+        ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+        ...(Array.isArray(parsedBody.packageFile) ? parsedBody.packageFile : [])
+      ];
+    }
+
+    const result = await PackageService.editPackageByMember(
+      packageId,
+      {
+        ...parsedBody,
+        ...(packageFile ? { packageFile } : {}) // ส่ง packageFile ไปเฉพาะเมื่อมีการเปลี่ยนแปลง
+      },
+      userId
+    );
+
     return createResponse(res, 200, "Package Updated", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -573,7 +638,7 @@ export const listCommunityHomestays: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const userId = Number(req.user?.id);
-    const { q: query = "", limit = 8 } = req.query;
+    const { query = "", limit = 8 } = req.query;
 
     const data = await PackageService.listCommunityHomestays({
       userId,
@@ -599,7 +664,7 @@ export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     // Super Admin ไม่ต้องใช้ userId
-    const { q: query = "", limit = 8 } = req.query;
+    const { query = "", limit = 8 } = req.query;
 
     const data = await PackageService.listAllHomestaysSuperAdmin({
       query,
@@ -689,8 +754,8 @@ export async function getHistoriesPackageAdmin(req: Request, res: Response) {
 }
 
 export const getHistoriesPackageByMemberDto = {
-    params: IdParamDto,
-    query: MembersQueryDto,
+  params: IdParamDto,
+  query: MembersQueryDto,
 } satisfies commonDto;
 
 /*

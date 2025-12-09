@@ -412,7 +412,7 @@ tagRoutes.get(
     "/shared/tags",
     validateDto(TagController.getAllTagsDto),
     authMiddleware,
-    allowRoles("superadmin", "admin"),
+    allowRoles("superadmin", "admin", "member"),
     TagController.getAllTags);
 
 export default tagRoutes;
