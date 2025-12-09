@@ -1,11 +1,14 @@
 import { Router } from "express";
-import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
-import { getPackageFeedbacks } from "~/Controllers/feedback-controller.js";
+import * as middlewares from "~/Middlewares/auth-middleware.js";
+import * as FeedbackController from "~/Controllers/feedback-controller.js";
+import { validateDto } from "~/Libs/validateDto.js";
 
-const packageFeedbackAdminRoutes = Router();
+import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
+
+const feedbackRoutes = Router();
 /**
  * @swagger
- * /api/admin/package/feedback/{packageId}:
+ * /api/admin/package/feedbacks/{packageId}:
  *   get:
  *     summary: ดึงรายการ feedback ของแพ็กเกจ (สำหรับผู้ดูแลระบบ)
  *     description: แสดงข้อมูล feedback ทั้งหมดของแพ็กเกจที่เลือก โดยต้องเป็นผู้ดูแลระบบเท่านั้น
@@ -93,11 +96,272 @@ const packageFeedbackAdminRoutes = Router();
  * Access : admin
  */
 
-packageFeedbackAdminRoutes.get(
-  "/admin/package/feedback/:packageId",
+feedbackRoutes.get(
+  "/admin/package/feedbacks/:packageId",
   authMiddleware,
   allowRoles("admin"),
-  getPackageFeedbacks
+  FeedbackController.getPackageFeedbacksForAdmin
 );
 
-export default packageFeedbackAdminRoutes;
+/**
+ * @swagger
+ * /api/member/feedbacks/all:
+ *   get:
+ *     tags:
+ *       - Member - Feedbacks
+ *     summary: Get all feedbacks submitted by the logged-in member
+ *     description: |
+ *       ดึงรายการ Feedback ทั้งหมดที่สมาชิก (role: **member**) เคยส่ง
+ *       ทุก response อยู่ในรูปแบบ `createResponse` หรือ `createErrorResponse`
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงรายการ Feedback สำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Get all feedbacks successfully
+ *                 data:
+ *                   type: array
+ *                   description: รายการ feedback ทั้งหมดของ member
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 12
+ *                       packageId:
+ *                         type: integer
+ *                         example: 5
+ *                       rating:
+ *                         type: integer
+ *                         example: 4
+ *                       comment:
+ *                         type: string
+ *                         example: "ที่พักดีมาก บริการเยี่ยม"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-01-12T14:30:00Z"
+ *                 meta:
+ *                   type: object
+ *                   nullable: true
+ *       401:
+ *         description: ไม่ได้ส่ง JWT Bearer token หรือ token ไม่ถูกต้อง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *       403:
+ *         description: Forbidden – ผู้ใช้ไม่มีสิทธิ์ member
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 403
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden resource
+ *       500:
+ *         description: Internal server error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ */
+
+/*
+ * คำอธิบาย : Routes สำหรับดึงฟีดแบ็กทั้งหมดของแพ็กเกจ (เฉพาะสมาชิก)
+ * Path : /api/member/feedbacks/all
+ * Access : member
+ */
+
+feedbackRoutes.get(
+  "/member/feedbacks/all",
+  middlewares.authMiddleware,
+  middlewares.allowRoles("member"),
+  FeedbackController.getMemberAllFeedbacks
+);
+/*
+ * /api/member/feedback/{feedbackId}/reply:
+ *   post:
+ *     summary: ส่งคำตอบกลับ Feedback ของสมาชิก
+ *     description: สมาชิกสามารถส่งข้อความตอบกลับบน Feedback ของตนเองได้
+ *     tags:
+ *       - Feedback (Member)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         description: ID ของ Feedback
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/replyFeedbackDto'
+ *             example:
+ *                     {
+ *                       "replyMessage": "ขอบคุณ"
+ *                     }
+ *     responses:
+ *       200:
+ *         description: ตอบกลับ Feedback สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FeedbackReply'
+ *
+ *       400:
+ *         description: ส่งข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบหรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       403:
+ *         description: ไม่มีสิทธิ์ตอบกลับ Feedback นี้
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/*
+ * คำอธิบาย : Routes สำหรับตอบกลับรีวิว (เฉพาะ member)
+ * Path : /api/member/feedback/:feedbackId/reply"
+ * Access : member
+ */
+feedbackRoutes.post(
+  "/member/feedback/:feedbackId/reply",
+  authMiddleware,
+  allowRoles("member"),
+  validateDto(FeedbackController.replyFeedbackDto),
+  FeedbackController.replyFeedback
+);
+
+/**
+ * @swagger
+ * /api/member/feedback/{feedbackId}/reply:
+ *   post:
+ *     summary: ส่งคำตอบกลับ Feedback ของสมาชิก
+ *     description: สมาชิกสามารถส่งข้อความตอบกลับบน Feedback ของตนเองได้
+ *     tags:
+ *       - Feedback (Member)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: feedbackId
+ *         required: true
+ *         description: ID ของ Feedback
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/replyFeedbackDto'
+ *
+ *     responses:
+ *       200:
+ *         description: ตอบกลับ Feedback สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FeedbackReply'
+ *
+ *       400:
+ *         description: ส่งข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบหรือ Token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       403:
+ *         description: ไม่มีสิทธิ์ตอบกลับ Feedback นี้
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+feedbackRoutes.get(
+  "/member/package/feedbacks/:packageId",
+  authMiddleware,
+  allowRoles("member"),
+  FeedbackController.getPackageFeedbacksForMember
+);
+export default feedbackRoutes;

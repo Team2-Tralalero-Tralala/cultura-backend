@@ -63,39 +63,109 @@ export const getSuperAdminDashboard: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-/*
- * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Admin
- * Input : query (dateStart, dateEnd, groupBy)
- * Output : ข้อมูล Dashboard
- */
-export const getAdminDashboardDto = {
-  query: DashboardDto.GetAdminDashboardDto,
-} satisfies commonDto;
+
 /**
  * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Admin
  * Input : req.query (dateStart, dateEnd, groupBy, req.user.id)
  * Output : JSON response พร้อมข้อมูล Dashboard
  */
 export const getAdminDashboard: TypedHandlerFromDto<
-  typeof getAdminDashboardDto
+  typeof getMemberDashboardDto
 > = async (req, res) => {
   try {
     if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
     }
 
-    const {
-      dateStart,
-      dateEnd,
+    const query = req.query as any;
+    const { bookingPeriodType, revenuePeriodType, packagePeriodType } = query;
 
-      groupBy = "day",
-    } = req.query;
+    const getArray = (key: string) => {
+      const val = query[key] || query[`${key}[]`];
+      return Array.isArray(val) ? val : val ? [val] : [];
+    };
 
-    const result = await DashboardService.getAdminDashBoard(
-      dateStart!,
-      dateEnd!,
-      groupBy,
-      req.user?.id
+    const bookingDates = getArray("bookingDates");
+    const revenueDates = getArray("revenueDates");
+    const packageDates = getArray("packageDates");
+
+    const toArray = (val: any) => (Array.isArray(val) ? val : val ? [val] : []);
+
+    const result = await DashboardService.getAdminDashboard(
+      req.user?.id,
+      {
+        periodType: bookingPeriodType as "weekly" | "monthly" | "yearly",
+        dates: toArray(bookingDates),
+      },
+      {
+        periodType: revenuePeriodType as "weekly" | "monthly" | "yearly",
+        dates: toArray(revenueDates),
+      },
+      {
+        periodType: packagePeriodType as "weekly" | "monthly" | "yearly",
+        dates: toArray(packageDates),
+      }
+    );
+
+    return createResponse(
+      res,
+      200,
+      "Dashboard data retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Member
+ * Input : query (bookingPeriodType, bookingDates, revenuePeriodType, revenueDates, packagePeriodType, packageDates)
+ * Output : ข้อมูล Dashboard
+ */
+export const getMemberDashboardDto = {
+  query: DashboardDto.GetMemberDashboardDto,
+} satisfies commonDto;
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Member
+ * Input : req.query (bookingPeriodType, bookingDates, revenuePeriodType, revenueDates, packagePeriodType, packageDates)
+ * Output : JSON response พร้อมข้อมูล Dashboard
+ */
+export const getMemberDashboard: TypedHandlerFromDto<
+  typeof getMemberDashboardDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "ผู้ใช้ไม่ได้เข้าสู่ระบบ");
+    }
+
+    const query = req.query as any;
+    const { bookingPeriodType, revenuePeriodType, packagePeriodType } = query;
+
+    const getArray = (key: string) => {
+      const val = query[key] || query[`${key}[]`];
+      return Array.isArray(val) ? val : val ? [val] : [];
+    };
+
+    const bookingDates = getArray("bookingDates");
+    const revenueDates = getArray("revenueDates");
+    const packageDates = getArray("packageDates");
+
+    const toArray = (val: any) => (Array.isArray(val) ? val : val ? [val] : []);
+
+    const result = await DashboardService.getMemberDashboard(
+      req.user?.id,
+      {
+        periodType: bookingPeriodType as "weekly" | "monthly" | "yearly",
+        dates: toArray(bookingDates),
+      },
+      {
+        periodType: revenuePeriodType as "weekly" | "monthly" | "yearly",
+        dates: toArray(revenueDates),
+      },
+      {
+        periodType: packagePeriodType as "weekly" | "monthly" | "yearly",
+        dates: toArray(packageDates),
+      }
     );
 
     return createResponse(
