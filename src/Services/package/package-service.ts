@@ -1125,6 +1125,7 @@ export async function getDraftPackages(createById: number) {
     where: {
       statusPackage: PackagePublishStatus.DRAFT,
       createById: createById,
+      isDeleted: false, 
     },
     select: {
       id: true,
@@ -1145,3 +1146,86 @@ export async function getDraftPackages(createById: number) {
 
   return draftPackages;
 }
+/*
+ * คำอธิบาย : ลบแพ็กเกจสถานะ Draft ของผู้ใช้ (Soft Delete)
+ * Input: packageId - ID ของแพ็กเกจ, createById - ID ของผู้ใช้ที่สร้างแพ็กเกจ
+ * Output : ข้อความยืนยันการลบแพ็กเกจ
+ */
+export async function DeleteDraftPackage(packageIdInput: unknown, createByIdInput: unknown) {
+  // แปลงค่าที่เข้ามาเป็น number
+  const packageId = Number(packageIdInput);
+  const createById = Number(createByIdInput);
+
+  if (isNaN(packageId) || isNaN(createById)) {
+    throw new Error("packageId หรือ createById ไม่ถูกต้อง");
+  }
+
+  // หาแพ็กเกจด้วย findUnique (id เป็น unique key) แทน findFirst
+  const draftPackage = await prisma.package.findUnique({
+    where: { id: packageId },
+    select: {
+      id: true,
+      statusPackage: true,
+      isDeleted: true,
+      createById: true,
+    },
+  });
+
+  if (!draftPackage) {
+    throw new Error("ไม่พบแพ็กเกจ");
+  }
+
+  if (draftPackage.createById !== createById) {
+    throw new Error("ผู้ใช้ไม่มีสิทธิ์ลบแพ็กเกจนี้");
+  }
+
+  if (draftPackage.statusPackage !== PackagePublishStatus.DRAFT) {
+    throw new Error("แพ็กเกจไม่ใช่สถานะ Draft");
+  }
+
+  if (draftPackage.isDeleted) {
+    throw new Error("แพ็กเกจถูกลบไปแล้ว");
+  }
+
+  // Soft delete
+  await prisma.package.update({
+    where: { id: packageId },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+
+  return { message: "ลบแพ็กเกจ Draft สำเร็จ (Soft Delete)" };
+}
+/*
+ * คำอธิบาย : ลบแพ็กเกจสถานะ Draft ของผู้ใช้เป็นกลุ่ม (Soft Delete)
+ * Input:   ids - Array ของ ID แพ็กเกจ
+ * Output : ผลลัพธ์การลบแพ็กเกจ
+ */
+export const bulkDeletePackages = async (ids: number[]) => {
+  if (!ids || ids.length === 0) {
+    return {
+      success: false,
+      message: "packageId ไม่ถูกต้อง",
+    };
+  }
+
+  const result = await prisma.package.updateMany({
+    where: {
+      id: { in: ids },
+      isDeleted: false,
+    },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+
+  return {
+    success: true,
+    message: `${result.count} แพ็กเกจถูกลบเรียบร้อย`,
+  };
+};
+
+
