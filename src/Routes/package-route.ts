@@ -1,41 +1,43 @@
 // Routes/package-routes.ts
 import { Router } from "express";
+import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
+import * as PackageController from "../Controllers/package-controller.js";
 import {
-    createPackageDto,
-    editPackageDto,
-    createPackageSuperAdmin,
     createPackageAdmin,
+    createPackageDto,
     createPackageMember,
-    listPackagesSuperAdmin,
-    listPackagesAdmin,
-    listPackagesMember,
-    listPackagesTourist,
-    editPackageSuperAdmin,
-    editPackageAdmin,
-    editPackageMember,
-    deletePackageSuperAdmin,
+    createPackageSuperAdmin,
     deletePackageAdmin,
     deletePackageMember,
-    getPackageDetail,
-    listHomestaysByPackageDto,
-    listHomestaysByPackage,
-    getCommunityMembersDto,
-    getCommunityMembers,
-    listCommunityHomestaysDto,
-    listCommunityHomestays,
-    listAllHomestaysSuperAdmin,
-    getAllFeedbacks,
-    duplicatePackageHistoryDto,
+    deletePackageSuperAdmin,
     duplicatePackageHistoryAdmin,
-    getPackageHistoryDetailAdmin,
+    duplicatePackageHistoryDto,
+    editPackageAdmin,
+    editPackageDto,
+    editPackageMember,
+    editPackageSuperAdmin,
+    getAllFeedbacks,
+    getCommunityMembers,
+    getCommunityMembersDto,
+    getNewestPackages,
     getHistoriesPackageAdmin,
     getPackageById,
-    getPackageDetailByMember
+    getPackageDetailByMember,
+    getPackageDetail,
+    getPackageHistoryDetailAdmin,
+    getPopularPackages,
+    listAllHomestaysSuperAdmin,
+    listCommunityHomestays,
+    listCommunityHomestaysDto,
+    listHomestaysByPackage,
+    listHomestaysByPackageDto,
+    listPackagesAdmin,
+    listPackagesMember,
+    listPackagesSuperAdmin,
+    listPackagesTourist,
 } from "../Controllers/package-controller.js";
-import * as PackageController from "../Controllers/package-controller.js";
-import { upload } from "~/Libs/uploadFile.js";
 
 const packageRoutes = Router();
 
@@ -612,12 +614,26 @@ packageRoutes.patch(
 );
 
 /*
- * คำอธิบาย : (Tourist) Route สำหรับดึงรายการแพ็กเกจ (ที่เผยแพร่แล้ว)
+ * คำอธิบาย : (Public) Route สำหรับดึงรายการแพ็กเกจใหม่/ยอดนิยม 40 อัน
  * Method : GET
- * Path : /tourist/packages
+ * Path : /tourist/packages?sort=newest หรือ /tourist/packages?sort=popular
+ * ไม่ต้องยืนยันตัวตน (Public API)
+ * ต้องวาง route นี้ก่อน route ที่ต้อง auth เพื่อให้ตรวจสอบ query parameter ก่อน
  */
 packageRoutes.get(
     "/tourist/packages",
+    (req, res, next) => {
+        // ถ้ามี query parameter sort=newest ให้ใช้ public endpoint สำหรับแพ็กเกจใหม่
+        if (req.query.sort === "newest") {
+            return getNewestPackages(req, res);
+        }
+        // ถ้ามี query parameter sort=popular ให้ใช้ public endpoint สำหรับแพ็กเกจยอดนิยม
+        if (req.query.sort === "popular") {
+            return getPopularPackages(req, res);
+        }
+        // ถ้าไม่มี sort parameter ให้ไปต่อที่ middleware ถัดไป (auth)
+        next();
+    },
     authMiddleware,
     allowRoles("tourist"),
     listPackagesTourist

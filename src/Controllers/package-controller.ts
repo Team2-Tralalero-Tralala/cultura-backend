@@ -247,6 +247,36 @@ export async function listPackagesTourist(req: Request, res: Response) {
 }
 
 /*
+ * คำอธิบาย : Handler สำหรับดึงรายการแพ็กเกจใหม่ 40 อัน (Public API)
+ * Input: req.query.sort (ต้องเป็น "newest")
+ * Output: 200 - ข้อมูลแพ็กเกจใหม่ 40 อัน
+ * 400 - Error message
+ */
+export async function getNewestPackages(req: Request, res: Response) {
+  try {
+    const result = await PackageService.getNewestPackages();
+    return createResponse(res, 200, "ดึงรายการแพ็กเกจใหม่สำเร็จ", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}
+
+/*
+ * คำอธิบาย : Handler สำหรับดึงรายการแพ็กเกจยอดนิยม 40 อัน (Public API)
+ * Input: req.query.sort (ต้องเป็น "popular")
+ * Output: 200 - ข้อมูลแพ็กเกจยอดนิยม 40 อัน
+ * 400 - Error message
+ */
+export async function getPopularPackages(req: Request, res: Response) {
+  try {
+    const result = await PackageService.getPopularPackages();
+    return createResponse(res, 200, "ดึงรายการแพ็กเกจยอดนิยมสำเร็จ", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}
+
+/*
  * DTO: editPackageDto
  * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของข้อมูล (body)
  * เมื่อมีการแก้ไขแพ็กเกจ
