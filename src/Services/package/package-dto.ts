@@ -299,7 +299,7 @@ export class updatePackageDto {
     @IsOptional() @Matches(/^\d{2}:\d{2}$/)
     homestayCheckOutTime?: string;
 
-    @IsOptional() 
+    @IsOptional()
     @IsInt({ message: "bookedRoom ต้องเป็นตัวเลข" })
     @Min(1, { message: "bookedRoom ต้องอย่างน้อย 1" })
     bookedRoom?: number;
@@ -338,7 +338,7 @@ export class MembersQueryDto {
 export class QueryListHomestaysDto {
     @IsOptional()
     @IsString()
-    q?: string;
+    query?: string;
 
     @IsOptional()
     @Type(() => Number)
