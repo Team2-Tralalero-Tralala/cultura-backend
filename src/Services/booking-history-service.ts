@@ -446,13 +446,13 @@ export const getBookingsByMember = async (
   });
 
   // คำนวณราคารวม = ราคาแพ็กเกจ * จำนวนผู้เข้าร่วม
-  const result = bookings.map((b) => ({
-    id: b.id,
-    tourist: b.tourist,
-    package: b.package,
-    totalPrice: (b.package?.price ?? 0) * (b.totalParticipant ?? 0),
-    status: b.status,
-    transferSlip: b.transferSlip,
+  const result = bookings.map((booking) => ({
+    id: booking.id,
+    tourist: booking.tourist,
+    package: booking.package,
+    totalPrice: (booking.package?.price ?? 0) * (booking.totalParticipant ?? 0),
+    status: booking.status,
+    transferSlip: booking.transferSlip,
   }));
 
   // ส่งผลลัพธ์พร้อม pagination
