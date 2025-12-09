@@ -621,23 +621,30 @@ async function findCommunityId(userId: number) {
     },
   });
 }
+interface DashboardFilter {
+  periodType: "weekly" | "monthly" | "yearly";
+  dates?: string[];
+}
 /**
  * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Admin
  * Input : dateStart, dateEnd, groupBy, userId
  * Output : ข้อมูล Dashboard ของ community ที่ admin ดูแล
  */
 export async function getAdminDashboard(
-  dateStart: string,
-  dateEnd: string,
-  groupBy: "hour" | "day" | "week" | "month" | "year" = "day",
-  userId: number
+  userId: number,
+  bookingFilter: DashboardFilter,
+  revenueFilter: DashboardFilter,
+  packageFilter: DashboardFilter
 ) {
-  const startDate = new Date(dateStart);
-  const endDate = new Date(dateEnd);
-  endDate.setHours(23, 59, 59, 999);
+  const bookingRanges = calculateDateRanges(bookingFilter);
+  const revenueRanges = calculateDateRanges(revenueFilter);
+  const packageRanges = calculateDateRanges(packageFilter);
+
+  const bookingDateFilters = bookingRanges.map((range) => ({
+    bookingAt: { gte: range.start, lte: range.end },
+  }));
 
   const community = await findCommunityId(userId);
-
   if (!community) {
     return {
       totalPackages: 0,
@@ -645,145 +652,73 @@ export async function getAdminDashboard(
       cancelledBookingCount: 0,
     };
   }
+  const totalPackagesDateFilters = bookingRanges.map((range) => ({
+    bookingOpenDate: { gte: range.start, lte: range.end },
+  }));
 
-  // แพ็กเกจทั้งหมดใน community นั้น
   const totalPackages = await prisma.package.count({
     where: {
       communityId: community.id,
+      ...(totalPackagesDateFilters.length > 0
+        ? { OR: totalPackagesDateFilters }
+        : {}),
     },
   });
 
-  // การจองที่สำเร็จทั้งหมดใน community นั้น
-  const successBookingCount = await prisma.bookingHistory.count({
+  const summaryBookings = await prisma.bookingHistory.findMany({
     where: {
-      status: "BOOKED",
-      package: {
-        communityId: community.id,
-      },
-    },
-  });
-
-  // การจองที่ยกเลิกทั้งหมดใน community นั้น
-  const cancelledBookingCount = await prisma.bookingHistory.count({
-    where: {
-      package: {
-        communityId: community.id,
-      },
-      status: {
-        in: ["REFUNDED", "REFUND_REJECTED"],
-      },
-    },
-  });
-
-  // รายได้รวมใน community นั้น
-  const allBooked = await prisma.bookingHistory.findMany({
-    where: {
-      status: "BOOKED",
-      package: {
-        communityId: community.id,
-      },
+      package: { communityId: community.id },
+      ...(bookingDateFilters.length > 0 ? { OR: bookingDateFilters } : {}),
     },
     select: {
+      bookingAt: true,
       totalParticipant: true,
+      status: true,
       package: { select: { price: true } },
     },
   });
 
-  // คำนวณรายได้รวม
-  const totalRevenue = allBooked.reduce((sum, booking) => {
-    return sum + (booking.package?.price || 0) * booking.totalParticipant;
-  }, 0);
+  let totalRevenue = 0;
+  let successBookingCount = 0;
+  let cancelledBookingCount = 0;
 
-  const revenueByDate: Record<string, number> = {};
-  const allDateKeys = generateDateRange(startDate, endDate, groupBy);
-  allDateKeys.forEach((key) => (revenueByDate[key] = 0));
-
-  // คำนวณรายได้แยกตามวันที่
-  const revenueGraph = {
-    labels: allDateKeys,
-    data: allDateKeys.map((dateKey) => revenueByDate[dateKey]),
-  };
-
-  // count of bookingHistory in time (group by date) for graph
-  const bookingHistories = await prisma.bookingHistory.findMany({
-    where: {
-      bookingAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-      package: {
-        communityId: community.id,
-      },
-    },
-    select: {
-      bookingAt: true,
-    },
-    orderBy: {
-      bookingAt: "asc",
-    },
-  });
-
-  // generate all date keys in the range
-  const bookingsByDate: { [key: string]: number } = {};
-  allDateKeys.forEach((dateKey) => {
-    bookingsByDate[dateKey] = 0;
-  });
-
-  // count bookings for each date
-  bookingHistories.forEach((booking) => {
-    let dateKey: string;
-    const bookingDate = new Date(booking.bookingAt);
-
-    switch (groupBy) {
-      case "hour":
-        dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
-        ).padStart(2, "0")}-${String(bookingDate.getDate()).padStart(
-          2,
-          "0"
-        )} ${String(bookingDate.getHours()).padStart(2, "0")}:00`;
-        break;
-      case "day":
-        dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
-        ).padStart(2, "0")}-${String(bookingDate.getDate()).padStart(2, "0")}`;
-        break;
-      case "week":
-        const weekStart = new Date(bookingDate);
-        weekStart.setDate(bookingDate.getDate() - bookingDate.getDay());
-        dateKey = `${weekStart.getFullYear()}-${String(
-          weekStart.getMonth() + 1
-        ).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
-        break;
-      case "month":
-        dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
-        ).padStart(2, "0")}`;
-        break;
-      case "year":
-        dateKey = `${bookingDate.getFullYear()}`;
-        break;
-      default:
-        dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
-        ).padStart(2, "0")}-${String(bookingDate.getDate()).padStart(2, "0")}`;
+  summaryBookings.forEach((booking) => {
+    if (booking.status === "BOOKED") {
+      successBookingCount++;
+      totalRevenue += (booking.package?.price || 0) * booking.totalParticipant;
+    } else if (
+      booking.status === "REFUNDED" ||
+      booking.status === "REFUND_REJECTED"
+    ) {
+      cancelledBookingCount++;
     }
-
-    bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1;
   });
+  // สร้างกราฟ Booking
+  const bookingCountGraph = await buildGraphData(
+    { communityId: community.id },
+    bookingRanges,
+    bookingFilter.periodType,
+    (booking: any) => 1 // Count 1 for each booking
+  );
 
-  const bookingCountGraph = {
-    labels: allDateKeys,
-    data: allDateKeys.map((key) => bookingsByDate[key]),
-  };
+  const revenueGraph = await buildGraphData(
+    { communityId: community.id },
+    revenueRanges,
+    revenueFilter.periodType,
+    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant // Calculate revenue
+  );
 
-  // ค้นหาแพ็กเกจยอดนิยม 20 อันดับแรกใน community นั้น
+  // หาแพคเกจที่ยอดจองเยอะที่สุด
+  const packageDateFilters = packageRanges.map((range) => ({
+    bookingAt: { gte: range.start, lte: range.end },
+  }));
+
   const topPackagesRaw = await prisma.bookingHistory.groupBy({
     by: ["packageId"],
     where: {
-      package: {
-        communityId: community.id,
-      },
+      package: { communityId: community.id },
+      ...(packageDateFilters.length > 0 ? { OR: packageDateFilters } : {}),
+      status: "BOOKED",
     },
     _count: {
       packageId: true,
@@ -795,24 +730,23 @@ export async function getAdminDashboard(
     },
     take: 20,
   });
-
-  // ดึงข้อมูลชื่อแพ็กเกจจากผล groupBy
+  // map packageId to packages
   const packageIds = topPackagesRaw.map(
     (groupedPackage) => groupedPackage.packageId!
   );
+
   const packages = await prisma.package.findMany({
     where: { id: { in: packageIds } },
     select: { id: true, name: true },
   });
-
-  // รวมชื่อกับจำนวนเข้าเป็น array เดียว
+  // ทำให้ข้อมูลที่ได้มาเป็น object ที่มี rank, name, bookingCount
   const topPackages = topPackagesRaw.map((groupedPackage, index) => {
     const packageData = packages.find(
       (packageEntity) => packageEntity.id === groupedPackage.packageId
     );
     return {
       rank: index + 1,
-      name: packageData?.name || "ไม่พบชื่อแพ็กเกจ",
+      name: packageData?.name || "-",
       bookingCount: groupedPackage._count.packageId,
     };
   });
@@ -830,10 +764,6 @@ export async function getAdminDashboard(
     },
     topPackages,
   };
-}
-interface DashboardFilter {
-  periodType: "weekly" | "monthly" | "yearly";
-  dates?: string[];
 }
 
 /**
@@ -911,11 +841,11 @@ function calculateDateRanges(
 /**
  * ฟังก์ชัน: buildGraphData
  * คำอธิบาย: ฟังก์ชันสำหรับสร้างข้อมูลกราฟ
- * input: userId, ranges, periodType, valueExtractor
+ * input: filter, ranges, periodType, valueExtractor
  * output: { labels: string[]; datasets: { label: string; data: number[] }[] }
  */
 async function buildGraphData(
-  userId: number,
+  filter: { communityId?: number; overseerMemberId?: number },
   dateRanges: { start: Date; end: Date; label: string }[],
   periodType: "weekly" | "monthly" | "yearly",
   valueExtractor: (booking: any) => number
@@ -925,10 +855,19 @@ async function buildGraphData(
     bookingAt: { gte: range.start, lte: range.end },
   }));
 
+  // สร้างเงื่อนไข filter สำหรับ package
+  const packageFilter: any = {};
+  if (filter.communityId) {
+    packageFilter.communityId = filter.communityId;
+  }
+  if (filter.overseerMemberId) {
+    packageFilter.overseerMemberId = filter.overseerMemberId;
+  }
+
   // ดึงข้อมูล bookingHistory ตามเงื่อนไข filter
   const bookings = await prisma.bookingHistory.findMany({
     where: {
-      package: { overseerMemberId: userId },
+      package: packageFilter,
       ...(dateFilters.length > 0 ? { OR: dateFilters } : {}),
       status: "BOOKED",
     },
@@ -1118,7 +1057,7 @@ export async function getMemberDashboard(
 
   // สร้างกราฟ Booking
   const bookingCountGraph = await buildGraphData(
-    userId,
+    { overseerMemberId: userId },
     bookingRanges,
     bookingFilter.periodType,
     (booking: any) => 1 // Count 1 for each booking
@@ -1126,7 +1065,7 @@ export async function getMemberDashboard(
 
   // สร้างกราฟ Revenue
   const revenueGraph = await buildGraphData(
-    userId,
+    { overseerMemberId: userId },
     revenueRanges,
     revenueFilter.periodType,
     (booking: any) => (booking.package?.price || 0) * booking.totalParticipant // Calculate revenue
