@@ -8,7 +8,7 @@ import type { UserPayload } from "~/Libs/Types/index.js";
  * Output : Feedback ทั้งหมดของแพ็กเกจนั้น
  * เฉพาะกรณีที่แพ็กเกจอยู่ใน community ของแอดมินเท่านั้น
  */
-export const getPackageFeedbacksByPackageId = async (
+export const getPackageFeedbacksByPackageIdAdmin = async (
   packageId: number,
   user: UserPayload
 ) => {
@@ -33,6 +33,7 @@ export const getPackageFeedbacksByPackageId = async (
       },
     },
     select: {
+      id: true,
       createdAt: true,
       rating: true,
       message: true,
@@ -48,7 +49,6 @@ export const getPackageFeedbacksByPackageId = async (
     },
   });
 
-  // ถ้าไม่มี feedback
   if (!feedbacks || feedbacks.length === 0) {
     throw new Error("No feedback found for this package");
   }
@@ -68,9 +68,9 @@ export const getAllMemberFeedbacks = async (user: UserPayload) => {
   const myPackages = await prisma.package.findMany({
     where: {
       OR: [
-        { createById: user.id },       // เงื่อนไข 1: เป็นคนสร้าง
-        { overseerMemberId: user.id }  // เงื่อนไข 2: เป็นผู้รับผิดชอบ 
-      ]
+        { createById: user.id }, // เงื่อนไข 1: เป็นคนสร้าง
+        { overseerMemberId: user.id }, // เงื่อนไข 2: เป็นผู้รับผิดชอบ
+      ],
     },
     select: {
       id: true,
@@ -98,27 +98,131 @@ export const getAllMemberFeedbacks = async (user: UserPayload) => {
               },
             },
             orderBy: {
-              createdAt: 'desc' // เรียง feedback ล่าสุดขึ้นก่อน
-            }
+              createdAt: "desc", // เรียง feedback ล่าสุดขึ้นก่อน
+            },
           },
         },
         // กรองเฉพาะ Booking ที่มี Feedback แล้ว (Optional: ถ้าอยากได้เฉพาะที่มีรีวิว)
         where: {
           feedbacks: {
-            some: {}
-          }
-        }
+            some: {},
+          },
+        },
       },
     },
     orderBy: {
-      id: 'desc'
-    }
+      id: "desc",
+    },
   });
 
   // จัดโครงสร้างส่งกลับให้ Frontend (ให้เหมือนกับที่ FE รอรับ)
   return {
-    packages: myPackages
+    packages: myPackages,
   };
 };
 
-export default getPackageFeedbacksByPackageId;
+/*
+ * ฟังก์ชัน : replyFeedbackService
+ * คำอธิบาย : ฟังก์ชันสำหรับรตอบกลับ Feedback
+ * โดยจะอัปเดตเฉพาะฟิลด์ replyMessage, replyAt และ responderId
+ *
+ * Input :
+ *   - feedbackId : Feedback ที่ต้องการตอบกลับ
+ *   - replyMessage : ข้อความตอบกลับรีวิว
+ *   - user : ข้อมูลผู้ใช้งานที่ทำการตอบกลับ
+ *
+ * Output :
+ *   - ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
+ */
+export const replyFeedbackMember = async (
+  feedbackId: number,
+  replyMessage: string,
+  user: UserPayload | undefined
+) => {
+  if (!user || user.role !== "member") {
+    throw new Error("อนุญาตเฉพาะผู้ใช้ที่มีบทบาทเป็น Member เท่านั้น");
+  }
+
+  if (typeof feedbackId !== "number" || Number.isNaN(feedbackId)) {
+    throw new Error("feedbackId ต้องเป็นตัวเลข");
+  }
+
+  if (typeof replyMessage !== "string") {
+    throw new Error("ข้อความตอบกลับต้อง String");
+  }
+
+  const updatedFeedback = await prisma.feedback.update({
+    where: { id: feedbackId },
+    data: {
+      replyMessage: replyMessage,
+      replyAt: new Date(),
+      responderId: user.id,
+    },
+    select: {
+      id: true,
+      replyMessage: true,
+      replyAt: true,
+      responderId: true,
+
+      responder: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+  });
+
+  return updatedFeedback;
+};
+
+/*
+ * ฟังก์ชัน : getPackageFeedbacksByPackageIdMember
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อเสนอแนะของแพ็กเกจ
+ *             สำหรับสมาชิก (Member) ที่ต้องการดูข้อเสนอแนะของแพ็กเกจของตน
+ * Input : packageId (หมายเลขแพ็กเกจ), user (ข้อมูลผู้ใช้ที่ร้องขอ)
+ * Output : รายการข้อเสนอแนะของแพ็กเกจ
+ */
+export async function getPackageFeedbacksByPackageIdMember(
+  packageId: number,
+  user: UserPayload
+) {
+  if (user.role !== "member") {
+    throw new Error("ผู้ใช้ไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
+  }
+
+  return prisma.feedback.findMany({
+    where: {
+      bookingHistory: {
+        packageId: packageId,
+        package: {
+          overseerMemberId: user.id,
+        },
+      },
+    },
+    select: {
+      id: true,
+      createdAt: true,
+      rating: true,
+      message: true,
+      feedbackImages: {
+        select: { image: true },
+      },
+      bookingHistory: {
+        select: {
+          tourist: { select: { fname: true, lname: true } },
+          package: { select: { name: true } },
+        },
+      },
+      replyMessage: true,
+      replyAt: true,
+      responder: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
