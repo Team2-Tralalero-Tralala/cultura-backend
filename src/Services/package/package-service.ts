@@ -1177,6 +1177,180 @@ export const getHistoriesPackageByAdmin = async (
 };
 
 /*
+ * ฟังก์ชัน : getPackageDetailByMember
+ * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับ Member โดยเช็คสิทธิ์
+ * Input  : memberId (user.id ที่เป็น member), packageId
+ * Output : รายละเอียดแพ็กเกจ (โครงเหมือน getPackageDetailById)
+ */
+export const getPackageDetailByMember = async (
+  memberId: number,
+  packageId: number
+) => {
+  return await prisma.package.findFirst({
+    where: {
+      id: packageId,
+      isDeleted: false,
+      OR: [
+        // 1) เป็น Overseer ของแพ็กเกจนี้
+        { overseerMemberId: memberId },
+
+        // 2) เป็นสมาชิกของชุมชนนี้
+        {
+          community: {
+            communityMembers: {
+              some: {
+                memberId,
+                isDeleted: false,
+              },
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      // ====== field ของ Package (ให้ตรงกับ JSON ที่ส่งมา) ======
+      id: true,
+      communityId: true,
+      locationId: true,
+      overseerMemberId: true,
+      createById: true,
+      name: true,
+      description: true,
+      capacity: true,
+      price: true,
+      warning: true,
+      statusPackage: true,
+      statusApprove: true,
+      startDate: true,
+      dueDate: true,
+      bookingOpenDate: true,
+      bookingCloseDate: true,
+      facility: true,
+      rejectReason: true,
+      isDeleted: true,
+      deleteAt: true,
+
+      // ====== createPackage ======
+      createPackage: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+
+      // ====== overseerPackage ======
+      overseerPackage: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          // ถ้าไม่อยากให้ activityRole โผล่ ก็ไม่ต้อง select
+          // activityRole: true,
+        },
+      },
+
+      // ====== tagPackages ======
+      tagPackages: {
+        select: {
+          tagId: true,
+          packageId: true,
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+
+      // ====== packageFile ======
+      packageFile: {
+        select: {
+          id: true,
+          filePath: true,
+          type: true,
+        },
+      },
+
+      // ====== location ======
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          alley: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+
+      // ====== homestayHistories ======
+      homestayHistories: {
+        select: {
+          id: true,
+          packageId: true,
+          homestayId: true,
+          bookedRoom: true,
+          checkInTime: true,
+          checkOutTime: true,
+
+          // ถ้าอยากใช้ detail homestay ไปทำ card
+          homestay: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              guestPerRoom: true,
+              totalRoom: true,
+              facility: true,
+              // location, image, tags เพิ่มได้ถ้าหน้า detail ใช้
+              location: {
+                select: {
+                  id: true,
+                  detail: true,
+                  houseNumber: true,
+                  villageNumber: true,
+                  alley: true,
+                  subDistrict: true,
+                  district: true,
+                  province: true,
+                  postalCode: true,
+                  latitude: true,
+                  longitude: true,
+                },
+              },
+              homestayImage: {
+                select: {
+                  id: true,
+                  image: true,
+                  type: true,
+                },
+              },
+              tagHomestays: {
+                select: {
+                  tag: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+/*
  * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ member
  * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
  * Output : ข้อมูลแพ็กเกจพร้อม Pagination

@@ -753,6 +753,50 @@ export async function getHistoriesPackageAdmin(req: Request, res: Response) {
   }
 }
 
+/*
+ * คำอธิบาย : (Member) Handler สำหรับดึงรายละเอียดแพ็กเกจที่ตนเองมีสิทธิ์ดู
+ * Input: req.user.id (memberId), req.params.id (packageId)
+ * Output:
+ *   200 - ข้อมูลแพ็กเกจ (โครงเดียวกับ getPackageDetailById)
+ *   404 - ไม่พบหรือไม่มีสิทธิ์เข้าถึง
+ *   400 - Error message
+ */
+export async function getPackageDetailByMember(req: Request, res: Response) {
+  try {
+    const memberId = Number((req as any).user?.id);
+    if (!memberId) {
+      return createErrorResponse(res, 401, "Unauthorized");
+    }
+
+    const packageId = Number(req.params.id);
+    if (isNaN(packageId)) {
+      return createErrorResponse(res, 400, "Package ID ต้องเป็นตัวเลข");
+    }
+
+    const result = await PackageService.getPackageDetailByMember(
+      memberId,
+      packageId
+    );
+
+    if (!result) {
+      // ไม่เจอแพ็กเกจ หรือ member ไม่มีสิทธิ์เข้าถึง
+      return createErrorResponse(
+        res,
+        404,
+        "ไม่พบแพ็กเกจนี้ หรือคุณไม่มีสิทธิ์เข้าถึง"
+      );
+    }
+
+    return createResponse(
+      res,
+      200,
+      "Get Package Detail Success",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}
 export const getHistoriesPackageByMemberDto = {
   params: IdParamDto,
   query: MembersQueryDto,

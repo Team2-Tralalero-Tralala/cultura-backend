@@ -30,7 +30,9 @@ import {
     duplicatePackageHistoryDto,
     duplicatePackageHistoryAdmin,
     getPackageHistoryDetailAdmin,
+    getHistoriesPackageAdmin,
     getPackageById,
+    getPackageDetailByMember
 } from "../Controllers/package-controller.js";
 import * as PackageController from "../Controllers/package-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
@@ -1340,6 +1342,13 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("member"),
     PackageController.getHistoriesPackageByMember
+);
+
+packageRoutes.get(
+  "/member/package/:id",
+  authMiddleware,
+  allowRoles("member"),
+  getPackageDetailByMember
 );
 
 export default packageRoutes;
