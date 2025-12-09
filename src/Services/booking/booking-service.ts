@@ -98,12 +98,12 @@ export async function approveRefundByAdmin(
   });
   if (!booking) throw new Error("ไม่พบคำขอคืนเงินนี้ หรือไม่มีสิทธิ์จัดการ");
 
-  const updated = await prisma.bookingHistory.update({
+  const updatedBooking = await prisma.bookingHistory.update({
     where: { id: bookingId },
     data: { status: "REFUNDED", refundAt: new Date() },
   });
 
-  return updated;
+  return updatedBooking;
 }
 
 /*
@@ -129,7 +129,7 @@ export async function rejectRefundByAdmin(
   });
   if (!booking) throw new Error("ไม่พบคำขอคืนเงินนี้ หรือไม่มีสิทธิ์จัดการ");
 
-  const updated = await prisma.bookingHistory.update({
+  const updatedBooking = await prisma.bookingHistory.update({
     where: { id: bookingId },
     data: {
       status: "REFUND_REJECTED",
@@ -138,7 +138,7 @@ export async function rejectRefundByAdmin(
     },
   });
 
-  return updated;
+  return updatedBooking;
 }
 
 /*
@@ -242,12 +242,12 @@ export async function approveRefundByMember(
   if (!booking) throw new Error("ไม่พบคำขอคืนเงินนี้ หรือไม่มีสิทธิ์จัดการ");
 
   // อัปเดตสถานะเป็น REFUNDED
-  const updated = await prisma.bookingHistory.update({
+  const updatedBooking = await prisma.bookingHistory.update({
     where: { id: bookingId },
     data: { status: "REFUNDED", refundAt: new Date() },
   });
 
-  return updated;
+  return updatedBooking;
 }
 
 /*
@@ -278,7 +278,7 @@ export async function rejectRefundByMember(
   if (!booking) throw new Error("ไม่พบคำขอคืนเงินนี้ หรือไม่มีสิทธิ์จัดการ");
 
   // อัปเดตสถานะเป็น REFUND_REJECTED พร้อมเหตุผล
-  const updated = await prisma.bookingHistory.update({
+  const updatedBooking = await prisma.bookingHistory.update({
     where: { id: bookingId },
     data: {
       status: "REFUND_REJECTED",
@@ -287,5 +287,5 @@ export async function rejectRefundByMember(
     },
   });
 
-  return updated;
+  return updatedBooking;
 }

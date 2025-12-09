@@ -157,6 +157,10 @@ export const approveRefundByMemberDto = {
  * ฟังก์ชัน : approveRefundByMember
  * อธิบาย : อนุมัติคำขอคืนเงิน (สำหรับ Member)
  * Route : PATCH /member/refunds/:id/approve
+ * Input :
+ * - req.params.bookingId : รหัสการจอง (bookingId)
+ * - req.user.id : รหัสสมาชิกผู้ดำเนินการ (userId จาก Token)
+ * Output : JSON Response (Status 200 พร้อมข้อมูลผลลัพธ์ หรือ Status 400 หากเกิดข้อผิดพลาด)
  */
 export const approveRefundByMember: TypedHandlerFromDto<
   typeof approveRefundByMemberDto
@@ -185,6 +189,11 @@ export const rejectRefundByMemberDto = {
  * ฟังก์ชัน : rejectRefundByMember
  * อธิบาย : ปฏิเสธคำขอคืนเงิน พร้อมเหตุผล (สำหรับ Member)
  * Route : PATCH /member/refunds/:id/reject
+ * Input :
+ * - req.params.bookingId : รหัสการจอง (bookingId)
+ * - req.body.reason : เหตุผลการปฏิเสธ (reason)
+ * - req.user.id : รหัสสมาชิกผู้ดำเนินการ (userId จาก Token)
+ * Output : JSON Response (Status 200 พร้อมข้อมูลผลลัพธ์ หรือ Status 400 หากเกิดข้อผิดพลาด)
  */
 export const rejectRefundByMember: TypedHandlerFromDto<
   typeof rejectRefundByMemberDto
