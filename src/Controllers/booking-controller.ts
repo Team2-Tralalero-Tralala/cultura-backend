@@ -47,7 +47,7 @@ export const getRefundRequestsByAdmin: TypedHandlerFromDto<
  */
 export class RefundIdParamDto {
   @IsNumberString()
-  id!: string;
+  bookingId!: string;
 }
 
 export const approveRefundByAdminDto = {
@@ -64,7 +64,7 @@ export const approveRefundByAdmin: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const userId = Number(req.user!.id);
-    const bookingId = Number(req.params.id);
+    const bookingId = Number(req.params.bookingId);
 
     const result = await RefundService.approveRefundByAdmin(userId, bookingId);
     return createResponse(res, 200, "อนุมัติคำขอคืนเงินสำเร็จ", result);
@@ -97,7 +97,7 @@ export const rejectRefundByAdmin: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const userId = Number(req.user!.id);
-    const bookingId = Number(req.params.id);
+    const bookingId = Number(req.params.bookingId);
     const { reason } = req.body;
 
     const result = await RefundService.rejectRefundByAdmin(
@@ -163,7 +163,7 @@ export const approveRefundByMember: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const userId = Number(req.user!.id);
-    const bookingId = Number(req.params.id);
+    const bookingId = Number(req.params.bookingId);
 
     const result = await RefundService.approveRefundByMember(userId, bookingId);
 
@@ -191,7 +191,7 @@ export const rejectRefundByMember: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const userId = Number(req.user!.id);
-    const bookingId = Number(req.params.id);
+    const bookingId = Number(req.params.bookingId);
     const { reason } = req.body;
 
     const result = await RefundService.rejectRefundByMember(

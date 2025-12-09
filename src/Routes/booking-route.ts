@@ -4,8 +4,8 @@
  *
  * ฟังก์ชันหลักที่รองรับ :
  *   - ดึงรายการคำขอคืนเงิน (GET /admin/refunds)
- *   - อนุมัติคำขอคืนเงิน (PATCH /admin/refunds/:id/approve)
- *   - ปฏิเสธคำขอคืนเงิน (PATCH /admin/refunds/:id/reject)
+ *   - อนุมัติคำขอคืนเงิน (PATCH /admin/refunds/:bookingId/approve)
+ *   - ปฏิเสธคำขอคืนเงิน (PATCH /admin/refunds/:bookingId/reject)
  *
  * Middleware ที่ใช้ :
  *   - authMiddleware : ตรวจสอบสิทธิ์การเข้าสู่ระบบ
@@ -86,7 +86,7 @@ refundRoutes.get(
 
 /**
  * @swagger
- * /api/admin/booking/refunds/{id}/approve:
+ * /api/admin/booking/refunds/{bookingId}/approve:
  *   patch:
  *     summary: อนุมัติคำขอคืนเงิน (Admin)
  *     description: |
@@ -132,11 +132,11 @@ refundRoutes.get(
  */
 
 /*
- * เส้นทาง : PATCH /admin/refunds/:id/approve
+ * เส้นทาง : PATCH /admin/refunds/:bookingId/approve
  * คำอธิบาย : อนุมัติคำขอคืนเงิน
  */
 refundRoutes.patch(
-  "/admin/booking/refunds/:id/approve",
+  "/admin/booking/refunds/:bookingId/approve",
   validateDto(RefundController.approveRefundByAdminDto),
   authMiddleware,
   allowRoles("admin"),
@@ -145,7 +145,7 @@ refundRoutes.patch(
 
 /**
  * @swagger
- * /api/admin/booking/refunds/{id}/reject:
+ * /api/admin/booking/refunds/{bookingId}/reject:
  *   patch:
  *     summary: ปฏิเสธคำขอคืนเงิน (Admin)
  *     description: |
@@ -191,11 +191,11 @@ refundRoutes.patch(
  */
 
 /*
- * เส้นทาง : PATCH /admin/refunds/:id/reject
+ * เส้นทาง : PATCH /admin/refunds/:bookingId/reject
  * คำอธิบาย : ปฏิเสธคำขอคืนเงิน
  */
 refundRoutes.patch(
-  "/admin/booking/refunds/:id/reject",
+  "/admin/booking/refunds/:bookingId/reject",
   validateDto(RefundController.rejectRefundByAdminDto),
   authMiddleware,
   allowRoles("admin"),
@@ -269,7 +269,7 @@ refundRoutes.get(
 
 /**
  * @swagger
- * /api/member/booking-history/{id}/approve-refund:
+ * /api/member/booking-history/{bookingId}/approve-refund:
  *   patch:
  *     summary: อนุมัติคำขอคืนเงิน (Member)
  *     description: Member อนุมัติคำขอคืนเงิน
@@ -323,11 +323,11 @@ refundRoutes.get(
  *               $ref: '#/components/schemas/CreateErrorResponse'
  */
 /*
- * เส้นทาง : PATCH /member/booking-history/:id/approve-refund
+ * เส้นทาง : PATCH /member/booking-history/:bookingId/approve-refund
  * คำอธิบาย : อนุมัติคำขอคืนเงิน
  */
 refundRoutes.patch(
-  "/member/booking-history/:id/approve-refund",
+  "/member/booking-history/:bookingId/approve-refund",
   validateDto(RefundController.approveRefundByMemberDto),
   authMiddleware,
   allowRoles("member"),
@@ -336,7 +336,7 @@ refundRoutes.patch(
 
 /**
  * @swagger
- * /api/member/booking-history/{id}/reject-refund:
+ * /api/member/booking-history/{bookingId}/reject-refund:
  *   patch:
  *     summary: ปฏิเสธคำขอคืนเงิน (Member)
  *     description: Member ปฏิเสธคำขอคืนเงิน
@@ -390,11 +390,11 @@ refundRoutes.patch(
  *               $ref: '#/components/schemas/CreateErrorResponse'
  */
 /*
- * เส้นทาง : PATCH /member/booking-history/:id/reject-refund
+ * เส้นทาง : PATCH /member/booking-history/:bookingId/reject-refund
  * คำอธิบาย : ปฏิเสธคำขอคืนเงิน
  */
 refundRoutes.patch(
-  "/member/booking-history/:id/reject-refund",
+  "/member/booking-history/:bookingId/reject-refund",
   validateDto(RefundController.rejectRefundByMemberDto),
   authMiddleware,
   allowRoles("member"),

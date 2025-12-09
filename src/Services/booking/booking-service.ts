@@ -134,6 +134,7 @@ export async function rejectRefundByAdmin(
     data: {
       status: "REFUND_REJECTED",
       rejectReason: reason ?? "ไม่ระบุเหตุผล",
+      cancelAt: new Date(),
     },
   });
 
@@ -165,7 +166,6 @@ export const getRefundRequestsByMember = async (
   
   // ตรวจสอบ Role ต้องเป็น MEMBER
   if (user.role?.name.toLowerCase() !== "member") {
-    // ใช้การคืนค่าว่างแบบเดียวกับโค้ด Admin เดิม
     return {
       data: [],
       pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
