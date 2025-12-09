@@ -223,11 +223,8 @@ export const createMemberByAdmin: TypedHandlerFromDto<
 
     const communityId = await AccountService.getCommunityIdByAdminId(adminId);
 
-    const memberRoleId = await AccountService.getMemberRoleId();
-
     const payload = {
       ...req.body,
-      roleId: memberRoleId,  
       memberOfCommunity: communityId,
       communityRole: req.body.communityRole || "General Member" 
     } as CreateAccountDto;

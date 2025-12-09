@@ -35,21 +35,35 @@ const selectSafe = {
 /*
  * ฟังก์ชัน: createAccount
  * คำอธิบาย: สร้างบัญชีผู้ใช้ใหม่ และเข้ารหัสรหัสผ่านก่อนบันทึก
- * Input: CreateAccountDto
- * Output: ข้อมูลผู้ใช้ที่สร้างสำเร็จ (เฉพาะฟิลด์ที่ปลอดภัย)
+ * [Modified]: ปรับปรุงให้รองรับการ Connect Role ด้วย Name (แก้ปัญหา Role ID เปลี่ยน)
  */
 export async function createAccount(body: CreateAccountDto) {
-  const role = await prisma.role.findUnique({
-    where: { id: body.roleId },
-    select: { id: true, name: true },
-  });
-  if (!role) throw new Error("role_not_found");
+  
+  // 1. เตรียม Role Connect (แก้ปัญหา Seed แล้ว ID เปลี่ยน)
+  // ถ้ามี roleId ส่งมา (เช่น SuperAdmin สร้าง) ให้ใช้ ID
+  // ถ้าไม่มี roleId (เช่น Admin สร้าง Member) ให้ใช้ชื่อ "MEMBER"
+  let roleConnect;
+  let roleNameCheck = "";
 
+  if (body.roleId) {
+    roleConnect = { id: Number(body.roleId) };
+    // เช็ค Role เพื่อความชัวร์ (เหมือนเดิม)
+    const role = await prisma.role.findUnique({ where: { id: body.roleId } });
+    if (!role) throw new Error("role_not_found");
+    roleNameCheck = role.name;
+  } else {
+    // ถ้าไม่มี roleId ให้ Default เป็น MEMBER โดยใช้ Name
+    roleConnect = { name: "MEMBER" };
+    roleNameCheck = "member";
+  }
+
+  // 2. Validate Allowed Roles
   const allowedRoles = ["admin", "member", "tourist"];
-  if (!allowedRoles.includes(role.name.toLowerCase())) {
+  if (!allowedRoles.includes(roleNameCheck.toLowerCase())) {
     throw new Error("role_not_allowed");
   }
 
+  // 3. Check Duplicate
   const dup = await prisma.user.findFirst({
     where: {
       OR: [
@@ -62,36 +76,42 @@ export async function createAccount(body: CreateAccountDto) {
   });
   if (dup) throw new Error("duplicate");
 
+  // แยก roleId ออกจาก body เพราะเราจะใช้ connect แทน
+  const { roleId, ...restBody } = body;
+
+  // 4. Create User
   const created = await prisma.user.create({
     data: {
-      roleId: role.id,
-      fname: body.fname,
-      lname: body.lname,
-      username: body.username,
-      email: body.email,
-      phone: body.phone,
-      password: await bcrypt.hash(body.password, 10),
-      ...(body.profileImage && { profileImage: body.profileImage }),
-      ...(body.communityRole && { activityRole: body.communityRole }),
-      ...(body.gender && {
+      role: {
+        connect: roleConnect // <--- ใช้ connect แทนการใส่ roleId ตรงๆ
+      },
+      fname: restBody.fname,
+      lname: restBody.lname,
+      username: restBody.username,
+      email: restBody.email,
+      phone: restBody.phone,
+      password: await bcrypt.hash(restBody.password, 10),
+      ...(restBody.profileImage && { profileImage: restBody.profileImage }),
+      ...(restBody.communityRole && { activityRole: restBody.communityRole }),
+      ...(restBody.gender && {
         gender:
-          body.gender.toUpperCase() === "MALE"
+          restBody.gender.toUpperCase() === "MALE"
             ? "MALE"
-            : body.gender.toUpperCase() === "FEMALE"
+            : restBody.gender.toUpperCase() === "FEMALE"
             ? "FEMALE"
             : "NONE",
       }),
-      ...(body.birthDate && { birthDate: new Date(body.birthDate) }),
-      ...(body.province && { province: body.province }),
-      ...(body.district && { district: body.district }),
-      ...(body.subDistrict && { subDistrict: body.subDistrict }),
-      ...(body.postalCode && { postalCode: body.postalCode }),
+      ...(restBody.birthDate && { birthDate: new Date(restBody.birthDate) }),
+      ...(restBody.province && { province: restBody.province }),
+      ...(restBody.district && { district: restBody.district }),
+      ...(restBody.subDistrict && { subDistrict: restBody.subDistrict }),
+      ...(restBody.postalCode && { postalCode: restBody.postalCode }),
     },
     select: selectSafe,
   });
 
-  //  เพิ่มการบันทึกสมาชิกเข้าชุมชน (เฉพาะ Role = member)
-  if (role.name.toLowerCase() === "member" && body.memberOfCommunity) {
+  // 5. เพิ่มการบันทึกสมาชิกเข้าชุมชน (เฉพาะ Role = member)
+  if (roleNameCheck.toLowerCase() === "member" && body.memberOfCommunity) {
     await prisma.communityMembers.create({
       data: {
         communityId: body.memberOfCommunity,
@@ -109,8 +129,6 @@ export async function createAccount(body: CreateAccountDto) {
 /*
  * ฟังก์ชัน: editAccount
  * คำอธิบาย: แก้ไขข้อมูลบัญชีผู้ใช้ตาม ID และอัปเดตเฉพาะฟิลด์ที่ส่งมา
- * Input: userId, EditAccountDto
- * Output: ข้อมูลบัญชีที่ถูกอัปเดตแล้ว
  */
 export async function editAccount(userId: number, body: EditAccountDto) {
   if (!Number.isFinite(userId) || userId <= 0)
@@ -191,12 +209,10 @@ export async function editAccount(userId: number, body: EditAccountDto) {
 
   // อัปเดตตาราง CommunityMembers ถ้ามีการเปลี่ยนชุมชน (สำหรับ Member)
   if (targetUser.role.name.toLowerCase() === "member" && body.memberOfCommunity) {
-    // 1. ลบชุมชนเก่าออก
     await prisma.communityMembers.deleteMany({
       where: { memberId: userId }
     });
 
-    // 2. เพิ่มเข้าชุมชนใหม่
     await prisma.communityMembers.create({
       data: {
         communityId: body.memberOfCommunity,
@@ -220,8 +236,6 @@ export async function editAccount(userId: number, body: EditAccountDto) {
 /*
  * ฟังก์ชัน: getAccountById
  * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ตาม ID
- * Input: userId
- * Output: ข้อมูลบัญชีผู้ใช้
  */
 export async function getAccountById(userId: number) {
   if (!Number.isFinite(userId) || userId <= 0)
@@ -242,7 +256,6 @@ export async function getAccountById(userId: number) {
     throw new Error("forbidden_role_access");
   }
 
-  // ดึงข้อมูลชุมชนที่ User อยู่ (จากตาราง communityMembers)
   let memberOfCommunity = null;
   if (user.role?.name.toLowerCase() === "member") {
     const communityMember = await prisma.communityMembers.findFirst({
@@ -258,7 +271,7 @@ export async function getAccountById(userId: number) {
 
   return {
     ...user,
-    memberOfCommunity, // ส่งค่านี้กลับไปเพื่อให้ Frontend แสดงผลใน Selector
+    memberOfCommunity, 
     profileImageUrl: user.profileImage
       ? `${baseUrl}/uploads/${user.profileImage}`
       : null,
@@ -267,9 +280,7 @@ export async function getAccountById(userId: number) {
 
 /*
  * ฟังก์ชัน: getAllUser
- * คำอธิบาย: ดึงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า (Pagination)
- * Input: page, limit
- * Output: รายการผู้ใช้พร้อมข้อมูลแบ่งหน้า
+ * คำอธิบาย: ดึงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า
  */
 export const getAllUser = async (
   page: number = 1,
@@ -310,8 +321,6 @@ export const getAllUser = async (
 /*
  * ฟังก์ชัน: getMemberByAdmin
  * คำอธิบาย: ดึงข้อมูลสมาชิกในชุมชนของแอดมิน
- * Input: adminId
- * Output: รายการสมาชิกในชุมชน
  */
 export const getMemberByAdmin = async (adminId: number) => {
   const community = await prisma.community.findFirst({
@@ -336,8 +345,6 @@ export const getMemberByAdmin = async (adminId: number) => {
 /*
  * ฟังก์ชัน: getAccountAll
  * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ทั้งหมด (เฉพาะ SuperAdmin)
- * Input: id (userId ของผู้ที่เรียก)
- * Output: รายการบัญชีผู้ใช้ทั้งหมด
  */
 export const getAccountAll = async (id: number) => {
   if (!Number.isInteger(id)) throw new Error("ID must be number");
@@ -368,10 +375,7 @@ export const getAccountAll = async (id: number) => {
 
   return accounts;
 };
-/**
- * ประเภทข้อมูล: AccountInCommunity
- * คำอธิบาย: ประเภทข้อมูลสำหรับบัญชีผู้ใช้ที่อยู่ในชุมชน
- */
+
 export type AccountInCommunity = {
   id: number;
   fname: string;
@@ -379,11 +383,9 @@ export type AccountInCommunity = {
   email: string;
   activityRole: string | null;
 };
-/**
+
+/*
  * ฟังก์ชัน: getAccountInCommunity
- * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ที่อยู่ในชุมชน
- * Input: communityId, page, limit, searchName
- * Output: รายการบัญชีผู้ใช้ที่อยู่ในชุมชน
  */
 export async function getAccountInCommunity(
   communityId: number,
@@ -399,18 +401,10 @@ export async function getAccountInCommunity(
   if (searchName) {
     whereCondition.OR = {
       user: {
-        fname: {
-          contains: searchName,
-        },
-        lname: {
-          contains: searchName,
-        },
-        email: {
-          contains: searchName,
-        },
-        activityRole: {
-          contains: searchName,
-        },
+        fname: { contains: searchName },
+        lname: { contains: searchName },
+        email: { contains: searchName },
+        activityRole: { contains: searchName },
       },
     };
   }
@@ -458,17 +452,4 @@ export async function getCommunityIdByAdminId(adminId: number) {
 
   if (!community) throw new Error("community_not_found_for_admin");
   return community.id;
-}
-
-/*
- * ฟังก์ชัน: getMemberRoleId
- * คำอธิบาย: ช่วยหา ID ของ Role 'MEMBER'
- */
-export async function getMemberRoleId() {
-  const role = await prisma.role.findUnique({
-    where: { name: "MEMBER" }, // ตรวจสอบใน DB ว่าใช้ชื่อ "MEMBER" หรือ "member"
-    select: { id: true },
-  });
-  if (!role) throw new Error("role_member_not_found");
-  return role.id;
 }
