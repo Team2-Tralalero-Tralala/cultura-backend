@@ -88,17 +88,18 @@ export const createPackage = async (data: PackageDto) => {
       throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
   }
 
-  // ตรวจ overseer
+const targetOverseerId = data.overseerMemberId ?? data.createById;
+
+  if (!targetOverseerId) {
+    throw new Error("ไม่สามารถระบุตัวตนผู้ดูแลแพ็กเกจได้ (Missing ID)");
+  }
   const overseer = await prisma.user.findUnique({
-    where: { id: Number(data.overseerMemberId) },
+    where: { id: Number(targetOverseerId) }, // ใช้ตัวแปร targetOverseerId แทน
     include: { communityMembers: { include: { Community: true } } },
   });
   if (!overseer)
-    throw new Error(`Member ID ${data.overseerMemberId} ไม่พบในระบบ`);
-
-  // ถ้าไม่ได้ส่ง communityId ให้อนุมานจากชุมชนของ overseer
-  const resolvedCommunityId =
-    data.communityId ?? overseer.communityMembers[0]?.Community?.id ?? null;
+    throw new Error(`Member ID ${targetOverseerId} ไม่พบในระบบ`);
+  const resolvedCommunityId = data.communityId ?? overseer.communityMembers[0]?.Community?.id ?? null;
   if (!resolvedCommunityId) {
     throw new Error("ไม่พบชุมชนของผู้ดูแล แพ็กเกจต้องสังกัดชุมชน");
   }
@@ -152,8 +153,8 @@ export const createPackage = async (data: PackageDto) => {
     data: {
       communityId: Number(resolvedCommunityId),
       locationId: location.id,
-      overseerMemberId: Number(data.overseerMemberId),
-      createById: data.createById ?? Number(data.overseerMemberId),
+      overseerMemberId: Number(targetOverseerId),
+      createById: data.createById ?? Number(targetOverseerId),
       name: data.name,
       description: data.description,
       capacity: data.capacity,
@@ -1342,6 +1343,180 @@ export const getHistoriesPackageByAdmin = async (
     })),
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
+};
+
+/*
+ * ฟังก์ชัน : getPackageDetailByMember
+ * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับ Member โดยเช็คสิทธิ์
+ * Input  : memberId (user.id ที่เป็น member), packageId
+ * Output : รายละเอียดแพ็กเกจ (โครงเหมือน getPackageDetailById)
+ */
+export const getPackageDetailByMember = async (
+  memberId: number,
+  packageId: number
+) => {
+  return await prisma.package.findFirst({
+    where: {
+      id: packageId,
+      isDeleted: false,
+      OR: [
+        // 1) เป็น Overseer ของแพ็กเกจนี้
+        { overseerMemberId: memberId },
+
+        // 2) เป็นสมาชิกของชุมชนนี้
+        {
+          community: {
+            communityMembers: {
+              some: {
+                memberId,
+                isDeleted: false,
+              },
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      // ====== field ของ Package (ให้ตรงกับ JSON ที่ส่งมา) ======
+      id: true,
+      communityId: true,
+      locationId: true,
+      overseerMemberId: true,
+      createById: true,
+      name: true,
+      description: true,
+      capacity: true,
+      price: true,
+      warning: true,
+      statusPackage: true,
+      statusApprove: true,
+      startDate: true,
+      dueDate: true,
+      bookingOpenDate: true,
+      bookingCloseDate: true,
+      facility: true,
+      rejectReason: true,
+      isDeleted: true,
+      deleteAt: true,
+
+      // ====== createPackage ======
+      createPackage: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+
+      // ====== overseerPackage ======
+      overseerPackage: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          // ถ้าไม่อยากให้ activityRole โผล่ ก็ไม่ต้อง select
+          // activityRole: true,
+        },
+      },
+
+      // ====== tagPackages ======
+      tagPackages: {
+        select: {
+          tagId: true,
+          packageId: true,
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+
+      // ====== packageFile ======
+      packageFile: {
+        select: {
+          id: true,
+          filePath: true,
+          type: true,
+        },
+      },
+
+      // ====== location ======
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          alley: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+
+      // ====== homestayHistories ======
+      homestayHistories: {
+        select: {
+          id: true,
+          packageId: true,
+          homestayId: true,
+          bookedRoom: true,
+          checkInTime: true,
+          checkOutTime: true,
+
+          // ถ้าอยากใช้ detail homestay ไปทำ card
+          homestay: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              guestPerRoom: true,
+              totalRoom: true,
+              facility: true,
+              // location, image, tags เพิ่มได้ถ้าหน้า detail ใช้
+              location: {
+                select: {
+                  id: true,
+                  detail: true,
+                  houseNumber: true,
+                  villageNumber: true,
+                  alley: true,
+                  subDistrict: true,
+                  district: true,
+                  province: true,
+                  postalCode: true,
+                  latitude: true,
+                  longitude: true,
+                },
+              },
+              homestayImage: {
+                select: {
+                  id: true,
+                  image: true,
+                  type: true,
+                },
+              },
+              tagHomestays: {
+                select: {
+                  tag: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
 };
 
 /*

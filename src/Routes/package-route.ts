@@ -22,7 +22,9 @@ import {
     getCommunityMembers,
     getCommunityMembersDto,
     getNewestPackages,
+    getHistoriesPackageAdmin,
     getPackageById,
+    getPackageDetailByMember,
     getPackageDetail,
     getPackageHistoryDetailAdmin,
     getPopularPackages,
@@ -48,7 +50,12 @@ packageRoutes.post(
     "/member/package",
     authMiddleware,
     allowRoles("member"),
-    validateDto(createPackageDto),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "gallery", maxCount: 5 },
+        { name: "video", maxCount: 5 },
+    ]),
+    // validateDto(createPackageDto),
     createPackageMember
 );
 
@@ -73,7 +80,12 @@ packageRoutes.put(
     "/member/package/:id",
     authMiddleware,
     allowRoles("member"),
-    validateDto(editPackageDto),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "gallery", maxCount: 5 },
+        { name: "video", maxCount: 5 },
+    ]),
+    // validateDto(editPackageDto),
     editPackageMember
 );
 
@@ -1346,6 +1358,13 @@ packageRoutes.get(
     authMiddleware,
     allowRoles("member"),
     PackageController.getHistoriesPackageByMember
+);
+
+packageRoutes.get(
+  "/member/package/:id",
+  authMiddleware,
+  allowRoles("member"),
+  getPackageDetailByMember
 );
 
 export default packageRoutes;
