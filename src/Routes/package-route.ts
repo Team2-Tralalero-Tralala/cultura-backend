@@ -1508,14 +1508,15 @@ packageRoutes.delete(
 );
 /**
  * @swagger
- * /member/packages/draft/bulk-delete:
+ * /api/member/packages/draft/bulk-delete:
  *   patch:
+ *     summary: ลบแพ็กเกจ Draft แบบหลายรายการ (เฉพาะ Member)
+ *     description: ผู้ใช้ที่มี role = member สามารถลบแพ็กเกจสถานะ DRAFT ได้แบบหลายรายการในครั้งเดียว
  *     tags:
- *       - Member Packages
- *     summary: ลบแพ็กเกจแบบหลายรายการ (เฉพาะของสมาชิก)
- *     description: ใช้สำหรับลบแพ็กเกจสถานะ Draft ตามรายการ ID ที่ส่งมา
+ *       - Package (Member)
+ *
  *     security:
- *       - bearerAuth: []   # ต้องใช้ JWT Bearer token
+ *       - bearerAuth: []
  *
  *     requestBody:
  *       required: true
@@ -1528,14 +1529,15 @@ packageRoutes.delete(
  *             properties:
  *               ids:
  *                 type: array
- *                 description: รายการ packageId ที่ต้องการลบ
+ *                 description: รายการรหัสแพ็กเกจที่ต้องการลบ
  *                 items:
  *                   type: number
- *                 example: [12, 14, 18]
+ *             example:
+ *               ids: [12, 45, 77]
  *
  *     responses:
  *       200:
- *         description: ลบแพ็กเกจสำเร็จ
+ *         description: ลบแพ็กเกจ draft สำเร็จ
  *         content:
  *           application/json:
  *             schema:
@@ -1555,7 +1557,7 @@ packageRoutes.delete(
  *                       example: 3
  *
  *       400:
- *         description: ข้อมูลไม่ถูกต้อง (createErrorResponse)
+ *         description: ข้อมูลไม่ถูกต้อง (Validation Failed)
  *         content:
  *           application/json:
  *             schema:
@@ -1566,10 +1568,14 @@ packageRoutes.delete(
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: "ids ต้องเป็น array ของตัวเลข"
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
  *
  *       401:
- *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
  *         content:
  *           application/json:
  *             schema:
@@ -1580,21 +1586,13 @@ packageRoutes.delete(
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: "Missing token"
+ *                   example: "Unauthorized"
  *
  *       403:
- *         description: ไม่มีสิทธิ์ใช้งาน (ต้องเป็น member)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Forbidden"
+ *         description: Forbidden - ไม่ใช่ role member
+ *
+ *       500:
+ *         description: Internal Server Error
  */
 /*
  * คำอธิบาย : (Member) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft) แบบกลุ่ม
@@ -1610,31 +1608,36 @@ packageRoutes.patch(
 );
 /**
  * @swagger
- * /admin/packages/draft/bulk-delete:
+ * /api/admin/packages/draft/bulk-delete:
  *   patch:
- *     summary: Bulk delete draft packages (Admin only)
- *     description: ลบแพ็กเกจแบบร่างหลายรายการพร้อมกัน (สำหรับแอดมิน)
+ *     summary: ลบแพ็กเกจ Draft แบบหลายรายการ (เฉพาะ Admin)
+ *     description: ผู้ใช้ที่มี role = admin สามารถลบแพ็กเกจสถานะ DRAFT ได้แบบหลายรายการในครั้งเดียว
  *     tags:
- *       - Admin Packages
+ *       - Package (Admin)
+ *
  *     security:
  *       - bearerAuth: []
+ *
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - ids
  *             properties:
  *               ids:
  *                 type: array
- *                 description: รายการไอดีของแพ็กเกจแบบร่างที่ต้องการลบ
+ *                 description: รายการรหัสแพ็กเกจที่ต้องการลบ
  *                 items:
  *                   type: number
- *             required:
- *               - ids
+ *             example:
+ *               ids: [12, 45, 77]
+ *
  *     responses:
  *       200:
- *         description: ลบแพ็กเกจแบบร่างสำเร็จ
+ *         description: ลบแพ็กเกจ draft สำเร็จ
  *         content:
  *           application/json:
  *             schema:
@@ -1645,13 +1648,51 @@ packageRoutes.patch(
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: ลบแพ็กเกจแบบร่างสำเร็จ
+ *                   example: "ลบแพ็กเกจ draft สำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deletedCount:
+ *                       type: number
+ *                       example: 3
+ *
  *       400:
- *         description: request body ไม่ถูกต้อง
+ *         description: ข้อมูลไม่ถูกต้อง (Validation Failed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *
  *       401:
- *         description: missing หรือ invalid JWT
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *
  *       403:
- *         description: ไม่มีสิทธิ์ (ต้องเป็น admin)
+ *         description: Forbidden - ไม่ใช่ role member
+ *
+ *       500:
+ *         description: Internal Server Error
  */
 /*
  * คำอธิบาย : (Admin) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft) แบบกลุ่ม
