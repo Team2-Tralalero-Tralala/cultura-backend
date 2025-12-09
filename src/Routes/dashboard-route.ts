@@ -291,7 +291,7 @@ dashboardRoutes.get(
   "/admin/dashboard",
   authMiddleware,
   allowRoles("admin"),
-  validateDto(DashboardController.getAdminDashboardDto),
+  validateDto(DashboardController.getMemberDashboardDto),
   DashboardController.getAdminDashboard
 );
 
