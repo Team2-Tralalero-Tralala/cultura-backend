@@ -72,7 +72,7 @@ export async function createPackageAdmin(req: Request, res: Response) {
     if (req.body.data) {
         try {
             parsedBody = JSON.parse(req.body.data);
-        } catch (e) {
+        } catch (error) {
             return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
         }
     } else {
@@ -129,7 +129,7 @@ export async function createPackageMember(req: Request, res: Response) {
     if (req.body.data) {
       try {
         parsedBody = JSON.parse(req.body.data);
-      } catch (e) {
+      } catch (error) {
         return createErrorResponse(res, 400, "รูปแบบข้อมูล JSON ใน field 'data' ไม่ถูกต้อง");
       }
     } else {
@@ -435,7 +435,7 @@ export async function editPackageMember(req: Request, res: Response) {
     if (req.body.data) {
         try {
             parsedBody = JSON.parse(req.body.data);
-        } catch (e) {
+        } catch (error) {
             return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
         }
     } else {
