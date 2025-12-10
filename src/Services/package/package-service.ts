@@ -21,7 +21,7 @@ const toNull = <T>(value: T | undefined | null): T | null => value ?? null;
  * Output : object เงื่อนไข where สำหรับ Prisma
  */
 function buildWhereForRole(user: any): any {
-  const base = { isDeleted: false };
+  const base = { isDeleted: false, statusPackage: { not: 'DRAFT' } };
   switch (user?.role?.name) {
     case "superadmin":
       return base;
