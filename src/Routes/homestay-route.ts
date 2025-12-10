@@ -18,7 +18,7 @@ import {
   createHomestayAdmin,
   editHomestayAdmin,
   deleteHomestayAdmin,
-  deleteHomestaySuperAdmin
+  deleteHomestaySuperAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -30,9 +30,9 @@ const homestayRoutes = Router();
  *     tags: [Homestay - SuperAdmin]
  *     summary: สร้าง Homestay (สำหรับ Super Admin)
  *     description: >
- *       สร้างข้อมูล Homestay แบบ **single item** สำหรับชุมชนที่กำหนด  
- *       **ต้องส่งแบบ `multipart/form-data`** โดยมีไฟล์ `cover` (ได้ 1 ไฟล์) และ `gallery` (ได้สูงสุด 10 ไฟล์)  
- *       ฟิลด์ข้อมูลหลักอยู่ในคีย์ `data` (เป็นสตริง JSON ของ *HomestayDto*).  
+ *       สร้างข้อมูล Homestay แบบ **single item** สำหรับชุมชนที่กำหนด
+ *       **ต้องส่งแบบ `multipart/form-data`** โดยมีไฟล์ `cover` (ได้ 1 ไฟล์) และ `gallery` (ได้สูงสุด 10 ไฟล์)
+ *       ฟิลด์ข้อมูลหลักอยู่ในคีย์ `data` (เป็นสตริง JSON ของ *HomestayDto*).
  *       ต้องยืนยันตัวตนด้วย **JWT Bearer** และสิทธิ์ **superadmin**.
  *     security:
  *       - bearerAuth: []
@@ -171,7 +171,7 @@ homestayRoutes.post(
  *   get:
  *     summary: ดึงรายละเอียดข้อมูลโฮมสเตย์ตามรหัส (SuperAdmin)
  *     description: |
- *       ใช้สำหรับดึงรายละเอียดข้อมูลของโฮมสเตย์จากรหัส `homestayId`  
+ *       ใช้สำหรับดึงรายละเอียดข้อมูลของโฮมสเตย์จากรหัส `homestayId`
  *       ต้องเป็น **SuperAdmin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - SuperAdmin / Homestay
@@ -328,7 +328,6 @@ homestayRoutes.get(
  *         description: ข้อผิดพลาดฝั่งเซิร์ฟเวอร์
  */
 
-
 homestayRoutes.put(
   "/super/homestay/edit/:homestayId",
   authMiddleware,
@@ -346,7 +345,7 @@ homestayRoutes.put(
  *   get:
  *     summary: ดึงรายการที่พัก (Homestays) ทั้งหมดภายในชุมชน (สำหรับ Super Admin)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลที่พัก (Homestays) ทั้งหมดของชุมชนที่ระบุ  
+ *       ใช้สำหรับดึงข้อมูลที่พัก (Homestays) ทั้งหมดของชุมชนที่ระบุ
  *       พร้อม pagination และตรวจสอบสิทธิ์เฉพาะ SuperAdmin เท่านั้น
  *     tags:
  *       - Homestay (Super Admin)
@@ -446,8 +445,8 @@ homestayRoutes.get(
  *   get:
  *     summary: ดึงรายการโฮมสเตย์ทั้งหมดของชุมชน (Admin)
  *     description: |
- *       ใช้สำหรับดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ  
- *       รองรับการแบ่งหน้า (Pagination)  
+ *       ใช้สำหรับดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ
+ *       รองรับการแบ่งหน้า (Pagination)
  *       ต้องเป็น **Admin** เท่านั้น และต้องแนบ JWT Token ใน Header
  *     tags:
  *       - Admin / Homestay
@@ -512,9 +511,9 @@ homestayRoutes.get(
  *     tags: [Homestay - Admin]
  *     summary: สร้าง Homestay (สำหรับ Admin)
  *     description: >
- *       สร้าง Homestay ใหม่ในชุมชนของผู้ดูแล (admin)  
- *       **ต้องส่งแบบ `multipart/form-data`** โดยข้อมูลหลักอยู่ในคีย์ `data` (สตริง JSON ตามสคีมา *HomestayDto* หรือเทียบเท่า)  
- *       แนบไฟล์ได้ ได้แก่ `cover` (สูงสุด 1 ไฟล์) และ `gallery` (สูงสุด 5 ไฟล์).  
+ *       สร้าง Homestay ใหม่ในชุมชนของผู้ดูแล (admin)
+ *       **ต้องส่งแบบ `multipart/form-data`** โดยข้อมูลหลักอยู่ในคีย์ `data` (สตริง JSON ตามสคีมา *HomestayDto* หรือเทียบเท่า)
+ *       แนบไฟล์ได้ ได้แก่ `cover` (สูงสุด 1 ไฟล์) และ `gallery` (สูงสุด 5 ไฟล์).
  *       ต้องยืนยันตัวตนด้วย **JWT Bearer** และสิทธิ์ **admin**.
  *     security:
  *       - bearerAuth: []
@@ -611,8 +610,8 @@ homestayRoutes.post(
  *     tags: [Homestay - Admin]
  *     summary: แก้ไข Homestay (สำหรับ Admin)
  *     description: >
- *       อัปเดตข้อมูล Homestay ของชุมชนภายใต้ความรับผิดชอบของแอดมิน  
- *       ต้องส่งแบบ `multipart/form-data` โดยมี `data` เป็น JSON string ของข้อมูลที่จะอัปเดต  
+ *       อัปเดตข้อมูล Homestay ของชุมชนภายใต้ความรับผิดชอบของแอดมิน
+ *       ต้องส่งแบบ `multipart/form-data` โดยมี `data` เป็น JSON string ของข้อมูลที่จะอัปเดต
  *       แนบไฟล์ได้: `cover` (≤1) และ `gallery` (≤5)
  *     security:
  *       - bearerAuth: []
@@ -680,8 +679,8 @@ homestayRoutes.put(
  *   get:
  *     summary: ดึงรายละเอียดของโฮมสเตย์ (Homestay) ในชุมชนของแอดมิน
  *     description: |
- *       ใช้สำหรับดึงข้อมูลรายละเอียดของโฮมสเตย์ (Homestay) ภายในชุมชน  
- *       ที่ผู้ดูแล (Admin) รับผิดชอบอยู่ โดยต้องระบุ `homestayId` ที่ต้องการค้นหา  
+ *       ใช้สำหรับดึงข้อมูลรายละเอียดของโฮมสเตย์ (Homestay) ภายในชุมชน
+ *       ที่ผู้ดูแล (Admin) รับผิดชอบอยู่ โดยต้องระบุ `homestayId` ที่ต้องการค้นหา
  *       ข้อมูลที่ได้จะรวมรายละเอียดของที่พัก, ภาพประกอบ, สิ่งอำนวยความสะดวก และเจ้าของที่พัก
  *     tags:
  *       - Homestay (Admin)
@@ -883,7 +882,7 @@ homestayRoutes.get(
  */
 
 homestayRoutes.patch(
-  "/admin/community/homestay/:homestayId", 
+  "/admin/community/homestay/:homestayId",
   authMiddleware,
   allowRoles("admin"),
   deleteHomestayAdmin
@@ -965,7 +964,7 @@ homestayRoutes.patch(
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: Permission denied: Superadmin only
+ *                   example: "Permission denied: Superadmin only"
  */
 
 /**
