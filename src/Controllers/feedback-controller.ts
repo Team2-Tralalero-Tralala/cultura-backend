@@ -122,3 +122,31 @@ export async function getPackageFeedbacksForMember(
   }
 }
 
+/*
+ * ฟังก์ชัน : replyFeedbackAdmin
+ * คำอธิบาย : ตอบกลับรีวิว
+ * หมายเหตุ : validation และ business logic ทำใน DTO + Service แล้ว
+ */
+export const replyFeedbackAdmin: TypedHandlerFromDto<
+  typeof replyFeedbackDto
+> = async (req, res) => {
+  try {
+    const { feedbackId } = req.params as { feedbackId: string };
+    const { replyMessage } = req.body as ReplyFeedbackDto;
+
+    const data = await FeedbackService.replyFeedbackAdmin(
+      Number(feedbackId),
+      replyMessage,
+      req.user
+    );
+
+    return response.createResponse(
+      res,
+      200,
+      "Reply feedback successfully",
+      data
+    );
+  } catch (error) {
+    return response.createErrorResponse(res, 400, (error as Error).message);
+  }
+};

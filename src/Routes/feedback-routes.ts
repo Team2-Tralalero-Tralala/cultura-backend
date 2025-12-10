@@ -439,7 +439,7 @@ feedbackRoutes.post(
   authMiddleware,
   allowRoles("admin"),
   validateDto(FeedbackController.replyFeedbackDto),
-  FeedbackController.replyFeedback
+  FeedbackController.replyFeedbackAdmin
 );
 
 export default feedbackRoutes;
