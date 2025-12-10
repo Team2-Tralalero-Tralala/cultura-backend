@@ -14,7 +14,8 @@ import {
     Max,
     MaxLength,
     Min,
-    ValidateNested
+    ValidateNested,
+    ArrayNotEmpty
 } from "class-validator";
 import "reflect-metadata";
 import { LocationDto } from "../location/location-dto.js";
@@ -351,4 +352,10 @@ export class QueryListHomestaysDto {
 export class IdParamDto {
     @IsNumberString()
     communityId?: string;
+}
+export class BulkDeletePackagesDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsNumber({}, { each: true })
+  ids!: number[];
 }
