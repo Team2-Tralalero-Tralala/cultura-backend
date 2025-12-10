@@ -1019,6 +1019,77 @@ accountRoutes.put(
   allowRoles("admin"),
   editMemberByAdmin
 );
+/**
+ * @swagger
+ * /api/shared/profile:
+ *   put:
+ *     summary: แก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่ล็อกอินอยู่
+ *     description: |
+ *       ใช้สำหรับให้ผู้ใช้งานที่ล็อกอินอยู่แก้ไข "ข้อมูลส่วนตัวของตัวเอง"  
+ *       ระบบจะอัปเดตเฉพาะฟิลด์ที่ส่งมา  
+ *       ต้องแนบ JWT Token ใน Header  
+ *
+ *       **ตัวอย่างกรณีผิดพลาด**
+ *       - ชื่อผู้ใช้ซ้ำ
+ *       - อีเมลซ้ำ
+ *       - หมายเลขโทรศัพท์ซ้ำ
+ *     tags:
+ *       - Shared / Profile
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fname:
+ *                 type: string
+ *                 example: เวียร์
+ *               lname:
+ *                 type: string
+ *                 example: ศรีสุข
+ *               username:
+ *                 type: string
+ *                 example: superadmin_1
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: superadmin_1@example.com
+ *               phone:
+ *                 type: string
+ *                 example: "0838781779"
+ *               profileImage:
+ *                 type: string
+ *                 nullable: true
+ *                 example: uploads/profile/avatar.png
+ *               gender:
+ *                 type: string
+ *                 enum: [MALE, FEMALE, NONE]
+ *                 example: NONE
+ *               birthDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "2003-05-14"
+ *               province:
+ *                 type: string
+ *                 example: ชลบุรี
+ *               district:
+ *                 type: string
+ *                 example: เมืองชลบุรี
+ *               subDistrict:
+ *                 type: string
+ *                 example: แสนสุข
+ *               postalCode:
+ *                 type: string
+ *                 example: "20130"
+ *     responses:
+ *       200:
+ *         description: แก้ไขข้อมูลโปรไฟล์สำเร็จ
+ *       400:
+ *         description: ไม่สามารถบันทึกข้อมูลได้ (ข้อมูลซ้ำหรือข้อมูลไม่ถูกต้อง)
+ */
 
 accountRoutes.put(
   "/shared/profile",
@@ -1027,6 +1098,25 @@ accountRoutes.put(
   AccountController.editProfile
 );
 
+/**
+ * @swagger
+ * /api/shared/profile:
+ *   get:
+ *     summary: ดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่ล็อกอินอยู่
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังเข้าสู่ระบบ  
+ *       รองรับผู้ใช้ทุก Role ที่มีบัญชีในระบบ  
+ *       ต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Shared / Profile
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลโปรไฟล์สำเร็จ
+ *       400:
+ *         description: ไม่สามารถดึงข้อมูลโปรไฟล์ได้
+ */
 accountRoutes.get(
   "/shared/profile",
   validateDto(AccountController.getMeDto),

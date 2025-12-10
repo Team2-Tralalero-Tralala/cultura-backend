@@ -12,6 +12,7 @@ import {
   type EditAccountDto,
 } from "./account-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import { Prisma } from "@prisma/client";
 
 /*
  * คำอธิบาย: ฟิลด์ที่ปลอดภัยสำหรับการ select กลับไปให้ client
@@ -471,6 +472,28 @@ export async function getMe(userId: number) {
     },
   });
 }
+
+/**
+ * ฟังก์ชัน : editProfile
+ * คำอธิบาย :
+ *   ใช้สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานในตาราง users
+ *   จะอัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data เท่านั้น (partial update)
+ *
+ * Input :
+ *   - userId : number
+ *       รหัสผู้ใช้งานที่ต้องการแก้ไข (ต้องเป็นบัญชีที่ยังไม่ถูกลบ)
+ *   - data   : EditAccountDto
+ *       ข้อมูลโปรไฟล์ที่ต้องการแก้ไข เช่น ชื่อ, นามสกุล, อีเมล, เบอร์โทร ฯลฯ
+ *
+ * Output :
+ *   - อัปเดตข้อมูลผู้ใช้งานในฐานข้อมูลสำเร็จ (ถ้าไม่เกิด error)
+ *   - กรณี error :
+ *       - throw Error("ไม่พบสมาชิก") หากไม่พบ user ตาม userId
+ *       - throw Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว") กรณี username ซ้ำ
+ *       - throw Error("อีเมลนี้ถูกใช้งานแล้ว") กรณี email ซ้ำ
+ *       - throw Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว") กรณีเบอร์โทรซ้ำ
+ *       - throw Error("ข้อมูลซ้ำในระบบ") กรณี unique constraint อื่น ๆ
+ */
 export async function editProfile(userId: number, data: EditAccountDto) {
   const user = await prisma.user.findFirst({
     where: {
@@ -482,8 +505,11 @@ export async function editProfile(userId: number, data: EditAccountDto) {
 
   if (!user) throw new Error("ไม่พบสมาชิก");
 
-  // Prepare valid update data for Prisma
-  // Explicitly selecting fields prevents "Type 'number' is not assignable to type 'never'" error
+  /*
+   * คำอธิบาย : เตรียมข้อมูลสำหรับอัปเดต
+   *   - ใช้รูปแบบ spread เงื่อนไข (&&) เพื่ออัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data
+   *   - ป้องกันไม่ให้เขียนทับค่าด้วย undefined โดยไม่ตั้งใจ
+   */
   const updateData: any = {
     ...(data.fname && { fname: data.fname }),
     ...(data.lname && { lname: data.lname }),
@@ -499,10 +525,37 @@ export async function editProfile(userId: number, data: EditAccountDto) {
     ...(data.postalCode && { postalCode: data.postalCode }),
   };
 
-  await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: updateData,
-  });
+    try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+  } catch (error: any) {
+    /*
+     * คำอธิบาย : จัดการกรณีเกิด Prisma Unique Constraint Error (รหัส P2002)
+     *   - ตรวจสอบ target ว่าฟิลด์ไหนซ้ำ แล้วแปลงเป็นข้อความภาษาไทยที่ผู้ใช้เข้าใจง่าย
+     */
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target as string[] | undefined;
+
+      if (target?.includes("us_username")) {
+        throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
+      }
+
+      if (target?.includes("us_email")) {
+        throw new Error("อีเมลนี้ถูกใช้งานแล้ว");
+      }
+
+      if (target?.includes("us_phone")) {
+        throw new Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว");
+      }
+
+      throw new Error("ข้อมูลซ้ำในระบบ");
+    }
+
+    throw error;
+  }
 }

@@ -292,26 +292,80 @@ export class ProfileIdParamDto {
   @IsNumberString()
   accountId?: string;
 }
-export const editProfileDto = {
-  body: EditAccountDto,
-  params: ProfileIdParamDto,
-} satisfies commonDto;
 
-export const editProfile: TypedHandlerFromDto<typeof editAccountDto> = async (
+/**
+ * DTO: editProfileDto
+ * วัตถุประสงค์ :
+ *   ใช้สำหรับตรวจสอบความถูกต้องของข้อมูลที่ผู้ใช้งานส่งเข้ามา
+ *   สำหรับการแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานเอง
+ *
+ * Input :
+ *   - body : ข้อมูลสมาชิกที่ต้องการแก้ไข (อ้างอิง EditAccountDto)
+ *
+ * Output :
+ *   - หากข้อมูลถูกต้อง ระบบจะส่งต่อไปยัง controller เพื่อประมวลผล
+ */
+export const editProfileDto = {
+  body: EditAccountDto, // ใช้ EditAccountDto ตามที่คุณบอกว่าไม่แก้ DTO
+} satisfies commonDto;
+/**
+ * ฟังก์ชัน : editProfile
+ * คำอธิบาย :
+ *   Controller สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
+ *   โดยอ้างอิง user id จาก token (req.user)
+ *
+ * Input :
+ *   - req.user.id : รหัสผู้ใช้งานที่ล็อกอิน
+ *   - req.body    : ข้อมูลโปรไฟล์ที่แก้ไข
+ *
+ * Output :
+ *   - Response 200 : แก้ไขข้อมูลสมาชิกสำเร็จ
+ *   - Response 400 : กรณีเกิดข้อผิดพลาด
+ */
+export const editProfile: TypedHandlerFromDto<typeof editProfileDto> = async (
   req,
   res
 ) => {
   try {
     const body = req.body;
-    const result = AccountService.editProfile(Number(req.user?.id), body);
+
+    const result = await AccountService.editProfile(
+      Number(req.user?.id),
+      body as any
+    );
+
     return createResponse(res, 200, "แก้ไขข้อมูลสมาชิกสำเร็จ", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
 };
 
+/**
+ * DTO: getMeDto
+ * วัตถุประสงค์ :
+ *   ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
+ *   โดยไม่ต้องรับข้อมูลเพิ่มเติมจาก client
+ *
+ * Input :
+ *   - ไม่มี
+ *
+ * Output :
+ *   - ข้อมูลโปรไฟล์ของผู้ใช้งาน (จาก token)
+ */
 export const getMeDto = {} satisfies commonDto;
 
+/**
+ * ฟังก์ชัน : getMe
+ * คำอธิบาย :
+ *   Controller สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
+ *
+ * Input :
+ *   - req.user.id : รหัสผู้ใช้งานจาก token
+ *
+ * Output :
+ *   - Response 200 : ข้อมูลโปรไฟล์ของผู้ใช้งาน
+ *   - Response 400 : กรณีเกิดข้อผิดพลาด
+ */
 export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
   try {
     const result = await AccountService.getMe(Number(req.user?.id));
