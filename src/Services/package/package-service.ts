@@ -59,13 +59,12 @@ function composeDateTimeIso(
     timeStr && /^\d{2}:\d{2}$/.test(timeStr)
       ? timeStr
       : useEndOfDayIfMissing
-      ? "23:59"
-      : "00:00";
+        ? "23:59"
+        : "00:00";
 
   // ทำเป็น "YYYY-MM-DDTHH:mm:ss" (ไม่มี Z ⇒ ตีความเป็น local)
-  const isoLocal = `${dateStr}T${timeFormat}:${
-    useEndOfDayIfMissing && !timeStr ? "59" : "00"
-  }`;
+  const isoLocal = `${dateStr}T${timeFormat}:${useEndOfDayIfMissing && !timeStr ? "59" : "00"
+    }`;
   return new Date(isoLocal);
 }
 
@@ -88,7 +87,7 @@ export const createPackage = async (data: PackageDto) => {
       throw new Error(`Community ID ${data.communityId} ไม่พบในระบบ`);
   }
 
-const targetOverseerId = data.overseerMemberId ?? data.createById;
+  const targetOverseerId = data.overseerMemberId ?? data.createById;
 
   if (!targetOverseerId) {
     throw new Error("ไม่สามารถระบุตัวตนผู้ดูแลแพ็กเกจได้ (Missing ID)");
@@ -105,24 +104,41 @@ const targetOverseerId = data.overseerMemberId ?? data.createById;
   }
 
   // สร้าง Location
-  const location = await prisma.location.create({
-    data: {
-      houseNumber: data.location.houseNumber,
-      villageNumber: toNull(data.location.villageNumber),
-      alley: toNull(data.location.alley),
-      subDistrict: data.location.subDistrict,
-      district: data.location.district,
-      province: data.location.province,
-      postalCode: data.location.postalCode,
-      detail: toNull(data.location.detail),
-      latitude: data.location.latitude,
-      longitude: data.location.longitude,
-    },
-  });
+  const hasValidLocation =
+    data.location &&
+    data.location.houseNumber &&
+    data.location.subDistrict &&
+    data.location.district &&
+    data.location.province &&
+    data.location.postalCode;
 
-  // จัดการวันเวลาเริ่ม-สิ้นสุด (รองรับ startTime/endTime ถ้ามี)
-  const startAt = composeDateTimeIso(data.startDate, (data as any).startTime);
-  const dueAt = composeDateTimeIso(data.dueDate, (data as any).endTime, true);
+  let locationId: number | null = null;
+
+  if (hasValidLocation) {
+    const location = await prisma.location.create({
+      data: {
+        houseNumber: data.location.houseNumber,
+        villageNumber: toNull(data.location.villageNumber),
+        alley: toNull(data.location.alley),
+        subDistrict: data.location.subDistrict,
+        district: data.location.district,
+        province: data.location.province,
+        postalCode: data.location.postalCode,
+        detail: toNull(data.location.detail),
+        latitude: Number(data.location.latitude) || 0,
+        longitude: Number(data.location.longitude) || 0,
+      },
+    });
+    locationId = location.id;
+  }
+
+const startAt = data.startDate
+    ? composeDateTimeIso(data.startDate, (data as any).startTime)
+    : null;
+
+  const dueAt = data.dueDate
+    ? composeDateTimeIso(data.dueDate, (data as any).endTime, true)
+    : null;
 
   const openBooking = data.bookingOpenDate
     ? composeDateTimeIso(data.bookingOpenDate, (data as any).openTime)
@@ -140,10 +156,10 @@ const targetOverseerId = data.overseerMemberId ?? data.createById;
   const homestayCheckOut =
     data.homestayId && data.homestayCheckOutDate
       ? composeDateTimeIso(
-          data.homestayCheckOutDate,
-          data.homestayCheckOutTime,
-          true
-        )
+        data.homestayCheckOutDate,
+        data.homestayCheckOutTime,
+        true
+      )
       : undefined;
 
   const hasHomestayLink =
@@ -152,21 +168,27 @@ const targetOverseerId = data.overseerMemberId ?? data.createById;
   return prisma.package.create({
     data: {
       communityId: Number(resolvedCommunityId),
-      locationId: location.id,
+      locationId: locationId, // ใช้ตัวแปรที่คำนวณไว้ข้างบน (อาจเป็น null)
       overseerMemberId: Number(targetOverseerId),
       createById: data.createById ?? Number(targetOverseerId),
       name: data.name,
-      description: data.description,
-      capacity: data.capacity,
-      price: data.price,
-      warning: data.warning,
+      
+      // เพิ่ม || null หรือ ?? null เพื่อรองรับกรณีไม่มีข้อมูล
+      description: data.description || null, 
+      capacity: data.capacity ?? null,       
+      price: data.price ?? null,             
+      warning: data.warning || null,
+      
       statusPackage: data.statusPackage,
       statusApprove: data.statusApprove,
       startDate: startAt,
       dueDate: dueAt,
       bookingOpenDate: openBooking,
       bookingCloseDate: closeBooking,
-      facility: data.facility,
+      
+      facility: data.facility || null, // เพิ่ม || null
+
+      // ... (ส่วน packageFile และ homestayHistories เหมือนเดิมไม่ต้องแก้)
       ...(Array.isArray((data as any).packageFile) &&
       (data as any).packageFile.length > 0
         ? {
@@ -183,7 +205,7 @@ const targetOverseerId = data.overseerMemberId ?? data.createById;
             homestayHistories: {
               create: {
                 homestayId: Number(data.homestayId),
-                bookedRoom: Number((data as any).bookedRoom || 1), // ถ้าไม่มีค่าให้เป็น 1 ห้อง
+                bookedRoom: Number((data as any).bookedRoom || 1),
                 checkInTime: homestayCheckIn!,
                 checkOutTime: homestayCheckOut!,
               },
@@ -292,34 +314,34 @@ export async function duplicatePackageFromHistory({
         facility: sourcePackage.facility,
         ...(sourcePackage.packageFile.length
           ? {
-              packageFile: {
-                create: sourcePackage.packageFile.map((file) => ({
-                  filePath: file.filePath,
-                  type: file.type,
-                })),
-              },
-            }
+            packageFile: {
+              create: sourcePackage.packageFile.map((file) => ({
+                filePath: file.filePath,
+                type: file.type,
+              })),
+            },
+          }
           : {}),
         ...(sourcePackage.tagPackages.length
           ? {
-              tagPackages: {
-                create: sourcePackage.tagPackages.map((tag) => ({
-                  tagId: tag.tagId,
-                })),
-              },
-            }
+            tagPackages: {
+              create: sourcePackage.tagPackages.map((tag) => ({
+                tagId: tag.tagId,
+              })),
+            },
+          }
           : {}),
         ...(sourcePackage.homestayHistories.length
           ? {
-              homestayHistories: {
-                create: sourcePackage.homestayHistories.map((history) => ({
-                  homestayId: history.homestayId,
-                  bookedRoom: history.bookedRoom,
-                  checkInTime: history.checkInTime,
-                  checkOutTime: history.checkOutTime,
-                })),
-              },
-            }
+            homestayHistories: {
+              create: sourcePackage.homestayHistories.map((history) => ({
+                homestayId: history.homestayId,
+                bookedRoom: history.bookedRoom,
+                checkInTime: history.checkInTime,
+                checkOutTime: history.checkOutTime,
+              })),
+            },
+          }
           : {}),
       },
       include: {
@@ -391,10 +413,10 @@ export const editPackage = async (id: number, data: any) => {
   const homestayCheckOut =
     data.homestayId && data.homestayCheckOutDate
       ? composeDateTimeIso(
-          data.homestayCheckOutDate,
-          data.homestayCheckOutTime,
-          true
-        )
+        data.homestayCheckOutDate,
+        data.homestayCheckOutTime,
+        true
+      )
       : undefined;
 
   const hasHomestayLink =
@@ -428,41 +450,54 @@ export const editPackage = async (id: number, data: any) => {
     }),
   };
 
-  // อัปเดต location เฉพาะส่งมา
   if (data.location) {
     const locationData = data.location;
     updateData.location = {
-      update: {
-        ...(locationData.houseNumber !== undefined && {
-          houseNumber: locationData.houseNumber,
-        }),
-        ...(locationData.villageNumber !== undefined && {
-          villageNumber: toNull(locationData.villageNumber),
-        }),
-        ...(locationData.alley !== undefined && {
-          alley: toNull(locationData.alley),
-        }),
-        ...(locationData.subDistrict !== undefined && {
-          subDistrict: locationData.subDistrict,
-        }),
-        ...(locationData.district !== undefined && {
-          district: locationData.district,
-        }),
-        ...(locationData.province !== undefined && {
-          province: locationData.province,
-        }),
-        ...(locationData.postalCode !== undefined && {
-          postalCode: locationData.postalCode,
-        }),
-        ...(locationData.detail !== undefined && {
-          detail: toNull(locationData.detail),
-        }),
-        ...(locationData.latitude !== undefined && {
-          latitude: Number(locationData.latitude),
-        }),
-        ...(locationData.longitude !== undefined && {
-          longitude: Number(locationData.longitude),
-        }),
+      upsert: {
+        create: {
+            houseNumber: locationData.houseNumber || "",
+            villageNumber: toNull(locationData.villageNumber),
+            alley: toNull(locationData.alley),
+            subDistrict: locationData.subDistrict || "",
+            district: locationData.district || "",
+            province: locationData.province || "",
+            postalCode: locationData.postalCode || "",
+            detail: toNull(locationData.detail),
+            latitude: Number(locationData.latitude) || 0,
+            longitude: Number(locationData.longitude) || 0,
+        },
+        update: {
+          ...(locationData.houseNumber !== undefined && {
+            houseNumber: locationData.houseNumber,
+          }),
+          ...(locationData.villageNumber !== undefined && {
+            villageNumber: toNull(locationData.villageNumber),
+          }),
+          ...(locationData.alley !== undefined && {
+            alley: toNull(locationData.alley),
+          }),
+          ...(locationData.subDistrict !== undefined && {
+            subDistrict: locationData.subDistrict,
+          }),
+          ...(locationData.district !== undefined && {
+            district: locationData.district,
+          }),
+          ...(locationData.province !== undefined && {
+            province: locationData.province,
+          }),
+          ...(locationData.postalCode !== undefined && {
+            postalCode: locationData.postalCode,
+          }),
+          ...(locationData.detail !== undefined && {
+            detail: toNull(locationData.detail),
+          }),
+          ...(locationData.latitude !== undefined && {
+            latitude: Number(locationData.latitude),
+          }),
+          ...(locationData.longitude !== undefined && {
+            longitude: Number(locationData.longitude),
+          }),
+        },
       },
     };
   }
@@ -485,14 +520,14 @@ export const editPackage = async (id: number, data: any) => {
       deleteMany: {}, // ลบประวัติ Homestay ที่ผูกกับ Package นี้ทั้งหมด
       ...(hasHomestayLink // ถ้าข้อมูลใหม่ครบถ้วน (มี ID, วันที่, ห้อง)
         ? {
-            create: {
-              // สร้างประวัติใหม่
-              homestayId: Number(data.homestayId),
-              bookedRoom: Number(data.bookedRoom),
-              checkInTime: homestayCheckIn!,
-              checkOutTime: homestayCheckOut!,
-            },
-          }
+          create: {
+            // สร้างประวัติใหม่
+            homestayId: Number(data.homestayId),
+            bookedRoom: Number(data.bookedRoom),
+            checkInTime: homestayCheckIn!,
+            checkOutTime: homestayCheckOut!,
+          },
+        }
         : {}), // ถ้าข้อมูลไม่ครบ (เช่น กดลบ Homestay) ก็จะไม่สร้างใหม่
     };
   }
@@ -1093,23 +1128,23 @@ export async function getCommunityMembersAndAdmin(
   const admin =
     community.adminId != null
       ? await prisma.user.findFirst({
-          where: {
-            id: community.adminId,
-            isDeleted: false,
-            role: { name: "admin" },
-          },
-          select: { id: true, fname: true, lname: true },
-        })
+        where: {
+          id: community.adminId,
+          isDeleted: false,
+          role: { name: "admin" },
+        },
+        select: { id: true, fname: true, lname: true },
+      })
       : null;
 
   const nameFilter =
     query && query.trim()
       ? {
-          OR: [
-            { fname: { contains: query.trim(), mode: "insensitive" } },
-            { lname: { contains: query.trim(), mode: "insensitive" } },
-          ],
-        }
+        OR: [
+          { fname: { contains: query.trim(), mode: "insensitive" } },
+          { lname: { contains: query.trim(), mode: "insensitive" } },
+        ],
+      }
       : {};
 
   const members = await prisma.user.findMany({
@@ -1615,8 +1650,8 @@ export async function getDraftPackages(createById: number) {
     ...pkg,
     overseerPackage: pkg.overseerPackage
       ? {
-          name: `${pkg.overseerPackage.fname} ${pkg.overseerPackage.lname}`,
-        }
+        name: `${pkg.overseerPackage.fname} ${pkg.overseerPackage.lname}`,
+      }
       : null,
   }));
 }
