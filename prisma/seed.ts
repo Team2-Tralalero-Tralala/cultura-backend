@@ -241,12 +241,41 @@ async function main() {
     tourist: roles.find((role) => role.name === "tourist")!.id,
   };
 
-  // Tags (20+)
-  const tagData = Array.from({ length: 25 }).map((_, i) => ({
-    name: `Tag-${i + 1}-${
-      ["Nature", "Culture", "Food", "Adventure", "Relax"][i % 5]
-    }`,
-  }));
+  const thaiTags = [
+    "ท่องเที่ยวเชิงเกษตร",
+    "อาหารพื้นเมือง",
+    "วัฒนธรรมท้องถิ่น",
+    "ธรรมชาติ",
+    "โฮมสเตย์",
+    "กิจกรรมกลางแจ้ง",
+    "งานฝีมือ",
+    "ผ้าทอ",
+    "จักสาน",
+    "เดินป่า",
+    "ดูนก",
+    "ปั่นจักรยาน",
+    "ล่องแก่ง",
+    "ทำอาหาร",
+    "เรียนรู้วิถีชีวิต",
+    "ถ่ายรูป",
+    "จุดชมวิว",
+    "น้ำตก",
+    "ภูเขา",
+    "ทะเล",
+    "เกาะ",
+    "วัดวาอาราม",
+    "ประวัติศาสตร์",
+    "สมุนไพร",
+    "สุขภาพ",
+    "พักผ่อน",
+    "ครอบครัว",
+    "คู่รัก",
+    "เพื่อนฝูง",
+    "สัมมนา",
+  ];
+
+  // Tags (Use predefined Thai tags)
+  const tagData = thaiTags.map((name) => ({ name }));
   await prisma.tag.createMany({ data: tagData });
   const allTags = await prisma.tag.findMany();
 
@@ -451,7 +480,7 @@ async function main() {
         registerDate: getRandomDate(),
         description: `รายละเอียดเกี่ยวกับ${communityNames[i]} แหล่งท่องเที่ยววิถีชุมชน`,
         bankName: "ธนาคารกรุงไทย",
-        accountName: `บัญชี ${communityNames[i]}`,
+        accountName: `บัญชี ${communityNames[i]!.substring(0, 35)}`,
         accountNumber: `${getRandomInt(1000000000, 9999999999)}`,
         mainActivityName: "ท่องเที่ยวเชิงเกษตร",
         mainActivityDescription: "ชมสวน เก็บผลไม้ เรียนรู้วิถีชีวิต",
@@ -481,7 +510,7 @@ async function main() {
   for (const community of communities) {
     await prisma.store.create({
       data: {
-        name: `ร้านค้าชุมชน ของ ${community.name}`,
+        name: `ร้านค้าชุมชน ${getRandom(["ขนม", "บ้านปูน", "กระท่อมไม้ไผ่"])}`,
         detail: "จำหน่ายสินค้า OTOP และของที่ระลึกประจำท้องถิ่น",
         communityId: community.id,
         locationId: getRandom(locationIds),
@@ -499,7 +528,7 @@ async function main() {
   for (const community of communities) {
     const homestay = await prisma.homestay.create({
       data: {
-        name: `โฮมสเตย์บ้าน ของ ${community.name}`,
+        name: `โฮมสเตย์ ${getRandom(["เรือนไทย", "บ้านปูน", "กระท่อมไม้ไผ่"])}`,
         communityId: community.id,
         locationId: getRandom(locationIds),
         type: getRandom(["เรือนไทย", "บ้านปูน", "กระท่อมไม้ไผ่"]),
@@ -645,8 +674,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {
