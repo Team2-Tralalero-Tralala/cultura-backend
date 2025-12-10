@@ -46,6 +46,14 @@ export const getPackageFeedbacksByPackageIdAdmin = async (
           package: { select: { name: true } },
         },
       },
+      replyMessage: true,
+      replyAt: true,
+      responder: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
     },
   });
 
