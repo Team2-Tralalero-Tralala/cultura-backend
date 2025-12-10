@@ -175,7 +175,7 @@ export const getAccountById = async (req: Request, res: Response) => {
  */
 export class CommunityIdParamDto {
   @IsNumberString()
-  communityId?: number;
+  communityId?: string;
 }
 /*
  * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"

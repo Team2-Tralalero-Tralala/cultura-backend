@@ -8,13 +8,11 @@ import * as TagService from "../Services/tag/tag-service.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 
-import {
-    TagDto,
-} from "~/Services/tag/tag-dto.js";
+import { TagDto } from "~/Services/tag/tag-dto.js";
 
 import {
-    commonDto,
-    type TypedHandlerFromDto,
+  commonDto,
+  type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 
 /*
@@ -23,7 +21,7 @@ import {
  * Output : ข้อมูลTagที่ถูกสร้าง
  */
 export const createTagDto = {
-    body: TagDto,
+  body: TagDto,
 } satisfies commonDto;
 
 /*
@@ -34,13 +32,16 @@ export const createTagDto = {
  *   - 200 Created พร้อมข้อมูล Tag ที่สร้างใหม่
  *   - 400 Bad Request ถ้ามี error
  */
-export const createTag: TypedHandlerFromDto<typeof createTagDto> = async (req, res) => {
-    try {
-        const result = await TagService.createTag(req.body);
-        return createResponse(res, 200, "Tag created successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+export const createTag: TypedHandlerFromDto<typeof createTagDto> = async (
+  req,
+  res
+) => {
+  try {
+    const result = await TagService.createTag(req.body);
+    return createResponse(res, 200, "Tag created successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
 
 /*
@@ -49,8 +50,8 @@ export const createTag: TypedHandlerFromDto<typeof createTagDto> = async (req, r
  * Output : tagId ที่ถูกตรวจสอบแล้ว
  */
 export class IdParamDto {
-    @IsNumberString()
-    tagId?: number;
+  @IsNumberString()
+  tagId?: string;
 }
 
 /*
@@ -59,7 +60,7 @@ export class IdParamDto {
  * Output : ข้อมูลtagที่ถูกลบ
  */
 export const deleteTagByIdDto = {
-    params: IdParamDto,
+  params: IdParamDto,
 } satisfies commonDto;
 
 /*
@@ -67,13 +68,15 @@ export const deleteTagByIdDto = {
  * Input : req.params.tagId
  * Output : JSON response พร้อมข้อมูลTagที่ถูกลบ
  */
-export const deleteTagById: TypedHandlerFromDto<typeof deleteTagByIdDto> = async (req, res) => {
-    try {
-        const result = await TagService.deleteTagById(Number(req.params.tagId));
-        return createResponse(res, 200, "Tag deleted successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+export const deleteTagById: TypedHandlerFromDto<
+  typeof deleteTagByIdDto
+> = async (req, res) => {
+  try {
+    const result = await TagService.deleteTagById(Number(req.params.tagId));
+    return createResponse(res, 200, "Tag deleted successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
 
 /*
@@ -82,8 +85,8 @@ export const deleteTagById: TypedHandlerFromDto<typeof deleteTagByIdDto> = async
  * Output : ข้อมูลTagที่ถูกแก้ไข
  */
 export const editTagDto = {
-    body: TagDto,
-    params: IdParamDto,
+  body: TagDto,
+  params: IdParamDto,
 } satisfies commonDto;
 
 /*
@@ -91,15 +94,18 @@ export const editTagDto = {
  * Input : req.params.tagId, req.body (name)
  * Output : JSON response พร้อมข้อมูลTagที่ถูกแก้ไข
  */
-export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (req, res) => {
-    try {
-        const tagName = req.body;
-        const id = Number(req.params.tagId);
-        const result = await TagService.editTag(id, tagName);
-        return createResponse(res, 200, "Tag edited successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (
+  req,
+  res
+) => {
+  try {
+    const tagName = req.body;
+    const id = Number(req.params.tagId);
+    const result = await TagService.editTag(id, tagName);
+    return createResponse(res, 200, "Tag edited successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
 
 /*
@@ -108,7 +114,7 @@ export const editTag: TypedHandlerFromDto<typeof editTagDto> = async (req, res) 
  * Output : รายการข้อมูล Tag ทั้งหมด (พร้อมข้อมูลการแบ่งหน้า)
  */
 export const getAllTagsDto = {
-    query: PaginationDto,
+  query: PaginationDto,
 } satisfies commonDto;
 
 /*
@@ -118,13 +124,16 @@ export const getAllTagsDto = {
  *   - 200 OK พร้อมข้อมูล Tag ทั้งหมด
  *   - 400 Bad Request ถ้ามี error
  */
-export const getAllTags : TypedHandlerFromDto<typeof getAllTagsDto> = async (req, res) => {
-    try {
-        const { page = 1, limit = 10 } = req.query;
-        const result = await TagService.getAllTags(Number(page),Number(limit));
+export const getAllTags: TypedHandlerFromDto<typeof getAllTagsDto> = async (
+  req,
+  res
+) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const result = await TagService.getAllTags(Number(page), Number(limit));
 
-        return createResponse(res, 200, "Tags retrieved successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+    return createResponse(res, 200, "Tags retrieved successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
