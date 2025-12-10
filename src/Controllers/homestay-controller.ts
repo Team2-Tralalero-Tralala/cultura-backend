@@ -361,6 +361,41 @@ export const editHomestayAdmin = async (req: Request, res: Response) => {
 };
 
 /*
+ * วัตถุประสงค์ : ลบ Homestay แบบ Soft Delete โดย Superadmin เท่านั้น
+ * Input :
+ *   - req.user.role (ต้องเป็น "superadmin")
+ *   - req.params.homestayId : หมายเลข Homestay
+ * Output :
+ *   - 200 : ลบสำเร็จ
+ *   - 400 : ไม่พบ homestay หรือเกิดข้อผิดพลาด
+ *   - 401 : ไม่ได้ authenticated
+ *   - 403 : ไม่มีสิทธิ์ (ไม่ใช่ superadmin)
+ */
+export const deleteHomestaySuperAdmin = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "User not authenticated");
+    }
+
+    if (req.user.role !== "superadmin") {
+      return createErrorResponse(res, 403, "Permission denied: Superadmin only");
+    }
+
+    const homestayId = Number(req.params.homestayId);
+
+    if (isNaN(homestayId)) {
+      return createErrorResponse(res, 400, "Invalid homestay ID");
+    }
+
+    const result = await HomestayService.deleteHomestayBySuperAdmin(homestayId);
+
+    return createResponse(res, 200, "Homestay deleted successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
 * Controller: deleteHomestayAdmin
 * วัตถุประสงค์ : ลบ Homestay ที่อยู่ในชุมชนที่ Admin ดูแล
 * Input : req.user.id (adminId), req.params.homestayId
