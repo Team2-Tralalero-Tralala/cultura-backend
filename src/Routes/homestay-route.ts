@@ -18,6 +18,7 @@ import {
   createHomestayAdmin,
   editHomestayAdmin,
   deleteHomestayAdmin,
+  deleteHomestaySuperAdmin
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -887,4 +888,98 @@ homestayRoutes.patch(
   allowRoles("admin"),
   deleteHomestayAdmin
 );
+
+/**
+ * @swagger
+ * /api/super/community/homestay/{homestayId}:
+ *   patch:
+ *     summary: Soft delete Homestay (Superadmin only)
+ *     description: ลบ Homestay แบบ Soft Delete โดยต้องเป็น Superadmin เท่านั้น
+ *     tags:
+ *       - Homestay (Superadmin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: homestayId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: หมายเลข Homestay ที่ต้องการลบ
+ *
+ *     responses:
+ *       200:
+ *         description: ลบ Homestay สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Homestay deleted successfully
+ *                 data:
+ *                   type: object
+ *                   description: ผลลัพธ์ที่ได้จาก service
+ *
+ *       400:
+ *         description: Bad Request - homestay ไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Invalid homestay ID
+ *
+ *       401:
+ *         description: Unauthorized - ไม่ได้ส่ง token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *
+ *       403:
+ *         description: Forbidden - ไม่มีสิทธิ์ (ต้องเป็น superadmin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Permission denied: Superadmin only
+ */
+
+/**
+ * SuperAdmin – ลบ Homestay แบบ Soft Delete
+ * รายละเอียด:
+ *   - ใช้สำหรับ Soft Delete ที่พักในทุกชุมชน (ระดับ SuperAdmin)
+ *   - อนุญาตเฉพาะ role = "superadmin" เท่านั้น (ผ่าน allowRoles)
+ *   - รับ homestayId ผ่าน URL parameter
+ */
+homestayRoutes.patch(
+  "/super/community/homestay/:homestayId",
+  authMiddleware,
+  allowRoles("superadmin"),
+  deleteHomestaySuperAdmin
+);
+
 export default homestayRoutes;

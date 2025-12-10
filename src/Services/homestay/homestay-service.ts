@@ -677,6 +677,29 @@ export async function editHomestayByAdmin(
 }
 
 /**
+ฟังก์ชัน : deleteHomestayBySuperAdmin
+ * Input :
+ *   - homestayId : หมายเลข Homestay ที่ต้องการลบ
+ * Output :
+ *   - ตัวข้อมูล Homestay ที่ถูก Soft Delete แล้ว
+ *   - Error หากไม่พบ Homestay
+ */
+export const deleteHomestayBySuperAdmin = async (homestayId: number) => {
+  const homestay = await prisma.homestay.findUnique({ where: { id: homestayId } });
+
+  if (!homestay) {
+    throw new Error("Homestay not found");
+  }
+
+  return prisma.homestay.update({
+    where: { id: homestayId },
+    data: { isDeleted: true, 
+    deleteAt: new Date()
+     }, 
+  });
+};
+
+/**
 ฟังก์ชัน : deleteHomestayByAdmin
 อธิบาย : ลบ homestay ที่อยู่ในชุมชนที่ admin คนนั้นดูแล (soft delete)
 */
