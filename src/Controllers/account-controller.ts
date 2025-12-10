@@ -213,7 +213,7 @@ export const getAccountInCommunity: TypedHandlerFromDto<
 
 /*
  * Controller: Admin Create Member
- * คำอธิบาย : Admin สร้างสมาชิกใหม่ 
+ * คำอธิบาย : Admin สร้างสมาชิกใหม่
  */
 export const createMemberByAdmin: TypedHandlerFromDto<
   typeof createAccountDto
@@ -226,7 +226,7 @@ export const createMemberByAdmin: TypedHandlerFromDto<
     const payload = {
       ...req.body,
       memberOfCommunity: communityId,
-      communityRole: req.body.communityRole || "General Member" 
+      communityRole: req.body.communityRole || "General Member",
     } as CreateAccountDto;
 
     const result = await AccountService.createAccount(payload);
@@ -236,7 +236,11 @@ export const createMemberByAdmin: TypedHandlerFromDto<
     console.error(error);
     const message = (error as Error).message;
     if (message === "community_not_found_for_admin") {
-         return createErrorResponse(res, 403, "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้");
+      return createErrorResponse(
+        res,
+        403,
+        "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้"
+      );
     }
     return createErrorResponse(res, 400, message);
   }
@@ -248,16 +252,17 @@ export const createMemberByAdmin: TypedHandlerFromDto<
  * คำอธิบาย : Admin แก้ไขข้อมูลสมาชิกในชุมชนของตัวเอง
  * Access: Admin
  */
-export const editMemberByAdmin: TypedHandlerFromDto<typeof editAccountDto> = async (
-  req,
-  res
-) => {
+export const editMemberByAdmin: TypedHandlerFromDto<
+  typeof editAccountDto
+> = async (req, res) => {
   try {
     const adminId = Number(req.user!.id);
     const targetUserId = Number(req.params.id);
     const body = req.body as EditAccountDto;
 
-    const adminCommunityId = await AccountService.getCommunityIdByAdminId(adminId);
+    const adminCommunityId = await AccountService.getCommunityIdByAdminId(
+      adminId
+    );
 
     const targetUser = await AccountService.getAccountById(targetUserId);
 
@@ -278,8 +283,40 @@ export const editMemberByAdmin: TypedHandlerFromDto<typeof editAccountDto> = asy
       return createErrorResponse(res, 403, "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ");
     }
     if (message === "user_not_found") {
-        return createErrorResponse(res, 404, "ไม่พบข้อมูลสมาชิกนี้ในระบบ");
+      return createErrorResponse(res, 404, "ไม่พบข้อมูลสมาชิกนี้ในระบบ");
     }
     return createErrorResponse(res, 400, message);
+  }
+};
+export class ProfileIdParamDto {
+  @IsNumberString()
+  accountId?: string;
+}
+export const editProfileDto = {
+  body: EditAccountDto,
+  params: ProfileIdParamDto,
+} satisfies commonDto;
+
+export const editProfile: TypedHandlerFromDto<typeof editAccountDto> = async (
+  req,
+  res
+) => {
+  try {
+    const body = req.body;
+    const result = AccountService.editProfile(Number(req.user?.id), body);
+    return createResponse(res, 200, "แก้ไขข้อมูลสมาชิกสำเร็จ", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+export const getMeDto = {} satisfies commonDto;
+
+export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
+  try {
+    const result = await AccountService.getMe(Number(req.user?.id));
+    return createResponse(res, 200, "get my profile data successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
   }
 };

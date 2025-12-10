@@ -16,7 +16,7 @@ import {
   getAccountById,
   getMemberByAdmin,
   createMemberByAdmin,
-  editMemberByAdmin
+  editMemberByAdmin,
 } from "../Controllers/account-controller.js";
 import * as AccountController from "../Controllers/account-controller.js";
 import { validateDto } from "../Libs/validateDto.js";
@@ -651,7 +651,6 @@ accountRoutes.get(
   AccountController.getAccountInCommunity
 );
 
-
 /** --------------------------------------------------------------------------
  * @route GET /admin/communities/members
  * @description ดึงข้อมูลสมาชิกในชุมชนของตนเอง (เฉพาะ Admin)
@@ -666,8 +665,8 @@ accountRoutes.get(
  *       - Admin - Communities
  *     summary: Get list of community members
  *     description: |
- *       ดึงรายการสมาชิกในชุมชน (Communities Members) สำหรับผู้ใช้ที่มีสิทธิ์ **admin** เท่านั้น  
- *       Endpoint นี้รองรับการแบ่งหน้า (pagination) ผ่าน query parameter `page` และ `limit`  
+ *       ดึงรายการสมาชิกในชุมชน (Communities Members) สำหรับผู้ใช้ที่มีสิทธิ์ **admin** เท่านั้น
+ *       Endpoint นี้รองรับการแบ่งหน้า (pagination) ผ่าน query parameter `page` และ `limit`
  *       Response ทั้งหมดอยู่ในรูปแบบ `createResponse` หรือ `createErrorResponse`.
  *     security:
  *       - bearerAuth: []
@@ -902,10 +901,10 @@ accountRoutes.get(
 
 accountRoutes.post(
   "/admin/member",
-  validateDto(createAccountDto), 
+  validateDto(createAccountDto),
   authMiddleware,
-  allowRoles("admin"),          
-  createMemberByAdmin            
+  allowRoles("admin"),
+  createMemberByAdmin
 );
 
 /**
@@ -1018,7 +1017,21 @@ accountRoutes.put(
   validateDto(editAccountDto),
   authMiddleware,
   allowRoles("admin"),
-  editMemberByAdmin 
+  editMemberByAdmin
+);
+
+accountRoutes.put(
+  "/shared/profile",
+  validateDto(AccountController.editProfileDto),
+  authMiddleware,
+  AccountController.editProfile
+);
+
+accountRoutes.get(
+  "/shared/profile",
+  validateDto(AccountController.getMeDto),
+  authMiddleware,
+  AccountController.getMe
 );
 
 export default accountRoutes;
