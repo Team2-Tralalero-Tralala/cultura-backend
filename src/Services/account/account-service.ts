@@ -6,8 +6,13 @@
  */
 import prisma from "../database-service.js";
 import bcrypt from "bcrypt";
-import type { CreateAccountDto, EditAccountDto } from "./account-dto.js";
+import {
+  ProfileDto,
+  type CreateAccountDto,
+  type EditAccountDto,
+} from "./account-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import { Prisma } from "@prisma/client";
 
 /*
  * คำอธิบาย: ฟิลด์ที่ปลอดภัยสำหรับการ select กลับไปให้ client
@@ -38,7 +43,6 @@ const selectSafe = {
  * [Modified]: ปรับปรุงให้รองรับการ Connect Role ด้วย Name (แก้ปัญหา Role ID เปลี่ยน)
  */
 export async function createAccount(body: CreateAccountDto) {
-  
   // 1. เตรียม Role Connect (แก้ปัญหา Seed แล้ว ID เปลี่ยน)
   // ถ้ามี roleId ส่งมา (เช่น SuperAdmin สร้าง) ให้ใช้ ID
   // ถ้าไม่มี roleId (เช่น Admin สร้าง Member) ให้ใช้ชื่อ "MEMBER"
@@ -83,7 +87,7 @@ export async function createAccount(body: CreateAccountDto) {
   const created = await prisma.user.create({
     data: {
       role: {
-        connect: roleConnect // <--- ใช้ connect แทนการใส่ roleId ตรงๆ
+        connect: roleConnect, // <--- ใช้ connect แทนการใส่ roleId ตรงๆ
       },
       fname: restBody.fname,
       lname: restBody.lname,
@@ -208,16 +212,19 @@ export async function editAccount(userId: number, body: EditAccountDto) {
   }
 
   // อัปเดตตาราง CommunityMembers ถ้ามีการเปลี่ยนชุมชน (สำหรับ Member)
-  if (targetUser.role.name.toLowerCase() === "member" && body.memberOfCommunity) {
+  if (
+    targetUser.role.name.toLowerCase() === "member" &&
+    body.memberOfCommunity
+  ) {
     await prisma.communityMembers.deleteMany({
-      where: { memberId: userId }
+      where: { memberId: userId },
     });
 
     await prisma.communityMembers.create({
       data: {
         communityId: body.memberOfCommunity,
-        memberId: userId
-      }
+        memberId: userId,
+      },
     });
   }
 
@@ -229,7 +236,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
 
   return {
     ...updated,
-    memberOfCommunity: body.memberOfCommunity || null, 
+    memberOfCommunity: body.memberOfCommunity || null,
   };
 }
 
@@ -260,7 +267,7 @@ export async function getAccountById(userId: number) {
   if (user.role?.name.toLowerCase() === "member") {
     const communityMember = await prisma.communityMembers.findFirst({
       where: { memberId: userId },
-      select: { communityId: true }
+      select: { communityId: true },
     });
     if (communityMember) {
       memberOfCommunity = communityMember.communityId;
@@ -271,7 +278,7 @@ export async function getAccountById(userId: number) {
 
   return {
     ...user,
-    memberOfCommunity, 
+    memberOfCommunity,
     profileImageUrl: user.profileImage
       ? `${baseUrl}/uploads/${user.profileImage}`
       : null,
@@ -452,4 +459,103 @@ export async function getCommunityIdByAdminId(adminId: number) {
 
   if (!community) throw new Error("community_not_found_for_admin");
   return community.id;
+}
+export async function getMe(userId: number) {
+  return await prisma.user.findFirst({
+    where: {
+      id: userId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+    include: {
+      role: true,
+    },
+  });
+}
+
+/**
+ * ฟังก์ชัน : editProfile
+ * คำอธิบาย :
+ *   ใช้สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานในตาราง users
+ *   จะอัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data เท่านั้น (partial update)
+ *
+ * Input :
+ *   - userId : number
+ *       รหัสผู้ใช้งานที่ต้องการแก้ไข (ต้องเป็นบัญชีที่ยังไม่ถูกลบ)
+ *   - data   : EditAccountDto
+ *       ข้อมูลโปรไฟล์ที่ต้องการแก้ไข เช่น ชื่อ, นามสกุล, อีเมล, เบอร์โทร ฯลฯ
+ *
+ * Output :
+ *   - อัปเดตข้อมูลผู้ใช้งานในฐานข้อมูลสำเร็จ (ถ้าไม่เกิด error)
+ *   - กรณี error :
+ *       - throw Error("ไม่พบสมาชิก") หากไม่พบ user ตาม userId
+ *       - throw Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว") กรณี username ซ้ำ
+ *       - throw Error("อีเมลนี้ถูกใช้งานแล้ว") กรณี email ซ้ำ
+ *       - throw Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว") กรณีเบอร์โทรซ้ำ
+ *       - throw Error("ข้อมูลซ้ำในระบบ") กรณี unique constraint อื่น ๆ
+ */
+export async function editProfile(userId: number, data: EditAccountDto) {
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+  });
+
+  if (!user) throw new Error("ไม่พบสมาชิก");
+
+  /*
+   * คำอธิบาย : เตรียมข้อมูลสำหรับอัปเดต
+   *   - ใช้รูปแบบ spread เงื่อนไข (&&) เพื่ออัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data
+   *   - ป้องกันไม่ให้เขียนทับค่าด้วย undefined โดยไม่ตั้งใจ
+   */
+  const updateData: any = {
+    ...(data.fname && { fname: data.fname }),
+    ...(data.lname && { lname: data.lname }),
+    ...(data.username && { username: data.username }),
+    ...(data.email && { email: data.email }),
+    ...(data.phone && { phone: data.phone }),
+    ...(data.profileImage && { profileImage: data.profileImage }),
+    ...(data.gender && { gender: data.gender as any }),
+    ...(data.birthDate && { birthDate: new Date(data.birthDate) }),
+    ...(data.province && { province: data.province }),
+    ...(data.district && { district: data.district }),
+    ...(data.subDistrict && { subDistrict: data.subDistrict }),
+    ...(data.postalCode && { postalCode: data.postalCode }),
+  };
+
+    try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+  } catch (error: any) {
+    /*
+     * คำอธิบาย : จัดการกรณีเกิด Prisma Unique Constraint Error (รหัส P2002)
+     *   - ตรวจสอบ target ว่าฟิลด์ไหนซ้ำ แล้วแปลงเป็นข้อความภาษาไทยที่ผู้ใช้เข้าใจง่าย
+     */
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target as string[] | undefined;
+
+      if (target?.includes("us_username")) {
+        throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
+      }
+
+      if (target?.includes("us_email")) {
+        throw new Error("อีเมลนี้ถูกใช้งานแล้ว");
+      }
+
+      if (target?.includes("us_phone")) {
+        throw new Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว");
+      }
+
+      throw new Error("ข้อมูลซ้ำในระบบ");
+    }
+
+    throw error;
+  }
 }

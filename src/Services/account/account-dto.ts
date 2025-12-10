@@ -145,3 +145,33 @@ export class EditAccountDto {
   @IsString()
   postalCode?: string;
 }
+
+export class ProfileDto {
+  @IsOptional()
+  @IsString()
+  profileImage?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  fname: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  lname: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  username: string;
+
+  @IsOptional()
+  @IsEmail()
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  phone: string;
+}

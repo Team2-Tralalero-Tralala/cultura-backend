@@ -213,7 +213,7 @@ export const getAccountInCommunity: TypedHandlerFromDto<
 
 /*
  * Controller: Admin Create Member
- * คำอธิบาย : Admin สร้างสมาชิกใหม่ 
+ * คำอธิบาย : Admin สร้างสมาชิกใหม่
  */
 export const createMemberByAdmin: TypedHandlerFromDto<
   typeof createAccountDto
@@ -226,7 +226,7 @@ export const createMemberByAdmin: TypedHandlerFromDto<
     const payload = {
       ...req.body,
       memberOfCommunity: communityId,
-      communityRole: req.body.communityRole || "General Member" 
+      communityRole: req.body.communityRole || "General Member",
     } as CreateAccountDto;
 
     const result = await AccountService.createAccount(payload);
@@ -236,7 +236,11 @@ export const createMemberByAdmin: TypedHandlerFromDto<
     console.error(error);
     const message = (error as Error).message;
     if (message === "community_not_found_for_admin") {
-         return createErrorResponse(res, 403, "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้");
+      return createErrorResponse(
+        res,
+        403,
+        "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้"
+      );
     }
     return createErrorResponse(res, 400, message);
   }
@@ -248,16 +252,17 @@ export const createMemberByAdmin: TypedHandlerFromDto<
  * คำอธิบาย : Admin แก้ไขข้อมูลสมาชิกในชุมชนของตัวเอง
  * Access: Admin
  */
-export const editMemberByAdmin: TypedHandlerFromDto<typeof editAccountDto> = async (
-  req,
-  res
-) => {
+export const editMemberByAdmin: TypedHandlerFromDto<
+  typeof editAccountDto
+> = async (req, res) => {
   try {
     const adminId = Number(req.user!.id);
     const targetUserId = Number(req.params.id);
     const body = req.body as EditAccountDto;
 
-    const adminCommunityId = await AccountService.getCommunityIdByAdminId(adminId);
+    const adminCommunityId = await AccountService.getCommunityIdByAdminId(
+      adminId
+    );
 
     const targetUser = await AccountService.getAccountById(targetUserId);
 
@@ -278,8 +283,94 @@ export const editMemberByAdmin: TypedHandlerFromDto<typeof editAccountDto> = asy
       return createErrorResponse(res, 403, "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ");
     }
     if (message === "user_not_found") {
-        return createErrorResponse(res, 404, "ไม่พบข้อมูลสมาชิกนี้ในระบบ");
+      return createErrorResponse(res, 404, "ไม่พบข้อมูลสมาชิกนี้ในระบบ");
     }
     return createErrorResponse(res, 400, message);
+  }
+};
+export class ProfileIdParamDto {
+  @IsNumberString()
+  accountId?: string;
+}
+
+/**
+ * DTO: editProfileDto
+ * วัตถุประสงค์ :
+ *   ใช้สำหรับตรวจสอบความถูกต้องของข้อมูลที่ผู้ใช้งานส่งเข้ามา
+ *   สำหรับการแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานเอง
+ *
+ * Input :
+ *   - body : ข้อมูลสมาชิกที่ต้องการแก้ไข (อ้างอิง EditAccountDto)
+ *
+ * Output :
+ *   - หากข้อมูลถูกต้อง ระบบจะส่งต่อไปยัง controller เพื่อประมวลผล
+ */
+export const editProfileDto = {
+  body: EditAccountDto, // ใช้ EditAccountDto ตามที่คุณบอกว่าไม่แก้ DTO
+} satisfies commonDto;
+/**
+ * ฟังก์ชัน : editProfile
+ * คำอธิบาย :
+ *   Controller สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
+ *   โดยอ้างอิง user id จาก token (req.user)
+ *
+ * Input :
+ *   - req.user.id : รหัสผู้ใช้งานที่ล็อกอิน
+ *   - req.body    : ข้อมูลโปรไฟล์ที่แก้ไข
+ *
+ * Output :
+ *   - Response 200 : แก้ไขข้อมูลสมาชิกสำเร็จ
+ *   - Response 400 : กรณีเกิดข้อผิดพลาด
+ */
+export const editProfile: TypedHandlerFromDto<typeof editProfileDto> = async (
+  req,
+  res
+) => {
+  try {
+    const body = req.body;
+
+    const result = await AccountService.editProfile(
+      Number(req.user?.id),
+      body as any
+    );
+
+    return createResponse(res, 200, "แก้ไขข้อมูลสมาชิกสำเร็จ", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/**
+ * DTO: getMeDto
+ * วัตถุประสงค์ :
+ *   ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
+ *   โดยไม่ต้องรับข้อมูลเพิ่มเติมจาก client
+ *
+ * Input :
+ *   - ไม่มี
+ *
+ * Output :
+ *   - ข้อมูลโปรไฟล์ของผู้ใช้งาน (จาก token)
+ */
+export const getMeDto = {} satisfies commonDto;
+
+/**
+ * ฟังก์ชัน : getMe
+ * คำอธิบาย :
+ *   Controller สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
+ *
+ * Input :
+ *   - req.user.id : รหัสผู้ใช้งานจาก token
+ *
+ * Output :
+ *   - Response 200 : ข้อมูลโปรไฟล์ของผู้ใช้งาน
+ *   - Response 400 : กรณีเกิดข้อผิดพลาด
+ */
+export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
+  try {
+    const result = await AccountService.getMe(Number(req.user?.id));
+    return createResponse(res, 200, "get my profile data successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
   }
 };
