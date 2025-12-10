@@ -50,7 +50,7 @@ export class PackageDto {
     @IsOptional()
     communityId: number;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT') 
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT') 
     @ValidateNested()
     @Type(() => LocationDto)
     @IsNotEmpty({ message: "location ห้ามว่าง" })
@@ -69,25 +69,25 @@ export class PackageDto {
     @MaxLength(100, { message: "name ยาวเกิน 100 ตัวอักษร" })
     name: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "description ห้ามว่าง" })
     @MaxLength(500, { message: "description ยาวเกิน 500 ตัวอักษร" })
     description: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsNumber()
     @IsNotEmpty({ message: "capacity ห้ามว่าง" })
     @Min(1, { message: "capacity ต้องมากกว่า 0" })
     capacity: number;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsNumber()
     @IsNotEmpty({ message: "price ห้ามว่าง" })
     @Min(0, { message: "price ต้องไม่น้อยกว่า 0" })
     price: number;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "warning ห้ามว่าง" })
     @MaxLength(200, { message: "warning ยาวเกิน 200 ตัวอักษร" })
@@ -103,13 +103,13 @@ export class PackageDto {
     })
     statusApprove: PackageApproveStatus;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "startDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
     startDate: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "dueDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
@@ -125,7 +125,7 @@ export class PackageDto {
     @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็นรูปแบบ HH:mm" })
     endTime?: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })
     @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
@@ -137,13 +137,13 @@ export class PackageDto {
     @Type(() => PackageFileDto)
     packageFile?: PackageFileDto[];
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsOptional()
     @IsString()
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingOpenDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
     bookingOpenDate?: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsOptional()
     @IsString()
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingCloseDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
@@ -193,12 +193,12 @@ export class updatePackageDto {
     @IsOptional()
     communityId?: number;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
-    @ValidateNested() // บอก class-validator ว่า validate field ข้างในด้วย
-    @Type(() => LocationDto) // ชี้ให้แปลงเป็น LocationDto
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
+    @ValidateNested()
+    @Type(() => LocationDto)
     location?: LocationDto;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsNumber()
     @IsNotEmpty({ message: "overseerMemberId ห้ามว่าง" })
     overseerMemberId?: number;
@@ -208,25 +208,25 @@ export class updatePackageDto {
     @MaxLength(100, { message: "name ยาวเกิน 100 ตัวอักษร" })
     name?: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "description ห้ามว่าง" })
     @MaxLength(500, { message: "description ยาวเกิน 500 ตัวอักษร" })
     description?: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsNumber()
     @IsNotEmpty({ message: "capacity ห้ามว่าง" })
     @Min(1, { message: "capacity ต้องมากกว่า 0" })
     capacity?: number;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsNumber()
     @IsNotEmpty({ message: "price ห้ามว่าง" })
     @Min(0, { message: "price ต้องไม่น้อยกว่า 0" })
     price?: number;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "warning ห้ามว่าง" })
     @MaxLength(200, { message: "warning ยาวเกิน 200 ตัวอักษร" })
@@ -244,13 +244,13 @@ export class updatePackageDto {
     @IsOptional()
     statusApprove?: PackageApproveStatus;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "startDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
     startDate!: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "dueDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "dueDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
@@ -266,13 +266,13 @@ export class updatePackageDto {
     @Matches(/^\d{2}:\d{2}$/, { message: "endTime ต้องเป็น HH:mm" })
     endTime?: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "bookingOpenDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingOpenDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
     bookingOpenDate!: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "bookingCloseDate ห้ามว่าง" })
     @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: "bookingCloseDate ต้องเป็นรูปแบบ yyyy-mm-dd" })
@@ -288,7 +288,7 @@ export class updatePackageDto {
     @Matches(/^\d{2}:\d{2}$/, { message: "closeTime ต้องเป็น HH:mm" })
     closeTime?: string;
 
-    @ValidateIf(o => o.statusPackage !== 'DRAFT')
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @IsString()
     @IsNotEmpty({ message: "facility ห้ามว่าง" })
     @MaxLength(200, { message: "facility ยาวเกิน 200 ตัวอักษร" })
