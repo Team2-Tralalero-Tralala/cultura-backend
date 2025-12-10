@@ -13,9 +13,10 @@ export class CreateAccountDto {
   @IsString()
   profileImage?: string | null;
 
+  @IsOptional()
   @IsInt()
   @IsPositive()
-  roleId!: number;
+  roleId?: number;
 
   @IsString()
   @MinLength(1)
