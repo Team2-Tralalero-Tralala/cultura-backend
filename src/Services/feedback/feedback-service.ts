@@ -46,6 +46,14 @@ export const getPackageFeedbacksByPackageIdAdmin = async (
           package: { select: { name: true } },
         },
       },
+      replyMessage: true,
+      replyAt: true,
+      responder: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
     },
   });
 
@@ -226,3 +234,59 @@ export async function getPackageFeedbacksByPackageIdMember(
     orderBy: { createdAt: "desc" },
   });
 }
+
+
+/*
+ * ฟังก์ชัน : replyFeedbackAdmin
+ * คำอธิบาย : ฟังก์ชันสำหรับรตอบกลับ Feedback
+ * โดยจะอัปเดตเฉพาะฟิลด์ replyMessage, replyAt และ responderId
+ *
+ * Input :
+ *   - feedbackId : Feedback ที่ต้องการตอบกลับ
+ *   - replyMessage : ข้อความตอบกลับรีวิว
+ *   - user : ข้อมูลผู้ใช้งานที่ทำการตอบกลับ
+ *
+ * Output :
+ *   - ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
+ */
+export const replyFeedbackAdmin = async (
+  feedbackId: number,
+  replyMessage: string,
+  user: UserPayload | undefined
+) => {
+  if (!user || user.role !== "admin") {
+    throw new Error("อนุญาตเฉพาะผู้ใช้ที่มีบทบาทเป็น admin เท่านั้น");
+  }
+
+  if (typeof feedbackId !== "number" || Number.isNaN(feedbackId)) {
+    throw new Error("feedbackId ต้องเป็นตัวเลข");
+  }
+
+  if (typeof replyMessage !== "string") {
+    throw new Error("ข้อความตอบกลับต้อง String");
+  }
+
+  const updatedFeedback = await prisma.feedback.update({
+    where: { id: feedbackId },
+    data: {
+      replyMessage: replyMessage,
+      replyAt: new Date(),
+      responderId: user.id,
+    },
+    select: {
+      id: true,
+      replyMessage: true,
+      replyAt: true,
+      responderId: true,
+
+      responder: {
+        select: {
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+  });
+
+  return updatedFeedback;
+};
