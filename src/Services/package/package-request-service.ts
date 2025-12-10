@@ -229,6 +229,24 @@ export const getDetailRequestById = async (packageId: number) => {
           longitude: true,
         },
       },
+      homestayHistories: {
+        select: {
+          checkInTime: true,
+          checkOutTime: true,
+          homestay: {
+            select: {
+              name: true,
+              facility: true,
+              homestayImage: {
+                select: {
+                  image: true,
+                  type: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 };
@@ -288,6 +306,24 @@ export const getDetailRequestByIdForAdmin = async (packageId: number) => {
           detail: true,
           latitude: true,
           longitude: true,
+        },
+      },
+      homestayHistories: {
+        select: {
+          checkInTime: true,
+          checkOutTime: true,
+          homestay: {
+            select: {
+              name: true,
+              facility: true,
+              homestayImage: {
+                select: {
+                  image: true,
+                  type: true,
+                },
+              },
+            },
+          },
         },
       },
     },
