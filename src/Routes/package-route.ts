@@ -37,6 +37,11 @@ import {
     listPackagesMember,
     listPackagesSuperAdmin,
     listPackagesTourist,
+    BulkDeletePackagesDtoSchema,
+    bulkDeleteDraftPackages,
+    getDraftPackages,
+    getDraftPackagesDto,
+    deleteDraftPackageController
 } from "../Controllers/package-controller.js";
 
 const packageRoutes = Router();
@@ -1365,6 +1370,511 @@ packageRoutes.get(
   authMiddleware,
   allowRoles("member"),
   getPackageDetailByMember
+);
+/**
+ * @swagger
+ * /api/admin/packages/draft:
+ *   get:
+ *     summary: Get draft packages (admin only)
+ *     description: Returns a paginated list of draft packages. Requires admin authentication.
+ *     tags:
+ *       - Admin - Packages
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Draft packages retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         description: Draft package record
+ *                     total:
+ *                       type: integer
+ *                       example: 25
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *
+ *       400:
+ *         description: Invalid request (DTO validation error)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid query parameters"
+ *
+ *       401:
+ *         description: Unauthorized - missing or invalid token
+ *
+ *       403:
+ *         description: Forbidden - admin role required
+ *
+ *       500:
+ *         description: Server error
+ */
+/*
+ * คำอธิบาย : (Admin) Route สำหรับดึงรายการแพ็กเกจสถานะร่าง (Draft)
+ * Method : GET
+ * Path : /admin/packages/draft
+ */
+packageRoutes.get(
+  "/admin/packages/draft",
+  validateDto(getDraftPackagesDto),
+  authMiddleware,
+  allowRoles("admin"),
+  getDraftPackages
+);
+/**
+ * @swagger
+ * /api/member/packages/draft:
+ *   get:
+ *     summary: Get draft packages (member only)
+ *     description: Returns a paginated list of the member's draft packages. Requires member authentication.
+ *     tags:
+ *       - Member - Packages
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Draft packages retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         description: Draft package record
+ *                     total:
+ *                       type: integer
+ *                       example: 12
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *
+ *       400:
+ *         description: Invalid request (DTO validation error)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid query parameters"
+ *
+ *       401:
+ *         description: Unauthorized – missing or invalid token
+ *
+ *       403:
+ *         description: Forbidden – member role required
+ *
+ *       500:
+ *         description: Server error
+ */
+/*
+ * คำอธิบาย : (Member) Route สำหรับดึงรายการแพ็กเกจสถานะร่าง (Draft)
+ * Method : GET
+ * Path : /member/packages/draft
+ */
+packageRoutes.get(
+  "/member/packages/draft",
+  validateDto(getDraftPackagesDto),
+  authMiddleware,
+  allowRoles("member"),
+  getDraftPackages
+);
+/**
+ * @swagger
+ * /api/member/packages/draft/{id}:
+ *   delete:
+ *     summary: Delete member draft package
+ *     description: Delete a draft package belonging to the authenticated member.
+ *     tags:
+ *       - Member - Packages
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Draft package ID
+ *
+ *     responses:
+ *       200:
+ *         description: Deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Draft package deleted successfully"
+ *
+ *       400:
+ *         description: Invalid ID format
+ *
+ *       401:
+ *         description: Unauthorized – missing or invalid token
+ *
+ *       404:
+ *         description: Draft package not found
+ *
+ *       500:
+ *         description: Server error
+ */
+/*
+ * คำอธิบาย : (Member) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft)
+ * Method : DELETE
+ * Path : /member/packages/draft/:id
+ */
+packageRoutes.delete(
+  "/member/packages/draft/:id",
+  authMiddleware,
+  deleteDraftPackageController
+);
+/**
+ * @swagger
+ * /api/admin/packages/draft/{id}:
+ *   delete:
+ *     summary: Delete draft package (admin)
+ *     description: Delete a draft package. Admin authentication required.
+ *     tags:
+ *       - Admin - Packages
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Draft package ID
+ *
+ *     responses:
+ *       200:
+ *         description: Deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Draft package deleted successfully"
+ *
+ *       400:
+ *         description: Invalid ID format
+ *
+ *       401:
+ *         description: Unauthorized – missing or invalid token
+ *
+ *       404:
+ *         description: Draft package not found
+ *
+ *       500:
+ *         description: Server error
+ */
+/*
+ * คำอธิบาย : (Admin) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft)
+ * Method : DELETE
+ * Path : /admin/packages/draft/:id
+ */
+packageRoutes.delete(
+  "/admin/packages/draft/:id",
+  authMiddleware,
+  deleteDraftPackageController
+);
+/**
+ * @swagger
+ * /api/member/packages/draft/bulk-delete:
+ *   patch:
+ *     summary: ลบแพ็กเกจ Draft แบบหลายรายการ (เฉพาะ Member)
+ *     description: ผู้ใช้ที่มี role = member สามารถลบแพ็กเกจสถานะ DRAFT ได้แบบหลายรายการในครั้งเดียว
+ *     tags:
+ *       - Package (Member)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - ids
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 description: รายการรหัสแพ็กเกจที่ต้องการลบ
+ *                 items:
+ *                   type: number
+ *             example:
+ *               ids: [12, 45, 77]
+ *
+ *     responses:
+ *       200:
+ *         description: ลบแพ็กเกจ draft สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "ลบแพ็กเกจ draft สำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deletedCount:
+ *                       type: number
+ *                       example: 3
+ *
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง (Validation Failed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *
+ *       403:
+ *         description: Forbidden - ไม่ใช่ role member
+ *
+ *       500:
+ *         description: Internal Server Error
+ */
+/*
+ * คำอธิบาย : (Member) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft) แบบกลุ่ม
+ * Method : DELETE
+ * Path : /member/packages/draft/bulk-delete
+ */
+packageRoutes.patch(
+  "/member/packages/draft/bulk-delete",
+  validateDto(BulkDeletePackagesDtoSchema),
+  authMiddleware,
+  allowRoles("member"),
+  bulkDeleteDraftPackages
+);
+/**
+ * @swagger
+ * /api/admin/packages/draft/bulk-delete:
+ *   patch:
+ *     summary: ลบแพ็กเกจ Draft แบบหลายรายการ (เฉพาะ Admin)
+ *     description: ผู้ใช้ที่มี role = admin สามารถลบแพ็กเกจสถานะ DRAFT ได้แบบหลายรายการในครั้งเดียว
+ *     tags:
+ *       - Package (Admin)
+ *
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - ids
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 description: รายการรหัสแพ็กเกจที่ต้องการลบ
+ *                 items:
+ *                   type: number
+ *             example:
+ *               ids: [12, 45, 77]
+ *
+ *     responses:
+ *       200:
+ *         description: ลบแพ็กเกจ draft สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "ลบแพ็กเกจ draft สำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deletedCount:
+ *                       type: number
+ *                       example: 3
+ *
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง (Validation Failed)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Validation error"
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Unauthorized"
+ *
+ *       403:
+ *         description: Forbidden - ไม่ใช่ role member
+ *
+ *       500:
+ *         description: Internal Server Error
+ */
+/*
+ * คำอธิบาย : (Admin) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft) แบบกลุ่ม
+ * Method : DELETE
+ * Path : /admin/packages/draft/bulk-delete
+ */
+packageRoutes.patch(
+  "/admin/packages/draft/bulk-delete",
+  validateDto(BulkDeletePackagesDtoSchema),
+  authMiddleware,
+  allowRoles("admin"),
+  bulkDeleteDraftPackages
 );
 
 export default packageRoutes;

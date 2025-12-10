@@ -17,8 +17,10 @@ import {
   QueryHomestaysDto,
   QueryListHomestaysDto,
   updatePackageDto,
+  BulkDeletePackagesDto,
 } from "~/Services/package/package-dto.js";
 import * as PackageService from "../Services/package/package-service.js";
+import { DeleteDraftPackage,bulkDeletePackages  } from "../Services/package/package-service.js";
 
 /*
  * DTO: createPackageDto
@@ -852,5 +854,99 @@ export const getHistoriesPackageByMember: TypedHandlerFromDto<
     return createResponse(res, 200, "Get History Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * คำอธิบาย : (Admin,Member) Handler สำหรับดึงรายการ "แพ็กเกจสถานะ Draft"
+ * Input: req.user.id
+ * Output: 200 - ข้อมูลแพ็กเกจสถานะ Draft
+ * 400 - Error message
+ */
+export const getDraftPackagesDto = {} satisfies commonDto;
+export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> = async (
+  req,
+  res
+) => {
+  try {
+    const myId = req.user?.id;
+    const result = await PackageService.getDraftPackages(Number(myId));
+    return createResponse(
+      res,
+      200,
+      "Fetched draft package successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * คำอธิบาย : (Admin,Member) Handler สำหรับลบแพ็กเกจสถานะ Draft
+ * Input: req.user.id, req.params.id
+ * Output: 200 - ข้อความยืนยันการลบแพ็กเกจสถานะ Draft
+ * 400 - Error message
+ */
+export async function deleteDraftPackageController(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const packageId = Number(req.params.id);
+    const userId = req.user.id; // ดึงจาก authMiddleware
+
+    const result = await DeleteDraftPackage(packageId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "ไม่สามารถลบแพ็กเกจได้",
+    });
+  }
+}
+/*
+ * คำอธิบาย : (Admin,Member) Handler สำหรับลบแพ็กเกจสถานะ Draft แบบกลุ่ม
+ * Input: req.user.id, req.body.ids (array of package IDs)
+ * Output: 200 - ข้อความยืนยันการลบแพ็กเกจสถานะ Draft
+ * 400 - Error message
+ */
+export const BulkDeletePackagesDtoSchema = {
+  body: BulkDeletePackagesDto,
+} satisfies commonDto;
+
+export const bulkDeleteDraftPackages = async (req: Request, res: Response) => {
+  try {
+    const ids = req.body.ids;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "packageId ไม่ถูกต้อง",
+      });
+    }
+
+    const result = await bulkDeletePackages(ids);
+
+    return res.json({
+      success: true,
+      deleted: ids.length,
+      message: "ลบแพ็กเกจสำเร็จ",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "เกิดข้อผิดพลาดในระบบ",
+      error: (err as Error).message,
+    });
   }
 };
