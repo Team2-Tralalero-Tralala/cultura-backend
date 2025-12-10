@@ -94,11 +94,11 @@ export const createPackage = async (data: PackageDto) => {
   }
   const overseer = await prisma.user.findUnique({
     where: { id: Number(targetOverseerId) }, // ใช้ตัวแปร targetOverseerId แทน
-    include: { communityMembers: { include: { Community: true } } },
+    include: { communityMembers: { include: { Community: true } }, communityAdmin: true, },
   });
   if (!overseer)
     throw new Error(`Member ID ${targetOverseerId} ไม่พบในระบบ`);
-  const resolvedCommunityId = data.communityId ?? overseer.communityMembers[0]?.Community?.id ?? null;
+  const resolvedCommunityId = data.communityId ?? overseer.communityMembers[0]?.Community?.id ?? overseer.communityAdmin[0]?.id ?? null;
   if (!resolvedCommunityId) {
     throw new Error("ไม่พบชุมชนของผู้ดูแล แพ็กเกจต้องสังกัดชุมชน");
   }
