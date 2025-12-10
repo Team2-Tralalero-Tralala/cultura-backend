@@ -761,7 +761,7 @@ userRoutes.patch(
  */
 
 userRoutes.post(
-  "/account/change-password/me",
+  "/shared/account/change-password/me",
   authMiddleware,
   allowRoles("superadmin", "admin", "member", "tourist"),
   validateDto(UserController.changePasswordDto),
