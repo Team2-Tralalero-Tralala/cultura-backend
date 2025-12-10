@@ -346,7 +346,20 @@ export async function getCommunityDetailById(
           storeImage: true,
         },
       },
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          roleId: true,
+          profileImage: true,
+          username: true,
+        },
+      },
+
       communityMembers: {
+        where: { isDeleted: false },
         include: {
           user: {
             select: {
@@ -355,6 +368,8 @@ export async function getCommunityDetailById(
               lname: true,
               email: true,
               roleId: true,
+              profileImage: true,
+              username: true,
             },
           },
         },
@@ -488,7 +503,20 @@ export async function getCommunityDetailByAdmin(userId: number) {
           storeImage: true,
         },
       },
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          roleId: true,
+          profileImage: true,
+          username: true,
+        },
+      },
+
       communityMembers: {
+        where: { isDeleted: false },
         include: {
           user: {
             select: {
@@ -497,6 +525,8 @@ export async function getCommunityDetailByAdmin(userId: number) {
               lname: true,
               email: true,
               roleId: true,
+              profileImage: true,
+              username: true,
             },
           },
         },

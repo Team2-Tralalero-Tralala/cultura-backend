@@ -322,9 +322,9 @@ export async function getMemberByAdmin(
       (member) => member.Community && communityIds.includes(member.Community.id)
     ) ?? false;
 
-  if (!isMemberInCommunity) {
-    throw new Error("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้นี้");
-  }
+  // if (!isMemberInCommunity) {
+  //   throw new Error("คุณไม่มีสิทธิ์ดูข้อมูลผู้ใช้นี้");
+  // }
 
   return user;
 }
