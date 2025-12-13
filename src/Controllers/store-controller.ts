@@ -366,7 +366,7 @@ export const deleteStoreByAdmin: TypedHandlerFromDto<
     if (!req.user) {
       return createErrorResponse(res, 401, "Unauthorized: User not found");
     }
-        
+
     const userId = req.user.id;
     const storeId = Number(req.params.id);
 
@@ -414,8 +414,7 @@ export const getStoreWithOtherStoresInCommunity: TypedHandlerFromDto<
     const { page = 1, limit = 12 } = req.query;
 
     const result = await StoreService.getStoreWithOtherStoresInCommunity(communityId, storeId, page, limit);
-
-    return createResponse(res, 200, "Get store detail with other stores successfully", result);
+    return createResponse(res, 200, "Get store detail with other stores successfully", result );
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }

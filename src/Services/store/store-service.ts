@@ -514,13 +514,8 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
  *  - store : รายละเอียดร้านค้าที่เลือก
  *  - otherStores : ร้านอื่นในชุมชน (pagination)
  */
-export const getStoreWithOtherStoresInCommunity = async (
-  communityId: number,
-  storeId: number,
-  page: number = 1,
-  limit: number = 12
-) => {
-  if (!Number.isInteger(communityId) || !Number.isInteger(storeId) || Number.isInteger(page) || !Number.isInteger(limit)) {
+export const getStoreWithOtherStoresInCommunity = async (communityId: number, storeId: number, page: number = 1, limit: number = 12) => {
+  if (!Number.isInteger(communityId) || !Number.isInteger(storeId) || !Number.isInteger(page) || !Number.isInteger(limit)) {
     throw new Error("Invalid parameter");
   }
 
