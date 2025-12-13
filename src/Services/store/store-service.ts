@@ -497,3 +497,113 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
 
   return deletedStore;
 }
+
+/**
+ * ฟังก์ชัน : getStoreWithOtherStoresInCommunity
+ * คำอธิบาย :
+ *  - ดึงรายละเอียดร้านค้าที่เลือก (เต็ม)
+ *  - ดึงร้านอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
+ *
+ * Input :
+ *  - communityId : number
+ *  - storeId : number
+ *  - page : number (default = 1)
+ *  - limit : number (default = 12)
+ *
+ * Output :
+ *  - store : รายละเอียดร้านค้าที่เลือก
+ *  - otherStores : ร้านอื่นในชุมชน (pagination)
+ */
+export const getStoreWithOtherStoresInCommunity = async (
+  communityId: number,
+  storeId: number,
+  page: number = 1,
+  limit: number = 12
+) => {
+  if (!Number.isInteger(communityId) || !Number.isInteger(storeId) || Number.isInteger(page) || !Number.isInteger(limit)) {
+    throw new Error("Invalid parameter");
+  }
+
+  if (page < 1 || limit < 1) {
+    throw new Error("page และ limit ต้องมากกว่า 0");
+  }
+
+  const community = await prisma.community.findFirst({
+    where: {
+      id: communityId,
+      isDeleted: false,
+    },
+  });
+
+  if (!community) throw new Error("Community not found");
+
+  const store = await prisma.store.findFirst({
+    where: {
+      id: storeId,
+      communityId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      detail: true,
+      storeImage: true,
+      communityId: true,
+      location: true,
+      tagStores: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!store) throw new Error("ไม่พบร้านค้า");
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.store.count({
+    where: {
+      communityId,
+      isDeleted: false,
+      id: { not: storeId },
+    },
+  });
+
+  const otherStores = await prisma.store.findMany({
+    where: {
+      communityId,
+      isDeleted: false,
+      id: { not: storeId },
+    },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      storeImage: true,
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    store,
+    otherStores: {
+      data: otherStores,
+      pagination: {
+        currentPage: page,
+        limit,
+        totalCount,
+        totalPages,
+      },
+    },
+  };
+};

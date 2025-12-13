@@ -366,12 +366,56 @@ export const deleteStoreByAdmin: TypedHandlerFromDto<
     if (!req.user) {
       return createErrorResponse(res, 401, "Unauthorized: User not found");
     }
-
+        
     const userId = req.user.id;
     const storeId = Number(req.params.id);
 
     const result = await StoreService.deleteStoreByAdmin(userId, storeId);
     return createResponse(res, 200, "Store deleted successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+
+export class CommunityAndStoreParamDto {
+  @IsNumberString()
+  communityId?: string;
+
+  @IsNumberString()
+  storeId?: string;
+}
+
+export const getStoreWithOtherStoresInCommunityDto = {
+  params: CommunityAndStoreParamDto,
+  query: PaginationDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getStoreWithOtherStoresInCommunity
+ * รายละเอียด :
+ *   - ดึงรายละเอียดร้านค้าที่เลือก
+ *   - ดึงร้านอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
+ *
+ * Route :
+ *   GET /communities/:communityId/stores/:storeId/with-others
+ *
+ * Query :
+ *   - page (default 1)
+ *   - limit (default 12)
+ */
+export const getStoreWithOtherStoresInCommunity: TypedHandlerFromDto<
+  typeof getStoreWithOtherStoresInCommunityDto
+> = async (req, res) => {
+  try {
+    const communityId = Number(req.params.communityId);
+    const storeId = Number(req.params.storeId);
+
+    const { page = 1, limit = 12 } = req.query;
+
+    const result = await StoreService.getStoreWithOtherStoresInCommunity(communityId, storeId, page, limit);
+
+    return createResponse(res, 200, "Get store detail with other stores successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }

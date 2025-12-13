@@ -1202,4 +1202,14 @@ storeRoute.delete(
   allowRoles("superadmin", "admin"),
   StoreController.deleteStore
 );
+
+/* 
+* คำอธิบาย : ใช้สำหรับแสดงรายละเอียดร้านค้าที่เลือก พร้อมดึงรายชื่อร้านค้าอื่น ๆ ที่อยู่ในชุมชนเดียวกัน 
+*/
+storeRoute.get(
+  "/shared/community/:communityId/store/:storeId",
+  validateDto(StoreController.getStoreWithOtherStoresInCommunityDto),
+  StoreController.getStoreWithOtherStoresInCommunity
+);
+
 export default storeRoute;
