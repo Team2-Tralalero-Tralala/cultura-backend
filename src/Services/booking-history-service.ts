@@ -551,3 +551,65 @@ export const updateBookingStatusByMember = async (
 
   return updated;
 };
+
+export const getMemberBookingHistories = async (
+  memberId: number,
+  page: number,
+  limit: number,
+  status?: string
+) => {
+  // 1. เงื่อนไขพื้นฐาน: ดึงเฉพาะแพ็กเกจที่ Member นี้ดูแล
+  const whereCondition: any = {
+    package: {
+      overseerMemberId: memberId,
+      isDeleted: false,
+    },
+  };
+
+  // 2. Logic จัดการ Status
+  // ถ้าเป็น 'ALL' -> ไม่ต้องใส่ filter (ดึงมาหมดทุกสถานะ)
+  // ถ้าไม่ใช่ 'ALL' -> ใส่ filter ตามปกติ
+  if (status && status !== 'ALL') {
+    const statusArray = status.split(",").map((s) => s.trim());
+    whereCondition.status = { in: statusArray };
+  }
+
+  // 3. ดึงข้อมูล
+  const totalCount = await prisma.bookingHistory.count({ where: whereCondition });
+  const bookings = await prisma.bookingHistory.findMany({
+    where: whereCondition,
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { bookingAt: "desc" },
+    select: {
+      id: true,
+      bookingAt: true,
+      status: true,
+      transferSlip: true,
+      totalParticipant: true,
+      tourist: { select: { fname: true, lname: true, profileImage: true } },
+      package: { select: { name: true, price: true } },
+    },
+  });
+
+  // 4. จัด Format ให้ตรงกับตารางหน้าเว็บ
+  const result = bookings.map((item) => ({
+    id: item.id,
+    bookerName: `${item.tourist.fname} ${item.tourist.lname}`,
+    eventName: item.package?.name || "ไม่ระบุ",
+    totalPrice: (item.package?.price || 0) * item.totalParticipant,
+    status: item.status,
+    slipUrl: item.transferSlip,
+    bookingDate: item.bookingAt,
+  }));
+
+  return {
+    data: result,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
+};

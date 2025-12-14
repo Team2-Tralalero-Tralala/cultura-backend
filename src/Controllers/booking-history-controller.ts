@@ -3,6 +3,7 @@
   import { getHistoriesByRole } from "../Services/booking-history-service.js";
   import * as bookingService from "../Services/booking-history-service.js";
   import { PaginationDto } from "~/Services/pagination-dto.js";
+  import { IsOptional, IsString } from "class-validator";
   import {
     commonDto,
     type TypedHandlerFromDto,
@@ -298,3 +299,45 @@
       return createErrorResponse(res, 400, (error as Error).message);
     }
   };
+
+export class GetHistoryDto {
+  @IsOptional()
+  page?: any;
+
+  @IsOptional()
+  limit?: any;
+
+  @IsString()
+  @IsOptional()
+  status?: string; // ยอมรับ String อะไรก็ได้ (รวมถึง "ALL")
+}
+
+export const getHistoryDto = {
+  query: GetHistoryDto,
+} satisfies commonDto;
+
+export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (req, res) => {
+  try {
+    const memberId = Number(req.user!.id);
+    const { page = 1, limit = 10, status } = req.query as any;
+
+    const result = await bookingService.getMemberBookingHistories(
+      memberId,
+      Number(page),
+      Number(limit),
+      status
+    );
+    return createResponse(res, 200, "Get history success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (req, res, next) => {
+  // ถ้าเจอ ALL -> ไปทางใหม่
+  if (req.query.status === 'ALL') {
+    return getMemberBookingHistoriesNew(req, res, next);
+  }
+  // ถ้าไม่เจอ -> ไปทางเดิม 
+  return getBookingsByMember(req, res, next);
+};
