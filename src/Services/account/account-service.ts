@@ -559,3 +559,139 @@ export async function editProfile(userId: number, data: EditAccountDto) {
     throw error;
   }
 }
+/**
+ * ฟังก์ชัน : editProfileTourist
+ * คำอธิบาย :
+ *   ใช้สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานในตาราง users
+ *   จะอัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data เท่านั้น (partial update)
+ * Input :
+ *   - userId : number
+ *       รหัสผู้ใช้งานที่ต้องการแก้ไข (ต้องเป็นบัญชีที่ยังไม่ถูกลบ)
+ *   - data   : EditAccountDto
+ *       ข้อมูลโปรไฟล์ที่ต้องการแก้ไข เช่น ชื่อ, นามสกุล, อีเมล, เบอร์โทร ฯลฯ
+ * Output :
+ *   - อัปเดตข้อมูลผู้ใช้งานในฐานข้อมูลสำเร็จ (ถ้าไม่เกิด error)
+ *   - กรณี error :
+ *      - throw Error("ไม่พบสมาชิก") หากไม่พบ user ตาม userId
+ *      - throw Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว") กรณี username ซ้ำ
+ *      - throw Error("อีเมลนี้ถูกใช้งานแล้ว") กรณี email ซ้ำ
+ *      - throw Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว") กรณีเบอร์โทรซ้ำ
+ *      - throw Error("ข้อมูลซ้ำในระบบ") กรณี unique constraint อื่น ๆ
+ **/
+export async function editProfileTourist(
+  userId: number,
+  data: EditAccountDto
+) {
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+  });
+
+  if (!user) {
+    throw new Error("ไม่พบสมาชิก");
+  }
+/*
+   * คำอธิบาย : ฟังก์ชันตรวจสอบรูปแบบอีเมลและเบอร์โทรศัพท์
+   *   - isValidEmail: ตรวจสอบรูปแบบอีเมลพื้นฐาน
+   *   - isValidPhone: ตรวจสอบว่าเป็นตัวเลข 9-10 หลัก
+   */
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const isValidPhone = (phone: string) =>
+    /^[0-9]{9,10}$/.test(phone);
+
+  const allowedGender = ["MALE", "FEMALE", "NONE"];
+
+  const updateData: Prisma.UserUpdateInput = {};
+
+  /*
+   * คำอธิบาย : เตรียมข้อมูลสำหรับอัปเดต
+   *   - อัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data
+   *   - ตรวจสอบความถูกต้องของข้อมูลก่อนอัปเดต
+   */
+  if (data.fname !== undefined) updateData.fname = data.fname;
+  if (data.lname !== undefined) updateData.lname = data.lname;
+  if (data.username !== undefined) updateData.username = data.username;
+
+  if (data.email !== undefined) {
+    if (!isValidEmail(data.email)) {
+      throw new Error("รูปแบบอีเมลไม่ถูกต้อง");
+    }
+    updateData.email = data.email;
+  }
+
+  if (data.phone !== undefined) {
+    if (!isValidPhone(data.phone)) {
+      throw new Error("หมายเลขโทรศัพท์ไม่ถูกต้อง");
+    }
+    updateData.phone = data.phone;
+  }
+
+  // รูปโปรไฟล์ (string | null)
+  if (data.profileImage !== undefined) {
+    updateData.profileImage = data.profileImage;
+  }
+
+  // gender enum
+  if (data.gender !== undefined) {
+    if (!allowedGender.includes(data.gender)) {
+      throw new Error("ค่าเพศไม่ถูกต้อง");
+    }
+    updateData.gender = data.gender as any;
+  }
+
+  // birthDate
+  if (data.birthDate !== undefined) {
+    const date = new Date(data.birthDate);
+    if (isNaN(date.getTime())) {
+      throw new Error("รูปแบบวันเกิดไม่ถูกต้อง");
+    }
+    updateData.birthDate = date;
+  }
+
+  if (data.province !== undefined) updateData.province = data.province;
+  if (data.district !== undefined) updateData.district = data.district;
+  if (data.subDistrict !== undefined) updateData.subDistrict = data.subDistrict;
+  if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
+
+  // ป้องกัน update เปล่า
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("ไม่มีข้อมูลสำหรับอัปเดต");
+  }
+  /*
+   * คำอธิบาย : ทำการอัปเดตข้อมูลในฐานข้อมูล
+   *   - ใช้ Prisma Client เพื่ออัปเดตข้อมูลผู้ใช้งานตาม userId
+   *   - จัดการกรณีเกิด Unique Constraint Error เพื่อแจ้งข้อความที่เหมาะสม
+   */
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+  } catch (error: any) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target as string[] | undefined;
+
+      if (target?.includes("us_username")) {
+        throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
+      }
+      if (target?.includes("us_email")) {
+        throw new Error("อีเมลนี้ถูกใช้งานแล้ว");
+      }
+      if (target?.includes("us_phone")) {
+        throw new Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว");
+      }
+
+      throw new Error("ข้อมูลซ้ำในระบบ");
+    }
+
+    throw error;
+  }
+}
