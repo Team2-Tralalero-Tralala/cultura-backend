@@ -3,7 +3,6 @@ import { BookingStatus } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "./pagination-dto.js";
 
-
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
  * Input :
@@ -34,7 +33,7 @@ export const getDetailBookingById = async (id: number) => {
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับสร้าง Booking History ใหม่
- * Input  : 
+ * Input  :
  *   - data: object {
  *       touristId: number (รหัสผู้จอง),
  *       packageId: number (รหัสแพ็กเกจ),
@@ -47,36 +46,35 @@ export const getDetailBookingById = async (id: number) => {
  *   }
  * Output : BookingHistory object ที่ถูกสร้างใหม่ในฐานข้อมูล
  */
-export const createBooking = async(data: any) => {
-    const packageId = await prisma.package.findUnique({
-        where: { id: Number(data.packageId) }
-    });
-    if (!packageId) {
-        throw new Error(`Package ID ${data.packageId} ไม่พบในระบบ`);
-    }
+export const createBooking = async (data: any) => {
+  const packageId = await prisma.package.findUnique({
+    where: { id: Number(data.packageId) },
+  });
+  if (!packageId) {
+    throw new Error(`Package ID ${data.packageId} ไม่พบในระบบ`);
+  }
 
-    const userId = await prisma.user.findUnique({
-        where: { id: Number(data.touristId) }
-    }); 
-    if (!userId) {
-        throw new Error(`User ID ${data.touristId} ไม่พบในระบบ`);
-    }
+  const userId = await prisma.user.findUnique({
+    where: { id: Number(data.touristId) },
+  });
+  if (!userId) {
+    throw new Error(`User ID ${data.touristId} ไม่พบในระบบ`);
+  }
 
-    return await prisma.bookingHistory.create({
-        data : {
-            touristId: data.touristId,
-            packageId: data.packageId,
-            bookingAt: data.bookingAt,
-            // cancelAt: data.cancelAt ?? null,
-            // refundAt: data.refundAt ?? null,
-            status: data.status ?? "PENDING",
-            totalParticipant: data.totalParticipant,
-            transferSlip: data.transferSlip
-            // rejectReason: data.rejectReason ?? null,
-        }
-    });
-
-}
+  return await prisma.bookingHistory.create({
+    data: {
+      touristId: data.touristId,
+      packageId: data.packageId,
+      bookingAt: data.bookingAt,
+      // cancelAt: data.cancelAt ?? null,
+      // refundAt: data.refundAt ?? null,
+      status: data.status ?? "PENDING",
+      totalParticipant: data.totalParticipant,
+      transferSlip: data.transferSlip,
+      // rejectReason: data.rejectReason ?? null,
+    },
+  });
+};
 
 /*
  * ฟังก์ชัน : getHistoriesByRole
@@ -92,8 +90,11 @@ export const createBooking = async(data: any) => {
  *       - หลักฐานการโอน
  *       - เวลาในการจอง
  */
-export const getHistoriesByRole = async (user: UserPayload, page: number = 1,
-  limit: number = 10) => {
+export const getHistoriesByRole = async (
+  user: UserPayload,
+  page: number = 1,
+  limit: number = 10
+) => {
   let where: any = {};
   if (user.role === "tourist") {
     where = { touristId: user.id };
@@ -126,7 +127,6 @@ export const getHistoriesByRole = async (user: UserPayload, page: number = 1,
   });
 
   return data;
-  
 };
 
 /**
@@ -185,8 +185,7 @@ export const getDetailBooking = async (id: number) => {
   return booking;
 };
 
-
-/*  
+/*
  * ฟังก์ชัน : getBookingsByAdmin
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
  * Input :
@@ -244,7 +243,7 @@ export const getBookingsByAdmin = async (
         communityId: community.id,
         isDeleted: false,
       },
-       status: { in: ["PENDING", "REFUND_PENDING"] },
+      status: { in: ["PENDING", "REFUND_PENDING"] },
     },
     orderBy: { bookingAt: "asc" },
     skip,
@@ -291,8 +290,7 @@ export const getBookingsByAdmin = async (
   };
 };
 
-
-/*  
+/*
  * ฟังก์ชัน : updateBookingStatus
  * คำอธิบาย : อัปเดตสถานะของการจอง + จัดการเหตุผลการปฏิเสธ (rejectReason)
  * เงื่อนไข :
@@ -306,12 +304,7 @@ export const updateBookingStatus = async (
   newStatus: string,
   rejectReason?: string
 ) => {
-  const validStatuses = [
-    "BOOKED",
-    "REJECTED",
-    "REFUNDED",
-    "REFUND_REJECTED",
-  ];
+  const validStatuses = ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"];
 
   if (!validStatuses.includes(newStatus)) {
     throw new Error("Invalid booking status");
@@ -344,8 +337,7 @@ export const updateBookingStatus = async (
   return booking;
 };
 
-
-/*  
+/*
  * ฟังก์ชัน : getBookingsByMember
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองเฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (เฉพาะ Member)
  * Input :
@@ -569,13 +561,15 @@ export const getMemberBookingHistories = async (
   // 2. Logic จัดการ Status
   // ถ้าเป็น 'ALL' -> ไม่ต้องใส่ filter (ดึงมาหมดทุกสถานะ)
   // ถ้าไม่ใช่ 'ALL' -> ใส่ filter ตามปกติ
-  if (status && status !== 'ALL') {
+  if (status && status !== "ALL") {
     const statusArray = status.split(",").map((s) => s.trim());
     whereCondition.status = { in: statusArray };
   }
 
   // 3. ดึงข้อมูล
-  const totalCount = await prisma.bookingHistory.count({ where: whereCondition });
+  const totalCount = await prisma.bookingHistory.count({
+    where: whereCondition,
+  });
   const bookings = await prisma.bookingHistory.findMany({
     where: whereCondition,
     skip: (page - 1) * limit,
