@@ -847,4 +847,146 @@ userRoutes.get(
   UserController.getAccountAll
 );
 
+/**
+ * @swagger
+ * /api/tourist/change-password:
+ *   patch:
+ *     tags:
+ *       - Tourist - Account
+ *     summary: Change password for tourist account
+ *     description: |
+ *       เปลี่ยนรหัสผ่านของผู้ใช้ประเภท **tourist**  
+ *       ต้องเข้าสู่ระบบแล้ว และส่งข้อมูลผ่าน DTO `changePasswordDto`  
+ *       Response ทั้งหมดอยู่ในรูปแบบ `createResponse` หรือ `createErrorResponse`
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *               - confirmNewPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: รหัสผ่านเดิม
+ *               newPassword:
+ *                 type: string
+ *                 description: รหัสผ่านใหม่
+ *               confirmNewPassword:
+ *                 type: string
+ *                 description: ยืนยันรหัสผ่านใหม่ ต้องตรงกับ newPassword
+ *           example:
+ *             currentPassword: "OldP@ssw0rd"
+ *             newPassword: "NewP@ssw0rd123"
+ *             confirmNewPassword: "NewP@ssw0rd123"
+ *     responses:
+ *       200:
+ *         description: เปลี่ยนรหัสผ่านสำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Change password successfully
+ *                 data:
+ *                   type: object
+ *                   nullable: true
+ *                 meta:
+ *                   type: object
+ *                   nullable: true
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้องหรือ validation error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Validation error
+ *                 errors:
+ *                   type: object
+ *                   nullable: true
+ *       401:
+ *         description: ไม่ได้ส่ง JWT Bearer token หรือ token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *       403:
+ *         description: Forbidden – ผู้ใช้ไม่มีสิทธิ์ tourist
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 403
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden resource
+ *       500:
+ *         description: Internal server error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ */
+
+/*
+ * เส้นทาง : PATCH /tourist/change-password
+ * คำอธิบาย : เปลี่ยนรหัสผ่านสำหรับนักท่องเที่ยว (Tourist)
+ * สิทธิ์ที่เข้าถึงได้ : tourist
+ */
+userRoutes.patch(
+  "/tourist/change-password",
+  authMiddleware,
+  allowRoles("tourist"),
+  validateDto(UserController.changePasswordDto),
+  UserController.changePassword
+);
+
 export default userRoutes;
