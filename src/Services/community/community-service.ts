@@ -3,6 +3,11 @@ import { CommunityDto } from "./community-dto.js";
 import { LocationDto } from "../location/location-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
+import {
+  CommunityStatus,
+  PackageApproveStatus,
+  PackagePublishStatus,
+} from "@prisma/client";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
@@ -689,4 +694,180 @@ export async function getCommunityDetailByMember(userId: number) {
 
   if (!community) throw new Error("Community not found");
   return community;
+}
+/*
+ * ฟังก์ชัน : getCommunityDetailPublic
+ * คำอธิบาย :
+ *  - ดึงรายละเอียดชุมชนสำหรับหน้า public (guest / tourist)
+ *  - ชุมชนต้อง OPEN และไม่ถูกลบ
+ *  - package ต้อง PUBLISH + APPROVE และไม่ถูกลบ
+ *  - homestay / store ต้องไม่ถูกลบ
+ *  - ดึง tag ของ package / homestay / store มาด้วย
+ *
+ * Input:
+ *  - communityId   : number  (รหัสชุมชน)
+ *  - packagePage   : number  (หน้าของแพ็กเกจ)
+ *  - packageLimit  : number  (จำนวนแพ็กเกจต่อหน้า)
+ *  - homestayPage  : number  (หน้าของที่พัก)
+ *  - homestayLimit : number  (จำนวนที่พักต่อหน้า)
+ *  - storePage     : number  (หน้าของร้านค้า)
+ *  - storeLimit    : number  (จำนวนร้านค้าต่อหน้า)
+ *
+ * Output:
+ *  - ข้อมูลรายละเอียดชุมชน
+ *  - รายการแพ็กเกจ / ที่พัก / ร้านค้า พร้อมข้อมูล pagination
+ *
+ * Error:
+ *  - ไม่พบชุมชน หรือชุมชนยังไม่เปิดให้เข้าชม
+ */
+export async function getCommunityDetailPublic(params: {
+  communityId: number;
+  packagePage: number;
+  packageLimit: number;
+  homestayPage: number;
+  homestayLimit: number;
+  storePage: number;
+  storeLimit: number;
+}) {
+  const {
+    communityId,
+    packagePage = 1,
+    packageLimit = 8,
+    storePage = 1,
+    storeLimit = 12,
+    homestayPage = 1,
+    homestayLimit = 12,
+  } = params;
+
+  const community = await prisma.community.findFirst({
+    where: {
+      id: communityId,
+      isDeleted: false,
+      status: CommunityStatus.OPEN,
+    },
+    include: {
+      location: true,
+      communityImage: true,
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          roleId: true,
+          profileImage: true,
+          username: true,
+        },
+      },
+      communityMembers: {
+        where: { isDeleted: false },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fname: true,
+              lname: true,
+              email: true,
+              roleId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!community) {
+    throw new Error("ไม่พบชุมชน หรือชุมชนยังไม่เปิดให้เข้าชม");
+  }
+
+  const packageSkip = (packagePage - 1) * packageLimit;
+  const homestaySkip = (homestayPage - 1) * homestayLimit;
+  const storeSkip = (storePage - 1) * storeLimit;
+
+  const packageWhere = {
+    communityId,
+    isDeleted: false,
+    statusPackage: PackagePublishStatus.PUBLISH,
+    statusApprove: PackageApproveStatus.APPROVE,
+  };
+
+  const homestayWhere = { communityId, isDeleted: false };
+  const storeWhere = { communityId, isDeleted: false };
+
+  const [packageTotal, homestayTotal, storeTotal, packages, homestays, stores] =
+    await prisma.$transaction([
+      prisma.package.count({ where: packageWhere }),
+      prisma.homestay.count({ where: homestayWhere }),
+      prisma.store.count({ where: storeWhere }),
+
+      prisma.package.findMany({
+        where: packageWhere,
+        orderBy: { id: "asc" },
+        skip: packageSkip,
+        take: packageLimit,
+        include: {
+          packageFile: true,
+          tagPackages: {
+            include: { tag: true },
+          },
+        },
+      }),
+
+      prisma.homestay.findMany({
+        where: homestayWhere,
+        orderBy: { id: "asc" },
+        skip: homestaySkip,
+        take: homestayLimit,
+        include: {
+          homestayImage: true,
+          tagHomestays: {
+            include: { tag: true },
+          },
+        },
+      }),
+
+      prisma.store.findMany({
+        where: storeWhere,
+        orderBy: { id: "asc" },
+        skip: storeSkip,
+        take: storeLimit,
+        include: {
+          storeImage: true,
+          tagStores: {
+            include: { tag: true },
+          },
+        },
+      }),
+    ]);
+
+  return {
+    community,
+    packages: {
+      data: packages,
+      pagination: {
+        currentPage: packagePage,
+        totalPages: Math.ceil(packageTotal / packageLimit),
+        totalCount: packageTotal,
+        limit: packageLimit,
+      },
+    },
+    homestays: {
+      data: homestays,
+      pagination: {
+        currentPage: homestayPage,
+        totalPages: Math.ceil(homestayTotal / homestayLimit),
+        totalCount: homestayTotal,
+        limit: homestayLimit,
+      },
+    },
+    stores: {
+      data: stores,
+      pagination: {
+        currentPage: storePage,
+        totalPages: Math.ceil(storeTotal / storeLimit),
+        totalCount: storeTotal,
+        limit: storeLimit,
+      },
+    },
+  };
 }
