@@ -422,11 +422,14 @@ export const deleteHomestayAdmin = async (req: Request, res: Response) => {
     }
 };
 
-/*
- * คำอธิบาย : DTO สำหรับดึงข้อมูลร้านค้าตาม HomestayId
- * Input : params (HomestayIdParamDto)
- * Output : ข้อมูลร้านค้าที่พบ
- */
+
+/**
+* DTO: HomestayIdParamDto
+* วัตถุประสงค์: ใช้สำหรับดึงข้อมูลโฮมสเตย์ตาม HomestayId
+* Input: communityId, homestayId
+* Output: หากข้อมูลอยู่ในรูปแบบที่ถูกต้อง ระบบจะอนุญาตให้ดําเนินการต่อไป
+* หากข้อมูลไม่ถูกต้อง ระบบจะแจ้งข้อผิดพลาดกลับไปยังผู้ใช้งานทันที
+*/
 export class HomestayIdParamDto {
     @IsNumberString()
     communityId?: string;
@@ -441,17 +444,9 @@ export const getHomestayWithOtherHomestaysInCommunityDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getHomestayWithOtherHomestaysInCommunity
- * รายละเอียด :
- *   - ดึงรายละเอียดที่พักที่เลือก
- *   - ดึงที่พักอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
- *
- * Route :
- *   GET /shared/community/:communityId/homestay/:homestayId
- *
- * Query :
- *   - page (default 1)
- *   - limit (default 12)
+ * คำอธิบาย : ดึงรายละเอียดที่พักที่เลือก ดึงที่พักอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
+ * Input : communityId, homestayId, page, limit
+ * Output : ข้อมูลที่พักที่เลือก พร้อมที่พักอื่นในชุมชนเดียวกัน
  */
 export const getHomestayWithOtherHomestaysInCommunity: TypedHandlerFromDto<
     typeof getHomestayWithOtherHomestaysInCommunityDto

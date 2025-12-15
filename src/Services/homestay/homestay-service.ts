@@ -740,7 +740,6 @@ export const deleteHomestayByAdmin = async (
 };
 
 /**
- * ฟังก์ชัน : getHomestayWithOtherHomestaysInCommunity
  * คำอธิบาย :
  *  - ดึงรายละเอียดที่พักที่เลือก 
  *  - ดึงที่พักอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
@@ -771,7 +770,7 @@ export const getHomestayWithOtherHomestaysInCommunity = async (communityId: numb
     },
   });
 
-  if (!community) throw new Error("Community not found");
+  if (!community) throw new Error("ไม่พบชุมชน");
 
   const homestay = await prisma.homestay.findFirst({
     where: {
