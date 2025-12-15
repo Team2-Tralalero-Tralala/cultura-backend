@@ -41,7 +41,8 @@ import {
     bulkDeleteDraftPackages,
     getDraftPackages,
     getDraftPackagesDto,
-    deleteDraftPackageController
+    deleteDraftPackageController,
+    getPackageByIdTourist
 } from "../Controllers/package-controller.js";
 
 const packageRoutes = Router();
@@ -730,18 +731,6 @@ packageRoutes.get(
     "/super/package/:id",
     authMiddleware,
     allowRoles("superadmin"),
-    getPackageDetail
-);
-
-/*
- * คำอธิบาย : (Tourist) Route สำหรับดึงข้อมูลแพ็กเกจ 1 รายการ
- * Method : GET
- * Path : /tourist/package/:id
- */
-packageRoutes.get(
-    "/tourist/package/:id",
-    authMiddleware,
-    allowRoles("tourist"),
     getPackageDetail
 );
 
@@ -1875,6 +1864,11 @@ packageRoutes.patch(
   authMiddleware,
   allowRoles("admin"),
   bulkDeleteDraftPackages
+);
+
+packageRoutes.get(
+  "/tourist/package/:packageId",
+  getPackageByIdTourist
 );
 
 export default packageRoutes;

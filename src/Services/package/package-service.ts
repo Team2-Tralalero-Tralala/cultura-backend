@@ -1737,3 +1737,135 @@ export const bulkDeletePackages = async (ids: number[]) => {
     message: `${result.count} แพ็กเกจถูกลบเรียบร้อย`,
   };
 };
+
+/**
+ * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
+ * Logic : 
+ * 1. ต้องเป็นแพ็กเกจที่ PUBLISH และ APPROVE แล้วเท่านั้น
+ * 2. ดึงข้อมูลที่พัก (Homestay) หากมีการผูกไว้ (สำหรับ UI ส่วน "รายละเอียดที่พัก")
+ * 3. ดึงข้อมูล "แพ็กเกจที่คุณสนใจ" (Related Packages) โดยอิงจากชุมชนเดียวกัน
+ */
+export const getPackageDetailByTourist = async (packageId: number) => {
+  // 1. ดึงข้อมูลหลักของ Package
+  const packageDetail = await prisma.package.findFirst({
+    where: {
+      id: Number(packageId),
+      isDeleted: false,
+      statusPackage: PackagePublishStatus.PUBLISH, // [cite: 2] ต้องเผยแพร่แล้ว
+      statusApprove: PackageApproveStatus.APPROVE, // [cite: 2] ต้องอนุมัติแล้ว
+    },
+    include: {
+      // รูปภาพทั้งหมด (Cover, Gallery, Video) สำหรับ Slider ด้านบน
+      packageFile: {
+        select: { id: true, filePath: true, type: true },
+      },
+      // ข้อมูลสถานที่ (จังหวัด, อำเภอ)
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      // ข้อมูลชุมชน (เผื่อใช้แสดงชื่อชุมชนเจ้าของ)
+      community: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+        }
+      },
+      // ข้อมูลที่พัก (ถ้ามี) สำหรับส่วน "รายละเอียดที่พัก"
+      homestayHistories: {
+        select: {
+          id: true,
+          checkInTime: true,  // เวลาเช็คอิน [cite: 67]
+          checkOutTime: true, // เวลาเช็คเอาท์
+          bookedRoom: true,
+          homestay: {
+            select: {
+              id: true,
+              name: true,        // ชื่อที่พัก [cite: 8]
+              type: true,        // ประเภท (เรือนไทย, บ้านปูน etc.)
+              guestPerRoom: true,// ความจุต่อห้อง
+              totalRoom: true,
+              facility: true,    // สิ่งอำนวยความสะดวกของที่พัก
+              // รูปภาพที่พัก
+              homestayImage: {
+                select: { id: true, image: true, type: true }
+              },
+              // สถานที่ตั้งของที่พัก (เผื่อต่างจากแพ็กเกจ)
+              location: {
+                select: {
+                  subDistrict: true,
+                  province: true,
+                }
+              }
+            },
+          },
+        },
+      },
+      // Tags (ถ้ามีแสดง)
+      tagPackages: {
+        select: {
+          tag: { select: { id: true, name: true } }
+        }
+      }
+    },
+  });
+
+  if (!packageDetail) {
+    return null;
+  }
+
+  // 2. ดึง Related Packages (แพ็กเกจอื่นๆ ในชุมชนเดียวกัน)
+  const relatedPackages = await prisma.package.findMany({
+    where: {
+      communityId: packageDetail.communityId, // ชุมชนเดียวกัน
+      id: { not: packageDetail.id },          // ไม่ใช่แพ็กเกจปัจจุบัน
+      isDeleted: false,
+      statusPackage: PackagePublishStatus.PUBLISH,
+      statusApprove: PackageApproveStatus.APPROVE,
+    },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      capacity: true,
+      // รูปปกสำหรับ Card
+      packageFile: {
+        where: { type: "COVER" },
+        select: { filePath: true },
+        take: 1,
+      },
+      location: {
+        select: {
+          subDistrict: true,
+          province: true,
+        }
+      }
+    },
+    orderBy: {
+      id: 'desc' // เอาใหม่ล่าสุด
+    },
+    take: 4, // ดึงมา 4 รายการสำหรับแสดงผลท้ายหน้า
+  });
+
+  // 3. รวมข้อมูลส่งกลับ
+  return {
+    ...packageDetail,
+    relatedPackages: relatedPackages.map(pkg => ({
+      id: pkg.id,
+      name: pkg.name,
+      price: pkg.price,
+      capacity: pkg.capacity,
+      location: pkg.location,
+      coverImage: pkg.packageFile[0]?.filePath || null
+    }))
+  };
+};

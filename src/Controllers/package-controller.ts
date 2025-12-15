@@ -950,3 +950,15 @@ export const bulkDeleteDraftPackages = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const getPackageByIdTourist = async (req: Request, res: Response) => {
+  try {
+    const packageId = Number(req.params.packageId);
+    const result = await PackageService.getPackageDetailByTourist(
+      packageId
+    );
+    return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+}
