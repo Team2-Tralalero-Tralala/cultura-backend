@@ -1746,20 +1746,17 @@ export const bulkDeletePackages = async (ids: number[]) => {
  * 3. ดึงข้อมูล "แพ็กเกจที่คุณสนใจ" (Related Packages) โดยอิงจากชุมชนเดียวกัน
  */
 export const getPackageDetailByTourist = async (packageId: number) => {
-  // 1. ดึงข้อมูลหลักของ Package
   const packageDetail = await prisma.package.findFirst({
     where: {
       id: Number(packageId),
       isDeleted: false,
-      statusPackage: PackagePublishStatus.PUBLISH, // [cite: 2] ต้องเผยแพร่แล้ว
-      statusApprove: PackageApproveStatus.APPROVE, // [cite: 2] ต้องอนุมัติแล้ว
+      statusPackage: PackagePublishStatus.PUBLISH,
+      statusApprove: PackageApproveStatus.APPROVE,
     },
     include: {
-      // รูปภาพทั้งหมด (Cover, Gallery, Video) สำหรับ Slider ด้านบน
       packageFile: {
         select: { id: true, filePath: true, type: true },
       },
-      // ข้อมูลสถานที่ (จังหวัด, อำเภอ)
       location: {
         select: {
           id: true,
@@ -1772,7 +1769,6 @@ export const getPackageDetailByTourist = async (packageId: number) => {
           longitude: true,
         },
       },
-      // ข้อมูลชุมชน (เผื่อใช้แสดงชื่อชุมชนเจ้าของ)
       community: {
         select: {
           id: true,
@@ -1780,26 +1776,23 @@ export const getPackageDetailByTourist = async (packageId: number) => {
           phone: true,
         }
       },
-      // ข้อมูลที่พัก (ถ้ามี) สำหรับส่วน "รายละเอียดที่พัก"
       homestayHistories: {
         select: {
           id: true,
-          checkInTime: true,  // เวลาเช็คอิน [cite: 67]
-          checkOutTime: true, // เวลาเช็คเอาท์
+          checkInTime: true,
+          checkOutTime: true,
           bookedRoom: true,
           homestay: {
             select: {
               id: true,
-              name: true,        // ชื่อที่พัก [cite: 8]
-              type: true,        // ประเภท (เรือนไทย, บ้านปูน etc.)
-              guestPerRoom: true,// ความจุต่อห้อง
+              name: true,
+              type: true,
+              guestPerRoom: true,
               totalRoom: true,
-              facility: true,    // สิ่งอำนวยความสะดวกของที่พัก
-              // รูปภาพที่พัก
+              facility: true,
               homestayImage: {
                 select: { id: true, image: true, type: true }
               },
-              // สถานที่ตั้งของที่พัก (เผื่อต่างจากแพ็กเกจ)
               location: {
                 select: {
                   subDistrict: true,
@@ -1810,9 +1803,9 @@ export const getPackageDetailByTourist = async (packageId: number) => {
           },
         },
       },
-      // Tags (ถ้ามีแสดง)
       tagPackages: {
         select: {
+          tagId: true,
           tag: { select: { id: true, name: true } }
         }
       }
@@ -1823,21 +1816,25 @@ export const getPackageDetailByTourist = async (packageId: number) => {
     return null;
   }
 
-  // 2. ดึง Related Packages (แพ็กเกจอื่นๆ ในชุมชนเดียวกัน)
+  const currentTagIds = packageDetail.tagPackages.map(tp => tp.tagId);
+
   const relatedPackages = await prisma.package.findMany({
     where: {
-      communityId: packageDetail.communityId, // ชุมชนเดียวกัน
-      id: { not: packageDetail.id },          // ไม่ใช่แพ็กเกจปัจจุบัน
+      id: { not: packageDetail.id },
       isDeleted: false,
       statusPackage: PackagePublishStatus.PUBLISH,
       statusApprove: PackageApproveStatus.APPROVE,
+      tagPackages: {
+        some: {
+          tagId: { in: currentTagIds }
+        }
+      }
     },
     select: {
       id: true,
       name: true,
       price: true,
       capacity: true,
-      // รูปปกสำหรับ Card
       packageFile: {
         where: { type: "COVER" },
         select: { filePath: true },
@@ -1848,24 +1845,33 @@ export const getPackageDetailByTourist = async (packageId: number) => {
           subDistrict: true,
           province: true,
         }
+      },
+      tagPackages: {
+        select: {
+          tag: {
+            select: {
+              name: true
+            }
+          }
+        }
       }
     },
     orderBy: {
-      id: 'desc' // เอาใหม่ล่าสุด
+      id: 'desc'
     },
-    take: 4, // ดึงมา 4 รายการสำหรับแสดงผลท้ายหน้า
+    // take: 8,
   });
 
-  // 3. รวมข้อมูลส่งกลับ
   return {
     ...packageDetail,
-    relatedPackages: relatedPackages.map(pkg => ({
-      id: pkg.id,
-      name: pkg.name,
-      price: pkg.price,
-      capacity: pkg.capacity,
-      location: pkg.location,
-      coverImage: pkg.packageFile[0]?.filePath || null
+    relatedPackages: relatedPackages.map(packageFind => ({
+      id: packageFind.id,
+      name: packageFind.name,
+      price: packageFind.price,
+      capacity: packageFind.capacity,
+      location: packageFind.location,
+      coverImage: packageFind.packageFile[0]?.filePath || null,
+      tags: packageFind.tagPackages.map(tp => tp.tag.name)
     }))
   };
 };
