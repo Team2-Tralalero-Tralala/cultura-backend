@@ -732,10 +732,128 @@ export const deleteHomestayByAdmin = async (
   // Soft delete
   await prisma.homestay.update({
     where: { id: homestayId },
-    data: { isDeleted: true, 
-    deleteAt: new Date()
- },
-});
+    data: { isDeleted: true,
+      deleteAt: new Date()
+    },
+  });
+  return { deletedId: homestayId };
+};
 
-return { deletedId: homestayId };
+/**
+ * ฟังก์ชัน : getHomestayWithOtherHomestaysInCommunity
+ * คำอธิบาย :
+ *  - ดึงรายละเอียดที่พักที่เลือก 
+ *  - ดึงที่พักอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
+ *
+ * Input :
+ *  - communityId : number
+ *  - homestayId : number
+ *  - page : number (default = 1)
+ *  - limit : number (default = 12)
+ *
+ * Output :
+ *  - homestay : รายละเอียดที่พักที่เลือก
+ *  - otherHomestays : ที่พักอื่นในชุมชน (pagination)
+ */
+export const getHomestayWithOtherHomestaysInCommunity = async (communityId: number, homestayId: number, page: number = 1, limit: number = 12) => {
+  if (!Number.isInteger(communityId) || !Number.isInteger(homestayId) || !Number.isInteger(page) || !Number.isInteger(limit)) {
+    throw new Error("Invalid parameter");
+  }
+
+  if (page < 1 || limit < 1) {
+    throw new Error("page และ limit ต้องมากกว่า 0");
+  }
+
+  const community = await prisma.community.findFirst({
+    where: {
+      id: communityId,
+      isDeleted: false,
+    },
+  });
+
+  if (!community) throw new Error("Community not found");
+
+  const homestay = await prisma.homestay.findFirst({
+    where: {
+      id: homestayId,
+      communityId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+    include: {
+      community: {
+        select: { id: true, name: true },
+      },
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          alley: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      homestayImage: {
+        select: { id: true, image: true, type: true },
+      },
+      tagHomestays: {
+        include: {
+          tag: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  if (!homestay) throw new Error("ไม่พบร้านค้า");
+
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.homestay.count({
+    where: {
+      communityId,
+      isDeleted: false,
+      id: { not: homestayId },
+    },
+  });
+
+  const otherHomestays = await prisma.homestay.findMany({
+    where: {
+      communityId,
+      isDeleted: false,
+      id: { not: homestayId },
+    },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      homestayImage: true,
+    },
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const { location, community: homestayCommunity, ...homestayData } = homestay;
+
+  return {
+    homestay: homestayData,
+    community: homestayCommunity,
+    location,
+    otherHomestays: {
+      data: otherHomestays,
+      pagination: {
+        currentPage: page,
+        limit,
+        totalCount,
+        totalPages,
+      },
+    },
+  };
 };

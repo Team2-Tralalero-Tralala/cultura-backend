@@ -7,6 +7,7 @@ import {
     commonDto,
     type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
 /*
  * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอน "สร้าง Homestay (เดี่ยว)" สำหรับ SuperAdmin
  * Input  : body (HomestayDto)
@@ -418,5 +419,52 @@ export const deleteHomestayAdmin = async (req: Request, res: Response) => {
         return createResponse(res, 200, "Delete homestay successfully", result);
     } catch (error) {
         return createErrorResponse(res, 400, (error as Error).message);
+    }
+};
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงข้อมูลร้านค้าตาม HomestayId
+ * Input : params (HomestayIdParamDto)
+ * Output : ข้อมูลร้านค้าที่พบ
+ */
+export class HomestayIdParamDto {
+    @IsNumberString()
+    communityId?: string;
+
+    @IsNumberString()
+    homestayId?: string;
+}
+
+export const getHomestayWithOtherHomestaysInCommunityDto = {
+    params: HomestayIdParamDto,
+    query: PaginationDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getHomestayWithOtherHomestaysInCommunity
+ * รายละเอียด :
+ *   - ดึงรายละเอียดที่พักที่เลือก
+ *   - ดึงที่พักอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
+ *
+ * Route :
+ *   GET /shared/community/:communityId/homestay/:homestayId
+ *
+ * Query :
+ *   - page (default 1)
+ *   - limit (default 12)
+ */
+export const getHomestayWithOtherHomestaysInCommunity: TypedHandlerFromDto<
+    typeof getHomestayWithOtherHomestaysInCommunityDto
+> = async (req, res) => {
+    try {
+        const communityId = Number(req.params.communityId);
+        const homestayId = Number(req.params.homestayId);
+
+        const { page = 1, limit = 12 } = req.query;
+
+        const result = await HomestayService.getHomestayWithOtherHomestaysInCommunity(communityId, homestayId, page, limit);
+        return createResponse(res, 200, "Get homestay detail with other homestays successfully", result);
+    } catch (error: any) {
+        return createErrorResponse(res, 400, error.message);
     }
 };
