@@ -559,11 +559,18 @@ export const getMemberBookingHistories = async (
   };
 
   // 2. Logic จัดการ Status
-  // ถ้าเป็น 'ALL' -> ไม่ต้องใส่ filter (ดึงมาหมดทุกสถานะ)
-  // ถ้าไม่ใช่ 'ALL' -> ใส่ filter ตามปกติ
+  
+  // กำหนดสถานะที่เรา 'อนุญาต' ให้แสดงในหน้านี้ (ตัด PENDING, REFUND_PENDING ออก)
+  const visibleStatuses = ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"];
+
   if (status && status !== "ALL") {
+    // กรณีมีการเลือกสถานะเจาะจง
     const statusArray = status.split(",").map((s) => s.trim());
+    // (Optional) อาจจะเช็คเพิ่มก็ได้ว่า statusArray ต้องอยู่ใน visibleStatuses ไหม
     whereCondition.status = { in: statusArray };
+  } else {
+    // กรณีเป็น 'ALL' หรือไม่ได้ส่งมา
+    whereCondition.status = { in: visibleStatuses };
   }
 
   // 3. ดึงข้อมูล
