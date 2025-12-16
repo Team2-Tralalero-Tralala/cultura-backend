@@ -696,7 +696,6 @@ export async function getCommunityDetailByMember(userId: number) {
   return community;
 }
 /*
- * ฟังก์ชัน : getCommunityDetailPublic
  * คำอธิบาย :
  *  - ดึงรายละเอียดชุมชนสำหรับหน้า public (guest / tourist)
  *  - ชุมชนต้อง OPEN และไม่ถูกลบ
@@ -716,9 +715,6 @@ export async function getCommunityDetailByMember(userId: number) {
  * Output:
  *  - ข้อมูลรายละเอียดชุมชน
  *  - รายการแพ็กเกจ / ที่พัก / ร้านค้า พร้อมข้อมูล pagination
- *
- * Error:
- *  - ไม่พบชุมชน หรือชุมชนยังไม่เปิดให้เข้าชม
  */
 export async function getCommunityDetailPublic(params: {
   communityId: number;

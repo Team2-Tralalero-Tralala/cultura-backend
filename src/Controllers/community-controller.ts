@@ -397,7 +397,6 @@ export const getCommunityDetailByMember: TypedHandlerFromDto<
 
 
 /**
- * DTO : CommunityIdParamDto
  * คำอธิบาย : DTO สำหรับรับ communityId จาก path params
  * Input:
  *  - communityId : string (ต้องเป็นตัวเลขเท่านั้น)
@@ -406,14 +405,22 @@ export const getCommunityDetailByMember: TypedHandlerFromDto<
  */
 
 export class CommunityIdParamDto {
-  @IsNumberString({}, { message: "communityId must be a number string" })
+  @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลขเท่านั้น" })
   communityId!: string;
 }
 
-/**
- * DTO : getCommunityDetailPublicDto
- * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชน (Public)
- *  - รองรับ query pagination แยกสำหรับ package / homestay / store
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนแบบ Public
+ * ใช้สำหรับตรวจสอบและแปลงค่าข้อมูลที่ส่งเข้ามาจาก request
+ * Input :
+ *  - params : CommunityIdParamDto
+ *      - communityId : รหัสชุมชน (ตัวเลข)
+ *  - query  : CommunityDetailPublicQueryDto
+ *      - packagePage / packageLimit   : pagination ของแพ็กเกจ
+ *      - homestayPage / homestayLimit : pagination ของที่พัก
+ *      - storePage / storeLimit       : pagination ของร้านค้า
+ * Output :
+ *  - Object สำหรับใช้งานร่วมกับ commonDto
  */
 export const getCommunityDetailPublicDto = {
   params: CommunityIdParamDto,
@@ -421,7 +428,6 @@ export const getCommunityDetailPublicDto = {
 } satisfies commonDto;
 
 /**
- * Controller : getCommunityDetailPublic
  * คำอธิบาย : ดึงรายละเอียดชุมชนสำหรับหน้า public (guest/tourist) พร้อม pagination (package/homestay/store)
  * Input:
  *  - req.params.communityId
