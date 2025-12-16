@@ -377,41 +377,32 @@ export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
 };
 
 /**
- * DTO: editProfileTouristDto
- * วัตถุประสงค์ :
- *   ใช้สำหรับตรวจสอบความถูกต้องของข้อมูลที่ผู้ใช้งานส่งเข้ามา
- *
- * Input :
- *   - body : ข้อมูลโปรไฟล์ที่ต้องการแก้ไข (อ้างอิง EditAccountDto)
- *
- * Output :
- *   - หากข้อมูลถูกต้อง ระบบจะส่งต่อไปยัง controller เพื่อประมวลผล
+ * DTO : editProfileTouristDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบความถูกต้องของข้อมูลที่ผู้ใช้งานส่งเข้ามา
+ * สำหรับการแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
+ * Input : ข้อมูลของ Tourist ที่ต้องการแก้ไข (อ้างอิง EditAccountDto)
+ * Output : หากข้อมูลอยู่ในรูปแบบที่ถูกต้อง ระบบจะอนุญาตให้ดำเนินการแก้ไขโปรไฟล์ได้
+ * หากข้อมูลไม่ถูกต้อง ระบบจะเเจ้งข้อผิดพลาดกลับไปยังผู้ใช้งานทันที
  */
 export const editProfileTouristDto = {
   body: EditAccountDto,
 } satisfies commonDto;
+
 /**
- * Controller: Edit Profile (Tourist)
- * Description:
- *   แก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่ล็อกอินอยู่ (Role: Tourist)
- *
- * Input:
- *   - req.user.id : id จาก token
- *   - req.body    : ข้อมูลโปรไฟล์ที่ต้องการแก้ไข
- *
- * Output:
- *   - 200: แก้ไขข้อมูลสำเร็จ
- *   - 400: เกิดข้อผิดพลาด
+ * Controller : editProfileTourist
+ * Role Access : Tourist
+ * Description : สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
+ * Input : รหัสผู้ใช้งานจาก token (req.user.id), ข้อมูลโปรไฟล์ที่ต้องการแก้ไข (req.body)
+ * Output : แก้ไขข้อมูลสำเร็จ (Response 200), กรณีเกิดข้อผิดพลาด(Response 400)
  */
 export const editProfileTourist = async (req: Request, res: Response) => {
   try {
     const body = req.body as EditAccountDto;
 
-    //override เสมอจาก file
     if (req.file) {
       body.profileImage = req.file.path.replace(/\\/g, "/");
     } else {
-      delete body.profileImage; // ป้องกัน string หลุด
+      delete body.profileImage;
     }
 
     const result = await AccountService.editProfileTourist(

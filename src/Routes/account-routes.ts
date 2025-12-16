@@ -1180,11 +1180,9 @@ accountRoutes.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-/*
- * คำอธิบาย : แก้ไขข้อมูลโปรไฟล์ของนักท่องเที่ยว (Tourist)
- * Method : PUT
- * Path : /tourist/edit-profile
- */
+/**
+* คําอธิบาย: route สําหรับแก้ไขโปรไฟล์ Tourist
+*/
 accountRoutes.put(
   "/tourist/edit-profile",
   authMiddleware,
