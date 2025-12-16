@@ -4,9 +4,10 @@
  * โดยเชื่อมต่อกับฐานข้อมูลผ่าน Prisma, เข้ารหัสรหัสผ่านด้วย bcrypt,
  * และสร้าง token ด้วย JWT
  */
-import { UserStatus } from "@prisma/client";
+import { Gender, UserStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { IsEmail, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsString } from "class-validator";
 import { generateToken } from "~/Libs/token.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import prisma from "./database-service.js";
@@ -15,11 +16,9 @@ import prisma from "./database-service.js";
 const JWT_EXPIRATION_HOURS = 1;
 
 /*
- * ฟังก์ชัน : findRoleIdByName
  * คำอธิบาย : ค้นหา roleId จากชื่อ role ที่กำหนด
  * Input : name (string) - ชื่อ role เช่น "admin", "tourist"
  * Output : roleId (number) - รหัส role จากฐานข้อมูล
- * Error : throw error ถ้าไม่พบ role
  */
 async function findRoleIdByName(name: string) {
   const role = await prisma.role.findUnique({ where: { name } });
@@ -28,14 +27,14 @@ async function findRoleIdByName(name: string) {
 }
 
 /*
- * ฟังก์ชัน : handleExpiredSessions
  * คำอธิบาย : จัดการ session ที่หมดอายุโดยอัพเดต logoutTime
  * Input : userId (number) - รหัสผู้ใช้
  * Output : จำนวน session ที่หมดอายุ
- * Logic : อัพเดต logoutTime สำหรับ logs ที่ไม่มี logoutTime และ loginTime เก่ากว่า JWT_EXPIRATION_HOURS
- * โดยตั้งค่า logoutTime เป็นเวลาที่ session หมดอายุจริง (loginTime + JWT_EXPIRATION_HOURS) ตาม JWT token expiration
  */
-async function handleExpiredSessions(userId: number, expirationSeconds: number) {
+async function handleExpiredSessions(
+  userId: number,
+  expirationSeconds: number
+) {
   const expirationTimeAgo = new Date(Date.now() - expirationSeconds * 1000);
 
   const expiredLogs = await prisma.log.findMany({
@@ -51,7 +50,9 @@ async function handleExpiredSessions(userId: number, expirationSeconds: number) 
   if (expiredLogs.length > 0) {
     // อัพเดตแต่ละ log โดยตั้งค่า logoutTime เป็นเวลาที่ session หมดอายุจริง
     for (const log of expiredLogs) {
-      const expirationTime = new Date(log.loginTime!.getTime() + expirationSeconds * 1000);
+      const expirationTime = new Date(
+        log.loginTime!.getTime() + expirationSeconds * 1000
+      );
       await prisma.log.update({
         where: { id: log.id },
         data: {
@@ -67,43 +68,70 @@ async function handleExpiredSessions(userId: number, expirationSeconds: number) 
 /*
  * DTO : signupDto
  * คำอธิบาย : โครงสร้างข้อมูลที่ใช้สมัครสมาชิก
- * Property:
- *   - username (string) : ชื่อผู้ใช้
- *   - password (string) : รหัสผ่าน (plaintext)
- *   - email (string) : อีเมล (ต้องเป็นรูปแบบ email)
- *   - fname (string) : ชื่อจริง
- *   - lname (string) : นามสกุล
- *   - phone (string) : เบอร์โทรศัพท์
- *   - role (string) : บทบาทผู้ใช้ เช่น "admin", "tourist"
+ * input: username, password, email, fname, lname, phone, role, gender, birthDate, province, district, subDistrict, postalCode
+ * output: User
  */
-export class signupDto {
+export class SignupDto {
   @IsString()
+  @IsNotEmpty({ message: "ชื่อผู้ใช้ห้ามว่าง" })
   username: string;
+
   @IsString()
+  @IsNotEmpty({ message: "รหัสผ่านห้ามว่าง" })
   password: string;
+
   @IsString()
-  @IsEmail()
+  @IsEmail({}, { message: "รูปแบบอีเมลไม่ถูกต้อง" })
+  @IsNotEmpty({ message: "อีเมลห้ามว่าง" })
   email: string;
+
   @IsString()
+  @IsNotEmpty({ message: "ชื่อจริงห้ามว่าง" })
   fname: string;
+
   @IsString()
+  @IsNotEmpty({ message: "นามสกุลห้ามว่าง" })
   lname: string;
+
   @IsString()
+  @IsNotEmpty({ message: "เบอร์โทรศัพท์ห้ามว่าง" })
   phone: string;
+
   @IsString()
+  @IsNotEmpty({ message: "บทบาทห้ามว่าง" })
   role: string;
+
+  @IsEnum(Gender, { message: "เพศไม่ถูกต้อง" })
+  gender: Gender;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsNotEmpty({ message: "วันเกิดห้ามว่าง" })
+  birthDate: Date;
+
+  @IsString()
+  @IsNotEmpty({ message: "จังหวัดห้ามว่าง" })
+  province: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "อำเภอ/เขตห้ามว่าง" })
+  district: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "ตำบล/แขวงห้ามว่าง" })
+  subDistrict: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "รหัสไปรษณีย์ห้ามว่าง" })
+  postalCode: string;
 }
 
 /*
- * ฟังก์ชัน : signup
  * คำอธิบาย : สมัครสมาชิกผู้ใช้ใหม่
  * Input : data (signupDto) - ข้อมูลผู้ใช้จาก client
  * Output : user object (ไม่รวม password) ที่ถูกบันทึกในฐานข้อมูล
- * Error :
- *   - ถ้า username/email/phone ถูกใช้แล้ว
- *   - ถ้า role ไม่พบในฐานข้อมูล
  */
-export async function signup(data: signupDto) {
+export async function signup(data: SignupDto) {
   const account = await prisma.user.findFirst({
     where: {
       OR: [
@@ -114,7 +142,14 @@ export async function signup(data: signupDto) {
     },
   });
 
-  if (account) throw new Error("ชื่อผู้ใช้, อีเมล หรือเบอร์โทรศัพท์ถูกใช้แล้ว");
+  if (account) {
+    if (account.username === data.username)
+      throw new Error("ชื่อผู้ใช้ถูกใช้แล้ว");
+    if (account.email === data.email) throw new Error("อีเมลถูกใช้แล้ว");
+    if (account.phone === data.phone)
+      throw new Error("เบอร์โทรศัพท์ถูกใช้แล้ว");
+    throw new Error("ชื่อผู้ใช้, อีเมล หรือเบอร์โทรศัพท์ถูกใช้แล้ว");
+  }
 
   const [roleId, hashedPassword] = await Promise.all([
     findRoleIdByName(data.role),
@@ -129,7 +164,13 @@ export async function signup(data: signupDto) {
       fname: data.fname,
       lname: data.lname,
       phone: data.phone,
+      birthDate: data.birthDate,
       roleId,
+      gender: data.gender,
+      province: data.province,
+      district: data.district,
+      subDistrict: data.subDistrict,
+      postalCode: data.postalCode,
     },
     include: { role: true },
   });
@@ -139,29 +180,30 @@ export async function signup(data: signupDto) {
 /*
  * DTO : loginDto
  * คำอธิบาย : โครงสร้างข้อมูลที่ใช้เข้าสู่ระบบ
- * Property:
- *   - username (string) : ชื่อผู้ใช้หรืออีเมล
- *   - password (string) : รหัสผ่าน
+ * input: username, password
+ * output: User
  */
-export class loginDto {
+export class LoginDto {
   @IsString()
+  @IsNotEmpty({ message: "ชื่อผู้ใช้หรืออีเมลห้ามว่าง" })
   username: string;
+
   @IsString()
+  @IsNotEmpty({ message: "รหัสผ่านห้ามว่าง" })
   password: string;
 }
 /*
- * ฟังก์ชัน : login
  * คำอธิบาย : เข้าสู่ระบบด้วย username/email และ password
  * Input : data (loginDto) - ข้อมูลการเข้าสู่ระบบ
  * Output :
  *   - user (object) : ข้อมูลผู้ใช้ที่เข้าสู่ระบบ (id, username, role)
  *   - token (string) : JWT token สำหรับยืนยันตัวตน
- * Error :
- *   - ถ้าไม่พบผู้ใช้
- *   - ถ้าผู้ใช้ถูก block
- *   - ถ้ารหัสผ่านไม่ถูกต้อง
  */
-export async function login(data: loginDto, ipAddress: string, expirationSeconds: number) {
+export async function login(
+  data: LoginDto,
+  ipAddress: string,
+  expirationSeconds: number
+) {
   const user = await prisma.user.findFirst({
     where: {
       OR: [{ username: data.username }, { email: data.username }],
@@ -200,13 +242,10 @@ export async function login(data: loginDto, ipAddress: string, expirationSeconds
 }
 
 /*
- * ฟังก์ชัน : logout
  * คำอธิบาย : ออกจากระบบผู้ใช้
- * Input : userId (number) - รหัสผู้ใช้ที่ต้องการออกจากระบบ, ipAddress (string) - ที่อยู่ IP ของผู้ใช้
+ * Input : user (UserPayload | undefined) - ข้อมูลผู้ใช้ที่ต้องการออกจากระบบ, ipAddress (string) - ที่อยู่ IP ของผู้ใช้
  * Output :
  *  - อัพเดต log ของผู้ใช้โดยเพิ่มเวลาที่ออกจากระบบ
- * Error :
- *   - ไม่มี
  */
 export async function logout(user: UserPayload | undefined, ipAddress: string) {
   if (user) {
@@ -217,7 +256,7 @@ export async function logout(user: UserPayload | undefined, ipAddress: string) {
         logoutTime: null,
       },
       orderBy: {
-        loginTime: 'desc',
+        loginTime: "desc",
       },
     });
 
@@ -247,11 +286,10 @@ export async function logout(user: UserPayload | undefined, ipAddress: string) {
 }
 
 /*
- * ฟังก์ชัน : getProfile
  * คำอธิบาย : ดึงข้อมูลโปรไฟล์ของผู้ใช้จากฐานข้อมูล
  * Input : userId (number) - รหัสผู้ใช้
  * Output : ข้อมูลผู้ใช้ (fname, lname, email, role)
- * Error : throw error ถ้าไม่พบผู้ใช้
+ * Error : throw error ถ้าไม่พบผู้ใช้s
  */
 export async function getProfile(userId: number) {
   const user = await prisma.user.findUnique({

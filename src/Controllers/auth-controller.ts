@@ -22,7 +22,7 @@ export const JWT_EXPIRATION_SECONDS = 24 * 60 * 60;
  */
 
 export const signupDto = {
-  body: AuthService.signupDto,
+  body: AuthService.SignupDto,
 } satisfies commonDto;
 
 /*
@@ -51,10 +51,9 @@ export const signup: TypedHandlerFromDto<typeof signupDto> = async (
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export const loginDto = {
-  body: AuthService.loginDto,
+  body: AuthService.LoginDto,
 } satisfies commonDto;
 /*
- * ฟังก์ชัน : login
  * คำอธิบาย : Handler สำหรับเข้าสู่ระบบ
  * Input : req.body - ข้อมูลผู้ใช้จาก client (ผ่านการ validate ด้วย loginDto แล้ว)
  * Output :
@@ -80,7 +79,6 @@ export const login: TypedHandlerFromDto<typeof loginDto> = async (req, res) => {
   }
 };
 /*
- * ฟังก์ชัน : logout
  * คำอธิบาย : Handler สำหรับออกจากระบบ
  * Input : -
  * Output :
