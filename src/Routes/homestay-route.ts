@@ -1117,7 +1117,6 @@ homestayRoutes.patch(
  */
 homestayRoutes.get(
   "/shared/community/:communityId/homestay/:homestayId",
-  authMiddleware,
   validateDto(HomestayController.getHomestayWithOtherHomestaysInCommunityDto),
   HomestayController.getHomestayWithOtherHomestaysInCommunity
 );
