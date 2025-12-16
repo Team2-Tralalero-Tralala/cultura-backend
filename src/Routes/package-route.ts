@@ -42,7 +42,8 @@ import {
     getDraftPackages,
     getDraftPackagesDto,
     deleteDraftPackageController,
-    getPackageByIdTourist
+    getPackageByIdTourist,
+    getPackageByIdTouristDto
 } from "../Controllers/package-controller.js";
 
 const packageRoutes = Router();
@@ -1866,8 +1867,71 @@ packageRoutes.patch(
   bulkDeleteDraftPackages
 );
 
+/**
+ * @swagger
+ * /api/tourist/package/{packageId}:
+ *   get:
+ *     summary: Get package detail (Tourist)
+ *     description: ดึงข้อมูลรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (ไม่ต้องยืนยันตัวตน)
+ *     tags:
+ *       - Package (Tourist)
+ *
+ *     parameters:
+ *       - in: path
+ *         name: packageId
+ *         required: true
+ *         description: รหัสของแพ็กเกจที่ต้องการดูรายละเอียด
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลรายละเอียดแพ็กเกจสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Get package detail successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/PackageDetail'
+ *
+ *       400:
+ *         description: Invalid packageId format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       404:
+ *         description: Package not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+/*
+ * คำอธิบาย : (Tourist) Route สำหรับดึงรายละเอียดแพ็กเกจ (สำหรับนักท่องเที่ยว)
+ * Method : GET
+ * Path : /tourist/package/:packageId
+ */
 packageRoutes.get(
   "/tourist/package/:packageId",
+  validateDto(getPackageByIdTouristDto),
   getPackageByIdTourist
 );
 

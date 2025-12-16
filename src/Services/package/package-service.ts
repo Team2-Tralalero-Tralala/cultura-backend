@@ -1738,12 +1738,10 @@ export const bulkDeletePackages = async (ids: number[]) => {
   };
 };
 
-/**
+/*
  * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
- * Logic : 
- * 1. ต้องเป็นแพ็กเกจที่ PUBLISH และ APPROVE แล้วเท่านั้น
- * 2. ดึงข้อมูลที่พัก (Homestay) หากมีการผูกไว้ (สำหรับ UI ส่วน "รายละเอียดที่พัก")
- * 3. ดึงข้อมูล "แพ็กเกจที่คุณสนใจ" (Related Packages) โดยอิงจากชุมชนเดียวกัน
+ * Input: packageId - รหัสของแพ็กเกจ
+ * Output : ข้อมูลรายละเอียดแพ็กเกจและแพ็กเกจที่เกี่ยวข้อง (Related Packages)
  */
 export const getPackageDetailByTourist = async (packageId: number) => {
   const packageDetail = await prisma.package.findFirst({
@@ -1864,14 +1862,14 @@ export const getPackageDetailByTourist = async (packageId: number) => {
 
   return {
     ...packageDetail,
-    relatedPackages: relatedPackages.map(packageFind => ({
-      id: packageFind.id,
-      name: packageFind.name,
-      price: packageFind.price,
-      capacity: packageFind.capacity,
-      location: packageFind.location,
-      coverImage: packageFind.packageFile[0]?.filePath || null,
-      tags: packageFind.tagPackages.map(tp => tp.tag.name)
+    relatedPackages: relatedPackages.map(relatedPackage => ({
+      id: relatedPackage.id,
+      name: relatedPackage.name,
+      price: relatedPackage.price,
+      capacity: relatedPackage.capacity,
+      location: relatedPackage.location,
+      coverImage: relatedPackage.packageFile[0]?.filePath || null,
+      tags: relatedPackage.tagPackages.map(tagPackage => tagPackage.tag.name)
     }))
   };
 };
