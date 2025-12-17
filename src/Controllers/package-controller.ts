@@ -963,7 +963,6 @@ export const getPackageByIdTouristDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getPackageByIdTourist
  * คำอธิบาย : Handler สำหรับดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
  * Input: req.params.packageId - รหัสของแพ็กเกจ
  * Output:

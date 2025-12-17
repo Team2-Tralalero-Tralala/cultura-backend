@@ -1815,7 +1815,7 @@ export const getPackageDetailByTourist = async (packageId: number) => {
     return null;
   }
 
-  const currentTagIds = packageDetail.tagPackages.map(tp => tp.tagId);
+  const currentTagIds = packageDetail.tagPackages.map(tagPackage => tagPackage.tagId);
 
   const relatedPackages = await prisma.package.findMany({
     where: {
