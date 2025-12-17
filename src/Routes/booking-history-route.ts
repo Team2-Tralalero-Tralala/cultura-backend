@@ -2,10 +2,7 @@ import { Router } from "express";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 import * as BookingHistoryController from "~/Controllers/booking-history-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
-import {
-  getBookingHistoriesDispatcher,
-  getHistoryDto,
-} from "~/Controllers/booking-history-controller.js";
+
 
 const bookingRoutes = Router();
 
@@ -554,10 +551,10 @@ bookingRoutes.get(
  */
 bookingRoutes.get(
   "/member/booking-histories",
-  validateDto(getHistoryDto),
+  validateDto(BookingHistoryController.getHistoryDto),
   authMiddleware,
   allowRoles("member"),
-  getBookingHistoriesDispatcher // เรียกตัวสับราง
+  BookingHistoryController.getBookingHistoriesDispatcher
 );
 
 /**

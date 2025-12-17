@@ -300,42 +300,77 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
   }
 };
 
+/**
+ * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
+ * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
+ */
 export class GetHistoryDto {
+  /**
+   * หมายเลขหน้าที่ต้องการดึงข้อมูล
+   */
   @IsOptional()
   page?: any;
 
+  /**
+   * จำนวนรายการต่อหน้า
+   */
   @IsOptional()
   limit?: any;
 
+  /**
+   * สถานะการจอง
+   * ยอมรับเป็น String ใด ๆ (รวมถึง "ALL")
+   */
   @IsString()
   @IsOptional()
   status?: string; // ยอมรับ String อะไรก็ได้ (รวมถึง "ALL")
 }
 
+/**
+ * คำอธิบาย : กำหนด Schema ของ Query สำหรับ Endpoint นี้
+ */
 export const getHistoryDto = {
   query: GetHistoryDto,
 } satisfies commonDto;
 
+/**
+ * คำอธิบาย : Controller สำหรับดึงประวัติการจองของสมาชิก
+ * รองรับการแบ่งหน้า และการดึงข้อมูลทุกสถานะ (ALL)
+ * Input  : req (ต้องผ่าน Auth เพื่อให้ได้ memberId)
+ * Output : Response ข้อมูลประวัติการจอง
+ */
 export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (
   req,
   res
 ) => {
   try {
+    // ดึง memberId จากข้อมูลผู้ใช้งานที่ผ่านการยืนยันตัวตน
     const memberId = Number(req.user!.id);
+
+    // รับค่า Query Parameters พร้อมกำหนดค่า Default
     const { page = 1, limit = 10, status } = req.query as any;
 
+    // เรียก Service เพื่อดึงข้อมูลประวัติการจอง
     const result = await bookingService.getMemberBookingHistories(
       memberId,
       Number(page),
       Number(limit),
       status
     );
+
+    // ส่ง Response กลับเมื่อดึงข้อมูลสำเร็จ
     return createResponse(res, 200, "Get history success", result);
   } catch (error) {
+    // ส่ง Error Response เมื่อเกิดข้อผิดพลาด
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
 
+/**
+ * คำอธิบาย : Dispatcher สำหรับเลือกเส้นทางการทำงานของ API
+ * - ถ้า status = "ALL" → ใช้ Logic ใหม่
+ * - ถ้า status อื่น     → ใช้ Logic เดิม
+ */
 export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   req,
   res,
@@ -345,6 +380,7 @@ export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   if (req.query.status === "ALL") {
     return getMemberBookingHistoriesNew(req, res, next);
   }
+
   // ถ้าไม่เจอ -> ไปทางเดิม
   return getBookingsByMember(req, res, next);
 };

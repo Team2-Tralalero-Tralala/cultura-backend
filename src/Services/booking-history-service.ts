@@ -543,7 +543,17 @@ export const updateBookingStatusByMember = async (
 
   return updated;
 };
-
+/*
+  * ฟังก์ชัน : getMemberBookingHistories
+  * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล
+  * Input :
+  *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
+  *   - page (number) : หน้าปัจจุบัน
+  *   - limit (number) : จำนวนต่อหน้า
+  *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น BOOKED, REJECTED หรือ ALL)
+  * Output :
+  *   - PaginationResponse : ข้อมูลรายการประวัติการจองของแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
+  */
 export const getMemberBookingHistories = async (
   memberId: number,
   page: number,
