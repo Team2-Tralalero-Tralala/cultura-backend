@@ -1783,6 +1783,7 @@ export const getPackageDetailByTourist = async (packageId: number) => {
           homestay: {
             select: {
               id: true,
+              communityId: true,
               name: true,
               type: true,
               guestPerRoom: true,
