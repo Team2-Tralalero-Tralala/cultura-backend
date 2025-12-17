@@ -377,7 +377,14 @@ export const deleteStoreByAdmin: TypedHandlerFromDto<
   }
 };
 
-
+/**
+ * DTO : CommunityAndStoreParamDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบพารามิเตอร์ communityId และ storeId
+ * Input :
+ *   - communityId : string (รหัสชุมชน)
+ *   - storeId : string (รหัสร้านค้า)
+ * Output : หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ แต่หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
+ */
 export class CommunityAndStoreParamDto {
   @IsNumberString()
   communityId?: string;
@@ -386,23 +393,28 @@ export class CommunityAndStoreParamDto {
   storeId?: string;
 }
 
+/* DTO : getStoreWithOtherStoresInCommunityDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบพารามิเตอร์และคิวรีสำหรับฟังก์ชัน getStoreWithOtherStoresInCommunity
+ * Input :
+ *   - params : CommunityAndStoreParamDto (ตรวจสอบ communityId และ storeId)
+ *   - query : PaginationDto (ตรวจสอบ page และ limit)
+ * Output : หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ แต่หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
+ */
 export const getStoreWithOtherStoresInCommunityDto = {
   params: CommunityAndStoreParamDto,
   query: PaginationDto,
 } satisfies commonDto;
 
-/*
- * ฟังก์ชัน : getStoreWithOtherStoresInCommunity
- * รายละเอียด :
- *   - ดึงรายละเอียดร้านค้าที่เลือก
- *   - ดึงร้านอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
- *
- * Route :
- *   GET /communities/:communityId/stores/:storeId/with-others
- *
- * Query :
- *   - page (default 1)
- *   - limit (default 12)
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้ารายละเอียดพร้อมร้านค้าอื่นๆ ในชุมชนเดียวกัน
+ * Input :
+ *  - req.params.communityId : string (รหัสชุมชน)
+ *  - req.params.storeId : string (รหัสร้านค้า)
+ *  - req.query.page : number (หมายเลขหน้าที่ต้องการ, ค่าเริ่มต้น 1)
+ *  - req.query.limit : number (จำนวนรายการต่อหน้า, ค่าเริ่มต้น 12)
+ * Output :
+ *   - 200 : ดึงข้อมูลร้านค้าและร้านค้าอื่นๆ สำเร็จ พร้อมผลลัพธ์
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
  */
 export const getStoreWithOtherStoresInCommunity: TypedHandlerFromDto<
   typeof getStoreWithOtherStoresInCommunityDto

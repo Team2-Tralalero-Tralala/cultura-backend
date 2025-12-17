@@ -499,7 +499,6 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
 }
 
 /**
- * ฟังก์ชัน : getStoreWithOtherStoresInCommunity
  * คำอธิบาย :
  *  - ดึงรายละเอียดร้านค้าที่เลือก (เต็ม)
  *  - ดึงร้านอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
