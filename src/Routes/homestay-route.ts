@@ -983,7 +983,7 @@ homestayRoutes.patch(
 );
 
 /**
- * SuperAdmin only
+ * tourist and guests
  * - สร้างโฮมสเตย์เดี่ยว/หลายรายการใต้ community ที่กำหนด
  * - ดูรายการทั้งหมด (พร้อม filter ผ่าน query)
  * - ดูรายละเอียด/แก้ไขตาม id

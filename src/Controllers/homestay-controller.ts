@@ -438,6 +438,12 @@ export class HomestayIdParamDto {
     homestayId?: string;
 }
 
+/* DTO: getHomestayWithOtherHomestaysInCommunityDto
+* วัตถุประสงค์: ใช้สำหรับดึงข้อมูลโฮมสเตย์พร้อมโฮมสเตย์อื่นๆ ในชุมชนเดียวกันแบบ pagination
+* Input: params (HomestayIdParamDto), query (PaginationDto)
+* Output: หากข้อมูลอยู่ในรูปแบบที่ถูกต้อง ระบบจะอนุญาตให้ดําเนินการต่อไป
+* หากข้อมูลไม่ถูกต้อง ระบบจะแจ้งข้อผิดพลาดกลับไปยังผู้ใช้งานทันที
+*/
 export const getHomestayWithOtherHomestaysInCommunityDto = {
     params: HomestayIdParamDto,
     query: PaginationDto,
