@@ -12,6 +12,7 @@ import {
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
+import { CommunityDetailPublicQueryDto } from "~/Libs/Types/communityDetailPublicQuery-dto.js";
 
 /*
  * คำอธิบาย : DTO สำหรับสร้างข้อมูลชุมชนใหม่
@@ -391,5 +392,77 @@ export const getCommunityDetailByMember: TypedHandlerFromDto<
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+
+/**
+ * คำอธิบาย : DTO สำหรับรับ communityId จาก path params
+ * Input:
+ *  - communityId : string (ต้องเป็นตัวเลขเท่านั้น)
+ * Output:
+ *  - ผ่าน validate แล้วจึงนำไปแปลงเป็น number ใน controller/service
+ */
+
+export class CommunityIdParamDto {
+  @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลขเท่านั้น" })
+  communityId!: string;
+}
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนแบบ Public
+ * ใช้สำหรับตรวจสอบและแปลงค่าข้อมูลที่ส่งเข้ามาจาก request
+ * Input :
+ *  - params : CommunityIdParamDto
+ *      - communityId : รหัสชุมชน (ตัวเลข)
+ *  - query  : CommunityDetailPublicQueryDto
+ *      - packagePage / packageLimit   : pagination ของแพ็กเกจ
+ *      - homestayPage / homestayLimit : pagination ของที่พัก
+ *      - storePage / storeLimit       : pagination ของร้านค้า
+ * Output :
+ *  - Object สำหรับใช้งานร่วมกับ commonDto
+ */
+export const getCommunityDetailPublicDto = {
+  params: CommunityIdParamDto,
+  query: CommunityDetailPublicQueryDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย : ดึงรายละเอียดชุมชนสำหรับหน้า public (guest/tourist) พร้อม pagination (package/homestay/store)
+ * Input:
+ *  - req.params.communityId
+ *  - req.query: packagePage/packageLimit/storePage/storeLimit/homestayPage/homestayLimit
+ * Output:
+ *  - 200: ส่งข้อมูลรายละเอียดชุมชน + รายการ package/homestay/store พร้อม pagination
+ *  - 400: ส่งข้อความ error
+ */
+export const getCommunityDetailPublic: TypedHandlerFromDto<
+  typeof getCommunityDetailPublicDto
+> = async (req, res) => {
+  try {
+    const communityId = Number(req.params.communityId);
+
+    const {
+      packagePage = 1,
+      packageLimit = 8,
+      storePage = 1,
+      storeLimit = 12,
+      homestayPage = 1,
+      homestayLimit = 12,
+    } = req.query;
+
+    const result = await CommunityService.getCommunityDetailPublic({
+      communityId,
+      packagePage,
+      packageLimit,
+      storePage,
+      storeLimit,
+      homestayPage,
+      homestayLimit,
+    });
+
+    return createResponse(res, 200, "Community detail (public)", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
   }
 };

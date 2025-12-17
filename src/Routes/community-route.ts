@@ -1562,5 +1562,170 @@ communityRoutes.get(
   CommunityController.getCommunityDetailByMember
 );
 
+/**
+ * @swagger
+ * /shared/community/{communityId}:
+ *   get:
+ *     summary: ดึงรายละเอียดชุมชน (Public)
+ *     description: |
+ *       ดึงรายละเอียดชุมชนสำหรับหน้า Public (guest / tourist) พร้อมรายการ:
+ *       - แพ็กเกจ (packages) แบบแยก pagination
+ *       - ที่พัก (homestays) แบบแยก pagination
+ *       - ร้านค้า (stores) แบบแยก pagination
+ *
+ *       **เงื่อนไขข้อมูล**
+ *       - ชุมชนต้องมีสถานะ `OPEN` และ `isDeleted = false`
+ *       - แพ็กเกจต้อง `PUBLISH` + `APPROVE` และ `isDeleted = false`
+ *       - ที่พัก/ร้านค้า ต้อง `isDeleted = false`
+ *       - ดึง tag ของ package/homestay/store มาด้วย
+ *
+ *     tags:
+ *       - Shared / Community
+ *     parameters:
+ *       - in: path
+ *         name: communityId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: รหัสชุมชน (ตัวเลขเท่านั้น)
+ *
+ *       - in: query
+ *         name: packagePage
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: หน้าของรายการแพ็กเกจ
+ *       - in: query
+ *         name: packageLimit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 8
+ *         description: จำนวนแพ็กเกจต่อหน้า
+ *
+ *       - in: query
+ *         name: storePage
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: หน้าของรายการร้านค้า
+ *       - in: query
+ *         name: storeLimit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 12
+ *         description: จำนวนร้านค้าต่อหน้า
+ *
+ *       - in: query
+ *         name: homestayPage
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: หน้าของรายการที่พัก
+ *       - in: query
+ *         name: homestayLimit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 12
+ *         description: จำนวนที่พักต่อหน้า
+ *
+ *     responses:
+ *       200:
+ *         description: ดึงรายละเอียดชุมชน (Public) สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: ดึงรายละเอียดชุมชน (Public) สำเร็จ
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     community:
+ *                       type: object
+ *                       description: ข้อมูลชุมชน (รวม location, images, admin, members)
+ *                     packages:
+ *                       type: object
+ *                       properties:
+ *                         data:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             currentPage: { type: integer, example: 1 }
+ *                             totalPages:  { type: integer, example: 3 }
+ *                             totalCount:  { type: integer, example: 24 }
+ *                             limit:       { type: integer, example: 8 }
+ *                     homestays:
+ *                       type: object
+ *                       properties:
+ *                         data:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             currentPage: { type: integer, example: 1 }
+ *                             totalPages:  { type: integer, example: 2 }
+ *                             totalCount:  { type: integer, example: 18 }
+ *                             limit:       { type: integer, example: 12 }
+ *                     stores:
+ *                       type: object
+ *                       properties:
+ *                         data:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             currentPage: { type: integer, example: 1 }
+ *                             totalPages:  { type: integer, example: 1 }
+ *                             totalCount:  { type: integer, example: 9 }
+ *                             limit:       { type: integer, example: 12 }
+ *
+ *       400:
+ *         description: ไม่พบชุมชน หรือข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: ไม่พบชุมชน หรือชุมชนยังไม่เปิดให้เข้าชม
+ */
+
+/*
+ * คำอธิบาย : ดึงข้อมูลรายละเอียดของชุมชนตาม ID (Guest, Tourist)
+ */
+communityRoutes.get(
+  "/shared/community/:communityId",
+  validateDto(CommunityController.getCommunityDetailPublicDto),
+  CommunityController.getCommunityDetailPublic
+);
+
 
 export default communityRoutes;
