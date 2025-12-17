@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import * as response from "~/Libs/createResponse.js";
 import * as FeedbackService from "~/Services/feedback/feedback-service.js";
-import { ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
+import { CreateFeedbackDto, ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
 import {
   commonDto,
   type TypedHandlerFromDto,
@@ -146,6 +146,40 @@ export const replyFeedbackAdmin: TypedHandlerFromDto<
       "Reply feedback successfully",
       data
     );
+  } catch (error) {
+    return response.createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * DTO สำหรับ createFeedback
+ */
+export const createFeedbackDto = {
+  body: CreateFeedbackDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : createFeedback
+ * คำอธิบาย : รับ Request สร้างรีวิวจากนักท่องเที่ยว
+ * Path : POST /api/tourist/booking-history/:bookingId/feedback
+ */
+export const createFeedback: TypedHandlerFromDto<typeof createFeedbackDto> = async (
+  req,
+  res
+) => {
+  try {
+    const { bookingId } = req.params as { bookingId: string }; 
+    const id = Number(bookingId);
+    if (isNaN(id)) {
+      return response.createErrorResponse(res, 400, "ID การจองไม่ถูกต้อง");
+    }
+    const { rating, message, images } = req.body;
+    const data = await FeedbackService.createFeedback(
+      id,
+      { rating, message, images: images ?? [] },
+      req.user!
+    );
+    return response.createResponse(res, 201, "ส่งข้อเสนอแนะสำเร็จ", data);
   } catch (error) {
     return response.createErrorResponse(res, 400, (error as Error).message);
   }

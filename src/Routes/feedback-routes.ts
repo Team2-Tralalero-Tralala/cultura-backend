@@ -442,4 +442,11 @@ feedbackRoutes.post(
   FeedbackController.replyFeedbackAdmin
 );
 
+feedbackRoutes.post(
+  "/tourist/booking-history/:bookingId/feedback",
+  authMiddleware,
+  validateDto(FeedbackController.createFeedbackDto),
+  allowRoles("tourist"),
+  FeedbackController.createFeedback
+);
 export default feedbackRoutes;
