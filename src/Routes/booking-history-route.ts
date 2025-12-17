@@ -3,6 +3,7 @@ import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 import * as BookingHistoryController from "~/Controllers/booking-history-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 
+
 const bookingRoutes = Router();
 
 /**
@@ -550,10 +551,10 @@ bookingRoutes.get(
  */
 bookingRoutes.get(
   "/member/booking-histories",
-  validateDto(BookingHistoryController.getBookingsByMemberDto),
+  validateDto(BookingHistoryController.getHistoryDto),
   authMiddleware,
   allowRoles("member"),
-  BookingHistoryController.getBookingsByMember
+  BookingHistoryController.getBookingHistoriesDispatcher
 );
 
 /**
@@ -562,7 +563,7 @@ bookingRoutes.get(
  *   post:
  *     summary: อัปเดตสถานะของรายการการจอง (Member)
  *     description: |
- *       ใช้สำหรับอัปเดตสถานะของรายการการจองที่เป็นของผู้ใช้ Member เองเท่านั้น  
+ *       ใช้สำหรับอัปเดตสถานะของรายการการจองที่เป็นของผู้ใช้ Member เองเท่านั้น
  *
  *       **ตัวอย่างการใช้งานทั่วไปของ Member เช่น**
  *       - ขอคืนเงินจากการจองที่ชำระเงินแล้ว
@@ -647,7 +648,4 @@ bookingRoutes.post(
   BookingHistoryController.updateBookingStatusByMember
 );
 
-
-
- 
 export default bookingRoutes;
