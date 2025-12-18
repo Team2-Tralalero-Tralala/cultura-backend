@@ -571,6 +571,11 @@ export async function editProfileTourist(
   userId: number,
   data: EditAccountDto
 ) {
+/*
+ * คำอธิบาย : ฟังก์ชันตรวจสอบว่าผู้ใช้งานมีอยู่ในระบบหรือไม่
+ * Input : รหัสผู้ใช้งานที่ต้องการตรวจสอบ
+ * Output : ข้อมูลผู้ใช้งานหากพบ, ส่งข้อผิดพลาดหากไม่พบ
+ */
   const user = await prisma.user.findFirst({
     where: {
       id: userId,
@@ -583,10 +588,10 @@ export async function editProfileTourist(
     throw new Error("ไม่พบสมาชิก");
   }
 /*
-   * คำอธิบาย : ฟังก์ชันตรวจสอบรูปแบบอีเมลและเบอร์โทรศัพท์
-   *   - isValidEmail: ตรวจสอบรูปแบบอีเมลพื้นฐาน
-   *   - isValidPhone: ตรวจสอบว่าเป็นตัวเลข 9-10 หลัก
-   */
+ * คำอธิบาย : ฟังก์ชันตรวจสอบรูปแบบอีเมลและหมายเลขโทรศัพท์
+ * Input : ข้อมูลอีเมลและเบอร์โทรศัพท์ที่ต้องการตรวจสอบ
+ * Output : true หากข้อมูลถูกต้องตามรูปแบบ, false หากไม่ถูกต้อง
+ */
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -594,14 +599,12 @@ export async function editProfileTourist(
     /^[0-9]{9,10}$/.test(phone);
 
   const allowedGender = ["MALE", "FEMALE", "NONE"];
-
+ /*
+ * คำอธิบาย : ฟังก์ชันเตรียมข้อมูลสำหรับการอัปเดตโปรไฟล์ 
+ * Input : ข้อมูลโปรไฟล์ที่ต้องการแก้ไข
+ * Output : ข้อมูลที่เตรียมไว้สำหรับการอัปเดตในฐานข้อมูล
+ */
   const updateData: Prisma.UserUpdateInput = {};
-
-  /*
-   * คำอธิบาย : เตรียมข้อมูลสำหรับอัปเดต
-   *   - อัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data
-   *   - ตรวจสอบความถูกต้องของข้อมูลก่อนอัปเดต
-   */
   if (data.fname !== undefined) updateData.fname = data.fname;
   if (data.lname !== undefined) updateData.lname = data.lname;
   if (data.username !== undefined) updateData.username = data.username;
@@ -619,21 +622,15 @@ export async function editProfileTourist(
     }
     updateData.phone = data.phone;
   }
-
-  // รูปโปรไฟล์ (string | null)
   if (data.profileImage !== undefined) {
     updateData.profileImage = data.profileImage;
   }
-
-  // gender enum
   if (data.gender !== undefined) {
     if (!allowedGender.includes(data.gender)) {
       throw new Error("ค่าเพศไม่ถูกต้อง");
     }
     updateData.gender = data.gender as any;
   }
-
-  // birthDate
   if (data.birthDate !== undefined) {
     const date = new Date(data.birthDate);
     if (isNaN(date.getTime())) {
@@ -641,21 +638,13 @@ export async function editProfileTourist(
     }
     updateData.birthDate = date;
   }
-
   if (data.province !== undefined) updateData.province = data.province;
   if (data.district !== undefined) updateData.district = data.district;
   if (data.subDistrict !== undefined) updateData.subDistrict = data.subDistrict;
   if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
-
-  // ป้องกัน update เปล่า
   if (Object.keys(updateData).length === 0) {
     throw new Error("ไม่มีข้อมูลสำหรับอัปเดต");
   }
-  /*
-   * คำอธิบาย : ทำการอัปเดตข้อมูลในฐานข้อมูล
-   *   - ใช้ Prisma Client เพื่ออัปเดตข้อมูลผู้ใช้งานตาม userId
-   *   - จัดการกรณีเกิด Unique Constraint Error เพื่อแจ้งข้อความที่เหมาะสม
-   */
   try {
     return await prisma.user.update({
       where: { id: userId },
