@@ -384,3 +384,70 @@ export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   // ถ้าไม่เจอ -> ไปทางเดิม
   return getBookingsByMember(req, res, next);
 };
+
+/*
+ * Class : GetBookingHistoryTouristQueryDto
+ * คำอธิบาย : DTO สำหรับ query parameter ของ API getBookingHistoryTourist
+ * สืบทอดจาก PaginationDto และเพิ่ม status
+ */
+export class GetBookingHistoryTouristQueryDto extends PaginationDto {
+  @IsOptional()
+  @IsString()
+  status?: string;
+}
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายการการจองทั้งหมดของ Member (รองรับ pagination)
+ * Input :
+ *   - query (page, limit)
+ * Output :
+ *   - รายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นดูแล + pagination metadata
+ */
+export const getBookingsByTouristDto = {
+  query: PaginationDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getBookingsByMember
+ * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
+ * Route : GET /member/bookings/all
+ * Input :
+ *   - req.user.id
+ *   - req.query.page, req.query.limit, req.query.status (ไม่บังคับ)
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
+ * หมายเหตุ :
+ *   - ใช้ข้อมูล memberId จาก token (req.user)
+ *   - เฉพาะผู้ใช้ role "member" เท่านั้นที่เข้าถึงได้
+ */
+export const getBookingsByTourist: TypedHandlerFromDto<
+  typeof getBookingsByTouristDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req.user!.id);
+    const {
+      page = 1,
+      limit = 10,
+      status,
+    } = req.query as {
+      page?: number;
+      limit?: number;
+      status?: string;
+    };
+    const result = await bookingService.getBookingHistoryTourist(
+      userId,
+      Number(page),
+      Number(limit),
+      status as string | undefined
+    );
+
+    return createResponse(
+      res,
+      200,
+      "Bookings history tourist retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

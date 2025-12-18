@@ -624,3 +624,137 @@ export const getMemberBookingHistories = async (
     },
   };
 };
+/*
+ * ฟังก์ชัน : getBookingHistoryTourist
+ * คำอธิบาย : ดึงรายการประวัติการจองของ Tourist (เฉพาะตนเอง)
+ * Input :
+ *   - touristId (number) : รหัสผู้จอง
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - status (string | undefined) : สถานะที่ต้องการกรอง
+ * Output :
+ *   - PaginationResponse : ข้อมูลการจองพร้อม pagination
+ */
+export const getBookingHistoryTourist = async (
+  touristId: number,
+  page = 1,
+  limit = 10,
+  status?: string
+): Promise<PaginationResponse<any>> => {
+  if (!Number.isInteger(touristId) || touristId <= 0) {
+    throw new Error("touristId must be Number");
+  }
+
+  // ตรวจสอบ user
+  const user = await prisma.user.findUnique({
+    where: { id: touristId },
+    include: { role: true },
+  });
+  if (!user) throw new Error("User not found");
+  if (user.role?.name?.toLowerCase() !== "tourist") {
+    return {
+      data: [],
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+    };
+  }
+
+  const skip = (page - 1) * limit;
+
+  // Prepared Filter
+  let statusFilter: BookingStatus | { in: BookingStatus[] } | undefined;
+  if (status) {
+    const statuses = status
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) as BookingStatus[];
+
+    if (statuses.length === 1) {
+      statusFilter = statuses[0];
+    } else if (statuses.length > 1) {
+      statusFilter = { in: statuses };
+    }
+  }
+
+  const whereCondition: any = {
+    touristId: touristId,
+  };
+
+  if (statusFilter) {
+    whereCondition.status = statusFilter;
+  }
+
+  const totalCount = await prisma.bookingHistory.count({
+    where: whereCondition,
+  });
+
+  const bookings = await prisma.bookingHistory.findMany({
+    where: whereCondition,
+    orderBy: { bookingAt: "desc" },
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      bookingAt: true,
+      status: true,
+      totalParticipant: true,
+      transferSlip: true,
+      package: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          startDate: true,
+          statusPackage: true,
+          community: {
+            select: {
+              id: true,
+              name: true
+            },
+          },
+          location: {
+            select: {
+              subDistrict: true,
+              district: true,
+              province: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const result = bookings.map((b) => ({
+    id: b.id,
+    community: {
+      id: b.package?.community?.id,
+      name: b.package?.community?.name || "",
+    },
+    package: {
+      id: b.package?.id,
+      name: b.package?.name || "",
+      description: b.package?.description || "",
+      price: b.package?.price || 0,
+      startDate: b.package?.startDate,
+      status: b.package?.statusPackage,
+      location: b.package?.location
+        ? `${b.package.location.subDistrict} ${b.package.location.district} ${b.package.location.province}`
+        : "Unknown Location",
+    },
+    quantity: b.totalParticipant || 1,
+    bookingAt: b.bookingAt,
+    totalPrice: (b.package?.price ?? 0) * (b.totalParticipant ?? 1),
+    status: b.status,
+    transferSlip: b.transferSlip,
+  }));
+
+  return {
+    data: result,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
+};

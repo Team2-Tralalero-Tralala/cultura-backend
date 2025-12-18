@@ -648,4 +648,129 @@ bookingRoutes.post(
   BookingHistoryController.updateBookingStatusByMember
 );
 
+/**
+ * @swagger
+ * /api/tourist/booking-histories:
+ *   get:
+ *     summary: ดึงประวัติการจองของตนเอง (Tourist)
+ *     description: |
+ *       ใช้สำหรับดึงรายการประวัติการจอง (BookingHistory)
+ *       **เฉพาะของผู้ใช้ Tourist ที่ล็อกอินอยู่**
+ *       พร้อมข้อมูลแพ็กเกจ ชุมชน ราคารวม และสถานะการจอง
+ *       รองรับการแบ่งหน้า (Pagination)
+ *     tags:
+ *       - Booking (Tourist)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าที่ต้องการดึงข้อมูล (ค่าเริ่มต้น 1)
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนข้อมูลต่อหน้า (ค่าเริ่มต้น 10)
+ *       - in: query
+ *         name: status
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "BOOKED,PENDING"
+ *         description: สถานะที่ต้องการกรอง (คั่นด้วย comma)
+ *     responses:
+ *       200:
+ *         description: ดึงประวัติการจองสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Booking histories tourist retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 12
+ *                           community:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                                 example: "ชุมชนบ้านโนนสะอาด"
+ *                           package:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 5
+ *                               name:
+ *                                 type: string
+ *                                 example: "แพ็กเกจท่องเที่ยวเชิงวัฒนธรรม"
+ *                               price:
+ *                                 type: number
+ *                                 example: 1500
+ *                           quantity:
+ *                             type: integer
+ *                             example: 2
+ *                           totalPrice:
+ *                             type: number
+ *                             example: 3000
+ *                           status:
+ *                             type: string
+ *                             example: "BOOKED"
+ *                           transferSlip:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "uploads/slips/slip_2025-02-11.png"
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-02-11T10:12:45.000Z"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 3
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 21
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *       400:
+ *         description: การดึงข้อมูลล้มเหลว
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ
+ */
+bookingRoutes.get(
+  "/tourist/booking-histories",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getBookingsByTourist
+);
+
 export default bookingRoutes;
