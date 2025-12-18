@@ -4,6 +4,7 @@ import * as FeedbackController from "~/Controllers/feedback-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
+import { upload } from "~/Libs/uploadFile.js";
 
 const feedbackRoutes = Router();
 /**
@@ -447,6 +448,9 @@ feedbackRoutes.post(
   authMiddleware,
   validateDto(FeedbackController.createFeedbackDto),
   allowRoles("tourist"),
+  upload.fields([
+    { name: "gallery", maxCount: 5 },
+  ]),
   FeedbackController.createFeedback
 );
 export default feedbackRoutes;

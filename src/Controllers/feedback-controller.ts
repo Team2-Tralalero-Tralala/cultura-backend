@@ -168,18 +168,27 @@ export const createFeedback: TypedHandlerFromDto<typeof createFeedbackDto> = asy
   res
 ) => {
   try {
-    const { bookingId } = req.params as { bookingId: string }; 
+    const { bookingId } = req.params as { bookingId: string };
     const id = Number(bookingId);
     if (isNaN(id)) {
       return response.createErrorResponse(res, 400, "ID การจองไม่ถูกต้อง");
     }
-    const { rating, message, images } = req.body;
-    const data = await FeedbackService.createFeedback(
+    const requestFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const galleryFiles = requestFiles?.["gallery"] || [];
+    const feedbackImagePaths = galleryFiles.map(
+      (fileItem) => `/uploads/${fileItem.filename}`
+    );
+    const { rating, message } = req.body;
+    const feedbackResult = await FeedbackService.createFeedback(
       id,
-      { rating, message, images: images ?? [] },
+      {
+        rating: Number(rating),
+        message,
+        images: feedbackImagePaths
+      },
       req.user!
     );
-    return response.createResponse(res, 201, "ส่งข้อเสนอแนะสำเร็จ", data);
+    return response.createResponse(res, 201, "ส่งข้อเสนอแนะสำเร็จ", feedbackResult);
   } catch (error) {
     return response.createErrorResponse(res, 400, (error as Error).message);
   }
