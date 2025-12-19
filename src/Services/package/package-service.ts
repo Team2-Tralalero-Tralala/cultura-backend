@@ -1737,3 +1737,140 @@ export const bulkDeletePackages = async (ids: number[]) => {
     message: `${result.count} แพ็กเกจถูกลบเรียบร้อย`,
   };
 };
+
+/*
+ * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
+ * Input: packageId - รหัสของแพ็กเกจ
+ * Output : ข้อมูลรายละเอียดแพ็กเกจและแพ็กเกจที่เกี่ยวข้อง (Related Packages)
+ */
+export const getPackageDetailByTourist = async (packageId: number) => {
+  const packageDetail = await prisma.package.findFirst({
+    where: {
+      id: Number(packageId),
+      isDeleted: false,
+      statusPackage: PackagePublishStatus.PUBLISH,
+      statusApprove: PackageApproveStatus.APPROVE,
+    },
+    include: {
+      packageFile: {
+        select: { id: true, filePath: true, type: true },
+      },
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      community: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+        }
+      },
+      homestayHistories: {
+        select: {
+          id: true,
+          checkInTime: true,
+          checkOutTime: true,
+          bookedRoom: true,
+          homestay: {
+            select: {
+              id: true,
+              communityId: true,
+              name: true,
+              type: true,
+              guestPerRoom: true,
+              totalRoom: true,
+              facility: true,
+              homestayImage: {
+                select: { id: true, image: true, type: true }
+              },
+              location: {
+                select: {
+                  subDistrict: true,
+                  province: true,
+                }
+              }
+            },
+          },
+        },
+      },
+      tagPackages: {
+        select: {
+          tagId: true,
+          tag: { select: { id: true, name: true } }
+        }
+      }
+    },
+  });
+
+  if (!packageDetail) {
+    return null;
+  }
+
+  const currentTagIds = packageDetail.tagPackages.map(tagPackage => tagPackage.tagId);
+
+  const relatedPackages = await prisma.package.findMany({
+    where: {
+      id: { not: packageDetail.id },
+      isDeleted: false,
+      statusPackage: PackagePublishStatus.PUBLISH,
+      statusApprove: PackageApproveStatus.APPROVE,
+      tagPackages: {
+        some: {
+          tagId: { in: currentTagIds }
+        }
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      capacity: true,
+      packageFile: {
+        where: { type: "COVER" },
+        select: { filePath: true },
+        take: 1,
+      },
+      location: {
+        select: {
+          subDistrict: true,
+          province: true,
+        }
+      },
+      tagPackages: {
+        select: {
+          tag: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      id: 'desc'
+    },
+    // take: 8,
+  });
+
+  return {
+    ...packageDetail,
+    relatedPackages: relatedPackages.map(relatedPackage => ({
+      id: relatedPackage.id,
+      name: relatedPackage.name,
+      price: relatedPackage.price,
+      capacity: relatedPackage.capacity,
+      location: relatedPackage.location,
+      coverImage: relatedPackage.packageFile[0]?.filePath || null,
+      tags: relatedPackage.tagPackages.map(tagPackage => tagPackage.tag.name)
+    }))
+  };
+};
