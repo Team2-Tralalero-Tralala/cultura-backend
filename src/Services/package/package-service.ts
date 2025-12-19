@@ -1863,6 +1863,7 @@ export const getPackageDetailByTourist = async (packageId: number) => {
 
   return {
     ...packageDetail,
+    packageFiles: packageDetail.packageFile,
     relatedPackages: relatedPackages.map(relatedPackage => ({
       id: relatedPackage.id,
       name: relatedPackage.name,
