@@ -21,6 +21,7 @@ import type { Request, Response } from "express";
 import { log } from "console";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 
+
 /** ----------------------------- DTOs ----------------------------- **/
 
 // ใช้กับการสร้างบัญชี
@@ -370,6 +371,46 @@ export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
   try {
     const result = await AccountService.getMe(Number(req.user?.id));
     return createResponse(res, 200, "get my profile data successfully", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/**
+ * DTO : editProfileTouristDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบความถูกต้องของข้อมูลที่ผู้ใช้งานส่งเข้ามา
+ * สำหรับการแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
+ * Input : ข้อมูลของ Tourist ที่ต้องการแก้ไข (อ้างอิง EditAccountDto)
+ * Output : หากข้อมูลอยู่ในรูปแบบที่ถูกต้อง ระบบจะอนุญาตให้ดำเนินการแก้ไขโปรไฟล์ได้
+ * หากข้อมูลไม่ถูกต้อง ระบบจะเเจ้งข้อผิดพลาดกลับไปยังผู้ใช้งานทันที
+ */
+export const editProfileTouristDto = {
+  body: EditAccountDto,
+} satisfies commonDto;
+
+/**
+ * Controller : editProfileTourist
+ * Role Access : Tourist
+ * Description : สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
+ * Input : รหัสผู้ใช้งานจาก token (req.user.id), ข้อมูลโปรไฟล์ที่ต้องการแก้ไข (req.body)
+ * Output : แก้ไขข้อมูลสำเร็จ (Response 200), กรณีเกิดข้อผิดพลาด(Response 400)
+ */
+export const editProfileTourist = async (req: Request, res: Response) => {
+  try {
+    const body = req.body as EditAccountDto;
+
+    if (req.file) {
+      body.profileImage = req.file.path.replace(/\\/g, "/");
+    } else {
+      delete body.profileImage;
+    }
+
+    const result = await AccountService.editProfileTourist(
+      Number(req.user?.id),
+      body
+    );
+
+    return createResponse(res, 200, "แก้ไขข้อมูลสำเร็จ", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
