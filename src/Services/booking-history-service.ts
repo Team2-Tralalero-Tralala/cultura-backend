@@ -624,14 +624,14 @@ export const getMemberBookingHistories = async (
     },
   };
 };
+
 /*
- * ฟังก์ชัน : getBookingHistoryTourist
  * คำอธิบาย : ดึงรายการประวัติการจองของ Tourist (เฉพาะตนเอง)
  * Input :
- *   - touristId (number) : รหัสผู้จอง
- *   - page (number) : หน้าปัจจุบัน
- *   - limit (number) : จำนวนต่อหน้า
- *   - status (string | undefined) : สถานะที่ต้องการกรอง
+ *   - touristId : รหัสผู้จอง
+ *   - page : หน้าปัจจุบัน
+ *   - limit : จำนวนต่อหน้า
+ *   - status : สถานะที่ต้องการกรอง
  * Output :
  *   - PaginationResponse : ข้อมูลการจองพร้อม pagination
  */
@@ -642,25 +642,21 @@ export const getBookingHistoryTourist = async (
   status?: string
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(touristId) || touristId <= 0) {
-    throw new Error("touristId must be Number");
+    throw new Error("tourist id ต้องเป็นตัวเลข");
   }
-
-  // ตรวจสอบ user
   const user = await prisma.user.findUnique({
     where: { id: touristId },
     include: { role: true },
   });
-  if (!user) throw new Error("User not found");
+  if (!user) throw new Error("ไม่พบผู้ใช้");
   if (user.role?.name?.toLowerCase() !== "tourist") {
     return {
       data: [],
       pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
     };
   }
-
   const skip = (page - 1) * limit;
 
-  // Prepared Filter
   let statusFilter: BookingStatus | { in: BookingStatus[] } | undefined;
   if (status) {
     const statuses = status
@@ -739,7 +735,7 @@ export const getBookingHistoryTourist = async (
       status: b.package?.statusPackage,
       location: b.package?.location
         ? `${b.package.location.subDistrict} ${b.package.location.district} ${b.package.location.province}`
-        : "Unknown Location",
+        : "ไม่มีข้อมูลสถานที่",
     },
     quantity: b.totalParticipant || 1,
     bookingAt: b.bookingAt,

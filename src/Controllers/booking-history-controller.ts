@@ -385,8 +385,8 @@ export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   return getBookingsByMember(req, res, next);
 };
 
+
 /*
- * Class : GetBookingHistoryTouristQueryDto
  * คำอธิบาย : DTO สำหรับ query parameter ของ API getBookingHistoryTourist
  * สืบทอดจาก PaginationDto และเพิ่ม status
  */
@@ -408,17 +408,12 @@ export const getBookingsByTouristDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getBookingsByMember
- * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
- * Route : GET /member/bookings/all
+ * คำอธิบาย : ดึงรายการปรัะวัติการจองของ Tourist ที่ล็อกอินอยู่
  * Input :
  *   - req.user.id
  *   - req.query.page, req.query.limit, req.query.status (ไม่บังคับ)
  * Output :
  *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
- * หมายเหตุ :
- *   - ใช้ข้อมูล memberId จาก token (req.user)
- *   - เฉพาะผู้ใช้ role "member" เท่านั้นที่เข้าถึงได้
  */
 export const getBookingsByTourist: TypedHandlerFromDto<
   typeof getBookingsByTouristDto

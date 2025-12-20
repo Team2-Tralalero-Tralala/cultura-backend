@@ -648,6 +648,9 @@ bookingRoutes.post(
   BookingHistoryController.updateBookingStatusByMember
 );
 
+/*
+ * คำอธิบาย : ดึงข้อมูลประวัติการจองของ Tourist ที่ล็อกอินอยู่
+ */
 /**
  * @swagger
  * /api/tourist/booking-histories:
