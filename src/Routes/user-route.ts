@@ -826,9 +826,7 @@ userRoutes.post(
  */
 
 /*
- * เส้นทาง : PATCH /admin/member/:userId
- * คำอธิบาย : ลบ member ออกจาก Community แบบ Soft Delete
- * สิทธิ์ที่เข้าถึงได้ : admin
+ * คำอธิบาย : ลบสามาชิกออกจากชุมชน
  */
 userRoutes.patch(
   "/admin/member/:userId",
