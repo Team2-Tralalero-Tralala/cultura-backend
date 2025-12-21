@@ -76,19 +76,15 @@ export const createBooking = async (data: any) => {
   });
 };
 
-/*
- * ฟังก์ชัน : getHistoriesByRole
- * คำอธิบาย : ดึงประวัติการจอง (bookingHistory) ตามสิทธิ์ของผู้ใช้งาน
+/**
+ * คำอธิบาย : ดึงประวัติการจอง (Booking History) ตาม role ของผู้ใช้งาน
  * Input :
- *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
+ *  - user : UserPayload (ข้อมูลผู้ใช้งานที่ล็อกอิน)
+ *  - page : number (หมายเลขหน้า, default = 1)
+ *  - limit : number (จำนวนรายการต่อหน้า, default = 10)
  * Output :
- *   - Array ของ object ที่ประกอบด้วย:
- *       - ชื่อผู้จอง
- *       - ชื่อกิจกรรม
- *       - ราคา
- *       - สถานะ
- *       - หลักฐานการโอน
- *       - เวลาในการจอง
+ *  - รายการ bookingHistory ที่มีสถานะ:
+ *    BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
  */
 export const getHistoriesByRole = async (
   user: UserPayload,
