@@ -172,26 +172,9 @@ export async function rejectPackageRequest(
 import { PackageApproveStatus } from "@prisma/client";
 
 /*
- * ฟังก์ชัน : getDetailRequestById
- * คำอธิบาย : ดึงรายละเอีดยแพ็กเกจจากหน้าคำขอของ superadmin
- * Input :
- *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
- * Output :
- *   - Array ของ object ที่ประกอบด้วย:
- *       - ชื่อแพ้กเกจ
- *       - รายละเอียด
- *       - ความจุ
- *       - ราคา
- *       - วันที่เริ่มต้น
- *       - วันที่สิ้นสุด
- *       - วันที่เปิดจอง
- *       - วันที่ปิดจอง
- *       - สิ่งอำนวยความสะดวก
- *       - ชื่อผู้ดูแลแพ็กเกจ
- *       - ชื่อผู้สร้างแพ็กเกจ
- *       - แท็กของแพ็กเกจ
- *       - ไฟล์ของแพ็กเกจ
- *       - ที่ตั้งของแพ็กเกจ
+ * คําอธิบาย : ฟังก์ชันสําหรับการดึงรายละเอียดแพ็กเกจจากหน้าคำขอของ Super Admin
+ * Input : packageId
+ * Output : ข้อมูลรายละเอียดแพ็กเกจ
  */
 export const getDetailRequestById = async (packageId: number) => {
   return prisma.package.findUnique({
@@ -252,26 +235,9 @@ export const getDetailRequestById = async (packageId: number) => {
 };
 
 /*
- * ฟังก์ชัน : getDetailRequestByIdForAdmin
- * คำอธิบาย : ดึงรายละเอีดยแพ็กเกจจากหน้าคำขอของ admin
- * Input :
- *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
- * Output :
- *   - Array ของ object ที่ประกอบด้วย:
- *       - ชื่อแพ้กเกจ
- *       - รายละเอียด
- *       - ความจุ
- *       - ราคา
- *       - วันที่เริ่มต้น
- *       - วันที่สิ้นสุด
- *       - วันที่เปิดจอง
- *       - วันที่ปิดจอง
- *       - สิ่งอำนวยความสะดวก
- *       - ชื่อผู้ดูแลแพ็กเกจ
- *       - ชื่อผู้สร้างแพ็กเกจ
- *       - แท็กของแพ็กเกจ
- *       - ไฟล์ของแพ็กเกจ
- *       - ที่ตั้งของแพ็กเกจ
+ * คําอธิบาย : ฟังก์ชันสําหรับการดึงรายละเอียดแพ็กเกจจากหน้าคำขอของ Admin
+ * Input : packageId
+ * Output : ข้อมูลรายละเอียดแพ็กเกจ
  */
 export const getDetailRequestByIdForAdmin = async (packageId: number) => {
   return prisma.package.findUnique({
