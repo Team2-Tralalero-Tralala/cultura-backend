@@ -65,6 +65,19 @@ userRoutes.put(
   UserController.updateProfileImage
 );
 
+/*
+ * เส้นทาง : GET /admin/member/all
+ * คำอธิบาย : ดึงรายชื่อสมาชิกทั้งหมดใน Community ของ Admin
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+userRoutes.get(
+  "/admin/member/all",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(UserController.getMemberAllByAdminDto),
+  UserController.getMemberAllByAdmin
+);
+
 /**
  * @swagger
  * /api/super/accounts:
@@ -334,6 +347,14 @@ userRoutes.get(
   validateDto(UserController.getUserByIdDto),
   UserController.getMemberByAdmin
 );
+
+// userRoutes.get(
+//   "/admin/member/all",
+//   authMiddleware,
+//   allowRoles("admin"),
+//   validateDto(UserController.getMemberAllByAdminDto),
+//   UserController.getMemberAllByAdmin
+// );
 
 /**
  * @swagger
@@ -847,4 +868,11 @@ userRoutes.get(
   UserController.getAccountAll
 );
 
+userRoutes.patch(
+  "/admin/member/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(UserController.softDeleteCommunityMemberByIdDto),
+  UserController.softDeleteCommunityMemberById
+);
 export default userRoutes;
