@@ -773,7 +773,7 @@ bookingRoutes.get(
   "/tourist/booking-histories",
   authMiddleware,
   allowRoles("tourist"),
-  BookingHistoryController.getBookingsByTourist
+  BookingHistoryController.getTouristBookingHistories
 );
 
 export default bookingRoutes;

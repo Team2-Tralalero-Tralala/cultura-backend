@@ -1,7 +1,9 @@
 import prisma from "./database-service.js";
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus,ImageType } from "@prisma/client";
+import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "./pagination-dto.js";
+
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
@@ -625,132 +627,108 @@ export const getMemberBookingHistories = async (
   };
 };
 
-/*
- * คำอธิบาย : ดึงรายการประวัติการจองของ Tourist (เฉพาะตนเอง)
- * Input :
- *   - touristId : รหัสผู้จอง
- *   - page : หน้าปัจจุบัน
- *   - limit : จำนวนต่อหน้า
- *   - status : สถานะที่ต้องการกรอง
- * Output :
- *   - PaginationResponse : ข้อมูลการจองพร้อม pagination
+/**
+ * คำอธิบาย : ประเภทข้อมูลประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
  */
-export const getBookingHistoryTourist = async (
+type TouristBookingHistory = {
+  id: number;
+  bookingAt: Date;
+  status: BookingStatus | null;
+  totalParticipant: number;
+  package: {
+    name: string | null;
+    price: number | null;
+    description: string | null;
+    startDate: Date | null;
+    dueDate: Date | null;
+    packageFile: PackageFile[];
+    community: {
+      name: string;
+      location: Location;
+    };
+  } | null;
+};
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
+ * Input :
+ *   - touristId (number) : รหัสผู้ที่เข้าร่วมแพ็กเกจ
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - sort ("asc" | "desc") : ลำดับ
+ *   - filter (object) : ตัวกรอง
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ พร้อม pagination
+ */
+export async function getTouristBookingHistory(
   touristId: number,
-  page = 1,
-  limit = 10,
-  status?: string
-): Promise<PaginationResponse<any>> => {
-  if (!Number.isInteger(touristId) || touristId <= 0) {
-    throw new Error("tourist id ต้องเป็นตัวเลข");
-  }
-  const user = await prisma.user.findUnique({
-    where: { id: touristId },
-    include: { role: true },
-  });
-  if (!user) throw new Error("ไม่พบผู้ใช้");
-  if (user.role?.name?.toLowerCase() !== "tourist") {
-    return {
-      data: [],
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+  page: number = 1,
+  limit: number = 10,
+  sort: "asc" | "desc",
+  filter?: {
+    status?: string[];
+    date?: {
+      from: Date;
+      to: Date;
     };
   }
+): Promise<PaginationResponse<TouristBookingHistory>> {
   const skip = (page - 1) * limit;
+  const whereCondition: any = { touristId };
 
-  let statusFilter: BookingStatus | { in: BookingStatus[] } | undefined;
-  if (status) {
-    const statuses = status
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean) as BookingStatus[];
-
-    if (statuses.length === 1) {
-      statusFilter = statuses[0];
-    } else if (statuses.length > 1) {
-      statusFilter = { in: statuses };
-    }
+  if (filter?.status) {
+    whereCondition.status = { in: filter.status as BookingStatus[] };
+  }
+  if (filter?.date) {
+    whereCondition.bookingAt = {
+      gte: filter.date.from,
+      lte: filter.date.to,
+    };
   }
 
-  const whereCondition: any = {
-    touristId: touristId,
-  };
-
-  if (statusFilter) {
-    whereCondition.status = statusFilter;
-  }
-
-  const totalCount = await prisma.bookingHistory.count({
+  const bookingHistories = await prisma.bookingHistory.findMany({
     where: whereCondition,
-  });
-
-  const bookings = await prisma.bookingHistory.findMany({
-    where: whereCondition,
-    orderBy: { bookingAt: "desc" },
-    skip,
-    take: limit,
+    orderBy: { bookingAt: sort },
     select: {
       id: true,
       bookingAt: true,
       status: true,
       totalParticipant: true,
-      transferSlip: true,
+      rejectReason: true,
       package: {
         select: {
-          id: true,
           name: true,
-          description: true,
           price: true,
+          description: true,
           startDate: true,
-          statusPackage: true,
-          community: {
-            select: {
-              id: true,
-              name: true
+          dueDate: true,
+          packageFile: {
+            where: {
+              type: ImageType.COVER,
             },
           },
-          location: {
+          community: {
             select: {
-              subDistrict: true,
-              district: true,
-              province: true,
+              name: true,
+              location: true,
             },
           },
         },
       },
     },
+    skip,
+    take: limit,
   });
-
-  const result = bookings.map((b) => ({
-    id: b.id,
-    community: {
-      id: b.package?.community?.id,
-      name: b.package?.community?.name || "",
-    },
-    package: {
-      id: b.package?.id,
-      name: b.package?.name || "",
-      description: b.package?.description || "",
-      price: b.package?.price || 0,
-      startDate: b.package?.startDate,
-      status: b.package?.statusPackage,
-      location: b.package?.location
-        ? `${b.package.location.subDistrict} ${b.package.location.district} ${b.package.location.province}`
-        : "ไม่มีข้อมูลสถานที่",
-    },
-    quantity: b.totalParticipant || 1,
-    bookingAt: b.bookingAt,
-    totalPrice: (b.package?.price ?? 0) * (b.totalParticipant ?? 1),
-    status: b.status,
-    transferSlip: b.transferSlip,
-  }));
-
+  const totalCount = await prisma.bookingHistory.count({
+    where: whereCondition,
+  });
+  const totalPages = Math.ceil(totalCount / limit);
   return {
-    data: result,
+    data: bookingHistories,
     pagination: {
       currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: totalPages,
       totalCount,
       limit,
     },
   };
-};
+}
