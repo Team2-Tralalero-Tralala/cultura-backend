@@ -298,3 +298,25 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/**
+ * ฟังก์ชัน : getBookingDetailForTourist
+ * คำอธิบาย : ดึงรายละเอียดการจองโดยใช้ getDetailBookingById (ไม่ล็อคสถานะ PENDING)
+ */
+export const getBookingDetailForTourist = async (req: Request, res: Response) => {
+  try {
+    const bookingId = Number(req.params.id);
+
+    // เรียกใช้ฟังก์ชัน Generic ที่คุณมีอยู่แล้วใน Service
+    const detail = await BookingHistoryService.getDetailBookingById(bookingId); 
+    
+    return createResponse(
+      res,
+      200,
+      "Get booking detail successfully",
+      detail
+    );
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};

@@ -25,6 +25,11 @@ export const getDetailBookingById = async (id: number) => {
   }
   const booking = await prisma.bookingHistory.findUnique({
     where: { id: numberId },
+    include: {
+      package: {
+        select: { name: true }
+      }
+    }
   });
   if (!booking) {
     throw new Error("Booking not found");
