@@ -3,7 +3,6 @@ import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 import * as BookingHistoryController from "~/Controllers/booking-history-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 
-
 const bookingRoutes = Router();
 
 /**
@@ -646,6 +645,139 @@ bookingRoutes.post(
   authMiddleware,
   allowRoles("member"),
   BookingHistoryController.updateBookingStatusByMember
+);
+
+/**
+ * @swagger
+ * /api/tourist/booking-history/own:
+ *   get:
+ *     summary: ดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ *     description: |
+ *       ใช้สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ *     tags:
+ *       - Tourist / Booking History
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงประวัติการจองของผู้ที่เดินทาง (Tourist) สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: get booking histories successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 351
+ *                           bookingAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-12-22T06:49:56.000Z"
+ *                           status:
+ *                             type: string
+ *                             example: "REJECTED"
+ *                           totalParticipant:
+ *                             type: integer
+ *                             example: 2
+ *                           rejectReason:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "สลิปไม่ถูกต้อง"
+ *                           package:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                                 example: "ปลูกป่าชายเลน"
+ *                               price:
+ *                                 type: number
+ *                                 example: 1435
+ *                               description:
+ *                                 type: string
+ *                                 example: "สัมผัสวิถีชีวิต ดำนา เกี่ยวข้าว ทานอาหารพื้นถิ่น"
+ *                               startDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2025-12-22T07:03:04.000Z"
+ *                               dueDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2026-12-22T07:03:04.000Z"
+ *                               packageFile:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                                   properties:
+ *                                     id:
+ *                                       type: integer
+ *                                       example: 106
+ *                                     filePath:
+ *                                       type: string
+ *                                       example: "uploads/store1.jpg"
+ *                                     type:
+ *                                       type: string
+ *                                       example: "COVER"
+ *                               community:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                     example: "วิสาหกิจชุมชนแปรรูปสมุนไพรบ้านทับทิมสยาม"
+ *                                   location:
+ *                                     type: object
+ *                                     properties:
+ *                                       id:
+ *                                         type: integer
+ *                                         example: 12
+ *                                       houseNumber:
+ *                                         type: string
+ *                                         example: "849/14"
+ *                                       subDistrict:
+ *                                         type: string
+ *                                         example: "อ่างทอง"
+ *                                       district:
+ *                                         type: string
+ *                                         example: "เกาะสมุย"
+ *                                       province:
+ *                                         type: string
+ *                                         example: "สุราษฎร์ธานี"
+ *                                       postalCode:
+ *                                         type: string
+ *                                         example: "84140"
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *       401:
+ *         description: Missing Token
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: ไม่พบประวัติการจอง
+ */
+/**
+ * คำอธิบาย: ใช้สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ */
+bookingRoutes.get(
+  "/tourist/booking-history/own",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getTouristBookingHistories
 );
 
 export default bookingRoutes;
