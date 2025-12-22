@@ -329,7 +329,7 @@ export const createFeedback = async (
       createdAt: new Date(),
       feedbackImages: {
         create: data.images && data.images.length > 0 
-          ? data.images.map((img) => ({ image: img })) 
+          ? data.images.map((image) => ({ image: image })) 
           : [], 
       },
     },

@@ -443,14 +443,65 @@ feedbackRoutes.post(
   FeedbackController.replyFeedbackAdmin
 );
 
+/**
+ * @swagger
+ * /api/tourist/booking-history/{bookingId}/feedback:
+ *   post:
+ *     tags: [Tourist - Feedback]
+ *     summary: ส่ง Feedback สำหรับการจอง
+ *     description: นักท่องเที่ยวส่งคะแนน ความคิดเห็น และรูปภาพ
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 example: 5
+ *               message:
+ *                 type: string
+ *               gallery:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       201:
+ *         description: ส่ง Feedback สำเร็จ
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง
+ *       401:
+ *         description: Unauthorized
+ */
+
+/*
+ * คำอธิบาย : Routes สำหรับนักท่องเที่ยวส่ง Feedback หลังการจองแพ็กเกจ
+ * Path : /api/tourist/booking-history/:bookingId/feedback
+ * Method : POST
+ * Access : tourist
+ * Body :
+ *   - rating (number) : คะแนนที่ให้ (1–5)
+ *   - message (string) : ข้อเสนอแนะ (optional)
+ *   - gallery (file[]) : รูปภาพประกอบ (สูงสุด 5 รูป)
+ * Output :
+ *   - ส่ง Feedback สำเร็จ หรือ error ตามกรณี
+ */
 feedbackRoutes.post(
   "/tourist/booking-history/:bookingId/feedback",
   authMiddleware,
-  validateDto(FeedbackController.createFeedbackDto),
   allowRoles("tourist"),
-  upload.fields([
-    { name: "gallery", maxCount: 5 },
-  ]),
+  upload.fields([{ name: "gallery", maxCount: 5 }]),
+  validateDto(FeedbackController.createFeedbackDto),
   FeedbackController.createFeedback
 );
 export default feedbackRoutes;

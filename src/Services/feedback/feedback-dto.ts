@@ -6,7 +6,8 @@
  *   - replyMessage : ข้อความตอบกลับรีวิว ความยาวไม่เกิน 100 ตัวอักษร
  */
 
-import { IsString, IsNotEmpty, MaxLength, IsNumber, Min, Max, IsArray, IsOptional } from "class-validator";
+import { Type } from "class-transformer";
+import { IsString, IsNotEmpty, MaxLength, Min, Max, IsArray, IsOptional, IsNumber } from "class-validator";
 
 export class ReplyFeedbackDto {
   @IsString({ message: "ข้อความตอบกลับต้องเป็นข้อความ (string)" })
@@ -15,7 +16,12 @@ export class ReplyFeedbackDto {
   replyMessage!: string;
 }
 
+/*
+ * คำอธิบาย : DTO สำหรับนักท่องเที่ยวส่ง Feedback หลังการจองแพ็กเกจ
+ * ใช้สำหรับ validate ข้อมูล rating และ message
+ */
 export class CreateFeedbackDto {
+  @Type(() => Number)
   @IsNumber({}, { message: "คะแนนต้องเป็นตัวเลข" })
   @Min(1, { message: "คะแนนต่ำสุดคือ 1" })
   @Max(5, { message: "คะแนนสูงสุดคือ 5" })
@@ -23,7 +29,7 @@ export class CreateFeedbackDto {
 
   @IsString({ message: "ข้อความต้องเป็นตัวอักษร" })
   @IsNotEmpty({ message: "กรุณากรอกความคิดเห็น" })
-  @MaxLength(200, { message: "ความคิดเห็นต้องไม่เกิน 200 ตัวอักษร" }) // อ้างอิงขนาดจาก [cite: 62]
+  @MaxLength(200, { message: "ความคิดเห็นต้องไม่เกิน 200 ตัวอักษร" })
   message!: string;
 
   @IsArray({ message: "รูปภาพต้องเป็นอาเรย์" })
