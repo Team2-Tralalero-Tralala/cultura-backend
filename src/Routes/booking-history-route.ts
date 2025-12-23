@@ -660,7 +660,7 @@ bookingRoutes.post(
  *       ใช้สำหรับดึงรายการประวัติการจอง (BookingHistory)
  *       **เฉพาะของผู้ใช้ Tourist ที่ล็อกอินอยู่**
  *       พร้อมข้อมูลแพ็กเกจ ชุมชน ราคารวม และสถานะการจอง
- *       รองรับการแบ่งหน้า (Pagination)
+ *       รองรับการแบ่งหน้า (Pagination) และการค้นหา/กรองข้อมูล
  *     tags:
  *       - Booking (Tourist)
  *     security:
@@ -687,6 +687,26 @@ bookingRoutes.post(
  *           type: string
  *           example: "BOOKED,PENDING"
  *         description: สถานะที่ต้องการกรอง (คั่นด้วย comma)
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: คำค้นหา (ชื่อแพ็กเกจ)
+ *       - in: query
+ *         name: sort
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [newest, oldest]
+ *           default: newest
+ *         description: เรียงลำดับตามวันที่จอง
+ *       - in: query
+ *         name: period
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: ช่วงเวลา (เช่น current, history)
  *     responses:
  *       200:
  *         description: ดึงประวัติการจองสำเร็จ
@@ -700,7 +720,7 @@ bookingRoutes.post(
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Booking histories tourist retrieved successfully
+ *                   example: Booking histories (tourist) retrieved successfully
  *                 data:
  *                   type: object
  *                   properties:
@@ -715,6 +735,9 @@ bookingRoutes.post(
  *                           community:
  *                             type: object
  *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
  *                               name:
  *                                 type: string
  *                                 example: "ชุมชนบ้านโนนสะอาด"
@@ -727,9 +750,26 @@ bookingRoutes.post(
  *                               name:
  *                                 type: string
  *                                 example: "แพ็กเกจท่องเที่ยวเชิงวัฒนธรรม"
+ *                               description:
+ *                                 type: string
+ *                                 example: "รายละเอียดแพ็กเกจ..."
  *                               price:
  *                                 type: number
  *                                 example: 1500
+ *                               startDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2025-03-01T00:00:00.000Z"
+ *                               dueDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2025-02-28T00:00:00.000Z"
+ *                               status:
+ *                                 type: string
+ *                                 example: "PUBLISH"
+ *                               location:
+ *                                 type: string
+ *                                 example: "ต.โนนสะอาด อ.เมือง จ.ขอนแก่น"
  *                           quantity:
  *                             type: integer
  *                             example: 2
@@ -743,10 +783,13 @@ bookingRoutes.post(
  *                             type: string
  *                             nullable: true
  *                             example: "uploads/slips/slip_2025-02-11.png"
- *                           createdAt:
+ *                           bookingAt:
  *                             type: string
  *                             format: date-time
  *                             example: "2025-02-11T10:12:45.000Z"
+ *                           isTripCompleted:
+ *                             type: boolean
+ *                             example: false
  *                     pagination:
  *                       type: object
  *                       properties:
