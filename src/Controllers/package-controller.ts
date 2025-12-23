@@ -20,7 +20,7 @@ import {
   BulkDeletePackagesDto,
 } from "~/Services/package/package-dto.js";
 import * as PackageService from "../Services/package/package-service.js";
-import { DeleteDraftPackage,bulkDeletePackages  } from "../Services/package/package-service.js";
+import { deleteDraftPackage,bulkDeletePackages  } from "../Services/package/package-service.js";
 
 /*
  * DTO: createPackageDto
@@ -857,13 +857,21 @@ export const getHistoriesPackageByMember: TypedHandlerFromDto<
   }
 };
 
-/*
- * คำอธิบาย : (Admin,Member) Handler สำหรับดึงรายการ "แพ็กเกจสถานะ Draft"
- * Input: req.user.id
- * Output: 200 - ข้อมูลแพ็กเกจสถานะ Draft
- * 400 - Error message
+/**
+ * DTO : getDraftPackagesDto
+ * วัตถุประสงค์ : ใช้สำหรับดึงข้อมูลแพ็กเกจที่อยู่ในสถานะ Draft ของผู้ใช้งานที่มีบทบาทเป็น Admin, Member
+ * Input : ไม่มี (อ้างอิงข้อมูลผู้ใช้งานจาก token)
+ * Output : หากเรียกใช้งานสำเร็จ ระบบจะส่งรายการแพ็กเกจ Draft กลับไป
  */
 export const getDraftPackagesDto = {} satisfies commonDto;
+
+/**
+ * Controller : getDraftPackages
+ * Role Access : Admin, Member
+ * Description : สำหรับดึงรายการแพ็กเกจที่อยู่ในสถานะ Draft
+ * Input : รหัสผู้ใช้งานจาก token (req.user.id)
+ * Output : ดึงข้อมูลสำเร็จ (Response 200), กรณีเกิดข้อผิดพลาด (Response 400)
+ */
 export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> = async (
   req,
   res
@@ -882,11 +890,12 @@ export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> =
   }
 };
 
-/*
- * คำอธิบาย : (Admin,Member) Handler สำหรับลบแพ็กเกจสถานะ Draft
- * Input: req.user.id, req.params.id
- * Output: 200 - ข้อความยืนยันการลบแพ็กเกจสถานะ Draft
- * 400 - Error message
+/**
+ * Controller : deleteDraftPackageController
+ * Role Access : Admin, Member
+ * Description : สำหรับลบแพ็กเกจที่อยู่ในสถานะ Draft ของผู้ใช้งาน
+ * Input : รหัสผู้ใช้งานจาก token (req.user.id), รหัสแพ็กเกจจากพารามิเตอร์ (req.params.id)
+ * Output : ลบแพ็กเกจสำเร็จ (Response 200), กรณีไม่มีสิทธิ์เข้าถึง (Response 401), กรณีเกิดข้อผิดพลาด (Response 400)
  */
 export async function deleteDraftPackageController(req: Request, res: Response) {
   try {
@@ -898,9 +907,9 @@ export async function deleteDraftPackageController(req: Request, res: Response) 
     }
 
     const packageId = Number(req.params.id);
-    const userId = req.user.id; // ดึงจาก authMiddleware
+    const userId = req.user.id;
 
-    const result = await DeleteDraftPackage(packageId, userId);
+    const result = await deleteDraftPackage(packageId, userId);
 
     res.status(200).json({
       success: true,
@@ -914,16 +923,24 @@ export async function deleteDraftPackageController(req: Request, res: Response) 
     });
   }
 }
-/*
- * คำอธิบาย : (Admin,Member) Handler สำหรับลบแพ็กเกจสถานะ Draft แบบกลุ่ม
- * Input: req.user.id, req.body.ids (array of package IDs)
- * Output: 200 - ข้อความยืนยันการลบแพ็กเกจสถานะ Draft
- * 400 - Error message
+
+/**
+ * DTO : BulkDeletePackagesDtoSchema
+ * วัตถุประสงค์ : ใช้สำหรับรับข้อมูลรายการรหัสแพ็กเกจ เพื่อทำการลบแพ็กเกจ Draft หลายรายการพร้อมกัน
+ * Input : รายการรหัสแพ็กเกจ (ids)
+ * Output : หากข้อมูลถูกต้อง ระบบจะอนุญาตให้ดำเนินการลบได้
  */
 export const BulkDeletePackagesDtoSchema = {
   body: BulkDeletePackagesDto,
 } satisfies commonDto;
 
+/**
+ * Controller : bulkDeleteDraftPackages
+ * Role Access : Admin, Member
+ * Description : สำหรับลบแพ็กเกจ Draft หลายรายการในครั้งเดียว
+ * Input : รายการรหัสแพ็กเกจจาก req.body.ids
+ * Output : ลบแพ็กเกจสำเร็จ (Response 200), กรณีข้อมูลไม่ถูกต้อง (Response 400), กรณีเกิดข้อผิดพลาดในระบบ (Response 500)
+ */
 export const bulkDeleteDraftPackages = async (req: Request, res: Response) => {
   try {
     const ids = req.body.ids;
@@ -950,6 +967,7 @@ export const bulkDeleteDraftPackages = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 /*
  * DTO: getPackageByIdTouristDto

@@ -107,8 +107,9 @@ const storeRoutes = Router();
  *               status: 404
  *               message: Store not found
  */
-
-// กำหนด endpoint สำหรับดึงข้อมูลร้านค้าตาม ID
+/**
+ * คำอธิบาย : (Super Admin) Route สำหรับดึงข้อมูลรายละเอียดร้านค้า ตาม ID
+ */
 storeRoutes.get("/:id", 
     authMiddleware, 
     validateDto(storeDto), 

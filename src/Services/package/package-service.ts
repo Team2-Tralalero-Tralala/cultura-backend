@@ -1615,10 +1615,11 @@ export const getHistoriesPackageByMember = async (
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
 };
+
 /*
- * คำอธิบาย : ดึงรายการแพ็กเกจสถานะ Draft ของผู้ใช้
- * Input: createById - ID ของผู้ใช้ที่สร้างแพ็กเกจ
- * Output : Array ของแพ็กเกจสถานะ Draft
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการแพ็กเกจที่อยู่ในสถานะ Draft ของผู้ใช้งานตามรหัสผู้สร้างแพ็กเกจ (Admin, Member)
+ * Input : รหัสผู้ใช้งานผู้สร้างแพ็กเกจ (createById)
+ * Output : รายการแพ็กเกจ Draft พร้อมข้อมูลชุมชนและผู้ดูแลแพ็กเกจ
  */
 export async function getDraftPackages(createById: number) {
   const draftPackages = await prisma.package.findMany({
@@ -1645,7 +1646,6 @@ export async function getDraftPackages(createById: number) {
     },
   });
 
-
   return draftPackages.map(pkg => ({
     ...pkg,
     overseerPackage: pkg.overseerPackage
@@ -1657,12 +1657,12 @@ export async function getDraftPackages(createById: number) {
 }
 
 /*
- * คำอธิบาย : ลบแพ็กเกจสถานะ Draft ของผู้ใช้ (Soft Delete)
- * Input: packageId - ID ของแพ็กเกจ, createById - ID ของผู้ใช้ที่สร้างแพ็กเกจ
- * Output : ข้อความยืนยันการลบแพ็กเกจ
+ * คำอธิบาย : ฟังก์ชันสำหรับลบแพ็กเกจ Draft รายการเดียว โดยใช้การลบแบบ Soft Delete (Admin, Member)
+ * Input : รหัสแพ็กเกจ (packageId), รหัสผู้ใช้งานผู้สร้างแพ็กเกจ (createById)
+ * Output : ลบแพ็กเกจ Draft สำเร็จ หรือส่งข้อผิดพลาดกรณีไม่ผ่านเงื่อนไข
  */
-export async function DeleteDraftPackage(packageIdInput: unknown, createByIdInput: unknown) {
-  // แปลงค่าที่เข้ามาเป็น number
+export async function deleteDraftPackage(packageIdInput: unknown, createByIdInput: unknown) {
+
   const packageId = Number(packageIdInput);
   const createById = Number(createByIdInput);
 
@@ -1670,7 +1670,6 @@ export async function DeleteDraftPackage(packageIdInput: unknown, createByIdInpu
     throw new Error("packageId หรือ createById ไม่ถูกต้อง");
   }
 
-  // หาแพ็กเกจด้วย findUnique (id เป็น unique key) แทน findFirst
   const draftPackage = await prisma.package.findUnique({
     where: { id: packageId },
     select: {
@@ -1697,7 +1696,6 @@ export async function DeleteDraftPackage(packageIdInput: unknown, createByIdInpu
     throw new Error("แพ็กเกจถูกลบไปแล้ว");
   }
 
-  // Soft delete
   await prisma.package.update({
     where: { id: packageId },
     data: {
@@ -1708,10 +1706,11 @@ export async function DeleteDraftPackage(packageIdInput: unknown, createByIdInpu
 
   return { message: "ลบแพ็กเกจ Draft สำเร็จ (Soft Delete)" };
 }
+
 /*
- * คำอธิบาย : ลบแพ็กเกจสถานะ Draft ของผู้ใช้เป็นกลุ่ม (Soft Delete)
- * Input:   ids - Array ของ ID แพ็กเกจ
- * Output : ผลลัพธ์การลบแพ็กเกจ
+ * คำอธิบาย : ฟังก์ชันสำหรับลบแพ็กเกจ Draft หลายรายการพร้อมกัน โดยใช้การลบแบบ Soft Delete (Admin, Member)
+ * Input : รายการรหัสแพ็กเกจ (ids)
+ * Output : ผลลัพธ์การลบแพ็กเกจ พร้อมจำนวนแพ็กเกจที่ถูกลบ
  */
 export const bulkDeletePackages = async (ids: number[]) => {
   if (!ids || ids.length === 0) {
@@ -1737,6 +1736,7 @@ export const bulkDeletePackages = async (ids: number[]) => {
     message: `${result.count} แพ็กเกจถูกลบเรียบร้อย`,
   };
 };
+
 
 /*
  * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
@@ -1816,7 +1816,7 @@ export const getPackageDetailByTourist = async (packageId: number) => {
   }
 
   const currentTagIds = packageDetail.tagPackages.map(tagPackage => tagPackage.tagId);
-
+  
   const relatedPackages = await prisma.package.findMany({
     where: {
       id: { not: packageDetail.id },
@@ -1858,7 +1858,6 @@ export const getPackageDetailByTourist = async (packageId: number) => {
     orderBy: {
       id: 'desc'
     },
-    // take: 8,
   });
 
   return {
