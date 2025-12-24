@@ -474,7 +474,6 @@ export async function getMe(userId: number) {
 }
 
 /**
- * ฟังก์ชัน : editProfile
  * คำอธิบาย :
  *   ใช้สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานในตาราง users
  *   จะอัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data เท่านั้น (partial update)
@@ -533,7 +532,7 @@ export async function editProfile(userId: number, data: EditAccountDto) {
   } catch (error: any) {
     /*
      * คำอธิบาย : จัดการกรณีเกิด Prisma Unique Constraint Error (รหัส P2002)
-     *   - ตรวจสอบ target ว่าฟิลด์ไหนซ้ำ แล้วแปลงเป็นข้อความภาษาไทยที่ผู้ใช้เข้าใจง่าย
+     *         - ตรวจสอบ target ว่าฟิลด์ไหนซ้ำ แล้วแปลงเป็นข้อความภาษาไทยที่ผู้ใช้เข้าใจง่าย
      */
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

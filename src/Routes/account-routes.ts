@@ -1023,20 +1023,17 @@ accountRoutes.put(
   allowRoles("admin"),
   editMemberByAdmin
 );
+
 /**
  * @swagger
  * /api/shared/profile:
  *   put:
- *     summary: แก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่ล็อกอินอยู่
+ *     summary: แก้ไขข้อมูลโปรไฟล์และอัปโหลดรูปภาพ (One Step)
  *     description: |
- *       ใช้สำหรับให้ผู้ใช้งานที่ล็อกอินอยู่แก้ไข "ข้อมูลส่วนตัวของตัวเอง"  
- *       ระบบจะอัปเดตเฉพาะฟิลด์ที่ส่งมา  
- *       ต้องแนบ JWT Token ใน Header  
- *
- *       **ตัวอย่างกรณีผิดพลาด**
- *       - ชื่อผู้ใช้ซ้ำ
- *       - อีเมลซ้ำ
- *       - หมายเลขโทรศัพท์ซ้ำ
+ *       ใช้สำหรับแก้ไข "ข้อมูลส่วนตัว" และ "อัปโหลดรูปโปรไฟล์" ใน Request เดียว
+ *       - **รูปแบบการส่ง:** Multipart/Form-Data
+ *       - **ไฟล์รูปภาพ:** ส่งใน field ชื่อ `file`
+ *       - **ข้อมูล Text:** ส่งเป็น JSON String ใน field ชื่อ `data`
  *     tags:
  *       - Shared / Profile
  *     security:
@@ -1044,60 +1041,45 @@ accountRoutes.put(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               fname:
+ *               file:
  *                 type: string
- *                 example: เวียร์
- *               lname:
+ *                 format: binary
+ *                 description: ไฟล์รูปภาพโปรไฟล์ (ถ้าต้องการเปลี่ยน)
+ *               data:
  *                 type: string
- *                 example: ศรีสุข
- *               username:
- *                 type: string
- *                 example: superadmin_1
- *               email:
- *                 type: string
- *                 format: email
- *                 example: superadmin_1@example.com
- *               phone:
- *                 type: string
- *                 example: "0838781779"
- *               profileImage:
- *                 type: string
- *                 nullable: true
- *                 example: uploads/profile/avatar.png
- *               gender:
- *                 type: string
- *                 enum: [MALE, FEMALE, NONE]
- *                 example: NONE
- *               birthDate:
- *                 type: string
- *                 format: date
- *                 example: "2003-05-14"
- *               province:
- *                 type: string
- *                 example: ชลบุรี
- *               district:
- *                 type: string
- *                 example: เมืองชลบุรี
- *               subDistrict:
- *                 type: string
- *                 example: แสนสุข
- *               postalCode:
- *                 type: string
- *                 example: "20130"
+ *                 description: |
+ *                   ข้อมูลผู้ใช้ในรูปแบบ **JSON String**
+ *                   (ตัวอย่าง: `{"fname":"เวียร์", "lname":"ศรีสุข", "phone":"083..."}`)
+ *                 example: >
+ *                   {"fname":"เวียร์","lname":"ศรีสุข","username":"superadmin_1","email":"superadmin_1@example.com","phone":"0838781779"}
  *     responses:
  *       200:
  *         description: แก้ไขข้อมูลโปรไฟล์สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: แก้ไขข้อมูลสำเร็จ
+ *                 data:
+ *                   type: object
  *       400:
- *         description: ไม่สามารถบันทึกข้อมูลได้ (ข้อมูลซ้ำหรือข้อมูลไม่ถูกต้อง)
+ *         description: รูปแบบข้อมูลไม่ถูกต้อง หรือ JSON Parse Error
  */
 
 accountRoutes.put(
   "/shared/profile",
-  validateDto(AccountController.editProfileDto),
+  upload.single("file"),
+  compressUploaded,
   authMiddleware,
   AccountController.editProfile
 );
@@ -1108,8 +1090,8 @@ accountRoutes.put(
  *   get:
  *     summary: ดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่ล็อกอินอยู่
  *     description: |
- *       ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังเข้าสู่ระบบ  
- *       รองรับผู้ใช้ทุก Role ที่มีบัญชีในระบบ  
+ *       ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังเข้าสู่ระบบ
+ *       รองรับผู้ใช้ทุก Role ที่มีบัญชีในระบบ
  *       ต้องแนบ JWT Token ใน Header
  *     tags:
  *       - Shared / Profile
@@ -1181,8 +1163,8 @@ accountRoutes.get(
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 /**
-* คําอธิบาย: route สําหรับแก้ไขโปรไฟล์ Tourist
-*/
+ * คําอธิบาย: route สําหรับแก้ไขโปรไฟล์ Tourist
+ */
 accountRoutes.put(
   "/tourist/edit-profile",
   authMiddleware,
