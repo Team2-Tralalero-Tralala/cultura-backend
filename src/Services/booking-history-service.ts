@@ -1,7 +1,9 @@
 import prisma from "./database-service.js";
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus,ImageType } from "@prisma/client";
+import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "./pagination-dto.js";
+
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
@@ -624,3 +626,109 @@ export const getMemberBookingHistories = async (
     },
   };
 };
+
+/**
+ * คำอธิบาย : ประเภทข้อมูลประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
+ */
+type TouristBookingHistory = {
+  id: number;
+  bookingAt: Date;
+  status: BookingStatus | null;
+  totalParticipant: number;
+  package: {
+    name: string | null;
+    price: number | null;
+    description: string | null;
+    startDate: Date | null;
+    dueDate: Date | null;
+    packageFile: PackageFile[];
+    community: {
+      name: string;
+      location: Location;
+    };
+  } | null;
+};
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
+ * Input :
+ *   - touristId (number) : รหัสผู้ที่เข้าร่วมแพ็กเกจ
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - sort ("asc" | "desc") : ลำดับ
+ *   - filter (object) : ตัวกรอง
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ พร้อม pagination
+ */
+export async function getTouristBookingHistory(
+  touristId: number,
+  page: number = 1,
+  limit: number = 10,
+  sort: "asc" | "desc",
+  filter?: {
+    status?: string[];
+    date?: {
+      from: Date;
+      to: Date;
+    };
+  }
+): Promise<PaginationResponse<TouristBookingHistory>> {
+  const skip = (page - 1) * limit;
+  const whereCondition: any = { touristId };
+
+  if (filter?.status) {
+    whereCondition.status = { in: filter.status as BookingStatus[] };
+  }
+  if (filter?.date) {
+    whereCondition.bookingAt = {
+      gte: filter.date.from,
+      lte: filter.date.to,
+    };
+  }
+
+  const bookingHistories = await prisma.bookingHistory.findMany({
+    where: whereCondition,
+    orderBy: { bookingAt: sort },
+    select: {
+      id: true,
+      bookingAt: true,
+      status: true,
+      totalParticipant: true,
+      rejectReason: true,
+      package: {
+        select: {
+          name: true,
+          price: true,
+          description: true,
+          startDate: true,
+          dueDate: true,
+          packageFile: {
+            where: {
+              type: ImageType.COVER,
+            },
+          },
+          community: {
+            select: {
+              name: true,
+              location: true,
+            },
+          },
+        },
+      },
+    },
+    skip,
+    take: limit,
+  });
+  const totalCount = await prisma.bookingHistory.count({
+    where: whereCondition,
+  });
+  const totalPages = Math.ceil(totalCount / limit);
+  return {
+    data: bookingHistories,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalCount,
+      limit,
+    },
+  };
+}
