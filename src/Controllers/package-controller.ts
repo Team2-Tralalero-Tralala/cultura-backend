@@ -11,15 +11,15 @@ import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.j
 import {
   IdParamDto,
   MembersQueryDto,
-  PackageDto,
+  //PackageDto,
   PackageDuplicateParamDto,
   PackageIdParamDto,
   QueryHomestaysDto,
   QueryListHomestaysDto,
   updatePackageDto,
   BulkDeletePackagesDto,
-  HistoryPackageQueryDto,
 } from "~/Services/package/package-dto.js";
+import * as PackageDto from "~/Services/package/package-dto.js";
 import * as PackageService from "../Services/package/package-service.js";
 import { DeleteDraftPackage, bulkDeletePackages } from "../Services/package/package-service.js";
 
@@ -61,7 +61,7 @@ export async function createPackageSuperAdmin(req: Request, res: Response) {
  */
 export async function createPackageAdmin(req: Request, res: Response) {
   try {
-    const userId = Number(req.user?.id);
+    const userId = Number((req as any).user?.id);
 
     // 1. ตรวจสอบว่ามีการส่งไฟล์มาหรือไม่ (เพื่อแยกแยะว่าเป็น Multipart หรือ JSON ปกติ)
     const files = req.files as {
@@ -122,7 +122,7 @@ export async function createPackageAdmin(req: Request, res: Response) {
  */
 export async function createPackageMember(req: Request, res: Response) {
   try {
-    const userId = Number(req.user?.id);
+    const userId = Number((req as any).user?.id);
     const files = req.files as {
       cover?: Express.Multer.File[];
       gallery?: Express.Multer.File[];
@@ -166,7 +166,7 @@ export async function createPackageMember(req: Request, res: Response) {
  */
 export async function listPackagesSuperAdmin(req: Request, res: Response) {
   try {
-    const userId = Number(req.user?.id);
+    const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getPackagesBySuperAdmin(userId, page, limit);
@@ -184,7 +184,7 @@ export async function listPackagesSuperAdmin(req: Request, res: Response) {
  */
 export async function listPackagesAdmin(req: Request, res: Response) {
   try {
-    const userId = Number(req.user?.id);
+    const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getPackagesByAdmin(userId, page, limit);
@@ -202,7 +202,7 @@ export async function listPackagesAdmin(req: Request, res: Response) {
  */
 export async function listPackagesMember(req: Request, res: Response) {
   try {
-    const userId = Number(req.user?.id);
+    const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getPackagesByMember(userId, page, limit);
@@ -776,7 +776,7 @@ export async function getPackageHistoryDetailAdmin(req: Request, res: Response) 
  */
 export const getHistoriesPackageByAdminDto = {
   params: IdParamDto,
-  query: HistoryPackageQueryDto,
+  query: PackageDto.HistoryPackageQueryDto,
 } satisfies commonDto;
 
 /*
@@ -856,7 +856,7 @@ export async function getPackageDetailByMember(req: Request, res: Response) {
  */
 export const getHistoriesPackageByMemberDto = {
   params: IdParamDto,
-  query: HistoryPackageQueryDto,
+  query: PackageDto.HistoryPackageQueryDto,
 } satisfies commonDto;
 
 /*
