@@ -525,10 +525,21 @@ export async function editProfile(userId: number, data: EditAccountDto) {
   };
 
     try {
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
+      select: {
+        id: true,
+        fname: true,
+        lname: true,
+        username: true,
+        email: true,
+        phone: true,
+        profileImage: true,
+        role: true, 
+      },
     });
+    return updatedUser;
   } catch (error: any) {
     /*
      * คำอธิบาย : จัดการกรณีเกิด Prisma Unique Constraint Error (รหัส P2002)
