@@ -18,9 +18,10 @@ import {
   QueryListHomestaysDto,
   updatePackageDto,
   BulkDeletePackagesDto,
+  HistoryPackageQueryDto,
 } from "~/Services/package/package-dto.js";
 import * as PackageService from "../Services/package/package-service.js";
-import { DeleteDraftPackage,bulkDeletePackages  } from "../Services/package/package-service.js";
+import { DeleteDraftPackage, bulkDeletePackages } from "../Services/package/package-service.js";
 
 /*
  * DTO: createPackageDto
@@ -60,7 +61,7 @@ export async function createPackageSuperAdmin(req: Request, res: Response) {
  */
 export async function createPackageAdmin(req: Request, res: Response) {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
 
     // 1. ตรวจสอบว่ามีการส่งไฟล์มาหรือไม่ (เพื่อแยกแยะว่าเป็น Multipart หรือ JSON ปกติ)
     const files = req.files as {
@@ -121,7 +122,7 @@ export async function createPackageAdmin(req: Request, res: Response) {
  */
 export async function createPackageMember(req: Request, res: Response) {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
     const files = req.files as {
       cover?: Express.Multer.File[];
       gallery?: Express.Multer.File[];
@@ -165,7 +166,7 @@ export async function createPackageMember(req: Request, res: Response) {
  */
 export async function listPackagesSuperAdmin(req: Request, res: Response) {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getPackagesBySuperAdmin(userId, page, limit);
@@ -183,7 +184,7 @@ export async function listPackagesSuperAdmin(req: Request, res: Response) {
  */
 export async function listPackagesAdmin(req: Request, res: Response) {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getPackagesByAdmin(userId, page, limit);
@@ -201,7 +202,7 @@ export async function listPackagesAdmin(req: Request, res: Response) {
  */
 export async function listPackagesMember(req: Request, res: Response) {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getPackagesByMember(userId, page, limit);
@@ -765,21 +766,37 @@ export async function getPackageHistoryDetailAdmin(req: Request, res: Response) 
     return createErrorResponse(res, 400, (error as Error).message);
   }
 }
+
 /*
- * คำอธิบาย : (Admin) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * DTO : getHistoriesPackageByAdminDto
+ * วัตถุประสงค์ : สำหรับตรวจสอบความถูกต้องของ params (id) และ query (page, limit)
+ * Input :
+ *   - query (page, limit)
+ * Output : รายการข้อมูลแพ็กเกจที่สิ้นสุดแล้วของ Admin พร้อม pagination
+ */
+export const getHistoriesPackageByAdminDto = {
+  params: IdParamDto,
+  query: HistoryPackageQueryDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : ฟังก์ชัน Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
  * Input: req.user.id, req.query.{page, limit}
  * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
  * 400 - Error message
  */
-export async function getHistoriesPackageAdmin(req: Request, res: Response) {
+export const getHistoriesPackageAdmin: TypedHandlerFromDto<typeof getHistoriesPackageByAdminDto> = async (
+  req,
+  res
+) => {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
     const result = await PackageService.getHistoriesPackageByAdmin(userId, page, limit);
 
-    return createResponse(res, 200, "Get History Packages Success", result);
+    return createResponse(res, 200, "Get History Packages Successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -829,29 +846,39 @@ export async function getPackageDetailByMember(req: Request, res: Response) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 }
+
+/*
+ * DTO : getHistoriesPackageByMemberDto
+ * วัตถุประสงค์ : สำหรับตรวจสอบความถูกต้องของ params (id) และ query (page, limit)
+ * Input :
+ *   - query (page, limit)
+ * Output : รายการข้อมูลแพ็กเกจที่สิ้นสุดแล้วของ Member พร้อม pagination
+ */
 export const getHistoriesPackageByMemberDto = {
   params: IdParamDto,
-  query: MembersQueryDto,
+  query: HistoryPackageQueryDto,
 } satisfies commonDto;
 
 /*
- * คำอธิบาย : (Member) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * คำอธิบาย : ฟังก์ชัน Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
  * Input: req.user.id, req.query.{page, limit}
- * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
+ * Output: 
+ * 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
  * 400 - Error message
  */
-export const getHistoriesPackageByMember: TypedHandlerFromDto<
-  typeof getHistoriesPackageByMemberDto
-> = async (req, res) => {
+export const getHistoriesPackageByMember: TypedHandlerFromDto<typeof getHistoriesPackageByMemberDto> = async (
+  req,
+  res
+) => {
   try {
-    const page = Number((req.query as any).page) || 1;
-    const limit = Number((req.query as any).limit) || 10;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getHistoriesPackageByMember(
       Number(req.user?.id),
       page,
       limit
     );
-    return createResponse(res, 200, "Get History Packages Success", result);
+    return createResponse(res, 200, "Get History Packages successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

@@ -450,7 +450,7 @@ export const getHomestayWithOtherHomestaysInCommunityDto = {
 } satisfies commonDto;
 
 /*
- * คำอธิบาย : ดึงรายละเอียดที่พักที่เลือก ดึงที่พักอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดที่พักที่เลือก ดึงที่พักอื่นในชุมชนเดียวกัน (ชื่อ + รูป) แบบ pagination
  * Input : communityId, homestayId, page, limit
  * Output : ข้อมูลที่พักที่เลือก พร้อมที่พักอื่นในชุมชนเดียวกัน
  */
