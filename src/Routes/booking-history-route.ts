@@ -709,15 +709,8 @@ bookingRoutes.post(
  *         description: Server Error
  */
 
-/*
- * คำอธิบาย : Routes สำหรับนักท่องเที่ยวดึงรายละเอียดประวัติการจองแพ็กเกจ
- * Path : /api/tourist/booking-history/:id
- * Method : GET
- * Access : tourist
- * Input :
- *   - id (number) : รหัสประวัติการจอง
- * Output :
- *   - ข้อมูลรายละเอียดการจองแพ็กเกจ
+/**
+ * คำอธิบาย: Route สำหรับนักท่องเที่ยวดึงรายละเอียดประวัติการจองแพ็กเกจ
  */
 bookingRoutes.get(
   "/tourist/booking-history/:id",

@@ -300,14 +300,15 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
 };
 
 /**
- * ฟังก์ชัน : getBookingDetailForTourist
  * คำอธิบาย : ดึงรายละเอียดการจองโดยใช้ getDetailBookingById (ไม่ล็อคสถานะ PENDING)
+ * Input: req.params.id - รหัสการจอง (bookingId) ที่ต้องการดึงข้อมูล
+ * Output: 
+ * - 200 OK พร้อมข้อมูลรายละเอียดการจอง (detail)
+ * - 400 Bad Request หากเกิดข้อผิดพลาด
  */
 export const getBookingDetailForTourist = async (req: Request, res: Response) => {
   try {
     const bookingId = Number(req.params.id);
-
-    // เรียกใช้ฟังก์ชัน Generic ที่คุณมีอยู่แล้วใน Service
     const detail = await BookingHistoryService.getDetailBookingById(bookingId); 
     
     return createResponse(

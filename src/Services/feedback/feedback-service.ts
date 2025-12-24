@@ -292,7 +292,6 @@ export const replyFeedbackAdmin = async (
 };
 
 /**
- * ฟังก์ชัน : createFeedback
  * คำอธิบาย : สร้าง Feedback ใหม่สำหรับ Booking
  * Input : bookingId, rating, message, images, user
  * Output : ข้อมูล Feedback ที่สร้างเสร็จแล้ว

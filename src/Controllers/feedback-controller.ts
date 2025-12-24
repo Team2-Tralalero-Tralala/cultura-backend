@@ -151,17 +151,21 @@ export const replyFeedbackAdmin: TypedHandlerFromDto<
   }
 };
 
-/*
- * DTO สำหรับ createFeedback
+/**
+ * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาเพื่อสร้างข้อเสนอแนะ (Feedback)
+ * Input: body (CreateFeedbackDto) ข้อมูลข้อเสนอแนะที่ผู้ใช้งานส่งเข้ามา
+ * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export const createFeedbackDto = {
   body: CreateFeedbackDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : createFeedback
- * คำอธิบาย : รับ Request สร้างรีวิวจากนักท่องเที่ยว
- * Path : POST /api/tourist/booking-history/:bookingId/feedback
+ * คำอธิบาย : Handler สำหรับสร้างข้อเสนอแนะ (Feedback) จากนักท่องเที่ยว
+ * Input: req.params.bookingId, req.body (rating, message), req.files (รูปภาพ)
+ * Output:
+ * - 201 Created พร้อมข้อมูลข้อเสนอแนะที่สร้างสำเร็จ
+ * - 400 Bad Request หาก ID ไม่ถูกต้องหรือเกิดข้อผิดพลาด
  */
 export const createFeedback: TypedHandlerFromDto<typeof createFeedbackDto> = async (
   req,

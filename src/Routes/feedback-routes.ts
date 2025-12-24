@@ -484,17 +484,8 @@ feedbackRoutes.post(
  *         description: Unauthorized
  */
 
-/*
- * คำอธิบาย : Routes สำหรับนักท่องเที่ยวส่ง Feedback หลังการจองแพ็กเกจ
- * Path : /api/tourist/booking-history/:bookingId/feedback
- * Method : POST
- * Access : tourist
- * Body :
- *   - rating (number) : คะแนนที่ให้ (1–5)
- *   - message (string) : ข้อเสนอแนะ (optional)
- *   - gallery (file[]) : รูปภาพประกอบ (สูงสุด 5 รูป)
- * Output :
- *   - ส่ง Feedback สำเร็จ หรือ error ตามกรณี
+/**
+ * คำอธิบาย : Route สำหรับนักท่องเที่ยวส่ง Feedback หลังการจองแพ็กเกจ
  */
 feedbackRoutes.post(
   "/tourist/booking-history/:bookingId/feedback",
