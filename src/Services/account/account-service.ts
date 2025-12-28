@@ -559,3 +559,117 @@ export async function editProfile(userId: number, data: EditAccountDto) {
     throw error;
   }
 }
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
+ * Input : รหัสผู้ใช้งานที่ต้องการแก้ไข (ต้องเป็นบัญชีที่ยังไม่ถูกลบ)
+ *         ข้อมูลโปรไฟล์ที่ต้องการแก้ไข เช่น ชื่อ, นามสกุล, ชื่อผู้ใช้งาน, อีเมล, เบอร์โทร, วันเกิด, เพศ, ที่อยู่ 
+ * Output :
+ *         - อัปเดตข้อมูลผู้ใช้งานในฐานข้อมูลสำเร็จ
+ */
+export async function editProfileTourist(
+  userId: number,
+  data: EditAccountDto
+) {
+/*
+ * คำอธิบาย : ฟังก์ชันตรวจสอบว่าผู้ใช้งานมีอยู่ในระบบหรือไม่
+ * Input : รหัสผู้ใช้งานที่ต้องการตรวจสอบ
+ * Output : ข้อมูลผู้ใช้งานหากพบ, ส่งข้อผิดพลาดหากไม่พบ
+ */
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      isDeleted: false,
+      deleteAt: null,
+    },
+  });
+
+  if (!user) {
+    throw new Error("ไม่พบสมาชิก");
+  }
+/*
+ * คำอธิบาย : ฟังก์ชันตรวจสอบรูปแบบอีเมลและหมายเลขโทรศัพท์
+ * Input : ข้อมูลอีเมลและเบอร์โทรศัพท์ที่ต้องการตรวจสอบ
+ * Output : true หากข้อมูลถูกต้องตามรูปแบบ, false หากไม่ถูกต้อง
+ */
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const isValidPhone = (phone: string) =>
+    /^[0-9]{9,10}$/.test(phone);
+
+  const allowedGender = ["MALE", "FEMALE", "NONE"];
+ /*
+ * คำอธิบาย : ฟังก์ชันเตรียมข้อมูลสำหรับการอัปเดตโปรไฟล์ 
+ * Input : ข้อมูลโปรไฟล์ที่ต้องการแก้ไข
+ * Output : ข้อมูลที่เตรียมไว้สำหรับการอัปเดตในฐานข้อมูล
+ */
+  const updateData: Prisma.UserUpdateInput = {};
+  if (data.fname !== undefined) updateData.fname = data.fname;
+  if (data.lname !== undefined) updateData.lname = data.lname;
+  if (data.username !== undefined) updateData.username = data.username;
+
+  if (data.email !== undefined) {
+    if (!isValidEmail(data.email)) {
+      throw new Error("รูปแบบอีเมลไม่ถูกต้อง");
+    }
+    updateData.email = data.email;
+  }
+
+  if (data.phone !== undefined) {
+    if (!isValidPhone(data.phone)) {
+      throw new Error("หมายเลขโทรศัพท์ไม่ถูกต้อง");
+    }
+    updateData.phone = data.phone;
+  }
+  if (data.profileImage !== undefined) {
+    updateData.profileImage = data.profileImage;
+  }
+  if (data.gender !== undefined) {
+    if (!allowedGender.includes(data.gender)) {
+      throw new Error("ค่าเพศไม่ถูกต้อง");
+    }
+    updateData.gender = data.gender as any;
+  }
+  if (data.birthDate !== undefined) {
+    const date = new Date(data.birthDate);
+    if (isNaN(date.getTime())) {
+      throw new Error("รูปแบบวันเกิดไม่ถูกต้อง");
+    }
+    updateData.birthDate = date;
+  }
+  if (data.province !== undefined) updateData.province = data.province;
+  if (data.district !== undefined) updateData.district = data.district;
+  if (data.subDistrict !== undefined) updateData.subDistrict = data.subDistrict;
+  if (data.postalCode !== undefined) updateData.postalCode = data.postalCode;
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("ไม่มีข้อมูลสำหรับอัปเดต");
+  }
+  try {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+  } catch (error: any) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const target = error.meta?.target as string[] | undefined;
+
+      if (target?.includes("us_username")) {
+        throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
+      }
+      if (target?.includes("us_email")) {
+        throw new Error("อีเมลนี้ถูกใช้งานแล้ว");
+      }
+      if (target?.includes("us_phone")) {
+        throw new Error("หมายเลขโทรศัพท์นี้ถูกใช้งานแล้ว");
+      }
+
+      throw new Error("ข้อมูลซ้ำในระบบ");
+    }
+
+    throw error;
+  }
+}

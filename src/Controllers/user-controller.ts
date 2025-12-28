@@ -508,4 +508,76 @@ export const deleteCommunityMemberById: TypedHandlerFromDto<
   catch (caughtError) {
     return createErrorResponse(res, 404, (caughtError as Error).message);
   }
+  };
+
+/**
+* DTO: getMembersByAdminDto
+* ใช้ตรวจสอบ Query Parameter ของ endpoint (Admin) สำหรับดึงรายชื่อสมาชิก
+*/
+export const getMemberAllByAdminDto = {
+  query: PaginationDto,
+} satisfies commonDto;
+
+/**
+ * ฟังก์ชัน: getMemberAllByAdmin
+ * วัตถุประสงค์: แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
+ * Input:
+ *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
+ *   - req.query.page, req.query.limit
+ * Output:
+ *   - 200 OK : คืนรายการสมาชิกพร้อม pagination
+ *   - 401 Unauthorized : ถ้าไม่มีข้อมูลผู้ใช้ที่ล็อกอิน
+ */
+export const getMemberAllByAdmin: TypedHandlerFromDto<
+  typeof getMemberAllByAdminDto
+> = async (req, res) => {
+  try {
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+
+    const { page = 1, limit = 10 } = req.query;
+
+    const memberData = await UserService.getMemberAllByAdmin(
+      req.user,
+      Number(page),
+      Number(limit)
+    );
+
+    return createResponse(res, 200, "Members fetched successfully", memberData);
+  } catch (caughtError) {
+    return createErrorResponse(res, 400, (caughtError as Error).message);
+  }
+};
+
+export const softDeleteCommunityMemberByIdDto = {
+  params: IdParamDto,
+} satisfies commonDto;
+
+/**
+ * ฟังก์ชัน : deleteCommunityMemberById
+ * คำอธิบาย :
+ *   Handler สำหรับแอดมินลบสมาชิกออกจากชุมชน (Soft Delete)
+ *   ไม่ลบบัญชีผู้ใช้ (User)
+ */
+export const softDeleteCommunityMemberById: TypedHandlerFromDto<
+  typeof softDeleteCommunityMemberByIdDto
+> = async (req, res) => {
+  try {
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+
+    const memberId = Number(req.params.userId);
+
+    const deletedMember =
+      await UserService.softDeleteCommunityMemberByAdmin(req.user.id, memberId);
+
+    return createResponse(
+      res,
+      200,
+      "Deleted community member successfully",
+      deletedMember
+    );
+  } catch (caughtError) {
+    return createErrorResponse(res, 404, (caughtError as Error).message);
+  }
 };

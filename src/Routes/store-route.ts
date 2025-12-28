@@ -1202,4 +1202,169 @@ storeRoute.delete(
   allowRoles("superadmin", "admin"),
   StoreController.deleteStore
 );
+
+/**
+ * @swagger
+ * /api/shared/community/{communityId}/store/{storeId}:
+ *   get:
+ *     summary: ดึงรายละเอียดร้านค้า พร้อมร้านอื่นในชุมชนเดียวกัน
+ *     description: |
+ *       ใช้สำหรับแสดงรายละเอียดของร้านค้าที่เลือก  
+ *       พร้อมดึงรายการร้านค้าอื่น ๆ ที่อยู่ในชุมชนเดียวกันแบบแบ่งหน้า (pagination)
+ *     tags:
+ *       - Shared / Store
+ *     parameters:
+ *       - in: path
+ *         name: communityId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสชุมชน
+ *
+ *       - in: path
+ *         name: storeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสร้านค้าที่ต้องการดูรายละเอียด
+ *
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: หน้าที่ต้องการ (เริ่มต้นที่ 1)
+ *
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 12
+ *         description: จำนวนร้านค้าอื่นต่อหน้า
+ *
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลร้านค้าและร้านอื่นในชุมชนสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Get store with other stores in community
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     store:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 23
+ *                         name:
+ *                           type: string
+ *                           example: ร้านกาแฟชุมชน
+ *                         detail:
+ *                           type: string
+ *                           example: ร้านกาแฟบรรยากาศอบอุ่น
+ *                         storeImage:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         communityId:
+ *                           type: integer
+ *                           example: 1
+ *                         location:
+ *                           type: object
+ *                         tagStores:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               tag:
+ *                                 type: object
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                   name:
+ *                                     type: string
+ *
+ *                     otherStores:
+ *                       type: object
+ *                       properties:
+ *                         data:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 5
+ *                               name:
+ *                                 type: string
+ *                                 example: ร้านของฝากชุมชน
+ *                               storeImage:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             currentPage:
+ *                               type: integer
+ *                               example: 1
+ *                             limit:
+ *                               type: integer
+ *                               example: 12
+ *                             totalCount:
+ *                               type: integer
+ *                               example: 20
+ *                             totalPages:
+ *                               type: integer
+ *                               example: 2
+ *
+ *       400:
+ *         description: พารามิเตอร์ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: Invalid parameter
+ *
+ *       404:
+ *         description: ไม่พบชุมชนหรือร้านค้าที่ระบุ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: Store not found
+ */
+
+/* 
+* คำอธิบาย : ใช้สำหรับแสดงรายละเอียดร้านค้าที่เลือก พร้อมดึงรายชื่อร้านค้าอื่น ๆ ที่อยู่ในชุมชนเดียวกัน 
+*/
+storeRoute.get(
+  "/shared/community/:communityId/store/:storeId",
+  validateDto(StoreController.getStoreWithOtherStoresInCommunityDto),
+  StoreController.getStoreWithOtherStoresInCommunity
+);
+
 export default storeRoute;
