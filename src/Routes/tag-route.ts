@@ -6,6 +6,9 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 const tagRoutes = Router();
 
 /**
+ * คำอธิบาย : route สำหรับสร้างประเภทหรือแท็ก
+ */
+/**
  * @swagger
  * /api/super/tag:
  *   post:
@@ -92,18 +95,17 @@ const tagRoutes = Router();
  *           type: string
  *           example: "Tag already exists"
  */
-
-/**
- * คำอธิบาย : route สำหรับสร้างประเภทหรือแท็ก
- */
 tagRoutes.post(
     "/super/tag",
-    validateDto(TagController.createTagDto),
     authMiddleware,
     allowRoles("superadmin"),
+    validateDto(TagController.createTagDto),
     TagController.createTag
 );
 
+/**
+ * คำอธิบาย : route สำหรับลบประเภทหรือแท็ก
+ */
 /**
  * @swagger
  * /api/super/tag/{tagId}:
@@ -189,18 +191,17 @@ tagRoutes.post(
  *           type: string
  *           example: "Tag not found"
  */
-
-/**
- * คำอธิบาย : route สำหรับลบประเภทหรือแท็ก
- */
 tagRoutes.patch(
     "/super/tag/:tagId",
-    validateDto(TagController.deleteTagByIdDto),
     authMiddleware,
     allowRoles("superadmin"),
+    validateDto(TagController.deleteTagByIdDto),
     TagController.deleteTagById
 );
 
+/**
+ * คำอธิบาย : route สำหรับแก้ไขประเภทหรือแท็ก
+ */
 /**
  * @swagger
  * /api/super/tag/{tagId}:
@@ -304,17 +305,17 @@ tagRoutes.patch(
  *           type: string
  *           example: "Tag not found"
  */
-
-/**
- * คำอธิบาย : route สำหรับแก้ไขประเภทหรือแท็ก
- */
 tagRoutes.put(
     "/super/tag/:tagId",
-    validateDto(TagController.editTagDto),
     authMiddleware,
     allowRoles("superadmin"),
+    validateDto(TagController.editTagDto),
     TagController.editTag
 );
+
+/**
+ * คำอธิบาย : route สำหรับดึงข้อมูลประเภทหรือแท็กมาแสดงทั้งหมด
+ */
 /**
  * @swagger
  * /api/shared/tags:
@@ -403,16 +404,11 @@ tagRoutes.put(
  *           type: string
  *           example: "เกิดข้อผิดพลาดในการประมวลผลคำขอ"
  */
-
-
-/**
- * คำอธิบาย : route สำหรับดึงข้อมูลประเภทหรือแท็กมาแสดงทั้งหมด
- */
 tagRoutes.get(
     "/shared/tags",
-    validateDto(TagController.getAllTagsDto),
     authMiddleware,
     allowRoles("superadmin", "admin", "member"),
+    validateDto(TagController.getAllTagsDto),
     TagController.getAllTags);
 
 export default tagRoutes;
