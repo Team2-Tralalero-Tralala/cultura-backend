@@ -20,6 +20,7 @@ import {
   editHomestayAdmin,
   deleteHomestayAdmin,
   deleteHomestaySuperAdmin,
+  getHomestayDetailByAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -790,7 +791,7 @@ homestayRoutes.get(
   "/admin/community/homestay/:homestayId",
   authMiddleware,
   allowRoles("admin"),
-  getHomestayDetail
+  getHomestayDetailByAdmin
 );
 
 /**

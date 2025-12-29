@@ -186,7 +186,6 @@ export const getDetailBooking = async (id: number) => {
 };
 
 /*
- * ฟังก์ชัน : getBookingsByAdmin
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
  * Input :
  *   - adminId (number) : รหัสผู้ดูแลที่ร้องขอ (ต้องเป็น Admin)
@@ -338,7 +337,6 @@ export const updateBookingStatus = async (
 };
 
 /*
- * ฟังก์ชัน : getBookingsByMember
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองเฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (เฉพาะ Member)
  * Input :
  *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
