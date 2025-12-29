@@ -1215,7 +1215,7 @@ export async function getTouristDashboard(
   );
 
   // lastesr 5 booking sort by ascending
-  const lastBooking = summaryBookings.slice(-5).reverse();
+  const lastBookingLists = summaryBookings.slice(-5).reverse();
 
   return {
     summary: {
@@ -1228,7 +1228,7 @@ export async function getTouristDashboard(
       bookingCountGraph,
     },
     package: {
-      lastBooking,
+      lastBookingLists,
     },
   };
 }

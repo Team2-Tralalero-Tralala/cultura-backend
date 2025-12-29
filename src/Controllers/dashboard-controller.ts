@@ -204,18 +204,21 @@ export const getTouristDashboard: TypedHandlerFromDto<
     const query = req.query as any;
     const { bookingPeriodType } = query;
 
-    const getArray = (key: string) => {
+    /**
+     * คำอธิบาย : ฟังก์ชันสำหรับแปลงค่า query ให้เป็น array
+     * Input : key (string)
+     * Output : array
+     */
+    const convertBookingDateToArray = (key: string) => {
       const val = query[key] || query[`${key}[]`];
       return Array.isArray(val) ? val : val ? [val] : [];
     };
 
-    const bookingDates = getArray("bookingDates");
-
-    const toArray = (val: any) => (Array.isArray(val) ? val : val ? [val] : []);
+    const bookingDates = convertBookingDateToArray("bookingDates");
 
     const result = await DashboardService.getTouristDashboard(req.user?.id, {
       periodType: bookingPeriodType as "weekly" | "monthly" | "yearly",
-      dates: toArray(bookingDates),
+      dates: bookingDates,
     });
 
     return createResponse(
