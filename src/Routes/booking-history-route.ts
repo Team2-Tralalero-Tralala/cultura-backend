@@ -648,10 +648,29 @@ bookingRoutes.post(
   BookingHistoryController.updateBookingStatusByMember
 );
 
-/*
- * คำอธิบาย : ดึงข้อมูลประวัติการจองของ Tourist ที่ล็อกอินอยู่
- */
 /**
+ * @swagger
+ * /api/tourist/booking-history/{id}:
+ *   get:
+ *     tags:
+ *       - Tourist - Booking History
+ *     summary: ดึงรายละเอียดประวัติการจองแพ็กเกจ
+ *     description: |
+ *       นักท่องเที่ยวสามารถดูรายละเอียดการจองแพ็กเกจของตนเองได้
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: รหัสประวัติการจอง
+ *         schema:
+ *           type: integer
+ *           example: 12
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูลประวัติการจองสำเร็จ
+ * คำอธิบาย : ดึงข้อมูลประวัติการจองของ Tourist ที่ล็อกอินอยู่
  * @swagger
  * /api/tourist/booking-histories:
  *   get:
@@ -720,6 +739,47 @@ bookingRoutes.post(
  *                   example: true
  *                 message:
  *                   type: string
+ *                   example: ดึงข้อมูลประวัติการจองสำเร็จ
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 12
+ *                     package:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 3
+ *                         name:
+ *                           type: string
+ *                           example: "พักใจใต้เงาไม้"
+ *                     bookingDate:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-01-10T08:30:00Z"
+ *       401:
+ *         description: ไม่ได้เข้าสู่ระบบหรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึงข้อมูลนี้
+ *       404:
+ *         description: ไม่พบประวัติการจอง
+ *       500:
+ *         description: Server Error
+ */
+
+/**
+ * คำอธิบาย: Route สำหรับนักท่องเที่ยวดึงรายละเอียดประวัติการจองแพ็กเกจ
+ */
+bookingRoutes.get(
+  "/tourist/booking-history/:id",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getBookingDetailForTourist
+);
+
+ /*
  *                   example: Booking histories (tourist) retrieved successfully
  *                 data:
  *                   type: object

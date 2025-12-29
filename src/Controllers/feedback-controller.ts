@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import * as response from "~/Libs/createResponse.js";
 import * as FeedbackService from "~/Services/feedback/feedback-service.js";
-import { ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
+import { CreateFeedbackDto, ReplyFeedbackDto } from "~/Services/feedback/feedback-dto.js";
 import {
   commonDto,
   type TypedHandlerFromDto,
@@ -146,6 +146,53 @@ export const replyFeedbackAdmin: TypedHandlerFromDto<
       "Reply feedback successfully",
       data
     );
+  } catch (error) {
+    return response.createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/**
+ * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาเพื่อสร้างข้อเสนอแนะ (Feedback)
+ * Input: body (CreateFeedbackDto) ข้อมูลข้อเสนอแนะที่ผู้ใช้งานส่งเข้ามา
+ * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
+ */
+export const createFeedbackDto = {
+  body: CreateFeedbackDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : Handler สำหรับสร้างข้อเสนอแนะ (Feedback) จากนักท่องเที่ยว
+ * Input: req.params.bookingId, req.body (rating, message), req.files (รูปภาพ)
+ * Output:
+ * - 201 Created พร้อมข้อมูลข้อเสนอแนะที่สร้างสำเร็จ
+ * - 400 Bad Request หาก ID ไม่ถูกต้องหรือเกิดข้อผิดพลาด
+ */
+export const createFeedback: TypedHandlerFromDto<typeof createFeedbackDto> = async (
+  req,
+  res
+) => {
+  try {
+    const { bookingId } = req.params as { bookingId: string };
+    const id = Number(bookingId);
+    if (isNaN(id)) {
+      return response.createErrorResponse(res, 400, "ID การจองไม่ถูกต้อง");
+    }
+    const requestFiles = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const galleryFiles = requestFiles?.["gallery"] || [];
+    const feedbackImagePaths = galleryFiles.map(
+      (fileItem) => `/uploads/${fileItem.filename}`
+    );
+    const { rating, message } = req.body;
+    const feedbackResult = await FeedbackService.createFeedback(
+      id,
+      {
+        rating: Number(rating),
+        message,
+        images: feedbackImagePaths
+      },
+      req.user!
+    );
+    return response.createResponse(res, 201, "ส่งข้อเสนอแนะสำเร็จ", feedbackResult);
   } catch (error) {
     return response.createErrorResponse(res, 400, (error as Error).message);
   }
