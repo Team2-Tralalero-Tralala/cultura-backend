@@ -19,7 +19,8 @@ const searchRoutes = Router();
  *       2. ค้นหาตาม tag(s): ใช้ query parameter `tag` (หลาย tag) หรือ `tags` (comma-separated)
  *       3. ค้นหาตาม keyword และ tag(s) ร่วมกัน: ใช้ทั้ง `search` และ `tag`/`tags`
  *       4. กรองตามราคา: ใช้ `priceMin` และ `priceMax`
- *       5. รองรับ pagination: `page` และ `limit`
+ *       5. เรียงลำดับผลลัพธ์: ใช้ `sort` (latest, price-low, price-high, popular)
+ *       6. รองรับ pagination: `page` และ `limit`
  *       สำหรับนักท่องเที่ยว (Tourist) - ไม่ต้องยืนยันตัวตน
  *     tags:
  *       - Search
@@ -63,6 +64,15 @@ const searchRoutes = Router();
  *           format: float
  *         description: ราคาสูงสุด
  *         example: 5000
+ *       - in: query
+ *         name: sort
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [latest, price-low, price-high, popular]
+ *           default: latest
+ *         description: การเรียงลำดับผลลัพธ์ (latest=ล่าสุด, price-low=ราคาต่ำ-สูง, price-high=ราคาสูง-ต่ำ, popular=ยอดนิยม)
+ *         example: "latest"
  *       - in: query
  *         name: page
  *         required: false
@@ -183,8 +193,9 @@ const searchRoutes = Router();
  *   - ?tags=tag1,tag2 - ค้นหาตาม tag(s) (comma-separated)
  *   - ?search=keyword&tag=tag1&tag=tag2 - ค้นหาตาม keyword และ tag(s) ร่วมกัน
  *   - ?priceMin=1000&priceMax=5000 - กรองตามราคา
+ *   - ?sort=latest|price-low|price-high|popular - เรียงลำดับผลลัพธ์
  *   - ?page=1&limit=10 - pagination
- * Input : Query parameters (search, tag, tags, priceMin, priceMax, page, limit)
+ * Input : Query parameters (search, tag, tags, priceMin, priceMax, sort, page, limit)
  * Output : ข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
  */
 searchRoutes.get(

@@ -5,8 +5,8 @@
  */
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
-  commonDto,
-  type TypedHandlerFromDto,
+    commonDto,
+    type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { SearchQueryDto } from "../Services/search/search-dto.js";
 import * as SearchService from "../Services/search/search-service.js";
@@ -19,6 +19,7 @@ import * as SearchService from "../Services/search/search-service.js";
  *   - query.tags - comma-separated tags (optional, เช่น "tag1,tag2")
  *   - query.priceMin - ราคาขั้นต่ำ (optional)
  *   - query.priceMax - ราคาสูงสุด (optional)
+ *   - query.sort - การเรียงลำดับ (optional, ค่าที่อนุญาต: latest, price-low, price-high, popular)
  *   - query.page, query.limit - pagination
  * Output : ข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
  */
@@ -34,7 +35,8 @@ export const searchDto = {
  *   - ค้นหาตาม tag(s) เท่านั้น: ?tag=tag1&tag=tag2 หรือ ?tags=tag1,tag2
  *   - ค้นหาตาม keyword และ tag(s) ร่วมกัน: ?search=keyword&tag=tag1&tag=tag2
  *   - กรองตามราคา: ?priceMin=1000&priceMax=5000
- * Input : req.query.search, req.query.tag (array), req.query.tags (comma-separated), req.query.priceMin, req.query.priceMax, req.query.page, req.query.limit
+ *   - เรียงลำดับผลลัพธ์: ?sort=latest|price-low|price-high|popular
+ * Input : req.query.search, req.query.tag (array), req.query.tags (comma-separated), req.query.priceMin, req.query.priceMax, req.query.sort, req.query.page, req.query.limit
  * Output :
  *   - 200 OK พร้อมข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
  *   - 400 Bad Request ถ้ามี error หรือไม่ระบุ search/tag อย่างใดอย่างหนึ่ง
@@ -49,6 +51,7 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     const tagsCommaSeparated = req.query.tags as string[] | string | undefined;
     const priceMin = req.query.priceMin as number | undefined;
     const priceMax = req.query.priceMax as number | undefined;
+    const sort = (req.query.sort as "latest" | "price-low" | "price-high" | "popular" | undefined) ?? "latest";
     const page = (req.query.page as number) ?? 1;
     const limit = (req.query.limit as number) ?? 10;
 
@@ -106,7 +109,8 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
       priceMin,
       priceMax,
       page,
-      limit
+      limit,
+      sort
     );
     return createResponse(
       res,
