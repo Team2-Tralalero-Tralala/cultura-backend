@@ -17,10 +17,14 @@ import {
   getMemberByAdmin,
   createMemberByAdmin,
   editMemberByAdmin,
+  editProfileTouristDto,
 } from "../Controllers/account-controller.js";
 import * as AccountController from "../Controllers/account-controller.js";
 import { validateDto } from "../Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "../Middlewares/auth-middleware.js";
+import { upload } from "~/Libs/uploadFile.js";
+import { compressImage } from "~/Libs/compressFile.js";
+import { compressUploaded } from "~/Middlewares/upload-middleware.js";
 const accountRoutes = Router();
 
 /**
@@ -1122,6 +1126,70 @@ accountRoutes.get(
   validateDto(AccountController.getMeDto),
   authMiddleware,
   AccountController.getMe
+);
+/**
+ * @swagger
+ * /api/tourist/edit-profile:
+ *   put:
+ *     tags:
+ *       - Account
+ *     summary: แก้ไขโปรไฟล์นักท่องเที่ยว
+ *     description: |
+ *       แก้ไขข้อมูลโปรไฟล์นักท่องเที่ยว พร้อมอัปโหลดรูปโปรไฟล์
+ *       - ต้องยืนยันตัวตนด้วย JWT Bearer Token
+ *       - ใช้ multipart/form-data
+ *       - Response เป็นรูปแบบ createResponse / createErrorResponse
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             allOf:
+ *               - $ref: '#/components/schemas/EditProfileTouristDto'
+ *               - type: object
+ *                 properties:
+ *                   profileImage:
+ *                     type: string
+ *                     format: binary
+ *                     description: ไฟล์รูปโปรไฟล์
+ *     responses:
+ *       200:
+ *         description: แก้ไขโปรไฟล์สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: ไม่ได้รับอนุญาต (JWT ไม่ถูกต้องหรือไม่มี)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: เกิดข้อผิดพลาดภายในระบบ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+/**
+* คําอธิบาย: route สําหรับแก้ไขโปรไฟล์ Tourist
+*/
+accountRoutes.put(
+  "/tourist/edit-profile",
+  authMiddleware,
+  upload.single("profileImage"),
+  compressUploaded,
+  validateDto(AccountController.editProfileTouristDto),
+  AccountController.editProfileTourist
 );
 
 export default accountRoutes;

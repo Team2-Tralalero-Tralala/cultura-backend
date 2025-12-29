@@ -3,6 +3,7 @@ import { Router } from "express";
 import { validateDto } from "~/Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 import { upload } from "~/Libs/uploadFile.js";
+import * as HomestayController from "../Controllers/homestay-controller.js";
 
 import {
   createHomestayDto,
@@ -979,6 +980,145 @@ homestayRoutes.patch(
   authMiddleware,
   allowRoles("superadmin"),
   deleteHomestaySuperAdmin
+);
+
+/**
+ * tourist and guests
+ * - สร้างโฮมสเตย์เดี่ยว/หลายรายการใต้ community ที่กำหนด
+ * - ดูรายการทั้งหมด (พร้อม filter ผ่าน query)
+ * - ดูรายละเอียด/แก้ไขตาม id
+ */
+/**
+ * @swagger
+ * /api/shared/community/{communityId}/homestay/{homestayId}:
+ *   get:
+ *     summary: ดึงรายละเอียดที่พักพร้อมที่พักอื่นในชุมชน (Shared)
+ *     description: |
+ *       ใช้สำหรับดึงรายละเอียดของที่พักที่ระบุ พร้อมทั้งแสดงข้อมูลที่พักอื่นๆ ในชุมชนเดียวกัน
+ *       ข้อมูลถูกแบ่งเป็นส่วนๆ: รายละเอียดที่พัก (homestay), ชุมชน (community), ที่ตั้ง (location), และที่พักอื่น (otherHomestays)
+ *     tags:
+ *       - Homestay (Shared)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: communityId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสชุมชน
+ *       - in: path
+ *         name: homestayId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสที่พักที่ต้องการดูรายละเอียด
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: หน้าสำหรับรายการที่พักอื่น (pagination)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 12
+ *         description: จำนวนรายการต่อหน้าสำหรับที่พักอื่น
+ *     responses:
+ *       200:
+ *         description: สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Get homestay detail with other homestays successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     homestay:
+ *                       type: object
+ *                       description: ข้อมูลรายละเอียดที่พัก (ไม่รวม location/community)
+ *                       properties:
+ *                         id: { type: integer }
+ *                         name: { type: string }
+ *                         type: { type: string }
+ *                         guestPerRoom: { type: integer }
+ *                         totalRoom: { type: integer }
+ *                         facility: { type: array, items: { type: string } }
+ *                         homestayImage:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id: { type: integer }
+ *                               image: { type: string }
+ *                               type: { type: string }
+ *                         tagHomestays:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               tag:
+ *                                 type: object
+ *                                 properties:
+ *                                   id: { type: integer }
+ *                                   name: { type: string }
+ *                     community:
+ *                       type: object
+ *                       description: ข้อมูลชุมชนของที่พัก
+ *                       properties:
+ *                         id: { type: integer }
+ *                         name: { type: string }
+ *                     location:
+ *                       type: object
+ *                       description: ข้อมูลที่ตั้งของที่พัก
+ *                       properties:
+ *                         id: { type: integer }
+ *                         houseNumber: { type: string }
+ *                         villageNumber: { type: string }
+ *                         subDistrict: { type: string }
+ *                         district: { type: string }
+ *                         province: { type: string }
+ *                         postalCode: { type: string }
+ *                         latitude: { type: number }
+ *                         longitude: { type: number }
+ *                     otherHomestays:
+ *                       type: object
+ *                       description: รายการที่พักอื่นๆ ในชุมชนเดียวกัน (Pagination)
+ *                       properties:
+ *                         data:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id: { type: integer }
+ *                               name: { type: string }
+ *                               homestayImage: { type: array }
+ *                         pagination:
+ *                           type: object
+ *                           properties:
+ *                             currentPage: { type: integer }
+ *                             limit: { type: integer }
+ *                             totalCount: { type: integer }
+ *                             totalPages: { type: integer }
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *       404:
+ *         description: ไม่พบข้อมูล
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ */
+homestayRoutes.get(
+  "/shared/community/:communityId/homestay/:homestayId",
+  validateDto(HomestayController.getHomestayWithOtherHomestaysInCommunityDto),
+  HomestayController.getHomestayWithOtherHomestaysInCommunity
 );
 
 export default homestayRoutes;

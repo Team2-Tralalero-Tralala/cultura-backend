@@ -3,6 +3,7 @@ import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { getHistoriesByRole } from "../Services/booking-history-service.js";
 import * as bookingService from "../Services/booking-history-service.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
+import { IsNumberString, IsOptional, IsString } from "class-validator";
 import {
   commonDto,
   type TypedHandlerFromDto,
@@ -293,6 +294,199 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
       200,
       "update booking status (member) successfully",
       updated
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/**
+ * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
+ * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
+ */
+export class GetHistoryDto {
+  /**
+   * หมายเลขหน้าที่ต้องการดึงข้อมูล
+   */
+  @IsOptional()
+  page?: any;
+
+  /**
+   * จำนวนรายการต่อหน้า
+   */
+  @IsOptional()
+  limit?: any;
+
+  /**
+   * สถานะการจอง
+   * ยอมรับเป็น String ใด ๆ (รวมถึง "ALL")
+   */
+  @IsString()
+  @IsOptional()
+  status?: string; // ยอมรับ String อะไรก็ได้ (รวมถึง "ALL")
+}
+
+/**
+ * คำอธิบาย : กำหนด Schema ของ Query สำหรับ Endpoint นี้
+ */
+export const getHistoryDto = {
+  query: GetHistoryDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย : Controller สำหรับดึงประวัติการจองของสมาชิก
+ * รองรับการแบ่งหน้า และการดึงข้อมูลทุกสถานะ (ALL)
+ * Input  : req (ต้องผ่าน Auth เพื่อให้ได้ memberId)
+ * Output : Response ข้อมูลประวัติการจอง
+ */
+export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (
+  req,
+  res
+) => {
+  try {
+    // ดึง memberId จากข้อมูลผู้ใช้งานที่ผ่านการยืนยันตัวตน
+    const memberId = Number(req.user!.id);
+
+    // รับค่า Query Parameters พร้อมกำหนดค่า Default
+    const { page = 1, limit = 10, status } = req.query as any;
+
+    // เรียก Service เพื่อดึงข้อมูลประวัติการจอง
+    const result = await bookingService.getMemberBookingHistories(
+      memberId,
+      Number(page),
+      Number(limit),
+      status
+    );
+
+    // ส่ง Response กลับเมื่อดึงข้อมูลสำเร็จ
+    return createResponse(res, 200, "Get history success", result);
+  } catch (error) {
+    // ส่ง Error Response เมื่อเกิดข้อผิดพลาด
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/**
+ * คำอธิบาย : Dispatcher สำหรับเลือกเส้นทางการทำงานของ API
+ * - ถ้า status = "ALL" → ใช้ Logic ใหม่
+ * - ถ้า status อื่น     → ใช้ Logic เดิม
+ */
+export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
+  req,
+  res,
+  next
+) => {
+  // ถ้าเจอ ALL -> ไปทางใหม่
+  if (req.query.status === "ALL") {
+    return getMemberBookingHistoriesNew(req, res, next);
+  }
+
+  // ถ้าไม่เจอ -> ไปทางเดิม
+  return getBookingsByMember(req, res, next);
+};
+
+
+/**
+ * DTO สำหรับรับ Parameter ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
+ */
+export class TouristIdParamDto {
+  @IsNumberString()
+  touristId?: string;
+}
+/**
+ * DTO สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
+ * วัตถุประสงค์ : เพื่อให้ผู้ที่เดินทางสามารถดูประวัติการจองของตัวเอง
+ * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * input :
+ *   - req.query.sort : ลำดับการเรียงข้อมูล (asc/desc)
+ *   - req.query.status : สถานะการจอง
+ *   - req.query.startDate : วันที่เริ่มต้น
+ *   - req.query.endDate : วันที่สิ้นสุด
+ * output :
+ *   - JSON response พร้อมข้อมูลประวัติการจองของผู้ที่เดินทาง
+ */
+export class TouristBookingHistoryQueryDto extends PaginationDto {
+  @IsOptional()
+  @IsString()
+  sort?: "asc" | "desc";
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+}
+/**
+ * DTO สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * วัตถุประสงค์ : เพื่อให้ผู้ที่เดินทางสามารถดูประวัติการจองของตัวเอง
+ * คำอธิบาย : DTO สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * Input :
+ *   - req.params.touristId : รหัสผู้ที่เดินทาง (TouristID)
+ *   - req.query.page, req.query.limit
+ * Output :
+ *   - JSON response พร้อมข้อมูลประวัติการจองของผู้ที่เดินทาง
+ */
+export const getTouristBookingHistoriesDto = {
+  params: TouristIdParamDto,
+  query: TouristBookingHistoryQueryDto,
+} satisfies commonDto;
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * input: communityId, page, limit
+ * output: account in community
+ */
+export const getTouristBookingHistories: TypedHandlerFromDto<
+  typeof getTouristBookingHistoriesDto
+> = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      sort,
+      status,
+      startDate,
+      endDate,
+    } = req.query as any;
+    const filter: {
+      status?: string[];
+      date?: { from: Date; to: Date };
+    } = {};
+
+    if (status) {
+      filter.status = status
+        .split(",")
+        .map((status: string) => status.trim())
+        .map((status: string) =>
+          status === "REFUNDED_PENDING" ? "REFUND_PENDING" : status
+        );
+    }
+
+    if (startDate && endDate) {
+      filter.date = {
+        from: new Date(startDate),
+        to: new Date(endDate),
+      };
+    }
+    const result = await bookingService.getTouristBookingHistory(
+      Number(req.user?.id),
+      Number(page),
+      Number(limit),
+      sort || "desc",
+      filter
+    );
+    return createResponse(
+      res,
+      200,
+      "get booking histories successfully",
+      result
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);

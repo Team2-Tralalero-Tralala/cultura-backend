@@ -420,3 +420,111 @@ export async function deleteCommunityMember(memberId: number) {
     },
   });
 }
+
+/**
+ * ฟังก์ชัน: getMemberAllByAdmin
+ * วัตถุประสงค์: แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
+ * เงื่อนไข:
+ *   - ดูได้เฉพาะ user ที่เป็นสมาชิก (อยู่ใน community_members)
+ *   - community ต้องเป็นชุมชนที่มี adminId = user.id
+ *   - รองรับ soft delete (isDeleted = false)
+ */
+export async function getMemberAllByAdmin(
+  user: UserPayload,
+  page: number = 1,
+  limit: number = 10
+): Promise<PaginationResponse<any>> {
+  const skip = (page - 1) * limit;
+
+  if (user.role.toLowerCase() !== "admin") {
+    throw new Error("Forbidden");
+  }
+
+  const whereCondition: any = {};
+
+  whereCondition.isDeleted = false;
+  whereCondition.status = "ACTIVE";
+  whereCondition.id = { not: user.id };
+
+  whereCondition.communityMembers = {
+    some: {
+      isDeleted: false,
+      Community: {
+        adminId: user.id,
+        isDeleted: false,
+      },
+    },
+  };
+
+  const totalCount = await prisma.user.count({ where: whereCondition });
+
+  const users = await prisma.user.findMany({
+    where: whereCondition,
+    select: {
+      id: true,
+      fname: true,
+      lname: true,
+      username: true,
+      email: true,
+      status: true,
+      role: { select: { name: true } },
+      communityMembers: {
+        where: { isDeleted: false },
+        select: {
+          Community: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { id: "asc" },
+    skip,
+    take: limit,
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return {
+    data: users,
+    pagination: { currentPage: page, totalPages, totalCount, limit },
+  };
+}
+
+/**
+ * ฟังก์ชัน : softDeleteCommunityMemberByAdmin
+ * คำอธิบาย :
+ *   แอดมินชุมชนลบ "สมาชิกออกจากชุมชน" แบบ Soft Delete
+ *   (ลบที่ตาราง community_members เท่านั้น ไม่ลบบัญชีผู้ใช้)
+ *
+ * Input :
+ *   - adminId  (number) : user id ของแอดมินที่ล็อกอิน
+ *   - memberId (number) : user id ของสมาชิกที่ต้องการลบออกจากชุมชน
+ *
+ * Output :
+ *   - ข้อมูลแถว communityMembers หลัง soft delete
+ */
+export async function softDeleteCommunityMemberByAdmin(
+  adminId: number,
+  memberId: number
+) {
+  const target = await prisma.communityMembers.findFirst({
+    where: {
+      memberId: memberId,
+      isDeleted: false,
+      Community: {
+        adminId: adminId,
+        isDeleted: false,
+      },
+    },
+  });
+
+  if (!target) {
+    throw new Error("ไม่พบสมาชิกในชุมชนนี้ หรือคุณไม่มีสิทธิ์ลบ");
+  }
+
+  return prisma.communityMembers.update({
+    where: { id: target.id },
+    data: {
+      isDeleted: true,
+      deleteAt: new Date(),
+    },
+  });
+}

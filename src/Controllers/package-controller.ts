@@ -950,3 +950,33 @@ export const bulkDeleteDraftPackages = async (req: Request, res: Response) => {
     });
   }
 };
+
+/*
+ * DTO: getPackageByIdTouristDto
+ * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (packageId)
+ * เมื่อนักท่องเที่ยวดึงข้อมูลรายละเอียดแพ็กเกจ
+ * Input: params.packageId
+ * Output: (Passed to handler)
+ */
+export const getPackageByIdTouristDto = {
+  params: PackageDuplicateParamDto, // ใช้ DTO ที่มี field 'packageId' ตรงกับ Route param
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : Handler สำหรับดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
+ * Input: req.params.packageId - รหัสของแพ็กเกจ
+ * Output:
+ * - 200 Get Package Detail Success พร้อมข้อมูลแพ็กเกจ
+ * - 400 หากเกิดข้อผิดพลาด
+ */
+export const getPackageByIdTourist: TypedHandlerFromDto<
+  typeof getPackageByIdTouristDto
+> = async (req, res) => {
+  try {
+    const packageId = Number(req.params.packageId);
+    const result = await PackageService.getPackageDetailByTourist(packageId);
+    return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
