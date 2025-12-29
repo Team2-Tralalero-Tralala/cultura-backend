@@ -5,8 +5,8 @@
  */
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
-    commonDto,
-    type TypedHandlerFromDto,
+  commonDto,
+  type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { SearchQueryDto } from "../Services/search/search-dto.js";
 import * as SearchService from "../Services/search/search-service.js";
@@ -49,7 +49,7 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     const searchTerm = req.query.search as string | undefined;
     const tags = req.query.tag as string[] | string | undefined;
     const tagsCommaSeparated = req.query.tags as string[] | string | undefined;
-    const priceMin = req.query.priceMin as number | undefined;
+    const priceMin = req.query.priceMin as number | 0;
     const priceMax = req.query.priceMax as number | undefined;
     const sort = (req.query.sort as "latest" | "price-low" | "price-high" | "popular" | undefined) ?? "latest";
     const page = (req.query.page as number) ?? 1;
