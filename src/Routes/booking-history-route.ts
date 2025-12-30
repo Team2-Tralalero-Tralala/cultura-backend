@@ -1,7 +1,9 @@
 import { Router } from "express";
-import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 import * as BookingHistoryController from "~/Controllers/booking-history-controller.js";
+import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
+import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
+import { compressUploadedFile } from "~/Middlewares/upload-middleware.js";
 
 
 const bookingRoutes = Router();
@@ -817,6 +819,244 @@ bookingRoutes.get(
   authMiddleware,
   allowRoles("tourist"),
   BookingHistoryController.getTouristBookingHistories
+);
+
+/**
+ * @swagger
+ * /api/tourist/booking/{bookingId}:
+ *   post:
+ *     summary: สร้างข้อมูลการจอง (Tourist)
+ *     description: |
+ *       ใช้สำหรับสร้าง Booking History โดยระบุว่าแพ็กเกจใดจองโดยใคร
+ *       ต้องเป็นผู้ใช้ Role: **Tourist** และต้องแนบ JWT Token ใน Header
+ *       สถานะเริ่มต้นของการจองจะเป็น PENDING
+ *     tags:
+ *       - Booking (Tourist)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสการจอง (reference)
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - packageId
+ *               - totalParticipant
+ *             properties:
+ *               packageId:
+ *                 type: integer
+ *                 description: รหัสแพ็กเกจที่ต้องการจอง
+ *                 example: 5
+ *               totalParticipant:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: จำนวนผู้เข้าร่วม
+ *                 example: 2
+ *               transferSlip:
+ *                 type: string
+ *                 maxLength: 256
+ *                 description: หลักฐานการโอนเงิน (optional)
+ *                 example: "uploads/slips/slip_2025-02-11.png"
+ *               touristBankId:
+ *                 type: integer
+ *                 description: รหัสบัญชีธนาคารของนักท่องเที่ยว (optional)
+ *                 example: 1
+ *     responses:
+ *       201:
+ *         description: สร้างข้อมูลการจองสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 201
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "สร้างข้อมูลการจองสำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 23
+ *                     touristId:
+ *                       type: integer
+ *                       example: 10
+ *                     packageId:
+ *                       type: integer
+ *                       example: 5
+ *                     totalParticipant:
+ *                       type: integer
+ *                       example: 2
+ *                     status:
+ *                       type: string
+ *                       example: "PENDING"
+ *                     bookingAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-02-11T10:12:45.000Z"
+ *                     transferSlip:
+ *                       type: string
+ *                       nullable: true
+ *                       example: "uploads/slips/slip_2025-02-11.png"
+ *                     package:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         name:
+ *                           type: string
+ *                         price:
+ *                           type: number
+ *                     tourist:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         fname:
+ *                           type: string
+ *                         lname:
+ *                           type: string
+ *       400:
+ *         description: คำขอไม่ถูกต้อง เช่น แพ็กเกจไม่พบ หรือจำนวนผู้เข้าร่วมเกินความจุ
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Tourist)
+ */
+
+/*
+ * เส้นทาง : POST /api/tourist/booking/:bookingId
+ * คำอธิบาย : สร้างข้อมูลการจองโดย Tourist
+ * รองรับ:
+ *   - สร้างการจองใหม่โดยระบุแพ็กเกจและจำนวนผู้เข้าร่วม
+ *   - อัปโหลดหลักฐานการโอนเงิน (optional)
+ *   - ระบุบัญชีธนาคาร (optional)
+ * Input : 
+ *   - params.bookingId - รหัสการจอง (reference)
+ *   - body.packageId - รหัสแพ็กเกจ
+ *   - body.totalParticipant - จำนวนผู้เข้าร่วม
+ *   - body.transferSlip - หลักฐานการโอนเงิน (optional)
+ *   - body.touristBankId - รหัสบัญชีธนาคาร (optional)
+ * Output : ข้อมูล Booking History ที่สร้างใหม่
+ */
+bookingRoutes.post(
+  "/tourist/booking/:bookingId",
+  authMiddleware,
+  allowRoles("tourist"),
+  validateDto(BookingHistoryController.createTouristBookingDto),
+  BookingHistoryController.createTouristBooking
+);
+
+/**
+ * @swagger
+ * /api/tourist/upload/payment-proof:
+ *   post:
+ *     summary: อัปโหลดหลักฐานการชำระเงิน (Tourist)
+ *     description: |
+ *       ใช้สำหรับอัปโหลดไฟล์หลักฐานการชำระเงิน (เช่น ใบสลิปโอนเงิน)
+ *       ไฟล์จะถูกบันทึกในโฟลเดอร์ uploads/ และจะถูกบีบอัดอัตโนมัติ (ถ้าเป็นรูปภาพ)
+ *       ต้องเป็นผู้ใช้ Role: **Tourist** และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Booking (Tourist)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - paymentProof
+ *             properties:
+ *               paymentProof:
+ *                 type: string
+ *                 format: binary
+ *                 description: Payment proof file images jpg, jpeg, png or PDF
+ *     responses:
+ *       200:
+ *         description: อัปโหลดหลักฐานการชำระเงินสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "อัปโหลดหลักฐานการชำระเงินสำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     filePath:
+ *                       type: string
+ *                       description: Path ของไฟล์ที่อัปโหลด
+ *                       example: "uploads/1739123456789-slip_2025-02-11.png"
+ *                     fileName:
+ *                       type: string
+ *                       description: ชื่อไฟล์ที่อัปโหลด
+ *                       example: "1739123456789-slip_2025-02-11.png"
+ *       400:
+ *         description: คำขอไม่ถูกต้อง เช่น ไม่พบไฟล์หรือไฟล์ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 400
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "ไม่พบไฟล์หลักฐานการชำระเงิน"
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Tourist)
+ */
+
+/*
+ * เส้นทาง : POST /api/tourist/upload/payment-proof
+ * คำอธิบาย : อัปโหลดหลักฐานการชำระเงินสำหรับการจอง
+ * รองรับ:
+ *   - อัปโหลดไฟล์หลักฐานการชำระเงิน (รูปภาพ: jpg, jpeg, png หรือ PDF)
+ *   - ไฟล์จะถูกบันทึกในโฟลเดอร์ uploads/
+ *   - ไฟล์รูปภาพจะถูกบีบอัดอัตโนมัติ
+ * Input : 
+ *   - multipart/form-data with field "paymentProof"
+ *   - Authorization header with JWT token
+ * Output : ข้อมูล path ของไฟล์ที่อัปโหลด
+ */
+bookingRoutes.post(
+  "/tourist/upload/payment-proof",
+  authMiddleware,
+  allowRoles("tourist"),
+  upload.single("paymentProof"),
+  compressUploadedFile,
+  BookingHistoryController.uploadPaymentProof
 );
 
 export default bookingRoutes;

@@ -1,14 +1,19 @@
-import type { Request, Response } from "express";
-import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getHistoriesByRole } from "../Services/booking-history-service.js";
-import * as bookingService from "../Services/booking-history-service.js";
-import { PaginationDto } from "~/Services/pagination-dto.js";
 import { IsNumberString, IsOptional, IsString } from "class-validator";
+import type { Request, Response } from "express";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
-  commonDto,
-  type TypedHandlerFromDto,
+    commonDto,
+    type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import * as BookingHistoryService from "~/Services/booking-history-service.js";
+import {
+    BookingIdParamDto,
+    CreateBookingBodyDto,
+} from "~/Services/booking/booking-dto.js";
+import * as TouristBookingService from "~/Services/booking/booking-service.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
+import * as bookingService from "../Services/booking-history-service.js";
+import { getHistoriesByRole } from "../Services/booking-history-service.js";
 /*
  * ฟังก์ชัน : getByRole
  * คำอธิบาย : Handler สำหรับดึงประวัติการจองตามสิทธิ์ของผู้ใช้งาน
@@ -487,6 +492,111 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
       200,
       "get booking histories successfully",
       result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * คำอธิบาย : DTO สำหรับสร้าง Booking History
+ * Input : 
+ *   - params.bookingId - รหัสการจอง (ใช้เป็น reference, อาจจะไม่ใช้ในการสร้างจริง)
+ *   - body.packageId - รหัสแพ็กเกจที่ต้องการจอง
+ *   - body.totalParticipant - จำนวนผู้เข้าร่วม
+ *   - body.transferSlip - หลักฐานการโอนเงิน (optional)
+ *   - body.touristBankId - รหัสบัญชีธนาคารของนักท่องเที่ยว (optional)
+ * Output : ข้อมูล Booking History ที่สร้างใหม่
+ */
+export const createTouristBookingDto = {
+  params: BookingIdParamDto,
+  body: CreateBookingBodyDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : createTouristBooking
+ * คำอธิบาย : Handler สำหรับสร้าง Booking History โดย Tourist
+ * รองรับ:
+ *   - สร้างการจองใหม่โดยระบุแพ็กเกจและจำนวนผู้เข้าร่วม
+ *   - อัปโหลดหลักฐานการโอนเงิน (optional)
+ *   - ระบุบัญชีธนาคาร (optional)
+ * Input : 
+ *   - req.params.bookingId - รหัสการจอง (reference)
+ *   - req.body.packageId - รหัสแพ็กเกจ
+ *   - req.body.totalParticipant - จำนวนผู้เข้าร่วม
+ *   - req.body.transferSlip - หลักฐานการโอนเงิน (optional)
+ *   - req.body.touristBankId - รหัสบัญชีธนาคาร (optional)
+ *   - req.user.id - รหัสผู้ใช้ (Tourist) จาก authentication middleware
+ * Output :
+ *   - 201 Created พร้อมข้อมูล Booking History ที่สร้างใหม่
+ *   - 400 Bad Request ถ้ามี error
+ */
+export const createTouristBooking: TypedHandlerFromDto<
+  typeof createTouristBookingDto
+> = async (req, res) => {
+  try {
+    const touristId = Number(req.user?.id);
+    const { packageId, totalParticipant, transferSlip, touristBankId } =
+      req.body;
+
+    if (!touristId) {
+      return createErrorResponse(res, 401, "ไม่พบข้อมูลผู้ใช้");
+    }
+
+    const booking = await TouristBookingService.createTouristBooking(
+      touristId,
+      packageId,
+      totalParticipant,
+      transferSlip,
+      touristBankId
+    );
+
+    return createResponse(
+      res,
+      201,
+      "สร้างข้อมูลการจองสำเร็จ",
+      booking
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * ฟังก์ชัน : uploadPaymentProof
+ * คำอธิบาย : Handler สำหรับอัปโหลดหลักฐานการชำระเงิน
+ * รองรับ:
+ *   - อัปโหลดไฟล์หลักฐานการชำระเงิน (รูปภาพ: jpg, jpeg, png หรือ PDF)
+ *   - ไฟล์จะถูกบันทึกในโฟลเดอร์ uploads/
+ *   - ไฟล์รูปภาพจะถูกบีบอัดอัตโนมัติ
+ * Input : 
+ *   - req.file - ไฟล์ที่อัปโหลด (จาก multer middleware)
+ *   - req.user.id - รหัสผู้ใช้ (Tourist) จาก authentication middleware
+ * Output :
+ *   - 200 OK พร้อมข้อมูล path ของไฟล์ที่อัปโหลด
+ *   - 400 Bad Request ถ้าไม่พบไฟล์
+ */
+export const uploadPaymentProof = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return createErrorResponse(
+        res,
+        400,
+        "ไม่พบไฟล์หลักฐานการชำระเงิน กรุณาแนบไฟล์"
+      );
+    }
+
+    const filePath = req.file.path.replace(/\\/g, "/"); // แปลง backslash เป็น forward slash
+    const fileName = req.file.filename;
+
+    return createResponse(
+      res,
+      200,
+      "อัปโหลดหลักฐานการชำระเงินสำเร็จ",
+      {
+        filePath,
+        fileName,
+      }
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
