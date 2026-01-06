@@ -144,6 +144,19 @@ export const patchRejectPackageRequest: TypedHandlerFromDto<
         return createErrorResponse(res, 400, (error as Error).message);
     }
 }
+
+/* DTO : RequestIdParamDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ route parameter สำหรับ requestId
+ *
+ * Input :
+ *  - params :
+ *    - requestId : รหัสของ request (ต้องเป็นตัวเลขในรูปแบบ string)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และนำไปใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะส่ง validation error กลับ
+ */
 export class RequestIdParamDto {
   @IsNumberString()
   requestId?: string;

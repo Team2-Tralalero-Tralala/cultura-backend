@@ -8,6 +8,18 @@ import {
 } from "~/Libs/Types/TypedHandler.js";
 import { IsNumberString } from "class-validator";
 
+/* DTO : PackageIdParamDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ route parameter สำหรับ packageId
+ *
+ * Input :
+ *  - params :
+ *    - packageId : รหัสของ package (ต้องเป็นตัวเลขในรูปแบบ string)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และนำไปใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะส่ง validation error กลับ
+ */
 export class PackageIdParamDto {
   @IsNumberString()
   packageId?: string;
@@ -33,15 +45,9 @@ export const getPackageFeedbacksForAdminDto = {
  * คำอธิบาย :
  *  - ดึงรายการ Feedback ของแพ็กเกจสำหรับแอดมิน
  *  - ตรวจสอบสิทธิ์และความเป็นเจ้าของ community ภายใน service
- *
+ * 
  * Input :
  *  - packageId : number (รหัสแพ็กเกจจาก URL params)
- *
- * Output :
- *  - รายการ Feedback ของแพ็กเกจ
- *
- * Error :
- *  - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
  */
 export const getPackageFeedbacksForAdmin: TypedHandlerFromDto<
   typeof getPackageFeedbacksForAdminDto

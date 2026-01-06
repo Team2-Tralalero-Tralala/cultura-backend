@@ -11,6 +11,19 @@ import {
 import * as BookingHistoryService from "~/Services/booking-history-service.js";
 import { IsNumberString } from "class-validator";
 
+/* DTO : GetHistoriesByRoleQueryDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ query parameters สำหรับการดึง histories ตาม role
+ *
+ * Input :
+ *  - query :
+ *    - page  : หมายเลขหน้าของข้อมูล (optional, ต้องเป็นตัวเลขในรูปแบบ string)
+ *    - limit : จำนวนข้อมูลต่อหน้า (optional, ต้องเป็นตัวเลขในรูปแบบ string)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะถูก reject พร้อม validation error
+ */
 export class GetHistoriesByRoleQueryDto {
   @IsOptional()
   @IsNumberString()
