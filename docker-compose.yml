@@ -7,16 +7,16 @@ volumes:
 
 services:
   db:
-    container_name: cultura_db
+    container_name: cultura_db_${ENV_SUFFIX:-dev}
     build:
       context: ../cultura-backend/prisma
       dockerfile: Dockerfile
     ports:
-      - "4336:3306"         # host 4336 -> container 3306
+      - "${DB_PORT:-4336}:3306" # host port parameterized
     environment:
-      MYSQL_DATABASE: cultura_data
-      MYSQL_USER: cultura
-      MYSQL_PASSWORD: team2
+      MYSQL_DATABASE: ${DB_NAME:-cultura_data}
+      MYSQL_USER: ${DB_USER:-cultura}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-team2}
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     volumes:
       - db_data:/var/lib/mysql
@@ -29,41 +29,41 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin
+    container_name: phpmyadmin_${ENV_SUFFIX:-dev}
     environment:
-      PMA_HOST: db        # or cultura_db (service/container name)
-      PMA_PORT: "3306"    # use container port, not host port
+      PMA_HOST: db # or cultura_db (service/container name)
+      PMA_PORT: "3306" # use container port, not host port
     ports:
-      - "4880:80"         # host 4880 -> container 80
+      - "${PHPMYADMIN_PORT:-4880}:80" # host port parameterized
     depends_on:
       - db
     restart: unless-stopped
 
   backend:
-    container_name: cultura-backend
+    container_name: cultura-backend_${ENV_SUFFIX:-dev}
     build:
       context: ../cultura-backend
       dockerfile: Dockerfile
     environment:
       # use container port 3306 here as well
-      DATABASE_URL: ${DATABASE_URL:-mysql://cultura:team2@cultura_db:3306/cultura_data}
-      PORT: ${PORT:-3000}   # app listens on 3000 inside container
+      DATABASE_URL: ${DATABASE_URL:-mysql://${DB_USER:-cultura}:${DB_PASSWORD:-team2}@db:3306/${DB_NAME:-cultura_data}}
+      PORT: ${PORT:-3000} # app listens on 3000 inside container
     ports:
-      - "4100:3000"         # host 4100 -> container 3000
+      - "${BACKEND_PORT:-3000}:3000" # host port parameterized
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
 
   frontend:
-    container_name: cultura-frontend
+    container_name: cultura-frontend_${ENV_SUFFIX:-dev}
     build:
       context: ../cultura-frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://dekdee2.informatics.buu.ac.th:4100/api}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${BACKEND_PORT:-3000}/api}
     ports:
-      - "4080:80"           # host 4080 -> container 80 (nginx)
+      - "${FRONTEND_PORT:-4000}:80" # host port parameterized
     depends_on:
       - backend
     restart: unless-stopped
