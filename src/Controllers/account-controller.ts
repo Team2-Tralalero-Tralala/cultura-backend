@@ -335,7 +335,7 @@ export const editProfile = async (req: Request, res: Response) => {
     if (req.body.data) {
       try {
         bodyData = JSON.parse(req.body.data);
-      } catch (e) {
+      } catch (error) {
         return createErrorResponse(res, 400, "รูปแบบข้อมูล JSON ไม่ถูกต้อง");
       }
     } else {
