@@ -3,7 +3,6 @@ import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 import * as BookingHistoryController from "~/Controllers/booking-history-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 
-
 const bookingRoutes = Router();
 
 /**
@@ -647,139 +646,7 @@ bookingRoutes.post(
   allowRoles("member"),
   BookingHistoryController.updateBookingStatusByMember
 );
-
-/**
- * @swagger
- * /api/tourist/booking-history/{id}:
- *   get:
- *     tags:
- *       - Tourist - Booking History
- *     summary: ดึงรายละเอียดประวัติการจองแพ็กเกจ
- *     description: |
- *       นักท่องเที่ยวสามารถดูรายละเอียดการจองแพ็กเกจของตนเองได้
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: รหัสประวัติการจอง
- *         schema:
- *           type: integer
- *           example: 12
- *     responses:
- *       200:
- *         description: ดึงข้อมูลประวัติการจองสำเร็จ
- * คำอธิบาย : ดึงข้อมูลประวัติการจองของ Tourist ที่ล็อกอินอยู่
- * @swagger
- * /api/tourist/booking-histories:
- *   get:
- *     summary: ดึงประวัติการจองของตนเอง (Tourist)
- *     description: |
- *       ใช้สำหรับดึงรายการประวัติการจอง (BookingHistory)
- *       **เฉพาะของผู้ใช้ Tourist ที่ล็อกอินอยู่**
- *       พร้อมข้อมูลแพ็กเกจ ชุมชน ราคารวม และสถานะการจอง
- *       รองรับการแบ่งหน้า (Pagination) และการค้นหา/กรองข้อมูล
- *     tags:
- *       - Booking (Tourist)
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         required: false
- *         schema:
- *           type: integer
- *           example: 1
- *         description: หน้าที่ต้องการดึงข้อมูล (ค่าเริ่มต้น 1)
- *       - in: query
- *         name: limit
- *         required: false
- *         schema:
- *           type: integer
- *           example: 10
- *         description: จำนวนข้อมูลต่อหน้า (ค่าเริ่มต้น 10)
- *       - in: query
- *         name: status
- *         required: false
- *         schema:
- *           type: string
- *           example: "BOOKED,PENDING"
- *         description: สถานะที่ต้องการกรอง (คั่นด้วย comma)
- *       - in: query
- *         name: search
- *         required: false
- *         schema:
- *           type: string
- *         description: คำค้นหา (ชื่อแพ็กเกจ)
- *       - in: query
- *         name: sort
- *         required: false
- *         schema:
- *           type: string
- *           enum: [newest, oldest]
- *           default: newest
- *         description: เรียงลำดับตามวันที่จอง
- *       - in: query
- *         name: period
- *         required: false
- *         schema:
- *           type: string
- *         description: ช่วงเวลา (เช่น current, history)
- *     responses:
- *       200:
- *         description: ดึงประวัติการจองสำเร็จ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: ดึงข้อมูลประวัติการจองสำเร็จ
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                       example: 12
- *                     package:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: integer
- *                           example: 3
- *                         name:
- *                           type: string
- *                           example: "พักใจใต้เงาไม้"
- *                     bookingDate:
- *                       type: string
- *                       format: date-time
- *                       example: "2025-01-10T08:30:00Z"
- *       401:
- *         description: ไม่ได้เข้าสู่ระบบหรือ Token ไม่ถูกต้อง
- *       403:
- *         description: ไม่มีสิทธิ์เข้าถึงข้อมูลนี้
- *       404:
- *         description: ไม่พบประวัติการจอง
- *       500:
- *         description: Server Error
- */
-
-/**
- * คำอธิบาย: Route สำหรับนักท่องเที่ยวดึงรายละเอียดประวัติการจองแพ็กเกจ
- */
-bookingRoutes.get(
-  "/tourist/booking-history/:id",
-  authMiddleware,
-  allowRoles("tourist"),
-  BookingHistoryController.getBookingDetailForTourist
-);
-
- /*
+/*
  *                   example: Booking histories (tourist) retrieved successfully
  *                 data:
  *                   type: object
@@ -874,6 +741,138 @@ bookingRoutes.get(
  */
 bookingRoutes.get(
   "/tourist/booking-histories",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getTouristBookingHistories
+);
+/**
+ * @swagger
+ * /api/tourist/booking-history/own:
+ *   get:
+ *     summary: ดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ *     description: |
+ *       ใช้สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ *     tags:
+ *       - Tourist / Booking History
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงประวัติการจองของผู้ที่เดินทาง (Tourist) สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: get booking histories successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 351
+ *                           bookingAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-12-22T06:49:56.000Z"
+ *                           status:
+ *                             type: string
+ *                             example: "REJECTED"
+ *                           totalParticipant:
+ *                             type: integer
+ *                             example: 2
+ *                           rejectReason:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "สลิปไม่ถูกต้อง"
+ *                           package:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                                 example: "ปลูกป่าชายเลน"
+ *                               price:
+ *                                 type: number
+ *                                 example: 1435
+ *                               description:
+ *                                 type: string
+ *                                 example: "สัมผัสวิถีชีวิต ดำนา เกี่ยวข้าว ทานอาหารพื้นถิ่น"
+ *                               startDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2025-12-22T07:03:04.000Z"
+ *                               dueDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2026-12-22T07:03:04.000Z"
+ *                               packageFile:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                                   properties:
+ *                                     id:
+ *                                       type: integer
+ *                                       example: 106
+ *                                     filePath:
+ *                                       type: string
+ *                                       example: "uploads/store1.jpg"
+ *                                     type:
+ *                                       type: string
+ *                                       example: "COVER"
+ *                               community:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                     example: "วิสาหกิจชุมชนแปรรูปสมุนไพรบ้านทับทิมสยาม"
+ *                                   location:
+ *                                     type: object
+ *                                     properties:
+ *                                       id:
+ *                                         type: integer
+ *                                         example: 12
+ *                                       houseNumber:
+ *                                         type: string
+ *                                         example: "849/14"
+ *                                       subDistrict:
+ *                                         type: string
+ *                                         example: "อ่างทอง"
+ *                                       district:
+ *                                         type: string
+ *                                         example: "เกาะสมุย"
+ *                                       province:
+ *                                         type: string
+ *                                         example: "สุราษฎร์ธานี"
+ *                                       postalCode:
+ *                                         type: string
+ *                                         example: "84140"
+ *       400:
+ *         description: คำขอไม่ถูกต้อง
+ *       401:
+ *         description: Missing Token
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: ไม่พบประวัติการจอง
+ */
+/**
+ * คำอธิบาย: ใช้สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ */
+bookingRoutes.get(
+  "/tourist/booking-history/own",
   authMiddleware,
   allowRoles("tourist"),
   BookingHistoryController.getTouristBookingHistories

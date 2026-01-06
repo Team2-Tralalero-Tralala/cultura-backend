@@ -1,9 +1,8 @@
 import prisma from "./database-service.js";
-import { BookingStatus,ImageType } from "@prisma/client";
+import { BookingStatus, ImageType } from "@prisma/client";
 import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "./pagination-dto.js";
-
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
@@ -28,9 +27,9 @@ export const getDetailBookingById = async (id: number) => {
     where: { id: numberId },
     include: {
       package: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
   if (!booking) {
     throw new Error("Booking not found");
@@ -551,16 +550,16 @@ export const updateBookingStatusByMember = async (
   return updated;
 };
 /*
-  * ฟังก์ชัน : getMemberBookingHistories
-  * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล
-  * Input :
-  *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
-  *   - page (number) : หน้าปัจจุบัน
-  *   - limit (number) : จำนวนต่อหน้า
-  *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น BOOKED, REJECTED หรือ ALL)
-  * Output :
-  *   - PaginationResponse : ข้อมูลรายการประวัติการจองของแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
-  */
+ * ฟังก์ชัน : getMemberBookingHistories
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล
+ * Input :
+ *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น BOOKED, REJECTED หรือ ALL)
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการประวัติการจองของแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
+ */
 export const getMemberBookingHistories = async (
   memberId: number,
   page: number,
@@ -576,7 +575,7 @@ export const getMemberBookingHistories = async (
   };
 
   // 2. Logic จัดการ Status
-  
+
   // กำหนดสถานะที่เรา 'อนุญาต' ให้แสดงในหน้านี้ (ตัด PENDING, REFUND_PENDING ออก)
   const visibleStatuses = ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"];
 
@@ -631,7 +630,6 @@ export const getMemberBookingHistories = async (
     },
   };
 };
-
 /**
  * คำอธิบาย : ประเภทข้อมูลประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
  */
