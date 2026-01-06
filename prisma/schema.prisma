@@ -298,6 +298,7 @@ model Package {
   bookingCloseDate DateTime?              @map("pk_booking_close_date") @db.DateTime
   facility         String?                @map("pk_facility") @db.VarChar(200)
   rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
+  createdAt        DateTime              @map("pk_created_at") @db.Timestamp(0) @default(now())
   isDeleted        Boolean               @default(false) @map("pk_is_deleted")
   deleteAt         DateTime?             @map("pk_delete_at") @db.Timestamp(0)
 
@@ -447,6 +448,7 @@ model BookingHistory {
   cancelAt         DateTime?      @map("bh_cancel_at") @db.Timestamp(0)
   refundAt         DateTime?      @map("bh_refund_at") @db.Timestamp(0)
   status           BookingStatus? @map("bh_status")
+  isParticipate    Boolean        @default(false) @map("bh_is_participate")
   totalParticipant Int            @map("bh_total_participant")
   rejectReason     String?        @map("bh_reject_reason") @db.VarChar(100)
   transferSlip     String?        @map("bh_transfer_slip") @db.VarChar(256)
