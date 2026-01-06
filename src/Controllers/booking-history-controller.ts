@@ -9,7 +9,6 @@ import {
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import * as BookingHistoryService from "~/Services/booking-history-service.js";
-import { IsNumberString } from "class-validator";
 
 /* DTO : GetHistoriesByRoleQueryDto
  * วัตถุประสงค์ :
@@ -57,9 +56,10 @@ export const getByRoleDto = {
  *  - limit : number (default = 10)
  * Output : รายการ booking histories ตามสิทธิ์ของผู้ใช้งาน
  */
-export const getByRole: TypedHandlerFromDto<
-  typeof getByRoleDto
-> = async (req, res) => {
+export const getByRole: TypedHandlerFromDto<typeof getByRoleDto> = async (
+  req,
+  res
+) => {
   try {
     const { page = "1", limit = "10" } = req.query;
     const data = await getHistoriesByRole(
@@ -67,12 +67,16 @@ export const getByRole: TypedHandlerFromDto<
       Number(page),
       Number(limit)
     );
-    return createResponse(res, 200, "Get booking histories by role successfully", data);
+    return createResponse(
+      res,
+      200,
+      "Get booking histories by role successfully",
+      data
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
 
 /*
  * ฟังก์ชัน : getDetailBooking
