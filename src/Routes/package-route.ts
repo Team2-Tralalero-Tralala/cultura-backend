@@ -2013,7 +2013,7 @@ packageRoutes.get(
  *                   type: string
  *                   example: "uuid-string"
  *       401:
- *         description: Unauthorized
+ *         description: กรุณาเข้าสู่ระบบ
  *         content:
  *           application/json:
  *             schema:
@@ -2032,7 +2032,7 @@ packageRoutes.get(
  *                   type: string
  *                   example: "uuid-string"
  *       403:
- *         description: Forbidden
+ *         description: Missing token
  *         content:
  *           application/json:
  *             schema:
@@ -2141,7 +2141,7 @@ packageRoutes.get(
  *                   type: string
  *                   example: "uuid-string"
  *       401:
- *         description: Unauthorized
+ *         description: Missing token
  *         content:
  *           application/json:
  *             schema:
@@ -2160,7 +2160,7 @@ packageRoutes.get(
  *                   type: string
  *                   example: "uuid-string"
  *       403:
- *         description: Forbidden
+ *         description: ไม่มีสิทธิ์เข้าถึง
  *         content:
  *           application/json:
  *             schema:

@@ -1160,9 +1160,12 @@ export const getParticipantsInPackage: TypedHandlerFromDto<
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const searchName = req.query.searchName;
-
+    if (!req.user) {
+      return createErrorResponse(res, 401, "กรุณาเข้าสู่ระบบ");
+    }
     const result = await PackageService.getParticipantsInPackage(
       packageId,
+      req.user.id,
       page,
       limit,
       searchName
@@ -1197,8 +1200,12 @@ export const updateParticipantStatus: TypedHandlerFromDto<
   typeof updateParticipantStatusDto
 > = async (req, res) => {
   try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "กรุณาเข้าสู่ระบบ");
+    }
     const result = await PackageService.updatePaticipateStatus(
-      Number(req.params.bookingHistoryId)
+      Number(req.params.bookingHistoryId),
+      req.user.id
     );
     return createResponse(res, 200, "สถานะการเข้าร่วมแพ็กเกจถูกอัปเดต", result);
   } catch (error) {

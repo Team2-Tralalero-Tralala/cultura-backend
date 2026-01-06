@@ -1901,11 +1901,12 @@ export type ParticipantsInPackage = {
 };
 /**
  * คำอธิบาย : (Admin,Member) Function สำหรับดึงรายการผู้เข้าร่วมแพ็กเกจ
- * Input: packageId - รหัสแพ็กเกจ, page - หน้าที่, limit - จำนวนรายการต่อหน้า, searchName - ค้นหาตามชื่อ
+ * Input: packageId - รหัสแพ็กเกจ, userId - รหัสผู้ใช้, page - หน้าที่, limit - จำนวนรายการต่อหน้า, searchName - ค้นหาตามชื่อ
  * Output: ข้อมูลผู้เข้าร่วมแพ็กเกจ
  */
 export async function getParticipantsInPackage(
   packageId: number,
+  userId: number,
   page: number = 1,
   limit: number = 10,
   searchName?: string
@@ -1913,6 +1914,25 @@ export async function getParticipantsInPackage(
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
   whereCondition.packageId = packageId;
+  const packageDetail = await prisma.package.findUnique({
+    where: {
+      id: packageId,
+    },
+    select: {
+      createById: true,
+      overseerMemberId: true,
+    },
+  });
+
+  if (!packageDetail) {
+    throw new Error("ไม่พบแพ็กเกจที่คุณต้องการ");
+  }
+  if (
+    packageDetail.createById !== userId &&
+    packageDetail.overseerMemberId !== userId
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์เข้าถึง");
+  }
 
   if (searchName) {
     whereCondition.OR = [
@@ -1975,10 +1995,37 @@ export async function getParticipantsInPackage(
 }
 /**
  * คำอธิบาย : (Admin,Member) Service สำหรับอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
- * Input: bookingHistoryId - รหัสประวัติการจอง
+ * Input: bookingHistoryId - รหัสประวัติการจอง, userId - รหัสผู้ใช้
  * Output: สถานะการเข้าร่วมแพ็กเกจถูกอัปเดต
  */
-export async function updatePaticipateStatus(bookingHistoryId: number) {
+export async function updatePaticipateStatus(
+  bookingHistoryId: number,
+  userId: number
+) {
+  const packageDetail = await prisma.bookingHistory.findUnique({
+    where: {
+      id: bookingHistoryId,
+    },
+    select: {
+      package: {
+        select: {
+          overseerMemberId: true,
+          createById: true,
+        },
+      },
+    },
+  });
+
+  if (!packageDetail) {
+    throw new Error("ไม่พบแพ็กเกจที่คุณต้องการ");
+  }
+
+  if (
+    packageDetail.package?.overseerMemberId !== userId &&
+    packageDetail.package?.createById !== userId
+  ) {
+    throw new Error("คุณไม่มีสิทธิ์เข้าถึง");
+  }
   const status = await prisma.bookingHistory.findUnique({
     where: {
       id: bookingHistoryId,
