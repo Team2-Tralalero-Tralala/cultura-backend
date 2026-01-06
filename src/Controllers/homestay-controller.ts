@@ -205,18 +205,29 @@ export const editHomestay = async (req: Request, res: Response) => {
     }
 };
 
-/*
- * DTO สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
+/**
+ * DTO: IdParamDto
+ * วัตถุประสงค์:ใช้สำหรับตรวจสอบความถูกต้องของพารามิเตอร์ communityId ในการดึงข้อมูลที่เกี่ยวข้องกับชุมชน
+ * Input:
+ * - params: communityId (รหัสชุมชน)
+ * Output:
+ * - หาก communityId อยู่ในรูปแบบตัวเลข ระบบจะอนุญาตให้ดำเนินการต่อ
+ * - หากรูปแบบไม่ถูกต้อง ระบบจะแจ้งข้อผิดพลาดกลับไปยังผู้ใช้งาน
  */
 export class IdParamDto {
     @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลข" })
     communityId?: string; // แก้เป็น optional
 }
 
-/*
- * คำอธิบาย : DTO สำหรับดึงข้อมูลที่พักทั้งหมดในชุมชน (รองรับ pagination)
- * Input : params (communityId) และ query (page, limit)
- * Output : รายการข้อมูลที่พักทั้งหมด + pagination metadata
+/**
+ * DTO: getHomestaysAllDto
+ * วัตถุประสงค์:ใช้สำหรับดึงข้อมูลที่พัก (Homestay) ทั้งหมดภายในชุมชน โดยรองรับการแบ่งหน้า (Pagination)
+ * Input:
+ * - params: communityId
+ * - query: page, limit
+ * Output:
+ * - รายการข้อมูลที่พักทั้งหมดภายในชุมชน
+ * - ข้อมูล Metadata สำหรับ Pagination
  */
 export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
 
