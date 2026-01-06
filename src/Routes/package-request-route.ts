@@ -18,6 +18,7 @@ import {
     patchRejectPackageRequestDto,
     patchRejectPackageRequestForAdmin,
 } from "~/Controllers/package-request-controller.js";
+import * as packageRequestController from "~/Controllers/package-request-controller.js";
 const packageRequestRoutes = Router();
 
 /**
@@ -463,10 +464,11 @@ packageRequestRoutes.patch(
  * รายละเอียดแพ็กเกจจากหน้าคำขอแพ็กเกจ (สำหรับ superadmin)
  */
 packageRequestRoutes.get(
-    "/super/package-requests/:requestId", 
+    "/super/package-requests/:requestId",
+    validateDto(packageRequestController.getDetailRequestForAdminDto),
     authMiddleware, 
     allowRoles("superadmin"), 
-    getDetailRequest
+    packageRequestController.getDetailRequest
 );
 
 /**
@@ -593,11 +595,13 @@ packageRequestRoutes.get(
  * รายละเอียดแพ็กเกจจากหน้าคำขอแพ็กเกจ (สำหรับ admin)
  */
 packageRequestRoutes.get(
-    "/admin/package-requests/:requestId", 
-    authMiddleware, 
-    allowRoles("admin"), 
-    getDetailRequestForAdmin
+  "/admin/package-requests/:requestId",
+  validateDto(packageRequestController.getDetailRequestForAdminDto),
+  authMiddleware,
+  allowRoles("admin"),
+  packageRequestController.getDetailRequestForAdmin
 );
+
 
 /**
  * @swagger

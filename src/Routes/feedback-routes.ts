@@ -93,12 +93,10 @@ const feedbackRoutes = Router();
 
 /*
  * คำอธิบาย : Routes สำหรับดึงฟีดแบ็กทั้งหมดของแพ็กเกจ (เฉพาะแอดมิน)
- * Path : /api/admin/package/feedback/:packageId
- * Access : admin
  */
-
 feedbackRoutes.get(
   "/admin/package/feedbacks/:packageId",
+  validateDto(FeedbackController.getPackageFeedbacksForAdminDto),
   authMiddleware,
   allowRoles("admin"),
   FeedbackController.getPackageFeedbacksForAdmin
@@ -286,8 +284,6 @@ feedbackRoutes.get(
 
 /*
  * คำอธิบาย : Routes สำหรับตอบกลับรีวิว (เฉพาะ member)
- * Path : /api/member/feedback/:feedbackId/reply"
- * Access : member
  */
 feedbackRoutes.post(
   "/member/feedback/:feedbackId/reply",
@@ -358,9 +354,9 @@ feedbackRoutes.post(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-
 feedbackRoutes.get(
   "/member/package/feedbacks/:packageId",
+  validateDto(FeedbackController.getPackageFeedbacksForMemberDto),
   authMiddleware,
   allowRoles("member"),
   FeedbackController.getPackageFeedbacksForMember
@@ -432,8 +428,6 @@ feedbackRoutes.get(
 
 /*
  * คำอธิบาย : Routes สำหรับตอบกลับรีวิว (เฉพาะ admin)
- * Path : /api/admin/feedback/:feedbackId/reply"
- * Access : admin
  */
 feedbackRoutes.post(
   "/admin/feedback/:feedbackId/reply",

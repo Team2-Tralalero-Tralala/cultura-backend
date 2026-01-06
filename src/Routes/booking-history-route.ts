@@ -354,10 +354,12 @@ bookingRoutes.post(
  */
 bookingRoutes.get(
   "/admin/booking/histories/all",
+  validateDto(BookingHistoryController.getByRoleDto),
   authMiddleware,
   allowRoles("admin", "member"),
   BookingHistoryController.getByRole
 );
+
 /**
  * @swagger
  * /api/booking-histories/{id}:

@@ -13,6 +13,7 @@ import {
     PackageRequestQueryDto,
     RejectReasonDto,
 } from "~/Services/package/package-request-dto.js";
+import { IsNumberString } from "class-validator";
 
 /* ===========================
  * DTO : getPackageRequestAllDto
@@ -143,60 +144,85 @@ export const patchRejectPackageRequest: TypedHandlerFromDto<
         return createErrorResponse(res, 400, (error as Error).message);
     }
 }
-import { getDetailRequestById } from "~/Services/package/package-request-service.js";
 
-
-/*
- * ฟังก์ชัน : getPendingSuperPackageByIdController
- * คำอธิบาย : Handler สำหรับดึงรายละเอียดแพ็กเกจจาก requestID
+/* DTO : RequestIdParamDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ route parameter สำหรับ requestId
+ *
  * Input :
- *   - res : Response object ของ Express สำหรับส่งผลลัพธ์กลับไปยัง client
+ *  - params :
+ *    - requestId : รหัสของ request (ต้องเป็นตัวเลขในรูปแบบ string)
+ *
  * Output :
- *   - 200 OK พร้อมข้อมูลแพ็กเกจที่มีสถานะเป็น PENDING_SUPER
- *   - 400 Bad Request ถ้ามีข้อผิดพลาดหรือไม่สามารถดึงข้อมูลได้
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และนำไปใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะส่ง validation error กลับ
  */
+export class RequestIdParamDto {
+  @IsNumberString()
+  requestId?: string;
+}
 
-export const getDetailRequest = async (req: Request, res: Response) => {
+/* DTO : getDetailRequestDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบพารามิเตอร์ requestId
+ * Input :
+ *   - params : RequestIdParamDto (ตรวจสอบ requestId)
+ * Output :
+ *   - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *   - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
+ */
+export const getDetailRequestDto = {
+  params: RequestIdParamDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดแพ็กเกจจาก requestId
+ * Input :
+ *  - req.params.requestId : string (รหัสคำขอแพ็กเกจ)
+ * Output :
+ *   - 200 : ดึงรายละเอียดแพ็กเกจสำเร็จ พร้อมผลลัพธ์
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ */
+export const getDetailRequest: TypedHandlerFromDto<
+  typeof getDetailRequestDto
+> = async (req, res) => {
   try {
-
-    const requestIdRaw = req.params.requestId;
-    const requestId = Number(requestIdRaw);
-
-    const data = await getDetailRequestById(requestId);
-    if (!data) {
-      return createErrorResponse(res, 404, "Package not found");
-    }
-    return createResponse(res, 200, "Get pending super package successfully", data);
-  } catch (error) {
-    return createErrorResponse(res, 400, (error as Error).message);
+    const requestId = Number(req.params.requestId);
+    const data = await PackageRequestService.getDetailRequestById(requestId);
+    return createResponse(res,200, "Get pending super package successfully", data);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
   }
 };
 
-import { getDetailRequestByIdForAdmin } from "~/Services/package/package-request-service.js";
-
-/*
- * ฟังก์ชัน : getDetailRequestForAdmin
- * คำอธิบาย : Handler สำหรับดึงรายละเอียดแพ็กเกจจาก requestID
+/* DTO : getDetailRequestForAdminDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบพารามิเตอร์ requestId
  * Input :
- *   - res : Response object ของ Express สำหรับส่งผลลัพธ์กลับไปยัง client
+ *   - params : RequestIdParamDto (ตรวจสอบ requestId)
  * Output :
- *   - 200 OK พร้อมข้อมูลแพ็กเกจที่มีสถานะเป็น PENDING_SUPER
- *   - 400 Bad Request ถ้ามีข้อผิดพลาดหรือไม่สามารถดึงข้อมูลได้
+ *   - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *   - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
  */
+export const getDetailRequestForAdminDto = {
+  params: RequestIdParamDto,
+} satisfies commonDto;
 
-export const getDetailRequestForAdmin = async (req: Request, res: Response) => {
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดแพ็กเกจจาก requestId (Admin)
+ * Input :
+ *  - req.params.requestId : string (รหัสคำขอแพ็กเกจ)
+ * Output :
+ *   - 200 : ดึงรายละเอียดแพ็กเกจสำเร็จ พร้อมผลลัพธ์
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ */
+export const getDetailRequestForAdmin: TypedHandlerFromDto<
+  typeof getDetailRequestForAdminDto
+> = async (req, res) => {
   try {
-
-    const requestIdRaw = req.params.requestId;
-    const requestId = Number(requestIdRaw);
-
-    const data = await getDetailRequestByIdForAdmin(requestId);
-    if (!data) {
-      return createErrorResponse(res, 404, "Package not found");
-    }
+    const requestId = Number(req.params.requestId);
+    const data = await PackageRequestService.getDetailRequestByIdForAdmin(requestId);
     return createResponse(res, 200, "Get pending super package successfully", data);
-  } catch (error) {
-    return createErrorResponse(res, 400, (error as Error).message);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
   }
 };
 

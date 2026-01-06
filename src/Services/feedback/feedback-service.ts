@@ -2,11 +2,11 @@ import prisma from "../database-service.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
 
 /**
- * ฟังก์ชัน : getPackageFeedbacksByPackageId
- * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจ (เฉพาะแอดมิน)
- * Input : packageId, user (UserPayload)
- * Output : Feedback ทั้งหมดของแพ็กเกจนั้น
- * เฉพาะกรณีที่แพ็กเกจอยู่ใน community ของแอดมินเท่านั้น
+ * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจ
+ * Input :
+ *  - packageId : number (รหัสแพ็กเกจ)
+ *  - user : UserPayload (ข้อมูลผู้ใช้ที่เป็นแอดมิน)
+ * Output : รายการ Feedback ทั้งหมดของแพ็กเกจ
  */
 export const getPackageFeedbacksByPackageIdAdmin = async (
   packageId: number,
@@ -129,18 +129,13 @@ export const getAllMemberFeedbacks = async (user: UserPayload) => {
   };
 };
 
-/*
- * ฟังก์ชัน : replyFeedbackService
- * คำอธิบาย : ฟังก์ชันสำหรับรตอบกลับ Feedback
- * โดยจะอัปเดตเฉพาะฟิลด์ replyMessage, replyAt และ responderId
- *
+/**
+ * คำอธิบาย : ตอบกลับ Feedback
  * Input :
  *   - feedbackId : Feedback ที่ต้องการตอบกลับ
  *   - replyMessage : ข้อความตอบกลับรีวิว
  *   - user : ข้อมูลผู้ใช้งานที่ทำการตอบกลับ
- *
- * Output :
- *   - ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
+ * Output : ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
  */
 export const replyFeedbackMember = async (
   feedbackId: number,
@@ -184,11 +179,11 @@ export const replyFeedbackMember = async (
   return updatedFeedback;
 };
 
-/*
- * ฟังก์ชัน : getPackageFeedbacksByPackageIdMember
- * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อเสนอแนะของแพ็กเกจ
- *             สำหรับสมาชิก (Member) ที่ต้องการดูข้อเสนอแนะของแพ็กเกจของตน
- * Input : packageId (หมายเลขแพ็กเกจ), user (ข้อมูลผู้ใช้ที่ร้องขอ)
+/**
+ * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจ
+ * Input :
+ *  - packageId : number (รหัสแพ็กเกจ)
+ *  - user : UserPayload (ข้อมูลผู้ใช้ที่เป็นแอดมิน)
  * Output : รายการข้อเสนอแนะของแพ็กเกจ
  */
 export async function getPackageFeedbacksByPackageIdMember(
@@ -236,18 +231,13 @@ export async function getPackageFeedbacksByPackageIdMember(
 }
 
 
-/*
- * ฟังก์ชัน : replyFeedbackAdmin
- * คำอธิบาย : ฟังก์ชันสำหรับรตอบกลับ Feedback
- * โดยจะอัปเดตเฉพาะฟิลด์ replyMessage, replyAt และ responderId
- *
+/**
+ * คำอธิบาย : ตอบกลับ Feedback
  * Input :
  *   - feedbackId : Feedback ที่ต้องการตอบกลับ
  *   - replyMessage : ข้อความตอบกลับรีวิว
  *   - user : ข้อมูลผู้ใช้งานที่ทำการตอบกลับ
- *
- * Output :
- *   - ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
+ * Output : ข้อมูล Feedback ที่ถูกอัปเดตแล้ว เฉพาะส่วนของการตอบกลับ
  */
 export const replyFeedbackAdmin = async (
   feedbackId: number,

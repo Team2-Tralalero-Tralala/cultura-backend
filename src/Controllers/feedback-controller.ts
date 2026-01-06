@@ -6,33 +6,61 @@ import {
   commonDto,
   type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
+import { IsNumberString } from "class-validator";
 
-/*
- * ฟังก์ชัน : getPackageFeedbacks
- * คำอธิบาย : ดึงรายการฟีดแบ็กของแพ็กเกจจาก packageId
- * หมายเหตุ : ตรวจสอบสิทธิ์/ความเป็นเจ้าของ community ทำใน service แล้ว
+/* DTO : PackageIdParamDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ route parameter สำหรับ packageId
+ *
+ * Input :
+ *  - params :
+ *    - packageId : รหัสของ package (ต้องเป็นตัวเลขในรูปแบบ string)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และนำไปใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะส่ง validation error กลับ
  */
-export const getPackageFeedbacksForAdmin = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+export class PackageIdParamDto {
+  @IsNumberString()
+  packageId?: string;
+}
 
+/* DTO : getPackageFeedbacksForAdminDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบพารามิเตอร์ packageId
+ *  - สำหรับฟังก์ชัน getPackageFeedbacksForAdmin
+ *
+ * Input :
+ *  - params : PackageIdParamDto (ตรวจสอบ packageId)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
+ */
+export const getPackageFeedbacksForAdminDto = {
+  params: PackageIdParamDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย :
+ *  - ดึงรายการ Feedback ของแพ็กเกจสำหรับแอดมิน
+ *  - ตรวจสอบสิทธิ์และความเป็นเจ้าของ community ภายใน service
+ * 
+ * Input :
+ *  - packageId : number (รหัสแพ็กเกจจาก URL params)
+ */
+export const getPackageFeedbacksForAdmin: TypedHandlerFromDto<
+  typeof getPackageFeedbacksForAdminDto
+> = async (req, res) => {
+  try {
     const packageId = Number(req.params.packageId);
+
     const data = await FeedbackService.getPackageFeedbacksByPackageIdAdmin(
       packageId,
-      req.user
+      req.user!
     );
 
-    return response.createResponse(
-      res,
-      200,
-      "Get package feedbacks successfully",
-      data
-    );
+    return response.createResponse(res, 200, "Get package feedbacks successfully", data);
   } catch (error) {
     return response.createErrorResponse(res, 400, (error as Error).message);
   }
@@ -59,17 +87,30 @@ export const getMemberAllFeedbacks = async (req: Request, res: Response) => {
   }
 };
 
-/*
- * DTO สำหรับ replyFeedback — ใช้ตรวจสอบ replyMessage
+
+/* DTO : replyFeedbackDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบพารามิเตอร์ feedbackId
+ *  - ใช้ตรวจสอบ body สำหรับการตอบกลับ feedback
+ *
+ * Input :
+ *  - params : FeedbackIdParamDto (ตรวจสอบ feedbackId)
+ *  - body : ReplyFeedbackDto (ตรวจสอบข้อความตอบกลับ)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
  */
 export const replyFeedbackDto = {
   body: ReplyFeedbackDto,
 } satisfies commonDto;
 
-/*
- * ฟังก์ชัน : replyFeedback
- * คำอธิบาย : ตอบกลับรีวิว — controller ไม่มีการดักเงื่อนไขใด ๆ
- * หมายเหตุ : validation และ business logic ทำใน DTO + Service แล้ว
+/**
+ * คำอธิบาย : ตอบกลับ Feedback
+ * Input :
+ *  - feedbackId : number (รหัส feedback จาก URL params)
+ *  - replyMessage : string (ข้อความตอบกลับ)
+ * Output : ข้อมูล Feedback หลังจากตอบกลับสำเร็จ
  */
 export const replyFeedback: TypedHandlerFromDto<
   typeof replyFeedbackDto
@@ -95,37 +136,51 @@ export const replyFeedback: TypedHandlerFromDto<
   }
 };
 
-/*
- * ฟังก์ชัน : getPackageFeedbacksForMember
- * คำอธิบาย : ดึงรายการฟีดแบ็กของแพ็กเกจจาก packageId สำหรับสมาชิก (Member)
- * หมายเหตุ : ตรวจสอบสิทธิ์และความเป็นผู้ดูแลแพ็กเกจทำใน Service แล้ว
+/* DTO : getPackageFeedbacksForMemberDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบพารามิเตอร์ packageId
+ *  - สำหรับฟังก์ชัน getPackageFeedbacksForMember
+ *
+ * Input :
+ *  - params : PackageIdParamDto (ตรวจสอบ packageId)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
  */
-export async function getPackageFeedbacksForMember(
-  req: Request,
-  res: Response
-) {
+export const getPackageFeedbacksForMemberDto = {
+  params: PackageIdParamDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจสำหรับสมาชิก
+ * Input : packageId : number (รหัสแพ็กเกจจาก URL params)
+ * Output : รายการ Feedback ของแพ็กเกจ
+ */
+export const getPackageFeedbacksForMember: TypedHandlerFromDto<
+  typeof getPackageFeedbacksForMemberDto
+> = async (req, res) => {
   try {
     const packageId = Number(req.params.packageId);
-    const data = await FeedbackService.getPackageFeedbacksByPackageIdMember(
-      packageId,
-      req.user!
-    );
 
-    return response.createResponse(
-      res,
-      200,
-      "Get package feedbacks successfully",
-      data
-    );
+    const data =
+      await FeedbackService.getPackageFeedbacksByPackageIdMember(
+        packageId,
+        req.user!
+      );
+
+    return response.createResponse(res, 200, "Get package feedbacks successfully", data);
   } catch (error) {
     return response.createErrorResponse(res, 400, (error as Error).message);
   }
-}
+};
 
-/*
- * ฟังก์ชัน : replyFeedbackAdmin
- * คำอธิบาย : ตอบกลับรีวิว
- * หมายเหตุ : validation และ business logic ทำใน DTO + Service แล้ว
+/**
+ * คำอธิบาย : ตอบกลับ Feedback
+ * Input :
+ *  - feedbackId : number (รหัส feedback จาก URL params)
+ *  - replyMessage : string (ข้อความตอบกลับ)
+ * Output : ข้อมูล Feedback หลังจากตอบกลับสำเร็จ
  */
 export const replyFeedbackAdmin: TypedHandlerFromDto<
   typeof replyFeedbackDto
