@@ -50,7 +50,7 @@ export class PackageDto {
     @IsOptional()
     communityId: number;
 
-    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT') 
+    @ValidateIf(dtoObject => dtoObject.statusPackage !== 'DRAFT')
     @ValidateNested()
     @Type(() => LocationDto)
     @IsNotEmpty({ message: "location ห้ามว่าง" })
@@ -376,8 +376,18 @@ export class IdParamDto {
     communityId?: string;
 }
 export class BulkDeletePackagesDto {
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  ids!: number[];
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsNumber({}, { each: true })
+    ids!: number[];
+}
+
+export class HistoryPackageQueryDto {
+    @IsOptional()
+    @IsNumberString()
+    page?: string;
+
+    @IsOptional()
+    @IsNumberString()
+    limit?: string;
 }

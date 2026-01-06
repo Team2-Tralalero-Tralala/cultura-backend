@@ -740,10 +740,7 @@ export const deleteHomestayByAdmin = async (
 };
 
 /**
- * คำอธิบาย :
- *  - ดึงรายละเอียดที่พักที่เลือก 
- *  - ดึงที่พักอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
- *
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดที่พักที่เลือก และดึงที่พักอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
  * Input :
  *  - communityId : number
  *  - homestayId : number
@@ -756,7 +753,7 @@ export const deleteHomestayByAdmin = async (
  */
 export const getHomestayWithOtherHomestaysInCommunity = async (communityId: number, homestayId: number, page: number = 1, limit: number = 12) => {
   if (!Number.isInteger(communityId) || !Number.isInteger(homestayId) || !Number.isInteger(page) || !Number.isInteger(limit)) {
-    throw new Error("Invalid parameter");
+    throw new Error("ต้องเป็นตัวเลขจำนวนเต็ม");
   }
 
   if (page < 1 || limit < 1) {

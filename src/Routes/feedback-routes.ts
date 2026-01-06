@@ -4,6 +4,7 @@ import * as FeedbackController from "~/Controllers/feedback-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
+import { upload } from "~/Libs/uploadFile.js";
 
 const feedbackRoutes = Router();
 /**
@@ -442,4 +443,56 @@ feedbackRoutes.post(
   FeedbackController.replyFeedbackAdmin
 );
 
+/**
+ * @swagger
+ * /api/tourist/booking-history/{bookingId}/feedback:
+ *   post:
+ *     tags: [Tourist - Feedback]
+ *     summary: ส่ง Feedback สำหรับการจอง
+ *     description: นักท่องเที่ยวส่งคะแนน ความคิดเห็น และรูปภาพ
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 example: 5
+ *               message:
+ *                 type: string
+ *               gallery:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       201:
+ *         description: ส่ง Feedback สำเร็จ
+ *       400:
+ *         description: ข้อมูลไม่ถูกต้อง
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * คำอธิบาย : Route สำหรับนักท่องเที่ยวส่ง Feedback หลังการจองแพ็กเกจ
+ */
+feedbackRoutes.post(
+  "/tourist/booking-history/:bookingId/feedback",
+  authMiddleware,
+  allowRoles("tourist"),
+  upload.fields([{ name: "gallery", maxCount: 5 }]),
+  validateDto(FeedbackController.createFeedbackDto),
+  FeedbackController.createFeedback
+);
 export default feedbackRoutes;

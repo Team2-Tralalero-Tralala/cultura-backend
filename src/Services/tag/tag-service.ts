@@ -1,24 +1,21 @@
 /*
- * คำอธิบาย : Service สำหรับจัดการ Tag
- * ประกอบด้วยการสร้าง (create), แก้ไข (edit), ลบ (delete), และดึงข้อมูล Tag ทั้งหมด(get)
- * โดยเชื่อมต่อกับฐานข้อมูลผ่าน Prisma
+ * คำอธิบาย : Service สำหรับจัดการประเภท
+ * ประกอบด้วยการสร้าง (create), แก้ไข (edit), ลบ (delete), และดึงข้อมูล Tag ทั้งหมด (get)
  */
 import prisma from "../database-service.js";
 import { TagDto } from "./tag-dto.js";
 
 /*
- * ฟังก์ชัน : createTag
- * คำอธิบาย : สร้าง Tag ใหม่
- * Input : name (string) - ชื่อ Tag ที่ต้องการสร้าง
- * Output : tagId (number) - รหัส Tag ที่สร้างใหม่
- * Error : throw error ถ้าไม่สามารถสร้าง Tag ได้
+ * คำอธิบาย : ฟังก์ชันสำหรับสร้างปประเภทใหม่
+ * Input : name (string) - ชื่อประเภทที่ต้องการสร้าง
+ * Output : tagId (number) - รหัสประเภทที่สร้างใหม่
  */
 export async function createTag(tag: TagDto) {
   const tagExists = await prisma.tag.findFirst({
     where: { name: tag.name },
   });
 
-  if (tagExists) throw new Error("Tag already exists");
+  if (tagExists) throw new Error("มีประเภทนี้อยู่แล้วในระบบ");
 
   return await prisma.tag.create({
     data: { name: tag.name },
@@ -26,17 +23,15 @@ export async function createTag(tag: TagDto) {
 }
 
 /*
- * ฟังก์ชัน : deleteTag
- * คำอธิบาย : ลบ Tag ที่กำหนด
- * Input : id (number) - รหัส Tag ที่ต้องการลบ
+ * คำอธิบาย : ฟังก์ชันสำหรับลบประเภท
+ * Input : id (number) - รหัสประเภทที่ต้องการลบ
  * Output : message (string) - ข้อความยืนยันการลบ
- * Error : throw error ถ้าไม่พบ Tag
  */
 export async function deleteTagById(tagId: number) {
   const findTag = await prisma.tag.findUnique({
     where: { id: tagId, isDeleted: false },
   });
-  if (!findTag) throw new Error("Tag not found");
+  if (!findTag) throw new Error("ไม่พบประเภทที่ต้องการลบ");
 
   return await prisma.tag.update({
     where: { id: tagId },
@@ -45,15 +40,13 @@ export async function deleteTagById(tagId: number) {
 }
 
 /*
- * ฟังก์ชัน : editTag
- * คำอธิบาย : แก้ไข Tag ที่กำหนด
- * Input : id (number) - รหัส Tag ที่ต้องการแก้ไข
+ * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขประเภทที่กำหนด
+ * Input : id (number) - รหัสประเภทที่ต้องการแก้ไข
  * Output : message (string) - ข้อความยืนยันการแก้ไข
- * Error : throw error ถ้าไม่พบ Tag
  */
 export async function editTag(tagId: number, tag: TagDto) {
   const findTag = await prisma.tag.findUnique({ where: { id: tagId } });
-  if (!findTag) throw new Error("Tag not found");
+  if (!findTag) throw new Error("ไม่พบประเภทที่ต้องการแก้ไข");
 
   return await prisma.tag.update({
     where: { id: tagId },
@@ -62,11 +55,9 @@ export async function editTag(tagId: number, tag: TagDto) {
 }
 
 /*
- * ฟังก์ชัน : getAllTags
- * คำอธิบาย : ดึงข้อมูล Tag ทั้งหมด
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลประเภททั้งหมด
  * Input : -
- * Output : tags (Array) - รายการ Tag ทั้งหมด
- * Error : throw error ถ้าไม่สามารถดึงข้อมูลได้
+ * Output : tags (Array) - รายการประเภททั้งหมด
  */
 export async function getAllTags(page: number = 1, limit: number = 10) {
   const [tags, totalCount] = await Promise.all([

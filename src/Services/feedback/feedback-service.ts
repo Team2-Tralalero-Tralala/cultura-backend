@@ -290,3 +290,52 @@ export const replyFeedbackAdmin = async (
 
   return updatedFeedback;
 };
+
+/**
+ * คำอธิบาย : สร้าง Feedback ใหม่สำหรับ Booking
+ * Input : bookingId, rating, message, images, user
+ * Output : ข้อมูล Feedback ที่สร้างเสร็จแล้ว
+ */
+export const createFeedback = async (
+  bookingId: number,
+  data: { rating: number; message: string; images?: string[] },
+  user: UserPayload
+) => {
+  const booking = await prisma.bookingHistory.findFirst({
+    where: {
+      id: bookingId,
+      touristId: user.id,
+    },
+  });
+
+  if (!booking) {
+    throw new Error("ไม่พบประวัติการจอง หรือคุณไม่มีสิทธิ์ในการรีวิวรายการนี้");
+  }
+
+  const existingFeedback = await prisma.feedback.findFirst({
+    where: { bookingHistoryId: bookingId },
+  });
+
+  if (existingFeedback) {
+    throw new Error("รายการนี้ได้รับการรีวิวไปแล้ว");
+  }
+
+  const feedback = await prisma.feedback.create({
+    data: {
+      bookingHistoryId: bookingId,
+      rating: data.rating,
+      message: data.message,
+      createdAt: new Date(),
+      feedbackImages: {
+        create: data.images && data.images.length > 0 
+          ? data.images.map((image) => ({ image: image })) 
+          : [], 
+      },
+    },
+    include: {
+      feedbackImages: true,
+    },
+  });
+
+  return feedback;
+};

@@ -646,7 +646,105 @@ bookingRoutes.post(
   allowRoles("member"),
   BookingHistoryController.updateBookingStatusByMember
 );
-
+/*
+ *                   example: Booking histories (tourist) retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 12
+ *                           community:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               name:
+ *                                 type: string
+ *                                 example: "ชุมชนบ้านโนนสะอาด"
+ *                           package:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 5
+ *                               name:
+ *                                 type: string
+ *                                 example: "แพ็กเกจท่องเที่ยวเชิงวัฒนธรรม"
+ *                               description:
+ *                                 type: string
+ *                                 example: "รายละเอียดแพ็กเกจ..."
+ *                               price:
+ *                                 type: number
+ *                                 example: 1500
+ *                               startDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2025-03-01T00:00:00.000Z"
+ *                               dueDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2025-02-28T00:00:00.000Z"
+ *                               status:
+ *                                 type: string
+ *                                 example: "PUBLISH"
+ *                               location:
+ *                                 type: string
+ *                                 example: "ต.โนนสะอาด อ.เมือง จ.ขอนแก่น"
+ *                           quantity:
+ *                             type: integer
+ *                             example: 2
+ *                           totalPrice:
+ *                             type: number
+ *                             example: 3000
+ *                           status:
+ *                             type: string
+ *                             example: "BOOKED"
+ *                           transferSlip:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "uploads/slips/slip_2025-02-11.png"
+ *                           bookingAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2025-02-11T10:12:45.000Z"
+ *                           isTripCompleted:
+ *                             type: boolean
+ *                             example: false
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 3
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 21
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *       400:
+ *         description: การดึงข้อมูลล้มเหลว
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ
+ */
+bookingRoutes.get(
+  "/tourist/booking-histories",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getTouristBookingHistories
+);
 /**
  * @swagger
  * /api/tourist/booking-history/own:

@@ -178,3 +178,56 @@ export const getMemberDashboard: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+/*
+ * DTO สำหรับดึงข้อมูล Dashboard ของ Tourist
+ * วัตถุประสงค์ : เพื่อให้สามารถดึงข้อมูล Dashboard ของ Tourist ได้
+ * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Tourist
+ * Input : query (bookingPeriodType, bookingDates)
+ * Output : ข้อมูล Dashboard
+ */
+export const getTouristDashboardDto = {
+  query: DashboardDto.GetTouristDashboardDto,
+} satisfies commonDto;
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Member
+ * Input : req.query (bookingPeriodType, bookingDates, revenuePeriodType, revenueDates, packagePeriodType, packageDates)
+ * Output : JSON response พร้อมข้อมูล Dashboard
+ */
+export const getTouristDashboard: TypedHandlerFromDto<
+  typeof getTouristDashboardDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "ผู้ใช้ไม่ได้เข้าสู่ระบบ");
+    }
+
+    const query = req.query as any;
+    const { bookingPeriodType } = query;
+
+    /**
+     * คำอธิบาย : ฟังก์ชันสำหรับแปลงค่า query ให้เป็น array
+     * Input : key (string)
+     * Output : array
+     */
+    const convertBookingDateToArray = (key: string) => {
+      const val = query[key] || query[`${key}[]`];
+      return Array.isArray(val) ? val : val ? [val] : [];
+    };
+
+    const bookingDates = convertBookingDateToArray("bookingDates");
+
+    const result = await DashboardService.getTouristDashboard(req.user?.id, {
+      periodType: bookingPeriodType as "weekly" | "monthly" | "yearly",
+      dates: bookingDates,
+    });
+
+    return createResponse(
+      res,
+      200,
+      "Dashboard data retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

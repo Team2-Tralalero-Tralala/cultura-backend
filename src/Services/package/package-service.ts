@@ -132,7 +132,7 @@ export const createPackage = async (data: PackageDto) => {
     locationId = location.id;
   }
 
-const startAt = data.startDate
+  const startAt = data.startDate
     ? composeDateTimeIso(data.startDate, (data as any).startTime)
     : null;
 
@@ -172,45 +172,45 @@ const startAt = data.startDate
       overseerMemberId: Number(targetOverseerId),
       createById: data.createById ?? Number(targetOverseerId),
       name: data.name,
-      
+
       // เพิ่ม || null หรือ ?? null เพื่อรองรับกรณีไม่มีข้อมูล
-      description: data.description || null, 
-      capacity: data.capacity ?? null,       
-      price: data.price ?? null,             
+      description: data.description || null,
+      capacity: data.capacity ?? null,
+      price: data.price ?? null,
       warning: data.warning || null,
-      
+
       statusPackage: data.statusPackage,
       statusApprove: data.statusApprove,
       startDate: startAt,
       dueDate: dueAt,
       bookingOpenDate: openBooking,
       bookingCloseDate: closeBooking,
-      
+
       facility: data.facility || null, // เพิ่ม || null
 
       // ... (ส่วน packageFile และ homestayHistories เหมือนเดิมไม่ต้องแก้)
       ...(Array.isArray((data as any).packageFile) &&
-      (data as any).packageFile.length > 0
+        (data as any).packageFile.length > 0
         ? {
-            packageFile: {
-              create: (data as any).packageFile.map((file: PackageFileDto) => ({
-                filePath: file.filePath,
-                type: file.type,
-              })),
-            },
-          }
+          packageFile: {
+            create: (data as any).packageFile.map((file: PackageFileDto) => ({
+              filePath: file.filePath,
+              type: file.type,
+            })),
+          },
+        }
         : {}),
       ...(hasHomestayLink
         ? {
-            homestayHistories: {
-              create: {
-                homestayId: Number(data.homestayId),
-                bookedRoom: Number((data as any).bookedRoom || 1),
-                checkInTime: homestayCheckIn!,
-                checkOutTime: homestayCheckOut!,
-              },
+          homestayHistories: {
+            create: {
+              homestayId: Number(data.homestayId),
+              bookedRoom: Number((data as any).bookedRoom || 1),
+              checkInTime: homestayCheckIn!,
+              checkOutTime: homestayCheckOut!,
             },
-          }
+          },
+        }
         : {}),
     },
     include: { location: true, packageFile: true, homestayHistories: true },
@@ -455,16 +455,16 @@ export const editPackage = async (id: number, data: any) => {
     updateData.location = {
       upsert: {
         create: {
-            houseNumber: locationData.houseNumber || "",
-            villageNumber: toNull(locationData.villageNumber),
-            alley: toNull(locationData.alley),
-            subDistrict: locationData.subDistrict || "",
-            district: locationData.district || "",
-            province: locationData.province || "",
-            postalCode: locationData.postalCode || "",
-            detail: toNull(locationData.detail),
-            latitude: Number(locationData.latitude) || 0,
-            longitude: Number(locationData.longitude) || 0,
+          houseNumber: locationData.houseNumber || "",
+          villageNumber: toNull(locationData.villageNumber),
+          alley: toNull(locationData.alley),
+          subDistrict: locationData.subDistrict || "",
+          district: locationData.district || "",
+          province: locationData.province || "",
+          postalCode: locationData.postalCode || "",
+          detail: toNull(locationData.detail),
+          latitude: Number(locationData.latitude) || 0,
+          longitude: Number(locationData.longitude) || 0,
         },
         update: {
           ...(locationData.houseNumber !== undefined && {
@@ -1245,6 +1245,12 @@ export const getAllFeedbacks = async (userId: number) => {
         include: {
           bookingHistories: {
             include: {
+              tourist: {
+                select: {
+                  fname: true,
+                  lname: true,
+                }
+              },
               feedbacks: {
                 include: {
                   feedbackImages: true,
@@ -1313,8 +1319,9 @@ export async function getPackageHistoryDetailById(packageId: number) {
   if (!foundPackage) return null;
   return foundPackage;
 }
+
 /*
- * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin
  * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
  * Output : ข้อมูลแพ็กเกจพร้อม Pagination
  */
@@ -1323,7 +1330,6 @@ export const getHistoriesPackageByAdmin = async (
   page = 1,
   limit = 10
 ): Promise<PaginationResponse<any>> => {
-  // ตรวจสอบ user
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
     include: { role: true, communityAdmin: true },
@@ -1331,14 +1337,12 @@ export const getHistoriesPackageByAdmin = async (
 
   if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
   if (user.role?.name !== "admin")
-    throw new Error("อนุญาตเฉพาะผู้ดูแล (Admin) เท่านั้น");
+    throw new Error("อนุญาตเฉพาะผู้ดูแล Admin เท่านั้น");
 
-  // ดึงรายการชุมชนที่ admin ดูแล
   const adminCommunityIds = user.communityAdmin.map((c: any) => c.id);
   if (adminCommunityIds.length === 0)
-    throw new Error("คุณยังไม่ได้สังกัดชุมชนใดในฐานะผู้ดูแล");
+    throw new Error("คุณยังไม่ได้สังกัดชุมชนใด");
 
-  // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
   const now = new Date();
 
   const whereCondition = {
@@ -1347,7 +1351,6 @@ export const getHistoriesPackageByAdmin = async (
     dueDate: { lt: now },
   };
 
-  // pagination
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
 
@@ -1366,7 +1369,6 @@ export const getHistoriesPackageByAdmin = async (
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
   return {
     data: packages.map((pkg) => ({
       id: pkg.id,
@@ -1555,7 +1557,7 @@ export const getPackageDetailByMember = async (
 };
 
 /*
- * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ member
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ member
  * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
  * Output : ข้อมูลแพ็กเกจพร้อม Pagination
  */
@@ -1564,7 +1566,7 @@ export const getHistoriesPackageByMember = async (
   page = 1,
   limit = 10
 ): Promise<PaginationResponse<any>> => {
-  // ตรวจสอบ user
+
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
     include: { role: true },
@@ -1572,18 +1574,16 @@ export const getHistoriesPackageByMember = async (
 
   if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
   if (user.role?.name !== "member")
-    throw new Error("อนุญาตเฉพาะผู้ดูแล (Member) เท่านั้น");
+    throw new Error("อนุญาตเฉพาะผู้ดูแล Member เท่านั้น");
 
-  // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
   const now = new Date();
 
   const whereCondition = {
     isDeleted: false,
-    overseerMemberId: user.id, // กรองเฉพาะที่ member คนนี้ดูแล
+    overseerMemberId: user.id, 
     dueDate: { lt: now },
   };
 
-  // pagination
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
 
@@ -1602,7 +1602,6 @@ export const getHistoriesPackageByMember = async (
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
   return {
     data: packages.map((pkg) => ({
       id: pkg.id,

@@ -301,6 +301,27 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
 };
 
 /**
+ * คำอธิบาย : ดึงรายละเอียดการจองโดยใช้ getDetailBookingById (ไม่ล็อคสถานะ PENDING)
+ * Input: req.params.id - รหัสการจอง (bookingId) ที่ต้องการดึงข้อมูล
+ * Output:
+ * - 200 OK พร้อมข้อมูลรายละเอียดการจอง (detail)
+ * - 400 Bad Request หากเกิดข้อผิดพลาด
+ */
+export const getBookingDetailForTourist = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const detail = await BookingHistoryService.getDetailBookingById(bookingId);
+
+    return createResponse(res, 200, "Get booking detail successfully", detail);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/*
  * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
  * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
  */
