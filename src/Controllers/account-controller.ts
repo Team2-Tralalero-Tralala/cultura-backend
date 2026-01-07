@@ -307,35 +307,49 @@ export class ProfileIdParamDto {
  *   - หากข้อมูลถูกต้อง ระบบจะส่งต่อไปยัง controller เพื่อประมวลผล
  */
 export const editProfileDto = {
-  body: EditAccountDto, // ใช้ EditAccountDto ตามที่คุณบอกว่าไม่แก้ DTO
+  body: EditAccountDto, 
 } satisfies commonDto;
-/**
- * ฟังก์ชัน : editProfile
+
+/*
  * คำอธิบาย :
- *   Controller สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
- *   โดยอ้างอิง user id จาก token (req.user)
+ * คอนโทรลเลอร์สำหรับแก้ไขข้อมูลส่วนตัวของผู้ใช้งานที่ล็อกอินอยู่
+ * รองรับการรับข้อมูลทั้งแบบ JSON ปกติ และแบบ Multipart (FormData) สำหรับการอัปโหลดรูปภาพ
  *
  * Input :
- *   - req.user.id : รหัสผู้ใช้งานที่ล็อกอิน
- *   - req.body    : ข้อมูลโปรไฟล์ที่แก้ไข
+ * - req.user.id : รหัสผู้ใช้งานที่ล็อกอิน (ดึงจาก Token)
+ * - req.file    : ไฟล์รูปภาพโปรไฟล์ใหม่ (Optional, รับจาก Multer)
+ * - req.body.data : ข้อมูลโปรไฟล์แบบ JSON String (กรณีส่งแบบ Multipart)
+ * - req.body    : ข้อมูลโปรไฟล์แบบ JSON Object (กรณีไม่มีการอัปโหลดไฟล์)
  *
  * Output :
- *   - Response 200 : แก้ไขข้อมูลสมาชิกสำเร็จ
- *   - Response 400 : กรณีเกิดข้อผิดพลาด
+ * - Response 200 : แก้ไขข้อมูลสมาชิกสำเร็จ พร้อมส่งข้อมูลล่าสุดกลับไป
+ * - Response 400 : กรณีเกิดข้อผิดพลาด เช่น JSON Format ไม่ถูกต้อง
  */
-export const editProfile: TypedHandlerFromDto<typeof editProfileDto> = async (
-  req,
-  res
-) => {
+export const editProfile = async (req: Request, res: Response) => {
   try {
-    const body = req.body;
+    const userId = Number(req.user?.id);
+    const file = req.file; // รับไฟล์จาก Multer
 
+    let bodyData: any = {};
+
+    if (req.body.data) {
+      try {
+        bodyData = JSON.parse(req.body.data);
+      } catch (error) {
+        return createErrorResponse(res, 400, "รูปแบบข้อมูล JSON ไม่ถูกต้อง");
+      }
+    } else {
+      bodyData = req.body;
+    }
+    if (file) {
+      const imagePath = `/uploads/${file.filename}`;
+      bodyData.profileImage = imagePath;
+    }
     const result = await AccountService.editProfile(
-      Number(req.user?.id),
-      body as any
+      userId,
+      bodyData // ส่ง Object ที่รวมข้อมูล + Path รูป ไปให้ Service
     );
-
-    return createResponse(res, 200, "แก้ไขข้อมูลสมาชิกสำเร็จ", result);
+    return createResponse(res, 200, "แก้ไขข้อมูลสำเร็จ", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
