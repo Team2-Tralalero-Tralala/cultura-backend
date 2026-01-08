@@ -220,7 +220,6 @@ export const getCommunityAllDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getCommunityAll
  * อธิบาย : ดึง community ทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
  * Input : req.user.id (จาก middleware auth) และ req.query.page, req.query.limit
  * Output :
@@ -286,7 +285,6 @@ export const getCommunityDetailByAdminDto = {} satisfies commonDto;
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดชุมชนของแอดมินปัจจุบัน
- * Route : GET /admin/community
  * Input : req.user.id
  * Output : JSON response พร้อมรายละเอียดชุมชน
  */
@@ -374,7 +372,6 @@ export const getCommunityDetailByMemberDto = {} satisfies commonDto;
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดชุมชนของสมาชิก
- * Route : GET /member/community
  * Input : req.user.id
  * Output : JSON response พร้อมรายละเอียดชุมชน
  */

@@ -471,5 +471,130 @@ dashboardRoutes.get(
   allowRoles("member"),
   DashboardController.getMemberDashboard
 );
+/**
+ * @swagger
+ * /api/tourist/dashboard:
+ *   get:
+ *     summary: ดึงข้อมูล Dashboard ของนักท่องเที่ยว (Tourist)
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูล Dashboard ของนักท่องเที่ยว (Tourist)
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: ดึงข้อมูล Dashboard ของนักท่องเที่ยว (Tourist) สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Dashboard data retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     summary:
+ *                       type: object
+ *                       properties:
+ *                         totalBooking:
+ *                           type: number
+ *                           example: 252
+ *                         successBookingCount:
+ *                           type: number
+ *                           example: 35
+ *                         cancelledBookingCount:
+ *                           type: number
+ *                           example: 94
+ *                         totalSpend:
+ *                           type: number
+ *                           example: 202421
+ *                     graph:
+ *                       type: object
+ *                       properties:
+ *                         bookingCountGraph:
+ *                           type: object
+ *                           properties:
+ *                             labels:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                               example: ["17/12", "18/12", "19/12", "20/12", "21/12", "22/12", "23/12"]
+ *                             data:
+ *                               type: array
+ *                               items:
+ *                                 type: number
+ *                               example: [29811, 29263, 12491, 78288, 31394, 21174, 0]
+ *                     package:
+ *                       type: object
+ *                       properties:
+ *                         lastBooking:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               bookingAt:
+ *                                 type: string
+ *                                 example: "2025-12-22T06:49:56.000Z"
+ *                               totalParticipant:
+ *                                 type: number
+ *                                 example: 2
+ *                               status:
+ *                                 type: string
+ *                                 example: "REJECTED"
+ *                               package:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                     example: "ปลูกป่าชายเลน"
+ *                                   price:
+ *                                     type: number
+ *                                     example: 1435
+ *       401:
+ *         description: ไม่มี Token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Missing Token
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Forbidden)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden
+ */
+/**
+ * คำอธิบาย: ใช้สำหรับดึงข้อมูล Dashboard ของผู้ที่ดูแล (Member)
+ */
+dashboardRoutes.get(
+  "/tourist/dashboard",
+  validateDto(DashboardController.getTouristDashboardDto),
+  authMiddleware,
+  allowRoles("tourist"),
+  DashboardController.getTouristDashboard
+);
 
 export default dashboardRoutes;

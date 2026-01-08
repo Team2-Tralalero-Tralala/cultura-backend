@@ -777,23 +777,30 @@ function calculateDateRanges(
 ): { start: Date; end: Date; label: string }[] {
   const dateRanges: { start: Date; end: Date; label: string }[] = [];
 
-  if (!filter.dates || filter.dates.length === 0) return dateRanges;
+  const targetDates =
+    filter.dates && filter.dates.length > 0
+      ? filter.dates
+      : [new Date().toISOString()];
 
   // วนลูปตามจำนวนวันที่ที่รับมา
-  for (const dateString of filter.dates) {
+  for (const dateString of targetDates) {
     const targetDate = new Date(dateString);
     let rangeStartDate: Date, rangeEndDate: Date, rangeLabel: string;
 
-    if (filter.periodType === "weekly") {
-      rangeStartDate = new Date(targetDate);
-      rangeStartDate.setHours(0, 0, 0, 0);
-      rangeEndDate = new Date(rangeStartDate);
-      rangeEndDate.setDate(rangeStartDate.getDate() + 6);
+    const effectivePeriodType = filter.periodType || "weekly";
+
+    if (effectivePeriodType === "weekly") {
+      rangeEndDate = new Date(targetDate);
       rangeEndDate.setHours(23, 59, 59, 999);
+
+      rangeStartDate = new Date(rangeEndDate);
+      rangeStartDate.setDate(rangeEndDate.getDate() - 6);
+      rangeStartDate.setHours(0, 0, 0, 0);
+
       rangeLabel = `${rangeStartDate.getDate()}/${
         rangeStartDate.getMonth() + 1
       } - ${rangeEndDate.getDate()}/${rangeEndDate.getMonth() + 1}`;
-    } else if (filter.periodType === "monthly") {
+    } else if (effectivePeriodType === "monthly") {
       rangeStartDate = new Date(
         targetDate.getFullYear(),
         targetDate.getMonth(),
@@ -839,13 +846,16 @@ function calculateDateRanges(
 }
 
 /**
- * ฟังก์ชัน: buildGraphData
  * คำอธิบาย: ฟังก์ชันสำหรับสร้างข้อมูลกราฟ
  * input: filter, ranges, periodType, valueExtractor
  * output: { labels: string[]; datasets: { label: string; data: number[] }[] }
  */
 async function buildGraphData(
-  filter: { communityId?: number; overseerMemberId?: number },
+  filter: {
+    communityId?: number;
+    overseerMemberId?: number;
+    touristId?: number;
+  },
   dateRanges: { start: Date; end: Date; label: string }[],
   periodType: "weekly" | "monthly" | "yearly",
   valueExtractor: (booking: any) => number
@@ -864,13 +874,21 @@ async function buildGraphData(
     packageFilter.overseerMemberId = filter.overseerMemberId;
   }
 
+  const whereClause: any = {
+    ...(Object.keys(packageFilter).length > 0
+      ? { package: packageFilter }
+      : {}),
+    ...(dateFilters.length > 0 ? { OR: dateFilters } : {}),
+    status: "BOOKED",
+  };
+
+  if (filter.touristId) {
+    whereClause.touristId = filter.touristId;
+  }
+
   // ดึงข้อมูล bookingHistory ตามเงื่อนไข filter
   const bookings = await prisma.bookingHistory.findMany({
-    where: {
-      package: packageFilter,
-      ...(dateFilters.length > 0 ? { OR: dateFilters } : {}),
-      status: "BOOKED",
-    },
+    where: whereClause,
     select: {
       bookingAt: true,
       totalParticipant: true,
@@ -882,7 +900,9 @@ async function buildGraphData(
   let labels: string[] = [];
   let data: number[] = [];
 
-  if (periodType === "monthly" && dateRanges.length === 1) {
+  const effectPeriodType = periodType || "weekly";
+
+  if (effectPeriodType === "monthly" && dateRanges.length === 1) {
     // Single Month -> Weekly breakdown
     const singleRange = dateRanges[0]!;
     let currentCheckDate = new Date(singleRange.start);
@@ -917,7 +937,7 @@ async function buildGraphData(
         .reduce((total, booking) => total + valueExtractor(booking), 0);
     });
     data.push(...rangeData);
-  } else if (periodType === "yearly" && dateRanges.length === 1) {
+  } else if (effectPeriodType === "yearly" && dateRanges.length === 1) {
     // Single Year -> Monthly breakdown
     labels = [
       "มกราคม",
@@ -945,7 +965,7 @@ async function buildGraphData(
       }
     });
     data.push(...rangeData);
-  } else if (periodType === "weekly") {
+  } else if (effectPeriodType === "weekly") {
     // Week -> Daily breakdown
     // Generate dates based on the first range
     const firstRangeStart = dateRanges[0]?.start
@@ -970,7 +990,7 @@ async function buildGraphData(
       });
       data.push(...rangeData);
     });
-  } else if (periodType === "monthly" && dateRanges.length > 1) {
+  } else if (effectPeriodType === "monthly" && dateRanges.length > 1) {
     // Compare Months -> specific labels (e.g. "January", "December") and total data
     labels = dateRanges.map((dateRange) => dateRange.label);
     const rangeData = dateRanges.map((range) => {
@@ -982,7 +1002,7 @@ async function buildGraphData(
         .reduce((total, booking) => total + valueExtractor(booking), 0);
     });
     data.push(...rangeData);
-  } else if (periodType === "yearly" && dateRanges.length > 1) {
+  } else if (effectPeriodType === "yearly" && dateRanges.length > 1) {
     // Compare Years -> specific labels (e.g. "2566", "2567") and total data
     labels = dateRanges.map((dateRange) => dateRange.label);
     const rangeData = dateRanges.map((range) => {
@@ -1128,6 +1148,87 @@ export async function getMemberDashboard(
     },
     package: {
       topPackages,
+    },
+  };
+}
+/**
+ * คำอธิบาย: ใช้สำหรับดึงข้อมูล Dashboard ของนักท่องเที่ยว (Tourist)
+ * input: userId, bookingFilter
+ * output: summary, graph, package
+ */
+export async function getTouristDashboard(
+  userId: number,
+  bookingFilter: DashboardFilter
+) {
+  const bookingRanges = calculateDateRanges(bookingFilter);
+
+  const bookingDateFilters = bookingRanges.map((range) => ({
+    bookingAt: { gte: range.start, lte: range.end },
+  }));
+
+  const totalBooking = await prisma.bookingHistory.count({
+    where: {
+      touristId: userId,
+      ...(bookingDateFilters.length > 0 ? { OR: bookingDateFilters } : {}),
+    },
+  });
+
+  const summaryBookings = await prisma.bookingHistory.findMany({
+    where: {
+      touristId: userId,
+      ...(bookingDateFilters.length > 0 ? { OR: bookingDateFilters } : {}),
+    },
+    select: {
+      bookingAt: true,
+      totalParticipant: true,
+      status: true,
+      package: { select: { name: true, price: true } },
+    },
+    orderBy: {
+      bookingAt: "asc",
+    },
+  });
+
+  let totalSpend = 0;
+  let successBookingCount = 0;
+  let cancelledBookingCount = 0;
+
+  // คำนวนรายได้และจำนวน Booking
+  summaryBookings.forEach((booking) => {
+    if (booking.status === "BOOKED") {
+      successBookingCount++;
+      totalSpend += (booking.package?.price || 0) * booking.totalParticipant;
+    } else if (
+      booking.status === "REFUNDED" ||
+      booking.status === "REFUND_REJECTED"
+    ) {
+      cancelledBookingCount++;
+    }
+  });
+
+  // สร้างกราฟ Booking
+  const bookingCountGraph = await buildGraphData(
+    { touristId: userId },
+    bookingRanges,
+    bookingFilter.periodType,
+    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant // Calculate spending
+  );
+
+  // lastesr 5 booking sort by ascending
+  const lastBookingLists = summaryBookings.slice(-5).reverse();
+
+  return {
+    summary: {
+      totalBooking,
+      successBookingCount,
+      cancelledBookingCount,
+      totalSpend,
+    },
+    graph: {
+      bookingCountGraph,
+    },
+    package: {
+      lastBookingLists,
     },
   };
 }

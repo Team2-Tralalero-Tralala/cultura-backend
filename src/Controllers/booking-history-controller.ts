@@ -14,24 +14,61 @@ import * as TouristBookingService from "~/Services/booking/booking-service.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import * as bookingService from "../Services/booking-history-service.js";
 import { getHistoriesByRole } from "../Services/booking-history-service.js";
-/*
- * ฟังก์ชัน : getByRole
- * คำอธิบาย : Handler สำหรับดึงประวัติการจองตามสิทธิ์ของผู้ใช้งาน
+
+/* DTO : GetHistoriesByRoleQueryDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ query parameters สำหรับการดึง histories ตาม role
+ *
  * Input :
- *   - req.user : ข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
- *   - res : Response object ของ Express สำหรับส่งผลลัพธ์กลับไปยัง client
+ *  - query :
+ *    - page  : หมายเลขหน้าของข้อมูล (optional, ต้องเป็นตัวเลขในรูปแบบ string)
+ *    - limit : จำนวนข้อมูลต่อหน้า (optional, ต้องเป็นตัวเลขในรูปแบบ string)
+ *
  * Output :
- *   - 200 OK พร้อมข้อมูล booking histories
- *   - 400 Bad Request ถ้ามีข้อผิดพลาดหรือไม่สามารถดึงข้อมูลได้
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะถูก reject พร้อม validation error
  */
-export const getByRole = async (req: Request, res: Response) => {
+export class GetHistoriesByRoleQueryDto {
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  limit?: string;
+}
+
+/* DTO : getByRoleDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ query สำหรับการดึง booking histories ตาม role
+ *
+ * Input :
+ *  - query : GetHistoriesByRoleQueryDto (page, limit)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
+ */
+export const getByRoleDto = {
+  query: GetHistoriesByRoleQueryDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย : ดึงประวัติการจอง (Booking History) ตาม role ของผู้ใช้งาน
+ * Input :
+ *  - req.user : UserPayload (ผ่าน auth middleware แล้ว)
+ *  - page : number (default = 1)
+ *  - limit : number (default = 10)
+ * Output : รายการ booking histories ตามสิทธิ์ของผู้ใช้งาน
+ */
+export const getByRole: TypedHandlerFromDto<typeof getByRoleDto> = async (
+  req,
+  res
+) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    const { page = 1, limit = 10 } = req.query;
+    const { page = "1", limit = "10" } = req.query;
     const data = await getHistoriesByRole(
-      req.user,
+      req.user!,
       Number(page),
       Number(limit)
     );
@@ -306,6 +343,27 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
 };
 
 /**
+ * คำอธิบาย : ดึงรายละเอียดการจองโดยใช้ getDetailBookingById (ไม่ล็อคสถานะ PENDING)
+ * Input: req.params.id - รหัสการจอง (bookingId) ที่ต้องการดึงข้อมูล
+ * Output:
+ * - 200 OK พร้อมข้อมูลรายละเอียดการจอง (detail)
+ * - 400 Bad Request หากเกิดข้อผิดพลาด
+ */
+export const getBookingDetailForTourist = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const detail = await BookingHistoryService.getDetailBookingById(bookingId);
+
+    return createResponse(res, 200, "Get booking detail successfully", detail);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/*
  * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
  * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
  */
@@ -389,8 +447,6 @@ export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   // ถ้าไม่เจอ -> ไปทางเดิม
   return getBookingsByMember(req, res, next);
 };
-
-
 /**
  * DTO สำหรับรับ Parameter ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
  * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
