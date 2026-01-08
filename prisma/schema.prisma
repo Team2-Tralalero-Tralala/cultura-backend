@@ -369,9 +369,30 @@ model User {
   overseerPackages Package[]          @relation("OverseerMember")
   createdPackages  Package[]          @relation("createPackage")
   communityMembers communityMembers[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([roleId])
   @@map("users")
+}
+
+/**
+ * คำอธิบาย : เก็บรหัสสำหรับลืมรหัสผ่านแบบใช้ครั้งเดียว
+ * - tokenHash: เก็บ sha256(hex) ของ changePasswordCode ที่ส่งให้ client
+ * - usedAt: ใช้ระบุว่า code นี้ถูกใช้แล้ว
+ * - expiresAt: หมดอายุ
+ */
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement()) @map("prt_id")
+  userId    Int       @map("prt_user_id")
+  tokenHash String    @unique @map("prt_token_hash") @db.Char(64)
+  createdAt DateTime  @default(now()) @map("prt_created_at") @db.DateTime(0)
+  expiresAt DateTime  @map("prt_expires_at") @db.DateTime(0)
+  usedAt    DateTime? @map("prt_used_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model communityMembers {
