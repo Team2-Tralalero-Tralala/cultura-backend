@@ -300,7 +300,7 @@ export async function rejectRefundByMember(
  *   - transferSlip (string | undefined) - หลักฐานการโอนเงิน (optional)
  *   - touristBankId (number | undefined) - รหัสบัญชีธนาคารของนักท่องเที่ยว (optional)
  * Output : BookingHistory object ที่ถูกสร้างใหม่ในฐานข้อมูล
- * 
+ *
  * เงื่อนไข:
  *   - ตรวจสอบว่าแพ็กเกจมีอยู่จริงและพร้อมให้จอง (PUBLISH, APPROVE)
  *   - ตรวจสอบว่าผู้ใช้เป็น Tourist จริง

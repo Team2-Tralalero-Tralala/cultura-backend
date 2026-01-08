@@ -48,7 +48,7 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
   try {
     const searchTerm = req.query.search as string | undefined;
     const tags = req.query.tag as string[] | string | undefined;
-    const tagsCommaSeparated = req.query.tags as string[] | string | undefined;
+    const commaSeparatedTags = req.query.tags as string[] | string | undefined;
     const priceMin = req.query.priceMin as number | 0;
     const priceMax = req.query.priceMax as number | undefined;
     const sort = (req.query.sort as "latest" | "price-low" | "price-high" | "popular" | undefined) ?? "latest";
@@ -69,14 +69,24 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     }
 
     // เพิ่ม tags จาก tags parameter (comma-separated)
-    if (tagsCommaSeparated) {
-      if (Array.isArray(tagsCommaSeparated)) {
+    if (commaSeparatedTags) {
+      if (Array.isArray(commaSeparatedTags)) {
         // ถ้าเป็น array ให้ join แล้ว split
-        const joined = tagsCommaSeparated.join(",");
-        allTags.push(...joined.split(",").map((t) => t.trim()).filter((t) => t !== ""));
+        const tagsText = commaSeparatedTags.join(",");
+        allTags.push(
+          ...tagsText
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== "")
+        );
       } else {
         // ถ้าเป็น string ให้ split
-        allTags.push(...tagsCommaSeparated.split(",").map((t) => t.trim()).filter((t) => t !== ""));
+        allTags.push(
+          ...commaSeparatedTags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== "")
+        );
       }
     }
 
