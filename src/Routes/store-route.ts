@@ -6,6 +6,9 @@ import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 
 const storeRoute = Router();
 
+/*
+ * คำอธิบาย : route สำหรับดึงข้อมูลร้านค้าทั้งหมดในชุมชนตาม communityId สำหรับ super admin
+ */
 /**
  * @swagger
  * /api/super/community/{communityId}/store:
@@ -110,18 +113,11 @@ const storeRoute = Router();
  *       403:
  *         description: ไม่มีสิทธิ์เข้าถึง (ต้องเป็น superadmin เท่านั้น)
  */
-
-/*
- * เส้นทาง : get /super/community/:communityId/store
- * รายละเอียด :
- *   ใช้สำหรับ "ดึงข้อมูลร้านค้าทั้งหมด"
- *   โดยจำกัดสิทธิ์ให้เฉพาะ superadmin เท่านั้น
- */
 storeRoute.get(
   "/super/community/:communityId/store",
-  validateDto(StoreController.getAllStoreDto),
   authMiddleware,
   allowRoles("superadmin"),
+  validateDto(StoreController.getAllStoreDto),
   StoreController.getAllStore
 );
 
@@ -915,6 +911,9 @@ storeRoute.post(
   StoreController.createStoreByAdmin
 );
 
+/*
+ * คำอธิบาย : ดึงข้อมูลร้านค้าทั้งหมดในชุมชนสำหรับ admin
+ */
 /**
  * @swagger
  * /api/admin/community/own/stores/all:
@@ -1013,18 +1012,11 @@ storeRoute.post(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-
-/*
- * เส้นทาง : get /admin/community/stores/all
- * รายละเอียด :
- *   ใช้สำหรับ "ดึงข้อมูลร้านค้าทั้งหมด"
- *   โดยจำกัดสิทธิ์ให้เฉพาะ admin เท่านั้น
- */
 storeRoute.get(
   "/admin/community/own/stores/all",
-  validateDto(StoreController.getAllStoreForAdminDto),
   authMiddleware,
   allowRoles("admin"),
+  validateDto(StoreController.getAllStoreForAdminDto),
   StoreController.getAllStoreForAdmin
 );
 

@@ -158,9 +158,7 @@ export async function getStoreById(storeId: number, user: UserPayload) {
 }
 
 /**
- * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมดที่อยู่ในชุมชนของผู้ใช้ที่มี role เป็น "admin"
- *            โดยดึงข้อมูลจาก community ที่ user สังกัดอยู่ (ผ่าน memberOfCommunity)
- *            ใช้สำหรับหน้ารวมร้านค้าในฝั่งผู้ดูแลชุมชน และรองรับการแบ่งหน้า (pagination)
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลร้านค้าทั้งหมด สำหรับ super admin
  * Input :
  * - userId : number (รหัสผู้ใช้งาน ที่ต้องมี role เป็น admin และต้องสังกัดชุมชน)
  * - page : number (หน้าที่ต้องการแสดงผล เริ่มต้นที่ 1)
@@ -176,23 +174,20 @@ export const getAllStore = async (
   page: number = 1,
   limit: number = 10
 ): Promise<PaginationResponse<any>> => {
-  if (!Number.isInteger(communityId)) {
-    throw new Error("ID must be a number");
-  }
   if (userRole != "superadmin") {
-    throw new Error("Forbidden");
+    throw new Error("ไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
   }
   const community = await prisma.community.findFirst({
     where: { id: communityId, isDeleted: false },
   });
-  if (!community) throw new Error("Community not found");
+  if (!community) throw new Error("ไม่พบชุมชน");
 
   const skip = (page - 1) * limit;
 
   const totalCount = await prisma.store.count({
     where: {
       isDeleted: false,
-      communityId, // ดึงเฉพาะร้านในชุมชนนั้น
+      communityId, 
     },
   });
 
@@ -311,10 +306,8 @@ export async function getAllStoreForAdmin(
   limit: number = 10
 ): Promise<PaginationResponse<any>> {
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new Error("User ID must be a number");
+    throw new Error("รหัสผู้ใช้ต้องเป็นหมายเลข");
   }
-
-  // ดึงข้อมูล user พร้อม role และชุมชนที่สังกัด
   const user = await prisma.user.findUnique({
     where: { id: userId, role: { name: "admin" } },
     include: {
@@ -322,17 +315,15 @@ export async function getAllStoreForAdmin(
     },
   });
 
-  if (!user) throw new Error("User not found");
+  if (!user) throw new Error("ไม่พบผู้ใช้");
 
-  // ใช้ communityId จาก user โดยตรง
   const communityId = user.communityAdmin[0]?.id;
   if (!communityId) {
-    throw new Error("User is not assigned to any community");
+    throw new Error("ผู้ใช้ไม่มีชุมชนที่สังกัด");
   }
 
   const skip = (page - 1) * limit;
 
-  // ดึงจำนวนร้านค้าในชุมชนนั้น
   const totalCount = await prisma.store.count({
     where: {
       isDeleted: false,
@@ -340,7 +331,6 @@ export async function getAllStoreForAdmin(
     },
   });
 
-  // ดึงข้อมูลร้านค้า
   const stores = await prisma.store.findMany({
     where: {
       isDeleted: false,

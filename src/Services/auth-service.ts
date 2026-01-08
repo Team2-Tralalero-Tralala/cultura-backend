@@ -304,5 +304,6 @@ export async function getProfile(userId: number) {
     lname: user.lname,
     email: user.email,
     role: user.role.name,
+    profileImage: user.profileImage,
   };
 }

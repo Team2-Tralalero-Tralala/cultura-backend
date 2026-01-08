@@ -1073,6 +1073,9 @@ packageRoutes.get(
     PackageController.getPackageHistoryDetailAdmin
 );
 
+/*
+ * คำอธิบาย : Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้วในชุมชนของตน admin
+ */
 /**
  * @swagger
  * /api/admin/package/histories/all:
@@ -1180,19 +1183,17 @@ packageRoutes.get(
  *       500:
  *         description: Internal Server Error
  */
-
-/*
- * คำอธิบาย : (Admin) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)
- * Method : GET
- * Path : /admin/package/histories/all
- */
 packageRoutes.get(
     "/admin/package/histories/all",
     authMiddleware,
     allowRoles("admin"),
+    validateDto(PackageController.getHistoriesPackageByAdminDto),
     PackageController.getHistoriesPackageAdmin
 );
 
+/*
+ * คำอธิบาย : Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้วในชุมชนของตน member
+ */
 /**
  * @swagger
  * /api/member/packages/histories/all:
@@ -1300,25 +1301,19 @@ packageRoutes.get(
  *       500:
  *         description: Internal Server Error
  */
-
-
-/*
- * คำอธิบาย : (Member) Route สำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้ว (ในชุมชนของตน)
- * Method : GET
- * Path : /member/packages/histories/all
- */
 packageRoutes.get(
     "/member/packages/histories/all",
     authMiddleware,
     allowRoles("member"),
+    validateDto(PackageController.getHistoriesPackageByMemberDto),
     PackageController.getHistoriesPackageByMember
 );
 
 packageRoutes.get(
-  "/member/package/:id",
-  authMiddleware,
-  allowRoles("member"),
-  PackageController.getPackageDetailByMember
+    "/member/package/:id",
+    authMiddleware,
+    allowRoles("member"),
+    PackageController.getPackageDetailByMember
 );
 /**
  * @swagger
@@ -1409,11 +1404,11 @@ packageRoutes.get(
  * Path : /admin/packages/draft
  */
 packageRoutes.get(
-  "/admin/packages/draft",
-  validateDto(PackageController.getDraftPackagesDto),
-  authMiddleware,
-  allowRoles("admin"),
-  PackageController.getDraftPackages
+    "/admin/packages/draft",
+    validateDto(PackageController.getDraftPackagesDto),
+    authMiddleware,
+    allowRoles("admin"),
+    PackageController.getDraftPackages
 );
 /**
  * @swagger
@@ -1505,11 +1500,11 @@ packageRoutes.get(
  * Path : /member/packages/draft
  */
 packageRoutes.get(
-  "/member/packages/draft",
-  validateDto(PackageController.getDraftPackagesDto),
-  authMiddleware,
-  allowRoles("member"),
-  PackageController.getDraftPackages
+    "/member/packages/draft",
+    validateDto(PackageController.getDraftPackagesDto),
+    authMiddleware,
+    allowRoles("member"),
+    PackageController.getDraftPackages
 );
 /**
  * @swagger
@@ -1564,9 +1559,9 @@ packageRoutes.get(
  * Path : /member/packages/draft/:id
  */
 packageRoutes.delete(
-  "/member/packages/draft/:id",
-  authMiddleware,
-  PackageController.deleteDraftPackageController
+    "/member/packages/draft/:id",
+    authMiddleware,
+    PackageController.deleteDraftPackageController
 );
 /**
  * @swagger
@@ -1621,9 +1616,9 @@ packageRoutes.delete(
  * Path : /admin/packages/draft/:id
  */
 packageRoutes.delete(
-  "/admin/packages/draft/:id",
-  authMiddleware,
-  PackageController.deleteDraftPackageController
+    "/admin/packages/draft/:id",
+    authMiddleware,
+    PackageController.deleteDraftPackageController
 );
 /**
  * @swagger
@@ -1719,11 +1714,11 @@ packageRoutes.delete(
  * Path : /member/packages/draft/bulk-delete
  */
 packageRoutes.patch(
-  "/member/packages/draft/bulk-delete",
-  validateDto(PackageController.BulkDeletePackagesDtoSchema),
-  authMiddleware,
-  allowRoles("member"),
-  PackageController.bulkDeleteDraftPackages
+    "/member/packages/draft/bulk-delete",
+    validateDto(PackageController.BulkDeletePackagesDtoSchema),
+    authMiddleware,
+    allowRoles("member"),
+    PackageController.bulkDeleteDraftPackages
 );
 /**
  * @swagger
@@ -1819,11 +1814,11 @@ packageRoutes.patch(
  * Path : /admin/packages/draft/bulk-delete
  */
 packageRoutes.patch(
-  "/admin/packages/draft/bulk-delete",
-  validateDto(PackageController.BulkDeletePackagesDtoSchema),
-  authMiddleware,
-  allowRoles("admin"),
-  PackageController.bulkDeleteDraftPackages
+    "/admin/packages/draft/bulk-delete",
+    validateDto(PackageController.BulkDeletePackagesDtoSchema),
+    authMiddleware,
+    allowRoles("admin"),
+    PackageController.bulkDeleteDraftPackages
 );
 
 /**
@@ -1887,9 +1882,9 @@ packageRoutes.patch(
  * คำอธิบาย : (Tourist) Route สำหรับดึงรายละเอียดแพ็กเกจ (สำหรับนักท่องเที่ยว)
  */
 packageRoutes.get(
-  "/tourist/package/:packageId",
-  validateDto(PackageController.getPackageByIdTouristDto),
-  PackageController.getPackageByIdTourist
+    "/tourist/package/:packageId",
+    validateDto(PackageController.getPackageByIdTouristDto),
+    PackageController.getPackageByIdTourist
 );
 
 export default packageRoutes;
