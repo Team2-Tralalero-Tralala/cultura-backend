@@ -935,9 +935,7 @@ export const BulkDeletePackagesDtoSchema = {
 } satisfies commonDto;
 
 /**
- * Controller : bulkDeleteDraftPackages
- * Role Access : Admin, Member
- * Description : สำหรับลบแพ็กเกจ Draft หลายรายการในครั้งเดียว
+ * คำอธิบาย : (Admin, Member) สำหรับลบแพ็กเกจ Draft หลายรายการในครั้งเดียว
  * Input : รายการรหัสแพ็กเกจจาก req.body.ids
  * Output : ลบแพ็กเกจสำเร็จ (Response 200), กรณีข้อมูลไม่ถูกต้อง (Response 400), กรณีเกิดข้อผิดพลาดในระบบ (Response 500)
  */

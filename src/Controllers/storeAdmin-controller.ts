@@ -14,9 +14,7 @@ import type {
 export const storeDto = {} satisfies commonDto;
 
 /**
- * Controller : getStoreById
- * Role Access : Admin
- * Description : สำหรับดึงข้อมูลร้านค้าตาม ID
+ * คำอธิบาย : (Admin) Handler สำหรับดึงข้อมูลร้านค้าตาม ID
  * Input : รหัสร้านค้าจาก URL path (req.params.id)
  * Output : ดึงข้อมูลสำเร็จ (Response 200), กรณีไม่พบข้อมูลร้านค้า (Response 404), กรณีข้อมูลไม่ถูกต้องหรือเกิดข้อผิดพลาด (Response 400)
  */
