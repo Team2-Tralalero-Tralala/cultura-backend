@@ -794,11 +794,16 @@ export const getPackagesByTourist = (userId: number, page = 1, limit = 10) =>
  * Output : Array ของข้อมูลแพ็กเกจใหม่ 40 อัน (เรียงตาม id มากไปน้อย)
  */
 export async function getNewestPackages() {
+  const now = new Date();
   const packages = await prisma.package.findMany({
     where: {
       isDeleted: false,
       statusPackage: PackagePublishStatus.PUBLISH,
       statusApprove: PackageApproveStatus.APPROVE,
+      // แสดงเฉพาะแพ็กเกจที่ "กำลังเปิดจองอยู่" และ "ยังไม่เริ่มกิจกรรม"
+      bookingOpenDate: { lte: now },
+      bookingCloseDate: { gte: now },
+      startDate: { gt: now },
     },
     select: {
       id: true,
@@ -871,12 +876,17 @@ export async function getNewestPackages() {
  * Output : Array ของข้อมูลแพ็กเกจยอดนิยม 40 อัน (เรียงตามจำนวนการจองที่สำเร็จ)
  */
 export async function getPopularPackages() {
+  const now = new Date();
   // ดึงแพ็กเกจทั้งหมดที่เผยแพร่และอนุมัติแล้ว
   const packages = await prisma.package.findMany({
     where: {
       isDeleted: false,
       statusPackage: PackagePublishStatus.PUBLISH,
       statusApprove: PackageApproveStatus.APPROVE,
+      // แสดงเฉพาะแพ็กเกจที่ "กำลังเปิดจองอยู่" และ "ยังไม่เริ่มกิจกรรม"
+      bookingOpenDate: { lte: now },
+      bookingCloseDate: { gte: now },
+      startDate: { gt: now },
     },
     select: {
       id: true,
