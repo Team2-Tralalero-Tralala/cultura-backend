@@ -3,13 +3,17 @@
  * รองรับการค้นหาแพ็กเกจตาม tag (หลาย tag) และการค้นหาทั้งแพ็กเกจและชุมชนตาม keyword
  * สามารถใช้ search และ tag ร่วมกันได้
  */
-import { ImageType, PackageApproveStatus, PackagePublishStatus } from "@prisma/client";
+import {
+  ImageType,
+  PackageApproveStatus,
+  PackagePublishStatus,
+} from "@prisma/client";
 import prisma from "../database-service.js";
 
 /*
  * ฟังก์ชัน : searchPackagesAndCommunities
  * คำอธิบาย : ค้นหาแพ็กเกจและชุมชนตาม keyword และ/หรือ tag(s) พร้อมการกรองราคาและการเรียงลำดับ
- * Input : 
+ * Input :
  *   - search (string | undefined) - คำค้นหา (optional)
  *   - tags (string[] | undefined) - array ของ tag names (optional)
  *   - priceMin (number | undefined) - ราคาขั้นต่ำ (optional)
@@ -18,7 +22,7 @@ import prisma from "../database-service.js";
  *   - limit (number) - จำนวนรายการต่อหน้า
  *   - sort (string | undefined) - การเรียงลำดับ (optional, ค่าที่อนุญาต: latest, price-low, price-high, popular)
  * Output : Object ประกอบด้วย packages (พร้อม pagination) และ communities
- * 
+ *
  * รองรับ:
  *   - ค้นหาตาม keyword เท่านั้น: searchPackagesAndCommunities("keyword", undefined, undefined, undefined, 1, 10, "latest")
  *   - ค้นหาตาม tag(s) เท่านั้น: searchPackagesAndCommunities(undefined, ["tag1", "tag2"], undefined, undefined, 1, 10, "price-low")
@@ -40,7 +44,9 @@ export async function searchPackagesAndCommunities(
   }
 
   const searchTerm = search?.trim();
-  const tagNames = tags?.filter((tag) => tag && tag.trim() !== "").map((tag) => tag.trim()) || [];
+  const tagNames =
+    tags?.filter((tag) => tag && tag.trim() !== "").map((tag) => tag.trim()) ||
+    [];
 
   // ค้นหา tag records ถ้ามี tags (ใช้ exact match)
   let tagIds: number[] = [];
@@ -135,18 +141,9 @@ export async function searchPackagesAndCommunities(
     }
   }
 
-  // นับจำนวนแพ็กเกจทั้งหมด
-  const totalCount = await prisma.package.count({
-    where: packageWhereConditions,
-  });
-
-  // คำนวณ skip และ totalPages
-  const skip = (page - 1) * limit;
-  const totalPages = Math.ceil(totalCount / limit);
-
   // กำหนด orderBy ตาม sort parameter
   let orderBy: any;
-  let needBookingCount = false;
+  // let needBookingCount = false; // ไม่จำเป็นต้องใช้ flag แล้ว เพราะเราจะดึงมาคำนวณทุกกรณี
 
   switch (sort) {
     case "price-low":
@@ -156,9 +153,8 @@ export async function searchPackagesAndCommunities(
       orderBy = { price: "desc" };
       break;
     case "popular":
-      // สำหรับ popular ต้องนับจำนวนการจอง ต้องใช้วิธีพิเศษ
-      needBookingCount = true;
-      orderBy = { id: "desc" }; // ใช้เป็น default ก่อน แล้วจะ sort ใหม่
+      // สำหรับ popular จะ sort ใน managed memory หลังจากนับ bookingCount
+      orderBy = { id: "desc" };
       break;
     case "latest":
     default:
@@ -166,105 +162,126 @@ export async function searchPackagesAndCommunities(
       break;
   }
 
-  // ค้นหาแพ็กเกจ (พร้อม pagination)
-  // สำหรับ popular ต้อง include bookingHistories เพื่อนับจำนวนการจอง
-  const baseSelect = {
-    id: true,
-    name: true,
-    description: true,
-    price: true,
-    capacity: true,
-    startDate: true,
-    dueDate: true,
-    facility: true,
-    communityId: true,
-    community: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    location: {
-      select: {
-        id: true,
-        province: true,
-        district: true,
-        subDistrict: true,
-      },
-    },
-    packageFile: {
-      where: {
-        type: ImageType.COVER,
-      },
-      select: {
-        filePath: true,
-      },
-      take: 1,
-    },
-    tagPackages: {
-      select: {
-        tag: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    },
-  };
-
-  let foundPackages: any[];
-  if (needBookingCount) {
-    // สำหรับ popular ต้องดึงทั้งหมดก่อนเพื่อ sort ตามจำนวนการจอง
-    foundPackages = await prisma.package.findMany({
-      where: packageWhereConditions,
-      select: {
-        ...baseSelect,
-        bookingHistories: {
-          where: {
-            status: "BOOKED",
-          },
-          select: {
-            id: true,
-          },
-        },
-      },
-      orderBy,
-    });
-  } else {
-    // สำหรับ sort อื่นๆ ใช้ pagination ตามปกติ
-    foundPackages = await prisma.package.findMany({
-      where: packageWhereConditions,
-      select: baseSelect,
-      orderBy,
-      skip,
-      take: limit,
-    });
-  }
-
-  // ถ้าเป็น popular ให้ sort ตามจำนวนการจอง
-  let sortedPackages: any[];
-  if (needBookingCount) {
-    sortedPackages = foundPackages
-      .map((pkg: any) => ({
-        ...pkg,
-        bookingCount: pkg.bookingHistories?.length || 0,
-      }))
-      .sort((a: any, b: any) => b.bookingCount - a.bookingCount)
-      .slice(skip, skip + limit)
-      .map(({ bookingCount, bookingHistories, ...pkg }: any) => pkg);
-  } else {
-    sortedPackages = foundPackages;
-  }
-
-  // ดึง community IDs จากแพ็กเกจทั้งหมดที่พบ (ไม่ใช่แค่หน้าที่เลือก)
-  const allPackagesForCommunities = await prisma.package.findMany({
+  // ดึงข้อมูลแพ็กเกจทั้งหมดตามเงื่อนไข (ยังไม่ pagination) เพื่อนำมา filter ต่อ
+  const candidates = await prisma.package.findMany({
     where: packageWhereConditions,
     select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      capacity: true,
+      startDate: true,
+      dueDate: true,
+      bookingCloseDate: true, // เพิ่มเพื่อเช็ควันปิดรับจอง
+      facility: true,
       communityId: true,
+      community: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          province: true,
+          district: true,
+          subDistrict: true,
+        },
+      },
+      packageFile: {
+        where: {
+          type: ImageType.COVER,
+        },
+        select: {
+          filePath: true,
+        },
+        take: 1,
+      },
+      tagPackages: {
+        select: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      bookingHistories: {
+        where: {
+          // นับเฉพาะสถานะที่ถือว่าจองที่นั่งแล้ว
+          status: {
+            in: ["PENDING", "BOOKED", "REFUND_PENDING", "REFUND_REJECTED"],
+          },
+        },
+        select: {
+          totalParticipant: true,
+        },
+      },
     },
+    orderBy,
   });
-  const packageCommunityIds = [...new Set(allPackagesForCommunities.map((pkg) => pkg.communityId))];
+
+  const now = new Date();
+
+  // Filter ใน Memory: ตัดแพ็กเกจที่ปิดจองแล้ว หรือ เต็มแล้ว
+  let filteredPackages = candidates.filter((pkg) => {
+    // 1. ตรวจสอบวันปิดจอง
+    if (pkg.bookingCloseDate && pkg.bookingCloseDate < now) {
+      return false; // ปิดจองแล้ว
+    }
+    // ถ้าไม่มี bookingCloseDate อาจจะ check dueDate หรือปล่อยผ่าน (ในที่นี้เช็ค dueDate เป็น fallback)
+    if (!pkg.bookingCloseDate && pkg.dueDate && pkg.dueDate < now) {
+      return false; // เลยกำหนด package ไปแล้ว
+    }
+
+    // 2. ตรวจสอบความจุ
+    if (pkg.capacity !== null) {
+      const currentParticipants = pkg.bookingHistories.reduce(
+        (sum, history) => sum + history.totalParticipant,
+        0
+      );
+      if (currentParticipants >= pkg.capacity) {
+        return false; // เต็มแล้ว
+      }
+    }
+
+    return true; // ผ่านเงื่อนไข
+  });
+
+  // ถ้า sort = popular ให้เรียงลำดับใหม่ตามจำนวนผู้เข้าร่วม (booking count/participants)
+  if (sort === "popular") {
+    filteredPackages = filteredPackages.sort((a, b) => {
+      const countA = a.bookingHistories.reduce(
+        (sum, h) => sum + h.totalParticipant,
+        0
+      );
+      const countB = b.bookingHistories.reduce(
+        (sum, h) => sum + h.totalParticipant,
+        0
+      );
+      return countB - countA;
+    });
+  }
+
+  // Pagination Logic
+  const totalCount = filteredPackages.length;
+  const totalPages = Math.ceil(totalCount / limit);
+  const skip = (page - 1) * limit;
+
+  const paginatedPackages = filteredPackages.slice(skip, skip + limit);
+
+  // ดึง community IDs จากแพ็กเกจทั้งหมดที่ "ผ่านการกรองแล้ว" (หรือจะเอา candidates ทั้งหมด? ปกติน่าจะเอา result set)
+  // แต่เดิม search logic จะดึง communities ที่ match search term ด้วย
+  const packageCommunityIds = [
+    ...new Set(candidates.map((pkg) => pkg.communityId)), // ใช้ candidates หรือ filtered? ควรใช้ filtered เพื่อความสัมพันธ์
+  ];
+  // แก้ไข: ใช้ filteredPackages เพื่อให้ community ที่แสดงสัมพันธ์กับ package ที่เจอ
+  const filteredPackageCommunityIds = [
+    ...new Set(filteredPackages.map((pkg) => pkg.communityId)),
+  ];
 
   // สร้างเงื่อนไข OR สำหรับชุมชน
   const communityOrConditions: any[] = [];
@@ -285,85 +302,61 @@ export async function searchPackagesAndCommunities(
   }
 
   // เพิ่มเงื่อนไขสำหรับ communities ที่มี packages ที่ตรงกับ search term หรือ tags
-  if (packageCommunityIds.length > 0) {
+  // ตรงนี้เดิมใช้ ID จากแพ็กเกจที่ search เจอ ถ้าเรากรอง pkg ออก ก็ไม่ควรเอามาคิดหรือเปล่า?
+  // User Prompt ไม่ได้ระบุละเอียด แต่ Logic "Package ... ต้องไม่เต็ม" น่าจะหมายถึง "การแสดงผล Package"
+  // ส่วนชุมชน ถ้าค้นหาเจอชุมชนโดยตรง ก็ควรขึ้น
+  if (filteredPackageCommunityIds.length > 0) {
     communityOrConditions.push({
       id: {
-        in: packageCommunityIds,
+        in: filteredPackageCommunityIds,
       },
     });
   }
 
-  // ถ้าไม่มีเงื่อนไขใดเลย ให้ return empty communities
-  if (communityOrConditions.length === 0) {
-    return {
-      packages: {
-        data: sortedPackages.map((pkg) => ({
-          id: pkg.id,
-          name: pkg.name,
-          description: pkg.description,
-          price: pkg.price,
-          capacity: pkg.capacity,
-          startDate: pkg.startDate,
-          dueDate: pkg.dueDate,
-          facility: pkg.facility,
-          community: pkg.community,
-          location: pkg.location,
-          coverImage: pkg.packageFile[0]?.filePath || null,
-          tags: pkg.tagPackages.map((tagPackage: any) => tagPackage.tag),
-        })),
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalCount,
-          limit,
+  let communities: any[] = [];
+  if (communityOrConditions.length > 0) {
+    communities = await prisma.community.findMany({
+      where: {
+        isDeleted: false,
+        status: "OPEN",
+        OR: communityOrConditions,
+      },
+      select: {
+        id: true,
+        name: true,
+        alias: true,
+        type: true,
+        description: true,
+        mainActivityName: true,
+        mainActivityDescription: true,
+        rating: true,
+        location: {
+          select: {
+            id: true,
+            province: true,
+            district: true,
+            subDistrict: true,
+          },
+        },
+        communityImage: {
+          where: {
+            type: "COVER",
+          },
+          select: {
+            image: true,
+          },
+          take: 1,
         },
       },
-      communities: [],
-    };
+      orderBy: {
+        id: "desc",
+      },
+    });
   }
-
-  // ค้นหาชุมชน
-  const communities = await prisma.community.findMany({
-    where: {
-      isDeleted: false,
-      status: "OPEN",
-      OR: communityOrConditions,
-    },
-    select: {
-      id: true,
-      name: true,
-      alias: true,
-      type: true,
-      description: true,
-      mainActivityName: true,
-      mainActivityDescription: true,
-      rating: true,
-      location: {
-        select: {
-          id: true,
-          province: true,
-          district: true,
-          subDistrict: true,
-        },
-      },
-      communityImage: {
-        where: {
-          type: "COVER",
-        },
-        select: {
-          image: true,
-        },
-        take: 1,
-      },
-    },
-    orderBy: {
-      id: "desc",
-    },
-  });
 
   return {
     packages: {
-      data: sortedPackages.map((pkg) => ({
+      data: paginatedPackages.map((pkg) => ({
         id: pkg.id,
         name: pkg.name,
         description: pkg.description,
@@ -374,10 +367,10 @@ export async function searchPackagesAndCommunities(
         facility: pkg.facility,
         community: pkg.community,
         location: pkg.location,
-          coverImage: pkg.packageFile[0]?.filePath || null,
-          tags: pkg.tagPackages.map((tagPackage: any) => tagPackage.tag),
-        })),
-        pagination: {
+        coverImage: pkg.packageFile[0]?.filePath || null,
+        tags: pkg.tagPackages.map((tagPackage: any) => tagPackage.tag),
+      })),
+      pagination: {
         currentPage: page,
         totalPages,
         totalCount,

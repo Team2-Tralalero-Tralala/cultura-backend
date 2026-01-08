@@ -647,6 +647,17 @@ type TouristBookingHistory = {
     };
   } | null;
 };
+async function checkHaveReview(bookingId: number) {
+  const isReview = await prisma.feedback.findFirst({
+    where: {
+      bookingHistoryId: bookingId,
+    },
+    select: {
+      id: true,
+    },
+  });
+  return isReview ? true : false;
+}
 /**
  * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
  * Input :

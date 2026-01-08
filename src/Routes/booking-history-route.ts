@@ -1007,7 +1007,7 @@ bookingRoutes.get(
  *   - สร้างการจองใหม่โดยระบุแพ็กเกจและจำนวนผู้เข้าร่วม
  *   - อัปโหลดหลักฐานการโอนเงิน (optional)
  *   - ระบุบัญชีธนาคาร (optional)
- * Input : 
+ * Input :
  *   - params.bookingId - รหัสการจอง (reference)
  *   - body.packageId - รหัสแพ็กเกจ
  *   - body.totalParticipant - จำนวนผู้เข้าร่วม
@@ -1106,7 +1106,7 @@ bookingRoutes.post(
  *   - อัปโหลดไฟล์หลักฐานการชำระเงิน (รูปภาพ: jpg, jpeg, png หรือ PDF)
  *   - ไฟล์จะถูกบันทึกในโฟลเดอร์ uploads/
  *   - ไฟล์รูปภาพจะถูกบีบอัดอัตโนมัติ
- * Input : 
+ * Input :
  *   - multipart/form-data with field "paymentProof"
  *   - Authorization header with JWT token
  * Output : ข้อมูล path ของไฟล์ที่อัปโหลด
@@ -1119,5 +1119,10 @@ bookingRoutes.post(
   compressUploadedFile,
   BookingHistoryController.uploadPaymentProof
 );
-
+bookingRoutes.get(
+  "/tourist/booking-history/:id",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getBookingDetailForTourist
+);
 export default bookingRoutes;
