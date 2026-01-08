@@ -396,7 +396,7 @@ model communityMembers {
  */
 model FeedbackImage {
   id         Int    @id @default(autoincrement()) @map("fi_id")
-  feedbackId Int    @unique @map("fi_feedback_id")
+  feedbackId Int    @map("fi_feedback_id")
   image      String @map("fi_image") @db.VarChar(256)
 
   // Relations

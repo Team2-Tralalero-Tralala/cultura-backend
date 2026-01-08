@@ -1319,8 +1319,9 @@ export async function getPackageHistoryDetailById(packageId: number) {
   if (!foundPackage) return null;
   return foundPackage;
 }
+
 /*
- * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ admin
  * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
  * Output : ข้อมูลแพ็กเกจพร้อม Pagination
  */
@@ -1329,7 +1330,6 @@ export const getHistoriesPackageByAdmin = async (
   page = 1,
   limit = 10
 ): Promise<PaginationResponse<any>> => {
-  // ตรวจสอบ user
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
     include: { role: true, communityAdmin: true },
@@ -1337,14 +1337,12 @@ export const getHistoriesPackageByAdmin = async (
 
   if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
   if (user.role?.name !== "admin")
-    throw new Error("อนุญาตเฉพาะผู้ดูแล (Admin) เท่านั้น");
+    throw new Error("อนุญาตเฉพาะผู้ดูแล Admin เท่านั้น");
 
-  // ดึงรายการชุมชนที่ admin ดูแล
   const adminCommunityIds = user.communityAdmin.map((c: any) => c.id);
   if (adminCommunityIds.length === 0)
-    throw new Error("คุณยังไม่ได้สังกัดชุมชนใดในฐานะผู้ดูแล");
+    throw new Error("คุณยังไม่ได้สังกัดชุมชนใด");
 
-  // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
   const now = new Date();
 
   const whereCondition = {
@@ -1353,7 +1351,6 @@ export const getHistoriesPackageByAdmin = async (
     dueDate: { lt: now },
   };
 
-  // pagination
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
 
@@ -1372,7 +1369,6 @@ export const getHistoriesPackageByAdmin = async (
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
   return {
     data: packages.map((pkg) => ({
       id: pkg.id,
@@ -1561,7 +1557,7 @@ export const getPackageDetailByMember = async (
 };
 
 /*
- * คำอธิบาย : ดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ member
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการประวัติแพ็กเกจที่จบไปแล้วของ member
  * Input: userId - ID ของผู้ใช้, page - เลขหน้า, limit - จำนวนต่อหน้า
  * Output : ข้อมูลแพ็กเกจพร้อม Pagination
  */
@@ -1570,7 +1566,7 @@ export const getHistoriesPackageByMember = async (
   page = 1,
   limit = 10
 ): Promise<PaginationResponse<any>> => {
-  // ตรวจสอบ user
+
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
     include: { role: true },
@@ -1578,18 +1574,16 @@ export const getHistoriesPackageByMember = async (
 
   if (!user) throw new Error(`User ID ${userId} ไม่พบในระบบ`);
   if (user.role?.name !== "member")
-    throw new Error("อนุญาตเฉพาะผู้ดูแล (Member) เท่านั้น");
+    throw new Error("อนุญาตเฉพาะผู้ดูแล Member เท่านั้น");
 
-  // เงื่อนไขแพ็กเกจที่จบแล้ว (วันที่สิ้นสุด < ปัจจุบัน)
   const now = new Date();
 
   const whereCondition = {
     isDeleted: false,
-    overseerMemberId: user.id, // กรองเฉพาะที่ member คนนี้ดูแล
+    overseerMemberId: user.id, 
     dueDate: { lt: now },
   };
 
-  // pagination
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
 
@@ -1608,7 +1602,6 @@ export const getHistoriesPackageByMember = async (
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  // ส่งผลลัพธ์ในรูปแบบเดียวกับ getPackageByRole
   return {
     data: packages.map((pkg) => ({
       id: pkg.id,
