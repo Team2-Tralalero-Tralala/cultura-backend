@@ -3,17 +3,20 @@
  * รองรับการค้นหาแพ็กเกจตาม tag (หลาย tag) และการค้นหาทั้งแพ็กเกจและชุมชนตาม keyword
  * สามารถใช้ search และ tag ร่วมกันได้
  * รองรับการกรองตามราคา (priceMin, priceMax)
+ * รองรับการเรียงลำดับผลลัพธ์ (sort: latest, price-low, price-high, popular)
  * 
  * หมายเหตุ: การตรวจสอบว่ามี search หรือ tag อย่างน้อยหนึ่งอย่างจะทำใน controller
  */
 import { Expose, Transform } from "class-transformer";
 import {
   IsArray,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
   Min
 } from "class-validator";
+
 import { PaginationDto } from "../pagination-dto.js";
 
 /**
@@ -24,6 +27,7 @@ import { PaginationDto } from "../pagination-dto.js";
  * - tags: ชื่อ tag แบบ comma-separated (optional, เช่น "tag1,tag2")
  * - priceMin: ราคาขั้นต่ำ (optional)
  * - priceMax: ราคาสูงสุด (optional)
+ * - sort: การเรียงลำดับผลลัพธ์ (optional, ค่าที่อนุญาต: latest, price-low, price-high, popular)
  */
 export class SearchQueryDto extends PaginationDto {
   @Expose()
@@ -76,4 +80,12 @@ export class SearchQueryDto extends PaginationDto {
   @IsNumber({}, { message: "priceMax ต้องเป็นตัวเลข" })
   @Min(0, { message: "priceMax ต้องมากกว่าหรือเท่ากับ 0" })
   priceMax?: number;
+
+  @Expose()
+  @IsOptional()
+  @IsString({ message: "sort ต้องเป็นข้อความ" })
+  @IsIn(["latest", "price-low", "price-high", "popular"], {
+    message: "sort ต้องเป็นหนึ่งใน: latest, price-low, price-high, popular",
+  })
+  sort?: "latest" | "price-low" | "price-high" | "popular";
 }
