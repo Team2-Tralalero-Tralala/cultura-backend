@@ -205,18 +205,36 @@ export const editHomestay = async (req: Request, res: Response) => {
     }
 };
 
-/*
- * DTO สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
+/**
+ * DTO: IdParamDto
+ * วัตถุประสงค์:ใช้สำหรับตรวจสอบความถูกต้องของพารามิเตอร์ communityId ในการดึงข้อมูลที่เกี่ยวข้องกับชุมชน
+ * Input:
+ * - params: communityId (รหัสชุมชน)
+ * Output:
+ * - หาก communityId อยู่ในรูปแบบตัวเลข ระบบจะอนุญาตให้ดำเนินการต่อ
+ * - หากรูปแบบไม่ถูกต้อง ระบบจะแจ้งข้อผิดพลาดกลับไปยังผู้ใช้งาน
  */
 export class IdParamDto {
     @IsNumberString({}, { message: "communityId ต้องเป็นตัวเลข" })
     communityId?: string; // แก้เป็น optional
 }
 
+/**
+ * DTO: getHomestaysAllDto
+ * วัตถุประสงค์:ใช้สำหรับดึงข้อมูลที่พัก (Homestay) ทั้งหมดภายในชุมชน โดยรองรับการแบ่งหน้า (Pagination)
+ * Input:
+ * - params: communityId
+ * - query: page, limit
+ * Output:
+ * - รายการข้อมูลที่พักทั้งหมดภายในชุมชน
+ * - ข้อมูล Metadata สำหรับ Pagination
+ */
 export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
 
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึง Homestay ทั้งหมดในชุมชน"
+ * คำอธิบาย : ดึงข้อมูล Homestay ทั้งหมดในชุมชน (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input : req.user.id (จาก middleware auth), req.params.communityId และ req.query.page, req.query.limit
+ * Output : รายการ Homestay ทั้งหมดพร้อม Pagination
  */
 export const getHomestaysAll: TypedHandlerFromDto<
     typeof getHomestaysAllDto
@@ -468,4 +486,44 @@ export const getHomestayWithOtherHomestaysInCommunity: TypedHandlerFromDto<
     } catch (error: any) {
         return createErrorResponse(res, 400, error.message);
     }
+};
+
+
+/*
+ * คำอธิบาย : DTO สำหรับดึงรายละเอียด Homestay ของแอดมิน
+ * Input : params.id (homestayId)
+ * Output : รายละเอียด homestay ของชุมชนที่แอดมินดูแล
+ */
+export const getHomestayDetailByAdminDto = {
+  params: {
+    homestayId: "number",
+  },
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียด homestay ของแอดมินชุมชน
+ * Input : req.user.id, req.params.id
+ * Output : JSON response พร้อมรายละเอียด homestay
+ */
+export const getHomestayDetailByAdmin: TypedHandlerFromDto<
+  typeof getHomestayDetailByAdminDto
+> = async (req, res) => {
+  try {
+    const adminId = Number(req.user!.id);
+    const homestayId = Number(req.params.homestayId);
+
+    const result = await HomestayService.getHomestayDetailByAdmin(
+      homestayId,
+      adminId
+    );
+
+    return createResponse(
+      res,
+      200,
+      "Homestay detail (admin) retrieved successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
