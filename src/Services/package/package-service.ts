@@ -1252,6 +1252,10 @@ export const getAllFeedbacks = async (userId: number) => {
     },
     include: {
       packages: {
+        where: {
+          statusApprove: "APPROVE", 
+          isDeleted: false,
+        },
         include: {
           bookingHistories: {
             include: {
