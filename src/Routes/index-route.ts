@@ -1,26 +1,26 @@
 import { Router } from "express";
+import accountRoutes from "./account-routes.js";
 import authRoutes from "./auth-route.js";
 import backupRoutes from "./backup-route.js";
-import bookingHistoriesRoutes from "./booking-history-route.js";
+import bankRoutes from "./bank-route.js";
+import bannerRoutes from "./banner-route.js";
+import { default as bookingHistoriesRoutes, default as bookingRoutes } from "./booking-history-route.js";
+import bookingRefund from "./booking-route.js";
 import communityRoutes from "./community-route.js";
 import configRoutes from "./config-route.js";
 import dashboardRoutes from "./dashboard-route.js";
-import logRoutes from "./log-route.js";
+import feedbackRoutes from "./feedback-routes.js";
+import homeRoutes from "./home-route.js";
 import homestayRoutes from "./homestay-route.js";
-import packageRoutes from "./package-route.js";
-import accountRoutes from "./account-routes.js";
+import logRoutes from "./log-route.js";
 import packageRequestsRoutes from "./package-request-route.js";
+import packageRoutes from "./package-route.js";
+import searchRoutes from "./search-route.js";
 import storeRoute from "./store-route.js";
+import storeAdminRoutes from "./storeAdmin-route.js";
+import storeSuperAdminRoutes from "./storeSuperAdmin-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
-import bannerRoutes from "./banner-route.js";
-import bankRoutes from "./bank-route.js";
-import storeAdminRoutes from "./storeAdmin-route.js";
-import bookingRefund from "./booking-route.js";
-import feedbackRoutes from "./feedback-routes.js";
-import bookingRoutes from "./booking-history-route.js";
-import storeSuperAdminRoutes from "./storeSuperAdmin-route.js";
-import homeRoutes from "./home-route.js";
 
 const rootRouter: Router = Router();
 
@@ -52,5 +52,6 @@ rootRouter.use(bookingRefund);
 
 rootRouter.use(feedbackRoutes);
 rootRouter.use(homeRoutes);
+rootRouter.use("/tourist/search", searchRoutes);
 
 export default rootRouter;
