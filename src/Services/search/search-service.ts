@@ -30,6 +30,8 @@ export async function searchPackagesAndCommunities(
   tags: string[] | undefined,
   priceMin: number | undefined,
   priceMax: number | undefined,
+  startDateStr: string | undefined,
+  endDateStr: string | undefined,
   page: number = 1,
   limit: number = 10,
   sort: "latest" | "price-low" | "price-high" | "popular" | undefined = "latest"
@@ -41,6 +43,31 @@ export async function searchPackagesAndCommunities(
 
   const searchTerm = search?.trim();
   const tagNames = tags?.filter((tag) => tag && tag.trim() !== "").map((tag) => tag.trim()) || [];
+
+  /*
+   * ฟังก์ชัน: parseSearchDateParam
+   * คำอธิบาย: รองรับทั้ง "YYYY-MM-DD" และ ISO date-time
+   * - หากเป็น "YYYY-MM-DD": แปลงเป็น local start-of-day / end-of-day เพื่อให้ค้นหาถูกต้องตามวัน
+   */
+  const parseSearchDateParam = (value: string, boundary: "start" | "end"): Date | null => {
+    const trimmed = value.trim();
+    const ymd = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (ymd) {
+      const year = Number(ymd[1]);
+      const monthIndex = Number(ymd[2]) - 1;
+      const day = Number(ymd[3]);
+      if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) return null;
+      if (boundary === "start") return new Date(year, monthIndex, day, 0, 0, 0, 0);
+      return new Date(year, monthIndex, day, 23, 59, 59, 999);
+    }
+
+    const dt = new Date(trimmed);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const startDateFilter = startDateStr ? parseSearchDateParam(startDateStr, "start") : null;
+  const endDateFilter = endDateStr ? parseSearchDateParam(endDateStr, "end") : null;
+  const now = new Date();
 
   // ค้นหา tag records ถ้ามี tags (ใช้ exact match)
   let tagIds: number[] = [];
@@ -86,6 +113,26 @@ export async function searchPackagesAndCommunities(
   // สร้าง array สำหรับ AND conditions
   const andConditions: any[] = [];
 
+  // กรองแพ็กเกจที่ "เวลาเริ่มกิจกรรมผ่านไปแล้ว" ออกเสมอ (ห้ามค้นหาเจอ/จองได้)
+  andConditions.push({
+    startDate: {
+      gt: now,
+    },
+  });
+
+  // กรองแพ็กเกจที่ "กำลังเปิดจองอยู่" เท่านั้น
+  // เงื่อนไข: bookingOpenDate <= now <= bookingCloseDate (หากเป็น null จะไม่ผ่านเงื่อนไขโดยอัตโนมัติ)
+  andConditions.push({
+    bookingOpenDate: {
+      lte: now,
+    },
+  });
+  andConditions.push({
+    bookingCloseDate: {
+      gte: now,
+    },
+  });
+
   // เพิ่มเงื่อนไข search ถ้ามี
   if (searchTerm) {
     andConditions.push({
@@ -121,6 +168,23 @@ export async function searchPackagesAndCommunities(
     }
     andConditions.push({
       price: priceCondition,
+    });
+  }
+
+  // เพิ่มเงื่อนไขช่วงวันที่ (กรองจาก startDate ของแพ็กเกจ)
+  if (startDateFilter) {
+    andConditions.push({
+      startDate: {
+        gte: startDateFilter,
+      },
+    });
+  }
+
+  if (endDateFilter) {
+    andConditions.push({
+      startDate: {
+        lte: endDateFilter,
+      },
     });
   }
 
