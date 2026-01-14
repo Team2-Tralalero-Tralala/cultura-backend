@@ -6,7 +6,6 @@
  */
 import { Gender, UserStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 import { Type } from "class-transformer";
 import {
   IsDate,
@@ -16,6 +15,7 @@ import {
   IsString,
   Matches,
 } from "class-validator";
+import crypto from "crypto";
 import { generateToken } from "~/Libs/token.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import prisma from "./database-service.js";
@@ -203,6 +203,12 @@ export class LoginDto {
 
 /* ============================== Forget/Set Password ============================== */
 
+/*
+ * DTO : ForgetPasswordDto
+ * คำอธิบาย : โครงสร้างข้อมูลสำหรับขอรหัสเปลี่ยนรหัสผ่าน (forget password)
+ * Input : contact (email หรือ phone), birthDateBE (วันเกิดรูปแบบ dd/MM/yyyy เป็นปี พ.ศ.)
+ * Output : ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class ForgetPasswordDto {
   @IsString()
   @IsNotEmpty({ message: "กรุณากรอกอีเมลหรือเบอร์โทรศัพท์" })
@@ -217,6 +223,12 @@ export class ForgetPasswordDto {
   birthDateBE: string;
 }
 
+/*
+ * DTO : SetPasswordDto
+ * คำอธิบาย : โครงสร้างข้อมูลสำหรับตั้งรหัสผ่านใหม่ด้วย changePasswordCode
+ * Input : changePasswordCode, newPassword
+ * Output : ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class SetPasswordDto {
   @IsString()
   @IsNotEmpty({ message: "กรุณากรอก changePasswordCode" })
@@ -234,13 +246,6 @@ export class SetPasswordDto {
 
 function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
-}
-
-function normalizePhone(input: string) {
-  const digits = input.replace(/\D+/g, "");
-  if (digits.startsWith("0") && digits.length === 10) return digits.slice(1);
-  if (digits.startsWith("66") && digits.length === 11) return digits.slice(2);
-  return digits;
 }
 
 function parseBirthDateBE(birthDateBE: string) {
@@ -270,6 +275,11 @@ function sameDateOnly(a: Date, b: Date) {
   );
 }
 
+/*
+ * คำอธิบาย : สร้าง changePasswordCode สำหรับรีเซ็ตรหัสผ่าน (ยืนยันตัวตนด้วย email/phone + วันเกิด)
+ * Input : payload (ForgetPasswordDto) - contact และ birthDateBE
+ * Output : { changePasswordCode, expiresAt } - โค้ดสำหรับเปลี่ยนรหัสผ่านและเวลาหมดอายุ
+ */
 export async function forgetPassword(payload: ForgetPasswordDto) {
   const contact = payload.contact.trim().toLowerCase();
   const isEmail = contact.includes("@");
@@ -278,7 +288,7 @@ export async function forgetPassword(payload: ForgetPasswordDto) {
 
   const where = isEmail
     ? { email: contact }
-    : { phone: normalizePhone(payload.contact) };
+    : { phone: contact };
 
   const user = await prisma.user.findFirst({
     where: { ...where, isDeleted: false },
@@ -311,6 +321,11 @@ export async function forgetPassword(payload: ForgetPasswordDto) {
   return { changePasswordCode, expiresAt };
 }
 
+/*
+ * คำอธิบาย : ตั้งรหัสผ่านใหม่ด้วย changePasswordCode ที่ยังไม่หมดอายุและยังไม่ถูกใช้
+ * Input : payload (SetPasswordDto) - changePasswordCode และ newPassword
+ * Output : { success: true } เมื่อเปลี่ยนรหัสผ่านสำเร็จ
+ */
 export async function setPassword(payload: SetPasswordDto) {
   const tokenHash = sha256Hex(payload.changePasswordCode.trim());
   const now = new Date();
