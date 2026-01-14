@@ -734,7 +734,7 @@ export const getAllFeedbacks = async (req: Request, res: Response) => {
     const result = await PackageService.getAllFeedbacks(userId);
     return createResponse(res, 200, "Get FeedBacks Successfully", result);
   } catch (error: any) {
-    return createErrorResponse(res, 404, (error as Error).message);
+    return createErrorResponse(res, 500, (error as Error).message);
   }
 };
 

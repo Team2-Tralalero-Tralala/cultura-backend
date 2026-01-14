@@ -90,4 +90,14 @@ export class SearchQueryDto extends PaginationDto {
     message: "sort ต้องเป็นหนึ่งใน: latest, price-low, price-high, popular",
   })
   sort?: "latest" | "price-low" | "price-high" | "popular";
+
+  @Expose()
+  @IsOptional()
+  @IsString({ message: "startDate ต้องเป็นข้อความ" })
+  startDate?: string;
+
+  @Expose()
+  @IsOptional()
+  @IsString({ message: "endDate ต้องเป็นข้อความ" })
+  endDate?: string;
 }

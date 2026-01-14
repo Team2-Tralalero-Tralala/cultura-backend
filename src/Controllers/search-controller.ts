@@ -49,8 +49,10 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     const searchTerm = req.query.search as string | undefined;
     const tags = req.query.tag as string[] | string | undefined;
     const commaSeparatedTags = req.query.tags as string[] | string | undefined;
-    const priceMin = req.query.priceMin as number | 0;
+    const priceMin = (req.query.priceMin as number | undefined) ?? 0;
     const priceMax = req.query.priceMax as number | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
     const sort = (req.query.sort as "latest" | "price-low" | "price-high" | "popular" | undefined) ?? "latest";
     const page = (req.query.page as number) ?? 1;
     const limit = (req.query.limit as number) ?? 10;
@@ -118,6 +120,8 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
       hasTags ? tagArray : undefined,
       priceMin,
       priceMax,
+      startDate,
+      endDate,
       page,
       limit,
       sort
