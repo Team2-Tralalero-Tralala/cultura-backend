@@ -20,8 +20,17 @@ const toNull = <T>(value: T | undefined | null): T | null => value ?? null;
  * Input: user - object ผู้ใช้ที่มีข้อมูล role และ community
  * Output : object เงื่อนไข where สำหรับ Prisma
  */
-function buildWhereForRole(user: any): any {
-  const base = { isDeleted: false, statusPackage: { not: 'DRAFT' } };
+function buildWhereForRole(user: any, filters?: { status?: string; approve?: string }): any {
+  const base: any = { isDeleted: false, statusPackage: { not: 'DRAFT' } };
+  // ถ้ามีการส่ง status กรองมา (เช่น PUBLISH, UNPUBLISH) ให้ใช้ค่านั้นแทน
+  if (filters?.status) {
+    base.statusPackage = filters.status;
+  }
+
+  // ถ้ามีการส่งสถานะการอนุมัติกรองมา (เช่น APPROVE, PENDING, REJECTED)
+  if (filters?.approve) {
+    base.statusApprove = filters.approve;
+  }
   switch (user?.role?.name) {
     case "superadmin":
       return base;
@@ -551,7 +560,8 @@ export const editPackage = async (id: number, data: any) => {
 export const getPackageByRole = async (
   userId: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  filters?: { status?: string; approve?: string }
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -563,7 +573,7 @@ export const getPackageByRole = async (
   });
   if (!user) throw new Error(`Member ID ${userId} ไม่ถูกต้อง`);
 
-  const whereCondition = buildWhereForRole(user);
+  const whereCondition = buildWhereForRole(user, filters);
 
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
@@ -582,6 +592,10 @@ export const getPackageByRole = async (
           email: true,
         },
       },
+      bookingHistories: {
+        where: { status: "BOOKED" },
+        select: { id: true }
+      }
     },
     skip,
     take: limit,
@@ -770,18 +784,18 @@ export const deletePackageByMember = (userId: number, packageId: number) =>
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ SuperAdmin
  */
-export const getPackagesBySuperAdmin = (userId: number, page = 1, limit = 10) =>
-  getPackageByRole(userId, page, limit);
+export const getPackagesBySuperAdmin = (userId: number, page = 1, limit = 10, filters?: any) =>
+  getPackageByRole(userId, page, limit, filters);
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Admin
  */
-export const getPackagesByAdmin = (userId: number, page = 1, limit = 10) =>
-  getPackageByRole(userId, page, limit);
+export const getPackagesByAdmin = (userId: number, page = 1, limit = 10, filters?: any) =>
+  getPackageByRole(userId, page, limit, filters);
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Member
  */
-export const getPackagesByMember = (userId: number, page = 1, limit = 10) =>
-  getPackageByRole(userId, page, limit);
+export const getPackagesByMember = (userId: number, page = 1, limit = 10, filters?: any) =>
+  getPackageByRole(userId, page, limit, filters);
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Tourist
  */
@@ -1253,7 +1267,7 @@ export const getAllFeedbacks = async (userId: number) => {
     include: {
       packages: {
         where: {
-          statusApprove: "APPROVE", 
+          statusApprove: "APPROVE",
           isDeleted: false,
         },
         include: {
@@ -1594,7 +1608,7 @@ export const getHistoriesPackageByMember = async (
 
   const whereCondition = {
     isDeleted: false,
-    overseerMemberId: user.id, 
+    overseerMemberId: user.id,
     dueDate: { lt: now },
   };
 
