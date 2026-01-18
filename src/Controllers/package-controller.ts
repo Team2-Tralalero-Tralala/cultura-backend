@@ -1184,11 +1184,12 @@ export const getParticipantsInPackage: TypedHandlerFromDto<
  * DTO: updateParticipantStatusDto
  * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (bookingHistoryId)
  * เมื่อผู้ใช้ต้องการอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
- * Input: params.bookingHistoryId
+ * Input: params.bookingHistoryId, body.isParticipate
  * Output: (Passed to handler)
  */
 export const updateParticipantStatusDto = {
-  params: UpdateParticipantStatusBodyDto,
+  params: BookingHistoryIdParamDto,
+  body: UpdateParticipantStatusBodyDto,
 } satisfies commonDto;
 /**
  * คำอธิบาย : (Admin,Member) Handler สำหรับอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
@@ -1203,9 +1204,10 @@ export const updateParticipantStatus: TypedHandlerFromDto<
     if (!req.user) {
       return createErrorResponse(res, 401, "กรุณาเข้าสู่ระบบ");
     }
-    const result = await PackageService.updatePaticipateStatus(
+    const result = await PackageService.updateParticipateStatus(
       Number(req.params.bookingHistoryId),
-      req.user.id
+      req.user.id,
+      req.body.isParticipate!
     );
     return createResponse(res, 200, "สถานะการเข้าร่วมแพ็กเกจถูกอัปเดต", result);
   } catch (error) {

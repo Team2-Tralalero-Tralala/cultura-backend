@@ -426,8 +426,8 @@ export class HistoryPackageQueryDto {
 }
 
 export class UpdateParticipantStatusBodyDto {
-  @IsNumberString()
-  bookingHistoryId?: string;
+  @IsBoolean()
+  isParticipate?: boolean;
 }
 
 export class BookingHistoryIdParamDto {

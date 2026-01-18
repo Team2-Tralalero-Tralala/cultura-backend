@@ -1995,12 +1995,13 @@ export async function getParticipantsInPackage(
 }
 /**
  * คำอธิบาย : (Admin,Member) Service สำหรับอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
- * Input: bookingHistoryId - รหัสประวัติการจอง, userId - รหัสผู้ใช้
+ * Input: bookingHistoryId - รหัสประวัติการจอง, userId - รหัสผู้ใช้, isParticipate - สถานะการเข้าร่วมแพ็กเกจ
  * Output: สถานะการเข้าร่วมแพ็กเกจถูกอัปเดต
  */
-export async function updatePaticipateStatus(
+export async function updateParticipateStatus(
   bookingHistoryId: number,
-  userId: number
+  userId: number,
+  isParticipate: boolean
 ) {
   const packageDetail = await prisma.bookingHistory.findUnique({
     where: {
@@ -2026,20 +2027,13 @@ export async function updatePaticipateStatus(
   ) {
     throw new Error("คุณไม่มีสิทธิ์เข้าถึง");
   }
-  const status = await prisma.bookingHistory.findUnique({
-    where: {
-      id: bookingHistoryId,
-    },
-    select: {
-      isParticipate: true,
-    },
-  });
+
   return await prisma.bookingHistory.update({
     where: {
       id: bookingHistoryId,
     },
     data: {
-      isParticipate: !status?.isParticipate,
+      isParticipate: isParticipate,
     },
     select: {
       id: true,
