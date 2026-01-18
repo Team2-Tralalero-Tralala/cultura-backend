@@ -556,7 +556,7 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
 
 /*
  * คำอธิบาย : DTO สำหรับสร้าง Booking History
- * Input :
+ * Input : 
  *   - params.bookingId - รหัสการจอง (ใช้เป็น reference, อาจจะไม่ใช้ในการสร้างจริง)
  *   - body.packageId - รหัสแพ็กเกจที่ต้องการจอง
  *   - body.totalParticipant - จำนวนผู้เข้าร่วม
