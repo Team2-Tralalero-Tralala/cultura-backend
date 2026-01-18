@@ -128,3 +128,37 @@ export const me: TypedHandlerFromDto<typeof checkLoginDto> = async (
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
+
+/* ============================== Forget/Set Password ============================== */
+
+export const forgetPasswordDto = {
+  body: AuthService.ForgetPasswordDto,
+} satisfies commonDto;
+
+export const forgetPassword: TypedHandlerFromDto<typeof forgetPasswordDto> = async (
+  req,
+  res
+) => {
+  try {
+    const result = await AuthService.forgetPassword(req.body);
+    return createResponse(res, 200, "forget password successful", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+export const setPasswordDto = {
+  body: AuthService.SetPasswordDto,
+} satisfies commonDto;
+
+export const setPassword: TypedHandlerFromDto<typeof setPasswordDto> = async (
+  req,
+  res
+) => {
+  try {
+    const result = await AuthService.setPassword(req.body);
+    return createResponse(res, 200, "set password successful", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};

@@ -1,3 +1,4 @@
+import { PackageApproveStatus, PackagePublishStatus } from "@prisma/client";
 import prisma from "~/Services/database-service.js";
 import type { PaginationResponse } from "~/Services/pagination-dto.js";
 
@@ -288,4 +289,112 @@ export async function rejectRefundByMember(
   });
 
   return updatedBooking;
+}
+
+/*
+ * คำอธิบาย : ฟังก์ชันสำหรับสร้าง Booking History ใหม่ (สำหรับ Tourist)
+ * Input :
+ *   - touristId (number) - รหัสผู้จอง (นักท่องเที่ยว)
+ *   - packageId (number) - รหัสแพ็กเกจที่ต้องการจอง
+ *   - totalParticipant (number) - จำนวนผู้เข้าร่วม
+ *   - transferSlip (string | undefined) - หลักฐานการโอนเงิน (optional)
+ *   - touristBankId (number | undefined) - รหัสบัญชีธนาคารของนักท่องเที่ยว (optional)
+ * Output : BookingHistory object ที่ถูกสร้างใหม่ในฐานข้อมูล
+ *
+ * เงื่อนไข:
+ *   - ตรวจสอบว่าแพ็กเกจมีอยู่จริงและพร้อมให้จอง (PUBLISH, APPROVE)
+ *   - ตรวจสอบว่าผู้ใช้เป็น Tourist จริง
+ *   - สถานะเริ่มต้นเป็น PENDING
+ */
+export async function createTouristBooking(
+  touristId: number,
+  packageId: number,
+  totalParticipant: number,
+  transferSlip?: string,
+  touristBankId?: number
+) {
+  // ตรวจสอบว่า tourist มีอยู่จริงและเป็น tourist
+  const tourist = await prisma.user.findUnique({
+    where: { id: touristId },
+    include: { role: true },
+  });
+
+  if (!tourist) {
+    throw new Error("ไม่พบข้อมูลผู้ใช้");
+  }
+
+  if (tourist.role?.name.toLowerCase() !== "tourist") {
+    throw new Error("ผู้ใช้ต้องเป็น Tourist เท่านั้น");
+  }
+
+  // ตรวจสอบว่าแพ็กเกจมีอยู่จริงและพร้อมให้จอง
+  const packageData = await prisma.package.findUnique({
+    where: { id: packageId },
+    select: {
+      id: true,
+      name: true,
+      statusPackage: true,
+      statusApprove: true,
+      isDeleted: true,
+      capacity: true,
+      price: true,
+    },
+  });
+
+  if (!packageData) {
+    throw new Error("ไม่พบแพ็กเกจที่ระบุ");
+  }
+
+  if (packageData.isDeleted) {
+    throw new Error("แพ็กเกจนี้ถูกลบแล้ว");
+  }
+
+  if (packageData.statusPackage !== PackagePublishStatus.PUBLISH) {
+    throw new Error("แพ็กเกจนี้ยังไม่เปิดให้จอง");
+  }
+
+  if (packageData.statusApprove !== PackageApproveStatus.APPROVE) {
+    throw new Error("แพ็กเกจนี้ยังไม่ได้รับการอนุมัติ");
+  }
+
+  // ตรวจสอบความจุ (capacity)
+  if (packageData.capacity !== null && totalParticipant > packageData.capacity) {
+    throw new Error(`จำนวนผู้เข้าร่วมเกินความจุของแพ็กเกจ (ความจุ: ${packageData.capacity} คน)`);
+  }
+
+  // ตรวจสอบจำนวนผู้เข้าร่วมต้องมากกว่า 0
+  if (totalParticipant < 1) {
+    throw new Error("จำนวนผู้เข้าร่วมต้องมากกว่าหรือเท่ากับ 1");
+  }
+
+  // สร้าง Booking History
+  const booking = await prisma.bookingHistory.create({
+    data: {
+      touristId,
+      packageId,
+      totalParticipant,
+      bookingAt: new Date(),
+      status: "PENDING",
+      transferSlip: transferSlip || null,
+      touristBankId: touristBankId || null,
+    },
+    include: {
+      package: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+        },
+      },
+      tourist: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+        },
+      },
+    },
+  });
+
+  return booking;
 }

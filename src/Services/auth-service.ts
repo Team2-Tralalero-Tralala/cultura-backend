@@ -7,7 +7,15 @@
 import { Gender, UserStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { Type } from "class-transformer";
-import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsString } from "class-validator";
+import {
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  Matches,
+} from "class-validator";
+import crypto from "crypto";
 import { generateToken } from "~/Libs/token.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import prisma from "./database-service.js";
@@ -191,6 +199,162 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: "รหัสผ่านห้ามว่าง" })
   password: string;
+}
+
+/* ============================== Forget/Set Password ============================== */
+
+/*
+ * DTO : ForgetPasswordDto
+ * คำอธิบาย : โครงสร้างข้อมูลสำหรับขอรหัสเปลี่ยนรหัสผ่าน (forget password)
+ * Input : contact (email หรือ phone), birthDateBE (วันเกิดรูปแบบ dd/MM/yyyy เป็นปี พ.ศ.)
+ * Output : ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
+export class ForgetPasswordDto {
+  @IsString()
+  @IsNotEmpty({ message: "กรุณากรอกอีเมลหรือเบอร์โทรศัพท์" })
+  contact: string;
+
+  // วัน-เดือน-ปีเกิด (พ.ศ) รูปแบบ dd/MM/yyyy
+  @IsString()
+  @Matches(/^(\d{2})\/(\d{2})\/(\d{4})$/, {
+    message: "รูปแบบวันเกิดไม่ถูกต้อง (วว/ดด/ปปปป)",
+  })
+  @IsNotEmpty({ message: "กรุณาระบุวันเกิด" })
+  birthDateBE: string;
+}
+
+/*
+ * DTO : SetPasswordDto
+ * คำอธิบาย : โครงสร้างข้อมูลสำหรับตั้งรหัสผ่านใหม่ด้วย changePasswordCode
+ * Input : changePasswordCode, newPassword
+ * Output : ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
+export class SetPasswordDto {
+  @IsString()
+  @IsNotEmpty({ message: "กรุณากรอก changePasswordCode" })
+  changePasswordCode: string;
+
+  @IsString()
+  @IsNotEmpty({ message: "กรุณากรอกรหัสผ่านใหม่" })
+  // อย่างน้อย 8 ตัวอักษร, มี a-z, A-Z, 0-9
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/, {
+    message:
+      "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วย A-Z, a-z และ 0-9",
+  })
+  newPassword: string;
+}
+
+function sha256Hex(input: string) {
+  return crypto.createHash("sha256").update(input).digest("hex");
+}
+
+function parseBirthDateBE(birthDateBE: string) {
+  const matchParts = birthDateBE.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!matchParts) throw new Error("รูปแบบวันเกิดไม่ถูกต้อง");
+
+  const day = Number(matchParts[1]);
+  const monthIndex = Number(matchParts[2]) - 1; // 0-based
+  const buddhistYear = Number(matchParts[3]);
+  const gregorianYear = buddhistYear - 543;
+
+  const dateCandidate = new Date(gregorianYear, monthIndex, day);
+  const isSame =
+    dateCandidate.getFullYear() === gregorianYear &&
+    dateCandidate.getMonth() === monthIndex &&
+    dateCandidate.getDate() === day;
+
+  if (!isSame) throw new Error("วันเกิดไม่ถูกต้อง");
+  return dateCandidate;
+}
+
+function sameDateOnly(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/*
+ * คำอธิบาย : สร้าง changePasswordCode สำหรับรีเซ็ตรหัสผ่าน (ยืนยันตัวตนด้วย email/phone + วันเกิด)
+ * Input : payload (ForgetPasswordDto) - contact และ birthDateBE
+ * Output : { changePasswordCode, expiresAt } - โค้ดสำหรับเปลี่ยนรหัสผ่านและเวลาหมดอายุ
+ */
+export async function forgetPassword(payload: ForgetPasswordDto) {
+  const contact = payload.contact.trim().toLowerCase();
+  const isEmail = contact.includes("@");
+
+  const birthDateAD = parseBirthDateBE(payload.birthDateBE);
+
+  const where = isEmail
+    ? { email: contact }
+    : { phone: contact };
+
+  const user = await prisma.user.findFirst({
+    where: { ...where, isDeleted: false },
+    select: { id: true, birthDate: true },
+  });
+
+  if (!user || !user.birthDate) throw new Error("ไม่พบผู้ใช้งาน");
+  if (!sameDateOnly(user.birthDate, birthDateAD)) throw new Error("ข้อมูลไม่ถูกต้อง");
+
+  const changePasswordCode =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : crypto.randomBytes(16).toString("hex");
+
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 นาที
+  const tokenHash = sha256Hex(changePasswordCode);
+
+  // ทำให้ code เดิมของ user หมดสภาพ (กันสับสน/โค้ดค้าง)
+  await prisma.$transaction([
+    prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    }),
+    prisma.passwordResetToken.create({
+      data: { userId: user.id, tokenHash, expiresAt },
+      select: { id: true },
+    }),
+  ]);
+
+  return { changePasswordCode, expiresAt };
+}
+
+/*
+ * คำอธิบาย : ตั้งรหัสผ่านใหม่ด้วย changePasswordCode ที่ยังไม่หมดอายุและยังไม่ถูกใช้
+ * Input : payload (SetPasswordDto) - changePasswordCode และ newPassword
+ * Output : { success: true } เมื่อเปลี่ยนรหัสผ่านสำเร็จ
+ */
+export async function setPassword(payload: SetPasswordDto) {
+  const tokenHash = sha256Hex(payload.changePasswordCode.trim());
+  const now = new Date();
+
+  const token = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    select: { id: true, userId: true, usedAt: true, expiresAt: true },
+  });
+
+  if (!token) throw new Error("changePasswordCode ไม่ถูกต้อง");
+  if (token.usedAt) throw new Error("changePasswordCode นี้ถูกใช้แล้ว");
+  if (token.expiresAt < now) throw new Error("changePasswordCode หมดอายุแล้ว");
+
+  const newHash = await bcrypt.hash(payload.newPassword, 10);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: token.userId },
+      data: { password: newHash },
+      select: { id: true },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: token.id },
+      data: { usedAt: now },
+      select: { id: true },
+    }),
+  ]);
+
+  return { success: true };
 }
 /*
  * คำอธิบาย : เข้าสู่ระบบด้วย username/email และ password

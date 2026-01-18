@@ -7,6 +7,10 @@ import {
   logout,
   me,
   checkLoginDto,
+  forgetPassword,
+  forgetPasswordDto,
+  setPassword,
+  setPasswordDto,
 } from "../Controllers/auth-controller.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
@@ -332,5 +336,19 @@ authRoutes.post("/logout", authMiddleware, logout);
  *                   example: Token ไม่ถูกต้องหรือหมดอายุ
  */
 authRoutes.get("/me", authMiddleware, validateDto(checkLoginDto), me);
+
+/**
+ * คำอธิบาย : ลืมรหัสผ่าน (ส่ง อีเมล/โทรศัพท์ + วันเกิด(พ.ศ) เพื่อรับ changePasswordCode)
+ */
+authRoutes.post(
+  "/forget-password",
+  await validateDto(forgetPasswordDto),
+  forgetPassword
+);
+
+/**
+ * คำอธิบาย : ตั้งรหัสผ่านใหม่ (ส่ง รหัสใหม่ + changePasswordCode)
+ */
+authRoutes.post("/set-password", await validateDto(setPasswordDto), setPassword);
 
 export default authRoutes;

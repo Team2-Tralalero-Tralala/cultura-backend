@@ -22,7 +22,7 @@ export const getServerStatus = async (
 ) => {
   try {
     const serverOnline = ConfigService.getServerStatus();
-    return res.status(200).json({
+    return createResponse(res, 200, "ดึงข้อมูลสถานะเซิร์ฟเวอร์สำเร็จ", {
       serverOnline,
     });
   } catch (error) {
