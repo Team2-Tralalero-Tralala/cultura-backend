@@ -1401,10 +1401,8 @@ packageRoutes.get(
  *       500:
  *         description: Server error
  */
-/*
+/**
  * คำอธิบาย : (Admin) Route สำหรับดึงรายการแพ็กเกจสถานะร่าง (Draft)
- * Method : GET
- * Path : /admin/packages/draft
  */
 packageRoutes.get(
   "/admin/packages/draft",
@@ -1497,10 +1495,8 @@ packageRoutes.get(
  *       500:
  *         description: Server error
  */
-/*
+/**
  * คำอธิบาย : (Member) Route สำหรับดึงรายการแพ็กเกจสถานะร่าง (Draft)
- * Method : GET
- * Path : /member/packages/draft
  */
 packageRoutes.get(
   "/member/packages/draft",
@@ -1556,10 +1552,8 @@ packageRoutes.get(
  *       500:
  *         description: Server error
  */
-/*
+/**
  * คำอธิบาย : (Member) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft)
- * Method : DELETE
- * Path : /member/packages/draft/:id
  */
 packageRoutes.delete(
   "/member/packages/draft/:id",
@@ -1613,10 +1607,8 @@ packageRoutes.delete(
  *       500:
  *         description: Server error
  */
-/*
+/**
  * คำอธิบาย : (Admin) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft)
- * Method : DELETE
- * Path : /admin/packages/draft/:id
  */
 packageRoutes.delete(
   "/admin/packages/draft/:id",
@@ -1711,10 +1703,8 @@ packageRoutes.delete(
  *       500:
  *         description: Internal Server Error
  */
-/*
+/**
  * คำอธิบาย : (Member) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft) แบบกลุ่ม
- * Method : DELETE
- * Path : /member/packages/draft/bulk-delete
  */
 packageRoutes.patch(
   "/member/packages/draft/bulk-delete",
@@ -1811,10 +1801,8 @@ packageRoutes.patch(
  *       500:
  *         description: Internal Server Error
  */
-/*
+/**
  * คำอธิบาย : (Admin) Route สำหรับลบแพ็กเกจสถานะร่าง (Draft) แบบกลุ่ม
- * Method : DELETE
- * Path : /admin/packages/draft/bulk-delete
  */
 packageRoutes.patch(
   "/admin/packages/draft/bulk-delete",

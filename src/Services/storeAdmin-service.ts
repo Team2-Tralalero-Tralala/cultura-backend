@@ -1,14 +1,14 @@
 import prisma from "./database-service.js";
 
 /*
- * ฟังก์ชัน : getStoreById
- * คำอธิบาย : ดึงข้อมูลร้านค้าพร้อมรูปภาพทั้งหมด และความสัมพันธ์อื่น ๆ เช่นแท็ก ชุมชน ที่ตั้ง
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลรายละเอียดร้านค้าตามรหัสร้านค้า (Admin)
+ * Input : รหัสร้านค้า (storeId)
+ * Output : ข้อมูลรายละเอียดร้านค้า พร้อมรูปภาพ แท็ก ชุมชน และข้อมูลที่ตั้ง
  */
 export async function getStoreById(storeId: number) {
   const store = await prisma.store.findUnique({
     where: { id: storeId },
     include: {
-      // ชื่อ relation ต้องตรงกับ schema (storeImage)
       storeImage: {
         select: {
           id: true,
@@ -16,20 +16,17 @@ export async function getStoreById(storeId: number) {
           type: true,
         },
       },
-      // ดึงแท็กร้าน (tagStores → tag)
       tagStores: {
         select: {
           tag: { select: { id: true, name: true } },
         },
       },
-      // ดึงชื่อชุมชน
       community: {
         select: {
           id: true,
           name: true,
         },
       },
-      // ดึงตำแหน่งที่ตั้ง (ถ้ามี latitude, longitude)
       location: true,
     },
   });
