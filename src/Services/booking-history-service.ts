@@ -1,5 +1,6 @@
 import prisma from "./database-service.js";
-import { BookingStatus } from "@prisma/client";
+import { BookingStatus, ImageType } from "@prisma/client";
+import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "./pagination-dto.js";
 
@@ -24,6 +25,11 @@ export const getDetailBookingById = async (id: number) => {
   }
   const booking = await prisma.bookingHistory.findUnique({
     where: { id: numberId },
+    include: {
+      package: {
+        select: { name: true },
+      },
+    },
   });
   if (!booking) {
     throw new Error("Booking not found");
@@ -76,19 +82,15 @@ export const createBooking = async (data: any) => {
   });
 };
 
-/*
- * ฟังก์ชัน : getHistoriesByRole
- * คำอธิบาย : ดึงประวัติการจอง (bookingHistory) ตามสิทธิ์ของผู้ใช้งาน
+/**
+ * คำอธิบาย : ดึงประวัติการจอง (Booking History) ตาม role ของผู้ใช้งาน
  * Input :
- *   - user : object ที่มีข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
+ *  - user : UserPayload (ข้อมูลผู้ใช้งานที่ล็อกอิน)
+ *  - page : number (หมายเลขหน้า, default = 1)
+ *  - limit : number (จำนวนรายการต่อหน้า, default = 10)
  * Output :
- *   - Array ของ object ที่ประกอบด้วย:
- *       - ชื่อผู้จอง
- *       - ชื่อกิจกรรม
- *       - ราคา
- *       - สถานะ
- *       - หลักฐานการโอน
- *       - เวลาในการจอง
+ *  - รายการ bookingHistory ที่มีสถานะ:
+ *    BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
  */
 export const getHistoriesByRole = async (
   user: UserPayload,
@@ -186,7 +188,6 @@ export const getDetailBooking = async (id: number) => {
 };
 
 /*
- * ฟังก์ชัน : getBookingsByAdmin
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
  * Input :
  *   - adminId (number) : รหัสผู้ดูแลที่ร้องขอ (ต้องเป็น Admin)
@@ -338,7 +339,6 @@ export const updateBookingStatus = async (
 };
 
 /*
- * ฟังก์ชัน : getBookingsByMember
  * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองเฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (เฉพาะ Member)
  * Input :
  *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
@@ -544,16 +544,16 @@ export const updateBookingStatusByMember = async (
   return updated;
 };
 /*
-  * ฟังก์ชัน : getMemberBookingHistories
-  * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล
-  * Input :
-  *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
-  *   - page (number) : หน้าปัจจุบัน
-  *   - limit (number) : จำนวนต่อหน้า
-  *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น BOOKED, REJECTED หรือ ALL)
-  * Output :
-  *   - PaginationResponse : ข้อมูลรายการประวัติการจองของแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
-  */
+ * ฟังก์ชัน : getMemberBookingHistories
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล
+ * Input :
+ *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น BOOKED, REJECTED หรือ ALL)
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการประวัติการจองของแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
+ */
 export const getMemberBookingHistories = async (
   memberId: number,
   page: number,
@@ -569,7 +569,7 @@ export const getMemberBookingHistories = async (
   };
 
   // 2. Logic จัดการ Status
-  
+
   // กำหนดสถานะที่เรา 'อนุญาต' ให้แสดงในหน้านี้ (ตัด PENDING, REFUND_PENDING ออก)
   const visibleStatuses = ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"];
 
@@ -624,3 +624,108 @@ export const getMemberBookingHistories = async (
     },
   };
 };
+/**
+ * คำอธิบาย : ประเภทข้อมูลประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
+ */
+type TouristBookingHistory = {
+  id: number;
+  bookingAt: Date;
+  status: BookingStatus | null;
+  totalParticipant: number;
+  package: {
+    name: string | null;
+    price: number | null;
+    description: string | null;
+    startDate: Date | null;
+    dueDate: Date | null;
+    packageFile: PackageFile[];
+    community: {
+      name: string;
+      location: Location;
+    };
+  } | null;
+};
+/**
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ
+ * Input :
+ *   - touristId (number) : รหัสผู้ที่เข้าร่วมแพ็กเกจ
+ *   - page (number) : หน้าปัจจุบัน
+ *   - limit (number) : จำนวนต่อหน้า
+ *   - sort ("asc" | "desc") : ลำดับ
+ *   - filter (object) : ตัวกรอง
+ * Output :
+ *   - PaginationResponse : ข้อมูลรายการประวัติการจองของผู้ที่เข้าร่วมแพ็กเกจ พร้อม pagination
+ */
+export async function getTouristBookingHistory(
+  touristId: number,
+  page: number = 1,
+  limit: number = 10,
+  sort: "asc" | "desc",
+  filter?: {
+    status?: string[];
+    date?: {
+      from: Date;
+      to: Date;
+    };
+  }
+): Promise<PaginationResponse<TouristBookingHistory>> {
+  const skip = (page - 1) * limit;
+  const whereCondition: any = { touristId };
+
+  if (filter?.status) {
+    whereCondition.status = { in: filter.status as BookingStatus[] };
+  }
+  if (filter?.date) {
+    whereCondition.bookingAt = {
+      gte: filter.date.from,
+      lte: filter.date.to,
+    };
+  }
+
+  const bookingHistories = await prisma.bookingHistory.findMany({
+    where: whereCondition,
+    orderBy: { bookingAt: sort },
+    select: {
+      id: true,
+      bookingAt: true,
+      status: true,
+      totalParticipant: true,
+      rejectReason: true,
+      package: {
+        select: {
+          name: true,
+          price: true,
+          description: true,
+          startDate: true,
+          dueDate: true,
+          packageFile: {
+            where: {
+              type: ImageType.COVER,
+            },
+          },
+          community: {
+            select: {
+              name: true,
+              location: true,
+            },
+          },
+        },
+      },
+    },
+    skip,
+    take: limit,
+  });
+  const totalCount = await prisma.bookingHistory.count({
+    where: whereCondition,
+  });
+  const totalPages = Math.ceil(totalCount / limit);
+  return {
+    data: bookingHistories,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalCount,
+      limit,
+    },
+  };
+}

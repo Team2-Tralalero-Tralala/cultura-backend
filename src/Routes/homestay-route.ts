@@ -20,6 +20,7 @@ import {
   editHomestayAdmin,
   deleteHomestayAdmin,
   deleteHomestaySuperAdmin,
+  getHomestayDetailByAdmin,
 } from "../Controllers/homestay-controller.js";
 
 const homestayRoutes = Router();
@@ -790,7 +791,7 @@ homestayRoutes.get(
   "/admin/community/homestay/:homestayId",
   authMiddleware,
   allowRoles("admin"),
-  getHomestayDetail
+  getHomestayDetailByAdmin
 );
 
 /**
@@ -983,10 +984,7 @@ homestayRoutes.patch(
 );
 
 /**
- * tourist and guests
- * - สร้างโฮมสเตย์เดี่ยว/หลายรายการใต้ community ที่กำหนด
- * - ดูรายการทั้งหมด (พร้อม filter ผ่าน query)
- * - ดูรายละเอียด/แก้ไขตาม id
+ * คำอธิบาย: route สำหรับดึงรายละเอียดที่พักพร้อมที่พักอื่นในชุมชน
  */
 /**
  * @swagger

@@ -402,9 +402,14 @@ export async function getHomestayDetailById(id: number) {
 // services/homestay-service.ts
 
 /**
- * ฟังก์ชัน : getHomestaysAll
- * อธิบาย : ดึง homestay ทั้งหมดในชุมชน (สำหรับ SuperAdmin)
- * Mapping : GET /super/community/:communityId/homestays
+ * คำอธิบาย : ดึงข้อมูลรายการที่พักทั้งหมดในชุมชน (เฉพาะ SuperAdmin)
+ * Input :
+ * - userId (number) : รหัสผู้ใช้งาน (ใช้ตรวจสอบสิทธิ์)
+ * - communityId (number) : รหัสชุมชนที่ต้องการดึงข้อมูล
+ * - page (number) : เลขหน้าที่ต้องการ (default = 1)
+ * - limit (number) : จำนวนรายการต่อหน้า (default = 10)
+ * Output :
+ * - Promise<PaginationResponse<any>> : Object ที่ประกอบด้วยข้อมูลรายการที่พัก (data) และข้อมูลการแบ่งหน้า (pagination)
  */
 export const getHomestaysAll = async (
   userId: number,
@@ -416,7 +421,7 @@ export const getHomestaysAll = async (
     throw new Error("ID must be a number");
   }
 
-  // ===== ตรวจสอบสิทธิ์ผู้ใช้ =====
+  // ตรวจสอบสิทธิ์ผู้ใช้ 
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { role: true },
@@ -428,16 +433,14 @@ export const getHomestaysAll = async (
     throw new Error("Forbidden: Only SuperAdmin can access this route");
   }
 
-  // ===== ตรวจสอบว่าชุมชนมีอยู่จริง =====
+  // ตรวจสอบว่าชุมชนมีอยู่จริง
   const community = await prisma.community.findFirst({
     where: { id: communityId, isDeleted: false },
   });
   if (!community) throw new Error("Community not found");
 
-  // ===== Pagination =====
   const skip = (page - 1) * limit;
 
-  // ===== ดึงข้อมูล homestay =====
   const totalCount = await prisma.homestay.count({
     where: { communityId, isDeleted: false },
   });
@@ -740,10 +743,7 @@ export const deleteHomestayByAdmin = async (
 };
 
 /**
- * คำอธิบาย :
- *  - ดึงรายละเอียดที่พักที่เลือก 
- *  - ดึงที่พักอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
- *
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายละเอียดที่พักที่เลือก และดึงที่พักอื่นในชุมชนเดียวกัน (เฉพาะชื่อ + รูป) แบบ pagination
  * Input :
  *  - communityId : number
  *  - homestayId : number
@@ -756,7 +756,7 @@ export const deleteHomestayByAdmin = async (
  */
 export const getHomestayWithOtherHomestaysInCommunity = async (communityId: number, homestayId: number, page: number = 1, limit: number = 12) => {
   if (!Number.isInteger(communityId) || !Number.isInteger(homestayId) || !Number.isInteger(page) || !Number.isInteger(limit)) {
-    throw new Error("Invalid parameter");
+    throw new Error("ต้องเป็นตัวเลขจำนวนเต็ม");
   }
 
   if (page < 1 || limit < 1) {
@@ -856,3 +856,64 @@ export const getHomestayWithOtherHomestaysInCommunity = async (communityId: numb
     },
   };
 };
+
+/**
+ * คำอธิบาย : ดึงรายละเอียด Homestay สำหรับ Admin ชุมชน
+ * Input  : homestayId:number, adminId:number
+ * Output : homestay (รวมความสัมพันธ์) หรือ null
+ */
+export async function getHomestayDetailByAdmin(
+  homestayId: number,
+  adminId: number
+) {
+  return prisma.homestay.findFirst({
+    where: {
+      id: homestayId,
+      isDeleted: false,
+      community: {
+        adminId: adminId,
+        isDeleted: false,
+      },
+    },
+    include: {
+      community: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      location: {
+        select: {
+          id: true,
+          detail: true,
+          houseNumber: true,
+          villageNumber: true,
+          alley: true,
+          subDistrict: true,
+          district: true,
+          province: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      },
+      homestayImage: {
+        select: {
+          id: true,
+          image: true,
+          type: true,
+        },
+      },
+      tagHomestays: {
+        include: {
+          tag: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}

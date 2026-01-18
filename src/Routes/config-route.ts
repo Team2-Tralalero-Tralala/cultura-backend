@@ -1,10 +1,10 @@
 import { Router } from "express";
+import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
 import {
     disableServer,
     enableServer,
     getServerStatus,
 } from "../Controllers/config-controller.js";
-import { authMiddleware, allowRoles } from "~/Middlewares/auth-middleware.js";
 
 const configRoutes = Router();
 
@@ -48,6 +48,9 @@ const configRoutes = Router();
  *         - $ref: '#/components/schemas/StandardSuccess'
  *         - type: object
  *           properties:
+ *             message:
+ *               type: string
+ *               example: "ดึงข้อมูลสถานะเซิร์ฟเวอร์สำเร็จ"
  *             data:
  *               $ref: '#/components/schemas/ConfigStatusData'
  *
@@ -56,10 +59,12 @@ const configRoutes = Router();
  *     get:
  *       tags: [Config]
  *       summary: Get current server status
- *       description: Returns whether the server is currently online.
+ *       description: |
+ *         Returns the current server status information.
+ *         This endpoint is publicly accessible and does not require authentication.
  *       responses:
  *         200:
- *           description: Server status
+ *           description: Server status retrieved successfully
  *           content:
  *             application/json:
  *               schema:

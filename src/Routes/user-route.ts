@@ -67,6 +67,174 @@ userRoutes.put(
 
 /**
  * @swagger
+ * /api/admin/member/all:
+ *   get:
+ *     tags:
+ *       - Admin - Member
+ *     summary: Get all members by admin
+ *     description: |
+ *       ดึงรายการสมาชิกทั้งหมด สำหรับผู้ใช้ที่มีสิทธิ์ **admin**  
+ *       รองรับการกรอง/ค้นหาตามเงื่อนไขจาก `getMemberAllByAdminDto`  
+ *       Response ทุกกรณีอยู่ในรูปแบบ `createResponse` / `createErrorResponse`
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: หน้าปัจจุบันของข้อมูล
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: จำนวนรายการต่อหน้า
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "john"
+ *         description: คำค้นหาชื่อหรืออีเมลสมาชิก
+ *     responses:
+ *       200:
+ *         description: ดึงรายการสมาชิกสำเร็จ (createResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Get members successfully
+ *                 data:
+ *                   type: array
+ *                   description: รายการสมาชิกทั้งหมด
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       email:
+ *                         type: string
+ *                         example: "john@example.com"
+ *                       role:
+ *                         type: string
+ *                         example: "member"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-01-10T09:30:00Z"
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 120
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
+ *       400:
+ *         description: Query parameter ไม่ถูกต้อง หรือ validation error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 400
+ *                 message:
+ *                   type: string
+ *                   example: Validation error
+ *                 errors:
+ *                   type: object
+ *                   nullable: true
+ *       401:
+ *         description: ไม่ได้ส่ง JWT Bearer token หรือ token ไม่ถูกต้อง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 401
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ *       403:
+ *         description: Forbidden – ผู้ใช้ไม่มีสิทธิ์ admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 403
+ *                 message:
+ *                   type: string
+ *                   example: Forbidden resource
+ *       500:
+ *         description: Internal server error (createErrorResponse)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 statusCode:
+ *                   type: integer
+ *                   example: 500
+ *                 message:
+ *                   type: string
+ *                   example: Internal server error
+ */
+
+/*
+ * เส้นทาง : GET /admin/member/all
+ * คำอธิบาย : ดึงรายชื่อสมาชิกทั้งหมดใน Community ของ Admin
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+userRoutes.get(
+  "/admin/member/all",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(UserController.getMemberAllByAdminDto),
+  UserController.getMemberAllByAdmin
+);
+
+/**
+ * @swagger
  * /api/super/accounts:
  *   get:
  *     summary: ดึงรายการบัญชีผู้ใช้งานทั้งหมด (Super Admin)
@@ -334,6 +502,14 @@ userRoutes.get(
   validateDto(UserController.getUserByIdDto),
   UserController.getMemberByAdmin
 );
+
+// userRoutes.get(
+//   "/admin/member/all",
+//   authMiddleware,
+//   allowRoles("admin"),
+//   validateDto(UserController.getMemberAllByAdminDto),
+//   UserController.getMemberAllByAdmin
+// );
 
 /**
  * @swagger
@@ -826,9 +1002,7 @@ userRoutes.post(
  */
 
 /*
- * เส้นทาง : PATCH /admin/member/:userId
- * คำอธิบาย : ลบ member ออกจาก Community แบบ Soft Delete
- * สิทธิ์ที่เข้าถึงได้ : admin
+ * คำอธิบาย : ลบสามาชิกออกจากชุมชน
  */
 userRoutes.patch(
   "/admin/member/:userId",
@@ -847,4 +1021,11 @@ userRoutes.get(
   UserController.getAccountAll
 );
 
+userRoutes.patch(
+  "/admin/member/:userId",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(UserController.softDeleteCommunityMemberByIdDto),
+  UserController.softDeleteCommunityMemberById
+);
 export default userRoutes;

@@ -298,6 +298,7 @@ model Package {
   bookingCloseDate DateTime?              @map("pk_booking_close_date") @db.DateTime
   facility         String?                @map("pk_facility") @db.VarChar(200)
   rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
+  createdAt        DateTime              @map("pk_created_at") @db.Timestamp(0) @default(now())
   isDeleted        Boolean               @default(false) @map("pk_is_deleted")
   deleteAt         DateTime?             @map("pk_delete_at") @db.Timestamp(0)
 
@@ -369,9 +370,30 @@ model User {
   overseerPackages Package[]          @relation("OverseerMember")
   createdPackages  Package[]          @relation("createPackage")
   communityMembers communityMembers[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([roleId])
   @@map("users")
+}
+
+/**
+ * คำอธิบาย : เก็บรหัสสำหรับลืมรหัสผ่านแบบใช้ครั้งเดียว
+ * - tokenHash: เก็บ sha256(hex) ของ changePasswordCode ที่ส่งให้ client
+ * - usedAt: ใช้ระบุว่า code นี้ถูกใช้แล้ว
+ * - expiresAt: หมดอายุ
+ */
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement()) @map("prt_id")
+  userId    Int       @map("prt_user_id")
+  tokenHash String    @unique @map("prt_token_hash") @db.Char(64)
+  createdAt DateTime  @default(now()) @map("prt_created_at") @db.DateTime(0)
+  expiresAt DateTime  @map("prt_expires_at") @db.DateTime(0)
+  usedAt    DateTime? @map("prt_used_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model communityMembers {
@@ -396,7 +418,7 @@ model communityMembers {
  */
 model FeedbackImage {
   id         Int    @id @default(autoincrement()) @map("fi_id")
-  feedbackId Int    @unique @map("fi_feedback_id")
+  feedbackId Int    @map("fi_feedback_id")
   image      String @map("fi_image") @db.VarChar(256)
 
   // Relations
@@ -443,10 +465,11 @@ model BookingHistory {
   touristId        Int            @map("bh_tourist_id")
   packageId        Int?           @map("bh_package_id")
   touristBankId    Int?           @map("bh_tourist_bank_account_id")
-  bookingAt        DateTime       @map("bh_booking_at") @db.Timestamp(0)
+  bookingAt        DateTime       @default(now()) @map("bh_booking_at") @db.DateTime(0)
   cancelAt         DateTime?      @map("bh_cancel_at") @db.Timestamp(0)
   refundAt         DateTime?      @map("bh_refund_at") @db.Timestamp(0)
   status           BookingStatus? @map("bh_status")
+  isParticipate    Boolean        @default(false) @map("bh_is_participate")
   totalParticipant Int            @map("bh_total_participant")
   rejectReason     String?        @map("bh_reject_reason") @db.VarChar(100)
   transferSlip     String?        @map("bh_transfer_slip") @db.VarChar(256)

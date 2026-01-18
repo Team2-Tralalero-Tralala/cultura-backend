@@ -306,8 +306,6 @@ export const getCommunityAll = async (
  *   - communityId (number) : รหัสชุมชนที่ต้องการดูรายละเอียด
  * Output :
  *   - Object ข้อมูลชุมชนพร้อมความสัมพันธ์ (location, member, image, store, homestay)
- * หมายเหตุ :
- *   - ตรวจสอบสิทธิ์ว่า user เป็น SuperAdmin เท่านั้น
  */
 export async function getCommunityDetailById(
   userId: number,
@@ -464,14 +462,11 @@ export async function getUnassignedMembers() {
 }
 
 /*
- * ฟังก์ชัน : getCommunityDetailByAdmin
  * คำอธิบาย : ดึงรายละเอียดของชุมชนของแอดมิน (เฉพาะ Admin)
  * Input :
  *   - userId (number) : รหัสผู้ใช้ (ต้องเป็น role = admin)
  * Output :
  *   - Object ข้อมูลชุมชนพร้อมความสัมพันธ์ (location, member, image, store, homestay, package)
- * หมายเหตุ :
- *   - ตรวจสอบสิทธิ์ว่า user เป็น Admin เท่านั้น
  */
 export async function getCommunityDetailByAdmin(userId: number) {
   // ตรวจสอบรูปแบบ input
@@ -629,14 +624,11 @@ export async function getCommunityOwn(userId: number) {
 }
 
 /*
- * ฟังก์ชัน : getCommunityDetailByMember
  * คำอธิบาย : ดึงรายละเอียดของชุมชนที่ Member คนนั้นสังกัดอยู่ (เฉพาะ Member)
  * Input :
  *   - userId (number) : รหัสผู้ใช้ (ต้องเป็น role = member)
  * Output :
  *   - Object ข้อมูลชุมชนพร้อมความสัมพันธ์ (location, member, image, store, homestay)
- * หมายเหตุ :
- *   - ตรวจสอบสิทธิ์ว่า user เป็น Member เท่านั้น
  */
 export async function getCommunityDetailByMember(userId: number) {
   // ตรวจสอบรูปแบบ input
@@ -674,6 +666,17 @@ export async function getCommunityDetailByMember(userId: number) {
       stores: {
         include: {
           storeImage: true,
+        },
+      },
+      admin: {
+        select: {
+          id: true,
+          fname: true,
+          lname: true,
+          email: true,
+          roleId: true,
+          profileImage: true,
+          username: true,
         },
       },
       communityMembers: {

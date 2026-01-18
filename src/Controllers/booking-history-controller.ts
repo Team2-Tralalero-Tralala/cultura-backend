@@ -1,32 +1,74 @@
+import { IsNumberString, IsOptional, IsString } from "class-validator";
 import type { Request, Response } from "express";
-import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
-import { getHistoriesByRole } from "../Services/booking-history-service.js";
-import * as bookingService from "../Services/booking-history-service.js";
-import { PaginationDto } from "~/Services/pagination-dto.js";
-import { IsOptional, IsString } from "class-validator";
+import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
-  commonDto,
-  type TypedHandlerFromDto,
+    commonDto,
+    type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import * as BookingHistoryService from "~/Services/booking-history-service.js";
-/*
- * ฟังก์ชัน : getByRole
- * คำอธิบาย : Handler สำหรับดึงประวัติการจองตามสิทธิ์ของผู้ใช้งาน
+import {
+    BookingIdParamDto,
+    CreateBookingBodyDto,
+} from "~/Services/booking/booking-dto.js";
+import * as TouristBookingService from "~/Services/booking/booking-service.js";
+import { PaginationDto } from "~/Services/pagination-dto.js";
+import * as bookingService from "../Services/booking-history-service.js";
+import { getHistoriesByRole } from "../Services/booking-history-service.js";
+
+/* DTO : GetHistoriesByRoleQueryDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ query parameters สำหรับการดึง histories ตาม role
+ *
  * Input :
- *   - req.user : ข้อมูลผู้ใช้ (ได้มาจาก middleware authentication)
- *   - res : Response object ของ Express สำหรับส่งผลลัพธ์กลับไปยัง client
+ *  - query :
+ *    - page  : หมายเลขหน้าของข้อมูล (optional, ต้องเป็นตัวเลขในรูปแบบ string)
+ *    - limit : จำนวนข้อมูลต่อหน้า (optional, ต้องเป็นตัวเลขในรูปแบบ string)
+ *
  * Output :
- *   - 200 OK พร้อมข้อมูล booking histories
- *   - 400 Bad Request ถ้ามีข้อผิดพลาดหรือไม่สามารถดึงข้อมูลได้
+ *  - หากข้อมูลถูกต้อง จะผ่านการ validate และใช้งานต่อได้
+ *  - หากข้อมูลไม่ถูกต้อง จะถูก reject พร้อม validation error
  */
-export const getByRole = async (req: Request, res: Response) => {
+export class GetHistoriesByRoleQueryDto {
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  limit?: string;
+}
+
+/* DTO : getByRoleDto
+ * วัตถุประสงค์ :
+ *  - ใช้ตรวจสอบ query สำหรับการดึง booking histories ตาม role
+ *
+ * Input :
+ *  - query : GetHistoriesByRoleQueryDto (page, limit)
+ *
+ * Output :
+ *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
+ *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
+ */
+export const getByRoleDto = {
+  query: GetHistoriesByRoleQueryDto,
+} satisfies commonDto;
+
+/**
+ * คำอธิบาย : ดึงประวัติการจอง (Booking History) ตาม role ของผู้ใช้งาน
+ * Input :
+ *  - req.user : UserPayload (ผ่าน auth middleware แล้ว)
+ *  - page : number (default = 1)
+ *  - limit : number (default = 10)
+ * Output : รายการ booking histories ตามสิทธิ์ของผู้ใช้งาน
+ */
+export const getByRole: TypedHandlerFromDto<typeof getByRoleDto> = async (
+  req,
+  res
+) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    const { page = 1, limit = 10 } = req.query;
+    const { page = "1", limit = "10" } = req.query;
     const data = await getHistoriesByRole(
-      req.user,
+      req.user!,
       Number(page),
       Number(limit)
     );
@@ -301,6 +343,27 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
 };
 
 /**
+ * คำอธิบาย : ดึงรายละเอียดการจองโดยใช้ getDetailBookingById (ไม่ล็อคสถานะ PENDING)
+ * Input: req.params.id - รหัสการจอง (bookingId) ที่ต้องการดึงข้อมูล
+ * Output:
+ * - 200 OK พร้อมข้อมูลรายละเอียดการจอง (detail)
+ * - 400 Bad Request หากเกิดข้อผิดพลาด
+ */
+export const getBookingDetailForTourist = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const bookingId = Number(req.params.id);
+    const detail = await BookingHistoryService.getDetailBookingById(bookingId);
+
+    return createResponse(res, 200, "Get booking detail successfully", detail);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/*
  * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
  * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
  */
@@ -383,4 +446,207 @@ export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
 
   // ถ้าไม่เจอ -> ไปทางเดิม
   return getBookingsByMember(req, res, next);
+};
+/**
+ * DTO สำหรับรับ Parameter ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
+ */
+export class TouristIdParamDto {
+  @IsNumberString()
+  touristId?: string;
+}
+/**
+ * DTO สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
+ * วัตถุประสงค์ : เพื่อให้ผู้ที่เดินทางสามารถดูประวัติการจองของตัวเอง
+ * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * input :
+ *   - req.query.sort : ลำดับการเรียงข้อมูล (asc/desc)
+ *   - req.query.status : สถานะการจอง
+ *   - req.query.startDate : วันที่เริ่มต้น
+ *   - req.query.endDate : วันที่สิ้นสุด
+ * output :
+ *   - JSON response พร้อมข้อมูลประวัติการจองของผู้ที่เดินทาง
+ */
+export class TouristBookingHistoryQueryDto extends PaginationDto {
+  @IsOptional()
+  @IsString()
+  sort?: "asc" | "desc";
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+}
+/**
+ * DTO สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * วัตถุประสงค์ : เพื่อให้ผู้ที่เดินทางสามารถดูประวัติการจองของตัวเอง
+ * คำอธิบาย : DTO สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * Input :
+ *   - req.params.touristId : รหัสผู้ที่เดินทาง (TouristID)
+ *   - req.query.page, req.query.limit
+ * Output :
+ *   - JSON response พร้อมข้อมูลประวัติการจองของผู้ที่เดินทาง
+ */
+export const getTouristBookingHistoriesDto = {
+  params: TouristIdParamDto,
+  query: TouristBookingHistoryQueryDto,
+} satisfies commonDto;
+/*
+ * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * input: communityId, page, limit
+ * output: account in community
+ */
+export const getTouristBookingHistories: TypedHandlerFromDto<
+  typeof getTouristBookingHistoriesDto
+> = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      sort,
+      status,
+      startDate,
+      endDate,
+    } = req.query as any;
+    const filter: {
+      status?: string[];
+      date?: { from: Date; to: Date };
+    } = {};
+
+    if (status) {
+      filter.status = status
+        .split(",")
+        .map((status: string) => status.trim())
+        .map((status: string) =>
+          status === "REFUNDED_PENDING" ? "REFUND_PENDING" : status
+        );
+    }
+
+    if (startDate && endDate) {
+      filter.date = {
+        from: new Date(startDate),
+        to: new Date(endDate),
+      };
+    }
+    const result = await bookingService.getTouristBookingHistory(
+      Number(req.user?.id),
+      Number(page),
+      Number(limit),
+      sort || "desc",
+      filter
+    );
+    return createResponse(
+      res,
+      200,
+      "get booking histories successfully",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * คำอธิบาย : DTO สำหรับสร้าง Booking History
+ * Input : 
+ *   - params.bookingId - รหัสการจอง (ใช้เป็น reference, อาจจะไม่ใช้ในการสร้างจริง)
+ *   - body.packageId - รหัสแพ็กเกจที่ต้องการจอง
+ *   - body.totalParticipant - จำนวนผู้เข้าร่วม
+ *   - body.transferSlip - หลักฐานการโอนเงิน (optional)
+ *   - body.touristBankId - รหัสบัญชีธนาคารของนักท่องเที่ยว (optional)
+ * Output : ข้อมูล Booking History ที่สร้างใหม่
+ */
+export const createTouristBookingDto = {
+  params: BookingIdParamDto,
+  body: CreateBookingBodyDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : createTouristBooking
+ * คำอธิบาย : Handler สำหรับสร้าง Booking History โดย Tourist
+ * Input :
+ *   - req.params.bookingId - รหัสการจอง (reference)
+ *   - req.body.packageId - รหัสแพ็กเกจ
+ *   - req.body.totalParticipant - จำนวนผู้เข้าร่วม
+ *   - req.body.transferSlip - หลักฐานการโอนเงิน (optional)
+ *   - req.body.touristBankId - รหัสบัญชีธนาคาร (optional)
+ *   - req.user.id - รหัสผู้ใช้ (Tourist) จาก authentication middleware
+ * Output :
+ *   - 201 Created พร้อมข้อมูล Booking History ที่สร้างใหม่
+ *   - 400 Bad Request ถ้ามี error
+ */
+export const createTouristBooking: TypedHandlerFromDto<
+  typeof createTouristBookingDto
+> = async (req, res) => {
+  try {
+    const touristId = Number(req.user?.id);
+    const { packageId, totalParticipant, transferSlip, touristBankId } =
+      req.body;
+
+    if (!touristId) {
+      return createErrorResponse(res, 401, "ไม่พบข้อมูลผู้ใช้");
+    }
+
+    const booking = await TouristBookingService.createTouristBooking(
+      touristId,
+      packageId,
+      totalParticipant,
+      transferSlip,
+      touristBankId
+    );
+
+    return createResponse(
+      res,
+      201,
+      "สร้างข้อมูลการจองสำเร็จ",
+      booking
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+
+/*
+ * ฟังก์ชัน : uploadPaymentProof
+ * คำอธิบาย : Handler สำหรับอัปโหลดหลักฐานการชำระเงิน
+ * Input :
+ *   - req.file - ไฟล์ที่อัปโหลด (จาก multer middleware)
+ *   - req.user.id - รหัสผู้ใช้ (Tourist) จาก authentication middleware
+ * Output :
+ *   - 200 OK พร้อมข้อมูล path ของไฟล์ที่อัปโหลด
+ *   - 400 Bad Request ถ้าไม่พบไฟล์
+ */
+export const uploadPaymentProof = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return createErrorResponse(
+        res,
+        400,
+        "ไม่พบไฟล์หลักฐานการชำระเงิน กรุณาแนบไฟล์"
+      );
+    }
+
+    const filePath = req.file.path.replace(/\\/g, "/"); // แปลง backslash เป็น forward slash
+    const fileName = req.file.filename;
+
+    return createResponse(
+      res,
+      200,
+      "อัปโหลดหลักฐานการชำระเงินสำเร็จ",
+      {
+        filePath,
+        fileName,
+      }
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };

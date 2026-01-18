@@ -7,18 +7,25 @@
 
 import type { Request, Response } from "express";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
+import type {
+  commonDto,
+  TypedHandlerFromDto,
+} from "~/Libs/Types/TypedHandler.js";
 import {
   IdParamDto,
   MembersQueryDto,
-  PackageDto,
+  //PackageDto,
   PackageDuplicateParamDto,
   PackageIdParamDto,
   QueryHomestaysDto,
   QueryListHomestaysDto,
   updatePackageDto,
   BulkDeletePackagesDto,
+  ParticipantsQueryDto,
+  UpdateParticipantStatusBodyDto,
+  BookingHistoryIdParamDto,
 } from "~/Services/package/package-dto.js";
+import * as PackageDto from "~/Services/package/package-dto.js";
 import * as PackageService from "../Services/package/package-service.js";
 import { deleteDraftPackage,bulkDeletePackages  } from "../Services/package/package-service.js";
 
@@ -75,7 +82,11 @@ export async function createPackageAdmin(req: Request, res: Response) {
       try {
         parsedBody = JSON.parse(req.body.data);
       } catch (error) {
-        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+        return createErrorResponse(
+          res,
+          400,
+          "Invalid JSON format in 'data' field"
+        );
       }
     } else {
       // Fallback: เผื่อส่งมาเป็น JSON ล้วนๆ (กรณีไม่มีรูป)
@@ -84,9 +95,18 @@ export async function createPackageAdmin(req: Request, res: Response) {
 
     // 3. รวมไฟล์เข้ากับข้อมูล (Mapping ไฟล์ให้ตรงกับโครงสร้าง PackageFileDto)
     const packageFile = [
-      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+      ...(files?.cover?.map((file) => ({
+        filePath: file.path,
+        type: "COVER",
+      })) ?? []),
+      ...(files?.gallery?.map((file) => ({
+        filePath: file.path,
+        type: "GALLERY",
+      })) ?? []),
+      ...(files?.video?.map((file) => ({
+        filePath: file.path,
+        type: "VIDEO",
+      })) ?? []),
     ];
 
     // 4. ส่งเข้า Service (รวมร่างข้อมูล)
@@ -95,7 +115,7 @@ export async function createPackageAdmin(req: Request, res: Response) {
       {
         ...parsedBody,
         packageFile, // แนบไฟล์ที่ map แล้วเข้าไป
-        createById: userId
+        createById: userId,
       },
       userId
     );
@@ -132,15 +152,28 @@ export async function createPackageMember(req: Request, res: Response) {
       try {
         parsedBody = JSON.parse(req.body.data);
       } catch (error) {
-        return createErrorResponse(res, 400, "รูปแบบข้อมูล JSON ใน field 'data' ไม่ถูกต้อง");
+        return createErrorResponse(
+          res,
+          400,
+          "รูปแบบข้อมูล JSON ใน field 'data' ไม่ถูกต้อง"
+        );
       }
     } else {
       parsedBody = req.body;
     }
     const packageFile = [
-      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+      ...(files?.cover?.map((file) => ({
+        filePath: file.path,
+        type: "COVER",
+      })) ?? []),
+      ...(files?.gallery?.map((file) => ({
+        filePath: file.path,
+        type: "GALLERY",
+      })) ?? []),
+      ...(files?.video?.map((file) => ({
+        filePath: file.path,
+        type: "VIDEO",
+      })) ?? []),
     ];
     const result = await PackageService.createPackageByMember(
       {
@@ -168,7 +201,11 @@ export async function listPackagesSuperAdmin(req: Request, res: Response) {
     const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const result = await PackageService.getPackagesBySuperAdmin(userId, page, limit);
+    const result = await PackageService.getPackagesBySuperAdmin(
+      userId,
+      page,
+      limit
+    );
     return createResponse(res, 200, "Get Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -204,7 +241,11 @@ export async function listPackagesMember(req: Request, res: Response) {
     const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const result = await PackageService.getPackagesByMember(userId, page, limit);
+    const result = await PackageService.getPackagesByMember(
+      userId,
+      page,
+      limit
+    );
     return createResponse(res, 200, "Get Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -241,7 +282,11 @@ export async function listPackagesTourist(req: Request, res: Response) {
     const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const result = await PackageService.getPackagesByTourist(userId, page, limit);
+    const result = await PackageService.getPackagesByTourist(
+      userId,
+      page,
+      limit
+    );
     return createResponse(res, 200, "Get Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -318,7 +363,12 @@ export const duplicatePackageHistoryAdmin: TypedHandlerFromDto<
       userId,
     });
 
-    return createResponse(res, 201, "Duplicate Package Success", duplicatedPackage);
+    return createResponse(
+      res,
+      201,
+      "Duplicate Package Success",
+      duplicatedPackage
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -362,7 +412,11 @@ export async function editPackageSuperAdmin(req: Request, res: Response) {
       try {
         parsedBody = JSON.parse(req.body.data);
       } catch {
-        return createErrorResponse(res, 400, "ฟิลด์ 'data' ไม่ใช่ JSON ที่ถูกต้อง");
+        return createErrorResponse(
+          res,
+          400,
+          "ฟิลด์ 'data' ไม่ใช่ JSON ที่ถูกต้อง"
+        );
       }
     } else {
       parsedBody = req.body;
@@ -373,9 +427,18 @@ export async function editPackageSuperAdmin(req: Request, res: Response) {
 
     // ④ รวมไฟล์เป็น packageFile[] (เทียบเคียง homestayImage ของตัวอย่าง)
     const packageFile = [
-      ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-      ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-      ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+      ...(files?.cover?.map((file) => ({
+        filePath: file.path,
+        type: "COVER",
+      })) ?? []),
+      ...(files?.gallery?.map((file) => ({
+        filePath: file.path,
+        type: "GALLERY",
+      })) ?? []),
+      ...(files?.video?.map((file) => ({
+        filePath: file.path,
+        type: "VIDEO",
+      })) ?? []),
     ];
 
     // ⑤ อัปเดตแพ็กเกจ (service รองรับ replace เมื่อมี packageFile)
@@ -391,7 +454,10 @@ export async function editPackageSuperAdmin(req: Request, res: Response) {
         packageId,
         parsedBody.tagIds
           .map((tagIdNumber: any) => Number(tagIdNumber))
-          .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+          .filter(
+            (tagIdNumber: number) =>
+              Number.isFinite(tagIdNumber) && tagIdNumber > 0
+          )
       );
     }
 
@@ -421,12 +487,25 @@ export async function editPackageAdmin(req: Request, res: Response) {
       try {
         parsedBody = JSON.parse(req.body.data);
       } catch {
-        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+        return createErrorResponse(
+          res,
+          400,
+          "Invalid JSON format in 'data' field"
+        );
       }
       const packageFile = [
-        ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-        ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-        ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
+        ...(files?.cover?.map((file) => ({
+          filePath: file.path,
+          type: "COVER",
+        })) ?? []),
+        ...(files?.gallery?.map((file) => ({
+          filePath: file.path,
+          type: "GALLERY",
+        })) ?? []),
+        ...(files?.video?.map((file) => ({
+          filePath: file.path,
+          type: "VIDEO",
+        })) ?? []),
       ];
       const result = await PackageService.editPackageByAdmin(
         packageId,
@@ -438,7 +517,10 @@ export async function editPackageAdmin(req: Request, res: Response) {
           packageId,
           parsedBody.tagIds
             .map((tagIdNumber: any) => Number(tagIdNumber))
-            .filter((tagIdNumber: number) => Number.isFinite(tagIdNumber) && tagIdNumber > 0)
+            .filter(
+              (tagIdNumber: number) =>
+                Number.isFinite(tagIdNumber) && tagIdNumber > 0
+            )
         );
       }
       return createResponse(res, 200, "Package Updated", result);
@@ -468,18 +550,38 @@ export async function editPackageMember(req: Request, res: Response) {
       try {
         parsedBody = JSON.parse(req.body.data);
       } catch (error) {
-        return createErrorResponse(res, 400, "Invalid JSON format in 'data' field");
+        return createErrorResponse(
+          res,
+          400,
+          "Invalid JSON format in 'data' field"
+        );
       }
     } else {
       parsedBody = req.body;
     }
     let packageFile = undefined;
-    if (files?.cover || files?.gallery || files?.video || parsedBody.packageFile) {
+    if (
+      files?.cover ||
+      files?.gallery ||
+      files?.video ||
+      parsedBody.packageFile
+    ) {
       packageFile = [
-        ...(files?.cover?.map((file) => ({ filePath: file.path, type: "COVER" })) ?? []),
-        ...(files?.gallery?.map((file) => ({ filePath: file.path, type: "GALLERY" })) ?? []),
-        ...(files?.video?.map((file) => ({ filePath: file.path, type: "VIDEO" })) ?? []),
-        ...(Array.isArray(parsedBody.packageFile) ? parsedBody.packageFile : [])
+        ...(files?.cover?.map((file) => ({
+          filePath: file.path,
+          type: "COVER",
+        })) ?? []),
+        ...(files?.gallery?.map((file) => ({
+          filePath: file.path,
+          type: "GALLERY",
+        })) ?? []),
+        ...(files?.video?.map((file) => ({
+          filePath: file.path,
+          type: "VIDEO",
+        })) ?? []),
+        ...(Array.isArray(parsedBody.packageFile)
+          ? parsedBody.packageFile
+          : []),
       ];
     }
 
@@ -487,7 +589,7 @@ export async function editPackageMember(req: Request, res: Response) {
       packageId,
       {
         ...parsedBody,
-        ...(packageFile ? { packageFile } : {}) // ส่ง packageFile ไปเฉพาะเมื่อมีการเปลี่ยนแปลง
+        ...(packageFile ? { packageFile } : {}), // ส่ง packageFile ไปเฉพาะเมื่อมีการเปลี่ยนแปลง
       },
       userId
     );
@@ -508,7 +610,10 @@ export async function deletePackageSuperAdmin(req: Request, res: Response) {
   try {
     const userId = Number((req as any).user?.id);
     const packageId = Number(req.params.id);
-    const result = await PackageService.deletePackageBySuperAdmin(userId, packageId);
+    const result = await PackageService.deletePackageBySuperAdmin(
+      userId,
+      packageId
+    );
     return createResponse(res, 200, "Package Deleted", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -542,7 +647,10 @@ export async function deletePackageMember(req: Request, res: Response) {
   try {
     const userId = Number((req as any).user?.id);
     const packageId = Number(req.params.id);
-    const result = await PackageService.deletePackageByMember(userId, packageId);
+    const result = await PackageService.deletePackageByMember(
+      userId,
+      packageId
+    );
     return createResponse(res, 200, "Package Deleted", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -733,7 +841,7 @@ export const getAllFeedbacks = async (req: Request, res: Response) => {
     const result = await PackageService.getAllFeedbacks(userId);
     return createResponse(res, 200, "Get FeedBacks Successfully", result);
   } catch (error: any) {
-    return createErrorResponse(res, 404, (error as Error).message);
+    return createErrorResponse(res, 500, (error as Error).message);
   }
 };
 
@@ -752,38 +860,71 @@ export const getAllFeedbacks = async (req: Request, res: Response) => {
  *   4. หากพบให้จัดรูปแบบ Response และส่งกลับให้ Client
  */
 
-export async function getPackageHistoryDetailAdmin(req: Request, res: Response) {
+export async function getPackageHistoryDetailAdmin(
+  req: Request,
+  res: Response
+) {
   try {
     const packageId = Number(req.params.packageId);
     if (!packageId) return createErrorResponse(res, 400, "Invalid packageId");
 
     const result = await PackageService.getPackageHistoryDetailById(packageId);
-    if (!result) return createErrorResponse(res, 404, "Package history not found");
+    if (!result)
+      return createErrorResponse(res, 404, "Package history not found");
 
-    return createResponse(res, 200, "Get Package History Detail Success", result);
+    return createResponse(
+      res,
+      200,
+      "Get Package History Detail Success",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 }
+
 /*
- * คำอธิบาย : (Admin) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * DTO : getHistoriesPackageByAdminDto
+ * วัตถุประสงค์ : สำหรับตรวจสอบความถูกต้องของ params (id) และ query (page, limit)
+ * Input :
+ *   - query (page, limit)
+ * Output : รายการข้อมูลแพ็กเกจที่สิ้นสุดแล้วของ Admin พร้อม pagination
+ */
+export const getHistoriesPackageByAdminDto = {
+  params: IdParamDto,
+  query: PackageDto.HistoryPackageQueryDto,
+} satisfies commonDto;
+
+/*
+ * คำอธิบาย : ฟังก์ชัน Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
  * Input: req.user.id, req.query.{page, limit}
  * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
  * 400 - Error message
  */
-export async function getHistoriesPackageAdmin(req: Request, res: Response) {
+export const getHistoriesPackageAdmin: TypedHandlerFromDto<
+  typeof getHistoriesPackageByAdminDto
+> = async (req, res) => {
   try {
-    const userId = Number((req as any).user?.id);
+    const userId = Number(req.user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
-    const result = await PackageService.getHistoriesPackageByAdmin(userId, page, limit);
+    const result = await PackageService.getHistoriesPackageByAdmin(
+      userId,
+      page,
+      limit
+    );
 
-    return createResponse(res, 200, "Get History Packages Success", result);
+    return createResponse(
+      res,
+      200,
+      "Get History Packages Successfully",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
-}
+};
 
 /*
  * คำอธิบาย : (Member) Handler สำหรับดึงรายละเอียดแพ็กเกจที่ตนเองมีสิทธิ์ดู
@@ -819,39 +960,48 @@ export async function getPackageDetailByMember(req: Request, res: Response) {
       );
     }
 
-    return createResponse(
-      res,
-      200,
-      "Get Package Detail Success",
-      result
-    );
+    return createResponse(res, 200, "Get Package Detail Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 }
+
+/*
+ * DTO : getHistoriesPackageByMemberDto
+ * วัตถุประสงค์ : สำหรับตรวจสอบความถูกต้องของ params (id) และ query (page, limit)
+ * Input :
+ *   - query (page, limit)
+ * Output : รายการข้อมูลแพ็กเกจที่สิ้นสุดแล้วของ Member พร้อม pagination
+ */
 export const getHistoriesPackageByMemberDto = {
   params: IdParamDto,
-  query: MembersQueryDto,
+  query: PackageDto.HistoryPackageQueryDto,
 } satisfies commonDto;
 
 /*
- * คำอธิบาย : (Member) Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
+ * คำอธิบาย : ฟังก์ชัน Handler สำหรับดึงรายการ "ประวัติแพ็กเกจที่สิ้นสุดแล้ว"
  * Input: req.user.id, req.query.{page, limit}
- * Output: 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
+ * Output:
+ * 200 - ข้อมูลแพ็กเกจที่สิ้นสุดแล้ว (พร้อม Pagination)
  * 400 - Error message
  */
 export const getHistoriesPackageByMember: TypedHandlerFromDto<
   typeof getHistoriesPackageByMemberDto
 > = async (req, res) => {
   try {
-    const page = Number((req.query as any).page) || 1;
-    const limit = Number((req.query as any).limit) || 10;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
     const result = await PackageService.getHistoriesPackageByMember(
       Number(req.user?.id),
       page,
       limit
     );
-    return createResponse(res, 200, "Get History Packages Success", result);
+    return createResponse(
+      res,
+      200,
+      "Get History Packages successfully",
+      result
+    );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -864,18 +1014,9 @@ export const getHistoriesPackageByMember: TypedHandlerFromDto<
  * Output : หากเรียกใช้งานสำเร็จ ระบบจะส่งรายการแพ็กเกจ Draft กลับไป
  */
 export const getDraftPackagesDto = {} satisfies commonDto;
-
-/**
- * Controller : getDraftPackages
- * Role Access : Admin, Member
- * Description : สำหรับดึงรายการแพ็กเกจที่อยู่ในสถานะ Draft
- * Input : รหัสผู้ใช้งานจาก token (req.user.id)
- * Output : ดึงข้อมูลสำเร็จ (Response 200), กรณีเกิดข้อผิดพลาด (Response 400)
- */
-export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> = async (
-  req,
-  res
-) => {
+export const getDraftPackages: TypedHandlerFromDto<
+  typeof getDraftPackagesDto
+> = async (req, res) => {
   try {
     const myId = req.user?.id;
     const result = await PackageService.getDraftPackages(Number(myId));
@@ -897,7 +1038,10 @@ export const getDraftPackages: TypedHandlerFromDto<typeof getDraftPackagesDto> =
  * Input : รหัสผู้ใช้งานจาก token (req.user.id), รหัสแพ็กเกจจากพารามิเตอร์ (req.params.id)
  * Output : ลบแพ็กเกจสำเร็จ (Response 200), กรณีไม่มีสิทธิ์เข้าถึง (Response 401), กรณีเกิดข้อผิดพลาด (Response 400)
  */
-export async function deleteDraftPackageController(req: Request, res: Response) {
+export async function deleteDraftPackageController(
+  req: Request,
+  res: Response
+) {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -915,7 +1059,6 @@ export async function deleteDraftPackageController(req: Request, res: Response) 
       success: true,
       message: result.message,
     });
-
   } catch (error: any) {
     res.status(400).json({
       success: false,
@@ -992,6 +1135,86 @@ export const getPackageByIdTourist: TypedHandlerFromDto<
     const packageId = Number(req.params.packageId);
     const result = await PackageService.getPackageDetailByTourist(packageId);
     return createResponse(res, 200, "Get Package Detail Success", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/**
+ * DTO: getParticipantsInPackageDto
+ * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (packageId) และ query (page, limit, searchName)
+ * เมื่อนักท่องเที่ยวดึงรายการผู้เข้าร่วมในแพ็กเกจ
+ * Input: params.packageId, query.page, query.limit, query.searchName
+ * Output: (Passed to handler)
+ */
+export const getParticipantsInPackageDto = {
+  params: PackageDuplicateParamDto, // ใช้ DTO ที่มี field 'packageId' ตรงกับ Route param
+  query: ParticipantsQueryDto,
+} satisfies commonDto;
+/**
+ * คำอธิบาย : (Admin,Member) Handler สำหรับดึงรายการผู้เข้าร่วมในแพ็กเกจ
+ * Input: req.params.packageId - รหัสของแพ็กเกจ, req.query.page - หน้าที่, req.query.limit - จำนวนรายการต่อหน้า, req.query.searchName - ค้นหาตามชื่อ
+ * Output:
+ * - 200 Get Participants In Package Success พร้อมรายการผู้เข้าร่วม
+ * - 400 หากเกิดข้อผิดพลาด
+ */
+export const getParticipantsInPackage: TypedHandlerFromDto<
+  typeof getParticipantsInPackageDto
+> = async (req, res) => {
+  try {
+    const packageId = Number(req.params.packageId);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const searchName = req.query.searchName;
+    if (!req.user) {
+      return createErrorResponse(res, 401, "กรุณาเข้าสู่ระบบ");
+    }
+    const result = await PackageService.getParticipantsInPackage(
+      packageId,
+      req.user.id,
+      page,
+      limit,
+      searchName
+    );
+    return createResponse(
+      res,
+      200,
+      "ดึงรายการผู้เข้าร่วมแพ็กเกจสำเร็จ",
+      result
+    );
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+/**
+ * DTO: updateParticipantStatusDto
+ * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (bookingHistoryId)
+ * เมื่อผู้ใช้ต้องการอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
+ * Input: params.bookingHistoryId, body.isParticipate
+ * Output: (Passed to handler)
+ */
+export const updateParticipantStatusDto = {
+  params: BookingHistoryIdParamDto,
+  body: UpdateParticipantStatusBodyDto,
+} satisfies commonDto;
+/**
+ * คำอธิบาย : (Admin,Member) Handler สำหรับอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
+ * Input: req.user.id, req.params.bookingHistoryId
+ * Output: 200 - ข้อความยืนยันการอัปเดตสถานะผู้เข้าร่วมแพ็กเกจ
+ * 400 - Error message
+ */
+export const updateParticipantStatus: TypedHandlerFromDto<
+  typeof updateParticipantStatusDto
+> = async (req, res) => {
+  try {
+    if (!req.user) {
+      return createErrorResponse(res, 401, "กรุณาเข้าสู่ระบบ");
+    }
+    const result = await PackageService.updateParticipateStatus(
+      Number(req.params.bookingHistoryId),
+      req.user.id,
+      req.body.isParticipate!
+    );
+    return createResponse(res, 200, "สถานะการเข้าร่วมแพ็กเกจถูกอัปเดต", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

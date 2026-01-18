@@ -38,6 +38,12 @@ export class GetSuperAdminDashboardDto extends PaginationDto {
   @IsString({ message: "search ต้องเป็น string" })
   search?: string;
 }
+/**
+ * DTO: GetAdminDashboardDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อเรียกใช้งาน Dashboard ของ Admin
+ * Input: query parameters (dateStart, dateEnd, page, limit, groupBy, province, region, search)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class GetAdminDashboardDto extends PaginationDto {
   @IsString({ message: "dateStart ต้องเป็น string" })
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
@@ -94,4 +100,21 @@ export class GetMemberDashboardDto extends PaginationDto {
   @IsOptional()
   @IsString({ each: true, message: "packageDates ต้องเป็น array ของ string" })
   packageDates?: string[];
+}
+/**
+ * DTO: GetTouristDashboardDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อเรียกใช้งาน Dashboard ของ Tourist
+ * Input: query parameters (bookingPeriodType, bookingDates, revenuePeriodType, revenueDates, packagePeriodType, packageDates)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
+export class GetTouristDashboardDto extends PaginationDto {
+  @IsOptional()
+  @IsEnum(["weekly", "monthly", "yearly"], {
+    message: "bookingPeriodType ต้องเป็น weekly, monthly หรือ yearly",
+  })
+  bookingPeriodType?: "weekly" | "monthly" | "yearly";
+
+  @IsOptional()
+  @IsString({ each: true, message: "bookingDates ต้องเป็น array ของ string" })
+  bookingDates?: string[];
 }
