@@ -444,7 +444,7 @@ model BookingHistory {
   touristId        Int            @map("bh_tourist_id")
   packageId        Int?           @map("bh_package_id")
   touristBankId    Int?           @map("bh_tourist_bank_account_id")
-  bookingAt        DateTime       @map("bh_booking_at") @db.Timestamp(0)
+  bookingAt        DateTime       @default(now()) @map("bh_booking_at") @db.DateTime(0)
   cancelAt         DateTime?      @map("bh_cancel_at") @db.Timestamp(0)
   refundAt         DateTime?      @map("bh_refund_at") @db.Timestamp(0)
   status           BookingStatus? @map("bh_status")
