@@ -19,15 +19,17 @@ import {
 
 import { PaginationDto } from "../pagination-dto.js";
 
-/**
- * Query DTO สำหรับค้นหาแพ็กเกจและชุมชน
- * - page, limit มาจาก PaginationDto
- * - search: คำค้นหา (optional, แต่ต้องมี search หรือ tag อย่างน้อยหนึ่งอย่าง)
- * - tag: ชื่อ tag ที่ต้องการค้นหา (optional, สามารถระบุหลาย tag ได้)
- * - tags: ชื่อ tag แบบ comma-separated (optional, เช่น "tag1,tag2")
- * - priceMin: ราคาขั้นต่ำ (optional)
- * - priceMax: ราคาสูงสุด (optional)
- * - sort: การเรียงลำดับผลลัพธ์ (optional, ค่าที่อนุญาต: latest, price-low, price-high, popular)
+/*
+ * ชนิดข้อมูล : SearchQueryDto
+ * คำอธิบาย : Query DTO สำหรับค้นหาแพ็กเกจและชุมชน (สืบทอด page, limit จาก PaginationDto)
+ * Input :
+ *   - search (string | undefined) - คำค้นหา (optional)
+ *   - tag (string[] | undefined) - รายชื่อ tag (optional, รองรับหลายค่า)
+ *   - tags (string[] | undefined) - รายชื่อ tag จาก comma-separated (optional)
+ *   - priceMin (number | undefined) - ราคาขั้นต่ำ (optional)
+ *   - priceMax (number | undefined) - ราคาสูงสุด (optional)
+ *   - sort ("latest" | "price-low" | "price-high" | "popular" | undefined) - การเรียงลำดับ (optional)
+ * Output : SearchQueryDto
  */
 export class SearchQueryDto extends PaginationDto {
   @Expose()

@@ -572,11 +572,7 @@ export const createTouristBookingDto = {
 /*
  * ฟังก์ชัน : createTouristBooking
  * คำอธิบาย : Handler สำหรับสร้าง Booking History โดย Tourist
- * รองรับ:
- *   - สร้างการจองใหม่โดยระบุแพ็กเกจและจำนวนผู้เข้าร่วม
- *   - อัปโหลดหลักฐานการโอนเงิน (optional)
- *   - ระบุบัญชีธนาคาร (optional)
- * Input : 
+ * Input :
  *   - req.params.bookingId - รหัสการจอง (reference)
  *   - req.body.packageId - รหัสแพ็กเกจ
  *   - req.body.totalParticipant - จำนวนผู้เข้าร่วม
@@ -621,11 +617,7 @@ export const createTouristBooking: TypedHandlerFromDto<
 /*
  * ฟังก์ชัน : uploadPaymentProof
  * คำอธิบาย : Handler สำหรับอัปโหลดหลักฐานการชำระเงิน
- * รองรับ:
- *   - อัปโหลดไฟล์หลักฐานการชำระเงิน (รูปภาพ: jpg, jpeg, png หรือ PDF)
- *   - ไฟล์จะถูกบันทึกในโฟลเดอร์ uploads/
- *   - ไฟล์รูปภาพจะถูกบีบอัดอัตโนมัติ
- * Input : 
+ * Input :
  *   - req.file - ไฟล์ที่อัปโหลด (จาก multer middleware)
  *   - req.user.id - รหัสผู้ใช้ (Tourist) จาก authentication middleware
  * Output :
