@@ -13,16 +13,16 @@ const packageRoutes = Router();
  * Path : /member/package
  */
 packageRoutes.post(
-    "/member/package",
-    authMiddleware,
-    allowRoles("member"),
-    upload.fields([
-        { name: "cover", maxCount: 1 },
-        { name: "gallery", maxCount: 5 },
-        { name: "video", maxCount: 5 },
-    ]),
-    // validateDto(createPackageDto),
-    PackageController.createPackageMember
+  "/member/package",
+  authMiddleware,
+  allowRoles("member"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
+  // validateDto(createPackageDto),
+  PackageController.createPackageMember
 );
 
 /*
@@ -31,10 +31,10 @@ packageRoutes.post(
  * Path : /member/packages
  */
 packageRoutes.get(
-    "/member/packages",
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.listPackagesMember
+  "/member/packages",
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.listPackagesMember
 );
 
 /*
@@ -43,16 +43,16 @@ packageRoutes.get(
  * Path : /member/package/:id
  */
 packageRoutes.put(
-    "/member/package/:id",
-    authMiddleware,
-    allowRoles("member"),
-    upload.fields([
-        { name: "cover", maxCount: 1 },
-        { name: "gallery", maxCount: 5 },
-        { name: "video", maxCount: 5 },
-    ]),
-    // validateDto(editPackageDto),
-    PackageController.editPackageMember
+  "/member/package/:id",
+  authMiddleware,
+  allowRoles("member"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
+  // validateDto(editPackageDto),
+  PackageController.editPackageMember
 );
 
 /*
@@ -61,10 +61,10 @@ packageRoutes.put(
  * Path : /member/package/:id
  */
 packageRoutes.patch(
-    "/member/package/:id",
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.deletePackageMember
+  "/member/package/:id",
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.deletePackageMember
 );
 
 /**
@@ -113,15 +113,15 @@ packageRoutes.patch(
  * Path : /admin/package
  */
 packageRoutes.post(
-    "/admin/package",
-    authMiddleware,
-    allowRoles("admin"),
-    upload.fields([
-        { name: "cover", maxCount: 1 },
-        { name: "gallery", maxCount: 5 },
-        { name: "video", maxCount: 5 },
-    ]),
-    PackageController.createPackageAdmin
+  "/admin/package",
+  authMiddleware,
+  allowRoles("admin"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
+  PackageController.createPackageAdmin
 );
 
 /*
@@ -130,11 +130,11 @@ packageRoutes.post(
  * Path : /admin/package/history/:packageId/duplicate
  */
 packageRoutes.post(
-    "/admin/package/history/:packageId/duplicate",
-    authMiddleware,
-    allowRoles("admin"),
-    validateDto(PackageController.duplicatePackageHistoryDto),
-    PackageController.duplicatePackageHistoryAdmin
+  "/admin/package/history/:packageId/duplicate",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(PackageController.duplicatePackageHistoryDto),
+  PackageController.duplicatePackageHistoryAdmin
 );
 
 /**
@@ -144,7 +144,7 @@ packageRoutes.post(
  *     tags: [Packages - Admin]
  *     summary: ดึงรายการแพ็กเกจ (เฉพาะ Admin)
  *     description: >
- *       คืนรายการแพ็กเกจพร้อมข้อมูล Pagination  
+ *       คืนรายการแพ็กเกจพร้อมข้อมูล Pagination
  *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์ `admin`.
  *     security:
  *       - bearerAuth: []
@@ -215,10 +215,10 @@ packageRoutes.post(
  * Path : /admin/packages
  */
 packageRoutes.get(
-    "/admin/packages",
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.listPackagesAdmin
+  "/admin/packages",
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.listPackagesAdmin
 );
 
 /**
@@ -261,22 +261,21 @@ packageRoutes.get(
  *         description: ผิดพลาด (createErrorResponse)
  */
 
-
 /*
  * คำอธิบาย : (Admin) Route สำหรับแก้ไขข้อมูลแพ็กเกจ
  * Method : PUT
  * Path : /admin/package/:id
  */
 packageRoutes.put(
-    "/admin/package/:id",
-    authMiddleware,
-    allowRoles("admin"),
-    upload.fields([
-        { name: "cover", maxCount: 1 },
-        { name: "gallery", maxCount: 5 },
-        { name: "video", maxCount: 5 }
-    ]),
-    PackageController.editPackageAdmin
+  "/admin/package/:id",
+  authMiddleware,
+  allowRoles("admin"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
+  PackageController.editPackageAdmin
 );
 
 /**
@@ -313,10 +312,10 @@ packageRoutes.put(
  * Path : /admin/package/:id
  */
 packageRoutes.patch(
-    "/admin/package/:id",
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.deletePackageAdmin
+  "/admin/package/:id",
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.deletePackageAdmin
 );
 
 /**
@@ -364,11 +363,11 @@ packageRoutes.patch(
  * Path : /super/package
  */
 packageRoutes.post(
-    "/super/package",
-    authMiddleware,
-    allowRoles("superadmin"),
-    validateDto(PackageController.createPackageDto),
-    PackageController.createPackageSuperAdmin
+  "/super/package",
+  authMiddleware,
+  allowRoles("superadmin"),
+  validateDto(PackageController.createPackageDto),
+  PackageController.createPackageSuperAdmin
 );
 
 /**
@@ -378,7 +377,7 @@ packageRoutes.post(
  *     tags: [Packages - SuperAdmin]
  *     summary: ดึงรายการแพ็กเกจทั้งหมด (เฉพาะ SuperAdmin)
  *     description: >
- *       คืนรายการแพ็กเกจทั้งหมดพร้อมข้อมูล Pagination  
+ *       คืนรายการแพ็กเกจทั้งหมดพร้อมข้อมูล Pagination
  *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์ `superadmin`.
  *     security:
  *       - bearerAuth: []
@@ -460,16 +459,16 @@ packageRoutes.post(
  * Path : /super/packages
  */
 packageRoutes.get(
-    "/super/packages",
-    authMiddleware,
-    allowRoles("superadmin"),
-    PackageController.listPackagesSuperAdmin
+  "/super/packages",
+  authMiddleware,
+  allowRoles("superadmin"),
+  PackageController.listPackagesSuperAdmin
 );
 packageRoutes.get(
-    "/:id",
-    authMiddleware,
-    allowRoles("superadmin", "admin", "member", "tourist"),
-    PackageController.getPackageById
+  "/:id",
+  authMiddleware,
+  allowRoles("superadmin", "admin", "member", "tourist"),
+  PackageController.getPackageById
 );
 
 /**
@@ -479,7 +478,7 @@ packageRoutes.get(
  *     tags: [Packages - SuperAdmin]
  *     summary: แก้ไขแพ็กเกจตาม ID (รองรับอัปโหลดรูป) (เฉพาะ SuperAdmin)
  *     description: >
- *       รับ `multipart/form-data` โดยส่ง **data** เป็น JSON string และไฟล์รูป  
+ *       รับ `multipart/form-data` โดยส่ง **data** เป็น JSON string และไฟล์รูป
  *       ฟิลด์ไฟล์: `cover` (สูงสุด 1), `gallery` (สูงสุด 5)
  *     security:
  *       - bearerAuth: []
@@ -531,12 +530,16 @@ packageRoutes.get(
  * Path : /super/package/:id
  */
 packageRoutes.put(
-    "/super/package/:id",
-    authMiddleware,
-    allowRoles("superadmin"),
-    upload.fields([{ name: "cover", maxCount: 1 }, { name: "gallery", maxCount: 5 }, { name: "video", maxCount: 5 },]),
-    // validateDto(editPackageDto),
-    PackageController.editPackageSuperAdmin
+  "/super/package/:id",
+  authMiddleware,
+  allowRoles("superadmin"),
+  upload.fields([
+    { name: "cover", maxCount: 1 },
+    { name: "gallery", maxCount: 5 },
+    { name: "video", maxCount: 5 },
+  ]),
+  // validateDto(editPackageDto),
+  PackageController.editPackageSuperAdmin
 );
 
 /**
@@ -573,10 +576,10 @@ packageRoutes.put(
  * Path : /super/package/:id
  */
 packageRoutes.patch(
-    "/super/package/:id",
-    authMiddleware,
-    allowRoles("superadmin"),
-    PackageController.deletePackageSuperAdmin
+  "/super/package/:id",
+  authMiddleware,
+  allowRoles("superadmin"),
+  PackageController.deletePackageSuperAdmin
 );
 
 /*
@@ -587,22 +590,22 @@ packageRoutes.patch(
  * ต้องวาง route นี้ก่อน route ที่ต้อง auth เพื่อให้ตรวจสอบ query parameter ก่อน
  */
 packageRoutes.get(
-    "/tourist/packages",
-    (req, res, next) => {
-        // ถ้ามี query parameter sort=newest ให้ใช้ public endpoint สำหรับแพ็กเกจใหม่
-        if (req.query.sort === "newest") {
-            return PackageController.getNewestPackages(req, res);
-        }
-        // ถ้ามี query parameter sort=popular ให้ใช้ public endpoint สำหรับแพ็กเกจยอดนิยม
-        if (req.query.sort === "popular") {
-            return PackageController.getPopularPackages(req, res);
-        }
-        // ถ้าไม่มี sort parameter ให้ไปต่อที่ middleware ถัดไป (auth)
-        next();
-    },
-    authMiddleware,
-    allowRoles("tourist"),
-    PackageController.listPackagesTourist
+  "/tourist/packages",
+  (req, res, next) => {
+    // ถ้ามี query parameter sort=newest ให้ใช้ public endpoint สำหรับแพ็กเกจใหม่
+    if (req.query.sort === "newest") {
+      return PackageController.getNewestPackages(req, res);
+    }
+    // ถ้ามี query parameter sort=popular ให้ใช้ public endpoint สำหรับแพ็กเกจยอดนิยม
+    if (req.query.sort === "popular") {
+      return PackageController.getPopularPackages(req, res);
+    }
+    // ถ้าไม่มี sort parameter ให้ไปต่อที่ middleware ถัดไป (auth)
+    next();
+  },
+  authMiddleware,
+  allowRoles("tourist"),
+  PackageController.listPackagesTourist
 );
 
 /*
@@ -611,10 +614,10 @@ packageRoutes.get(
  * Path : /member/package/:id
  */
 packageRoutes.get(
-    "/member/package/:id",
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.getPackageDetail
+  "/member/package/:id",
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.getPackageDetail
 );
 
 /*
@@ -623,10 +626,10 @@ packageRoutes.get(
  * Path : /admin/package/:id
  */
 packageRoutes.get(
-    "/admin/package/:id",
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.getPackageDetail
+  "/admin/package/:id",
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.getPackageDetail
 );
 
 /**
@@ -688,10 +691,10 @@ packageRoutes.get(
  * Path : /super/package/:id
  */
 packageRoutes.get(
-    "/super/package/:id",
-    authMiddleware,
-    allowRoles("superadmin"),
-    PackageController.getPackageDetail
+  "/super/package/:id",
+  authMiddleware,
+  allowRoles("superadmin"),
+  PackageController.getPackageDetail
 );
 
 /**
@@ -701,7 +704,7 @@ packageRoutes.get(
  *     tags: [Homestays - SuperAdmin]
  *     summary: ดึงรายการที่พักที่อยู่ในชุมชนเดียวกับ "แพ็กเกจ" ที่ระบุ (เฉพาะ SuperAdmin)
  *     description: >
- *       คืนรายการ **Homestays** ตามชุมชนของแพ็กเกจ `id` ที่ระบุ  
+ *       คืนรายการ **Homestays** ตามชุมชนของแพ็กเกจ `id` ที่ระบุ
  *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์ `superadmin`.
  *     security:
  *       - bearerAuth: []
@@ -791,11 +794,11 @@ packageRoutes.get(
  * Path : /super/homestay-select/:id
  */
 packageRoutes.get(
-    "/super/homestay-select/:id",
-    validateDto(PackageController.listHomestaysByPackageDto),
-    authMiddleware,
-    allowRoles("superadmin"),
-    PackageController.listHomestaysByPackage
+  "/super/homestay-select/:id",
+  validateDto(PackageController.listHomestaysByPackageDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  PackageController.listHomestaysByPackage
 );
 
 /**
@@ -805,7 +808,7 @@ packageRoutes.get(
  *     tags: [Homestays - SuperAdmin]
  *     summary: ดึงรายการที่พักทั้งหมด (เฉพาะ SuperAdmin)
  *     description: |
- *       คืนรายการ **Homestay** ทุกแห่งในระบบ พร้อมข้อมูลชุมชนและรูปหน้าปก (ถ้ามี)  
+ *       คืนรายการ **Homestay** ทุกแห่งในระบบ พร้อมข้อมูลชุมชนและรูปหน้าปก (ถ้ามี)
  *       **ต้องส่ง JWT Bearer token** และต้องมีสิทธิ์ `superadmin`.
  *     security:
  *       - bearerAuth: []
@@ -914,19 +917,19 @@ packageRoutes.get(
  * Path : /super/list-homestays
  */
 packageRoutes.get(
-    "/super/list-homestays",
-    validateDto(PackageController.listCommunityHomestaysDto),
-    authMiddleware,
-    allowRoles("superadmin"),
-    PackageController.listAllHomestaysSuperAdmin
+  "/super/list-homestays",
+  validateDto(PackageController.listCommunityHomestaysDto),
+  authMiddleware,
+  allowRoles("superadmin"),
+  PackageController.listAllHomestaysSuperAdmin
 );
 
 packageRoutes.get(
-    "/admin/list-homestays",
-    validateDto(PackageController.listCommunityHomestaysDto),
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.listCommunityHomestays
+  "/admin/list-homestays",
+  validateDto(PackageController.listCommunityHomestaysDto),
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.listCommunityHomestays
 );
 
 /*
@@ -935,11 +938,11 @@ packageRoutes.get(
  * Path : /super/community/:communityId/members
  */
 packageRoutes.get(
-    "/super/community/:communityId/members",
-    validateDto(PackageController.getCommunityMembersDto),
-    authMiddleware,
-    allowRoles("superadmin", "admin"),
-    PackageController.getCommunityMembers
+  "/super/community/:communityId/members",
+  validateDto(PackageController.getCommunityMembersDto),
+  authMiddleware,
+  allowRoles("superadmin", "admin"),
+  PackageController.getCommunityMembers
 );
 
 /*
@@ -948,11 +951,11 @@ packageRoutes.get(
  * Path : /member/list-homestays
  */
 packageRoutes.get(
-    "/member/list-homestays",
-    validateDto(PackageController.listCommunityHomestaysDto),
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.listCommunityHomestays
+  "/member/list-homestays",
+  validateDto(PackageController.listCommunityHomestaysDto),
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.listCommunityHomestays
 );
 
 /*
@@ -963,10 +966,10 @@ packageRoutes.get(
  * Controller : getAllFeedbacks
  */
 packageRoutes.get(
-    "/admin/package/feedbacks/all",
-    authMiddleware,
-    allowRoles("admin", "member"),
-    PackageController.getAllFeedbacks
+  "/admin/package/feedbacks/all",
+  authMiddleware,
+  allowRoles("admin", "member"),
+  PackageController.getAllFeedbacks
 );
 
 /**
@@ -1067,10 +1070,10 @@ packageRoutes.get(
  * Path : /api/admin/package/history/:packageId
  */
 packageRoutes.get(
-    "/admin/package/history/:packageId",
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.getPackageHistoryDetailAdmin
+  "/admin/package/history/:packageId",
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.getPackageHistoryDetailAdmin
 );
 
 /*
@@ -1082,7 +1085,7 @@ packageRoutes.get(
  *   get:
  *     summary: ดึงรายการประวัติแพ็กเกจที่สิ้นสุดแล้ว (สำหรับผู้ดูแลระบบ)
  *     description: |
- *       ใช้สำหรับดึงข้อมูล "แพ็กเกจที่หมดอายุ" ทั้งหมดในชุมชนที่ผู้ดูแลระบบรับผิดชอบ  
+ *       ใช้สำหรับดึงข้อมูล "แพ็กเกจที่หมดอายุ" ทั้งหมดในชุมชนที่ผู้ดูแลระบบรับผิดชอบ
  *       ข้อมูลนี้จะรวมถึงสถานะการอนุมัติ, วันที่สิ้นสุด, และข้อมูลชุมชนที่เกี่ยวข้อง
  *     tags: [Admin - Package]
  *     security:
@@ -1184,11 +1187,11 @@ packageRoutes.get(
  *         description: Internal Server Error
  */
 packageRoutes.get(
-    "/admin/package/histories/all",
-    authMiddleware,
-    allowRoles("admin"),
-    validateDto(PackageController.getHistoriesPackageByAdminDto),
-    PackageController.getHistoriesPackageAdmin
+  "/admin/package/histories/all",
+  authMiddleware,
+  allowRoles("admin"),
+  validateDto(PackageController.getHistoriesPackageByAdminDto),
+  PackageController.getHistoriesPackageAdmin
 );
 
 /*
@@ -1302,18 +1305,18 @@ packageRoutes.get(
  *         description: Internal Server Error
  */
 packageRoutes.get(
-    "/member/packages/histories/all",
-    authMiddleware,
-    allowRoles("member"),
-    validateDto(PackageController.getHistoriesPackageByMemberDto),
-    PackageController.getHistoriesPackageByMember
+  "/member/packages/histories/all",
+  authMiddleware,
+  allowRoles("member"),
+  validateDto(PackageController.getHistoriesPackageByMemberDto),
+  PackageController.getHistoriesPackageByMember
 );
 
 packageRoutes.get(
-    "/member/package/:id",
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.getPackageDetailByMember
+  "/member/package/:id",
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.getPackageDetailByMember
 );
 /**
  * @swagger
@@ -1404,11 +1407,11 @@ packageRoutes.get(
  * Path : /admin/packages/draft
  */
 packageRoutes.get(
-    "/admin/packages/draft",
-    validateDto(PackageController.getDraftPackagesDto),
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.getDraftPackages
+  "/admin/packages/draft",
+  validateDto(PackageController.getDraftPackagesDto),
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.getDraftPackages
 );
 /**
  * @swagger
@@ -1500,11 +1503,11 @@ packageRoutes.get(
  * Path : /member/packages/draft
  */
 packageRoutes.get(
-    "/member/packages/draft",
-    validateDto(PackageController.getDraftPackagesDto),
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.getDraftPackages
+  "/member/packages/draft",
+  validateDto(PackageController.getDraftPackagesDto),
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.getDraftPackages
 );
 /**
  * @swagger
@@ -1559,9 +1562,9 @@ packageRoutes.get(
  * Path : /member/packages/draft/:id
  */
 packageRoutes.delete(
-    "/member/packages/draft/:id",
-    authMiddleware,
-    PackageController.deleteDraftPackageController
+  "/member/packages/draft/:id",
+  authMiddleware,
+  PackageController.deleteDraftPackageController
 );
 /**
  * @swagger
@@ -1616,9 +1619,9 @@ packageRoutes.delete(
  * Path : /admin/packages/draft/:id
  */
 packageRoutes.delete(
-    "/admin/packages/draft/:id",
-    authMiddleware,
-    PackageController.deleteDraftPackageController
+  "/admin/packages/draft/:id",
+  authMiddleware,
+  PackageController.deleteDraftPackageController
 );
 /**
  * @swagger
@@ -1714,11 +1717,11 @@ packageRoutes.delete(
  * Path : /member/packages/draft/bulk-delete
  */
 packageRoutes.patch(
-    "/member/packages/draft/bulk-delete",
-    validateDto(PackageController.BulkDeletePackagesDtoSchema),
-    authMiddleware,
-    allowRoles("member"),
-    PackageController.bulkDeleteDraftPackages
+  "/member/packages/draft/bulk-delete",
+  validateDto(PackageController.BulkDeletePackagesDtoSchema),
+  authMiddleware,
+  allowRoles("member"),
+  PackageController.bulkDeleteDraftPackages
 );
 /**
  * @swagger
@@ -1814,11 +1817,11 @@ packageRoutes.patch(
  * Path : /admin/packages/draft/bulk-delete
  */
 packageRoutes.patch(
-    "/admin/packages/draft/bulk-delete",
-    validateDto(PackageController.BulkDeletePackagesDtoSchema),
-    authMiddleware,
-    allowRoles("admin"),
-    PackageController.bulkDeleteDraftPackages
+  "/admin/packages/draft/bulk-delete",
+  validateDto(PackageController.BulkDeletePackagesDtoSchema),
+  authMiddleware,
+  allowRoles("admin"),
+  PackageController.bulkDeleteDraftPackages
 );
 
 /**
@@ -1882,9 +1885,328 @@ packageRoutes.patch(
  * คำอธิบาย : (Tourist) Route สำหรับดึงรายละเอียดแพ็กเกจ (สำหรับนักท่องเที่ยว)
  */
 packageRoutes.get(
-    "/tourist/package/:packageId",
-    validateDto(PackageController.getPackageByIdTouristDto),
-    PackageController.getPackageByIdTourist
+  "/tourist/package/:packageId",
+  validateDto(PackageController.getPackageByIdTouristDto),
+  PackageController.getPackageByIdTourist
+);
+
+/**
+ * @swagger
+ * /api/shared/participants/package/{packageId}:
+ *   get:
+ *     summary: Get participants in a package (Shared)
+ *     description: Retrieve a list of participants for a specific package. Accessible by Admin and Member.
+ *     tags:
+ *       - Package
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: packageId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the package
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: searchName
+ *         schema:
+ *           type: string
+ *         description: Search by participant name
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "ดึงรายการผู้เข้าร่วมแพ็กเกจสำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           bookingAt:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2026-01-05T23:48:42.000Z"
+ *                           tourist:
+ *                             type: object
+ *                             properties:
+ *                               fname:
+ *                                 type: string
+ *                                 example: "กมล"
+ *                               lname:
+ *                                 type: string
+ *                                 example: "ธนวรรธน์"
+ *                               phone:
+ *                                 type: string
+ *                                 example: "0835343773"
+ *                           package:
+ *                             type: object
+ *                             properties:
+ *                               dueDate:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: "2024-12-02T05:50:45.000Z"
+ *                           isParticipate:
+ *                             type: boolean
+ *                             example: false
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 1
+ *                         totalCount:
+ *                           type: integer
+ *                           example: 6
+ *                         limit:
+ *                           type: integer
+ *                           example: 10
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 400
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid Token"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ *       401:
+ *         description: กรุณาเข้าสู่ระบบ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 401
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Missing token"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ *       403:
+ *         description: Missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 403
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 500
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Internal Server Error"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ */
+/*
+ * คำอธิบาย : (Shared) Route สำหรับดึงรายการผู้เข้าร่วมในแพ็กเกจ
+ */
+packageRoutes.get(
+  "/shared/participants/package/:packageId",
+  validateDto(PackageController.getParticipantsInPackageDto),
+  authMiddleware,
+  allowRoles("admin", "member"),
+  PackageController.getParticipantsInPackage
+);
+/**
+ * @swagger
+ * /api/shared/participate/{bookingHistoryId}/status:
+ *   post:
+ *     summary: Update participant status (Shared)
+ *     description: Update the status of a participant's booking. Accessible by Admin and Member.
+ *     tags:
+ *       - Package
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingHistoryId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the booking history (participant)
+ *     responses:
+ *       200:
+ *         description: Status updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 error:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "สถานะการเข้าร่วมแพ็กเกจถูกอัปเดต"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: number
+ *                     isParticipate:
+ *                       type: boolean
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 400
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid Token"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ *       401:
+ *         description: Missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 401
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Missing token"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ *       403:
+ *         description: ไม่มีสิทธิ์เข้าถึง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 403
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Forbidden"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 500
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Internal Server Error"
+ *                 errorId:
+ *                   type: string
+ *                   example: "uuid-string"
+ */
+/*
+ * คำอธิบาย : (Shared) Route สำหรับอัปเดตสถานะผู้เข้าร่วม
+ */
+packageRoutes.post(
+  "/shared/participate/:bookingHistoryId/status",
+  validateDto(PackageController.updateParticipantStatusDto),
+  authMiddleware,
+  allowRoles("admin", "member"),
+  PackageController.updateParticipantStatus
 );
 
 export default packageRoutes;
