@@ -8,8 +8,13 @@ const VIDEO_EXT = new Set([".mp4"]); // จะเพิ่ม .mov/.m4v/.webm �
 
 async function compressOne(f: Express.Multer.File) {
     const ext = path.extname(f.originalname).toLowerCase();
-    if (IMAGE_EXT.has(ext)) await compressImage(f.path);
-    else if (VIDEO_EXT.has(ext)) await compressVideo(f.path);
+    try {
+        if (IMAGE_EXT.has(ext)) await compressImage(f.path);
+        else if (VIDEO_EXT.has(ext)) await compressVideo(f.path);
+    } catch (error) {
+        // การบีบอัดเป็น optional: ถ้าบีบอัดไม่สำเร็จให้ข้าม เพื่อไม่ให้การอัปโหลดล้ม
+        console.warn(`[compressUploadedFile] skip compress: ${f.path}`, error);
+    }
 }
 
 export async function compressUploaded(req: Request, _res: Response, next: NextFunction) {
