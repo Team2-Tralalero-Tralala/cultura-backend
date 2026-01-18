@@ -472,6 +472,7 @@ model BookingHistory {
   isParticipate    Boolean        @default(false) @map("bh_is_participate")
   totalParticipant Int            @map("bh_total_participant")
   rejectReason     String?        @map("bh_reject_reason") @db.VarChar(100)
+  refundReason     String?        @map("bh_refund_reason") @db.VarChar(100)
   transferSlip     String?        @map("bh_transfer_slip") @db.VarChar(256)
 
   // Relations
