@@ -201,11 +201,9 @@ export async function listPackagesSuperAdmin(req: Request, res: Response) {
     const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const result = await PackageService.getPackagesBySuperAdmin(
-      userId,
-      page,
-      limit
-    );
+    const status = req.query.status as string;
+    const approve = req.query.approve as string;
+    const result = await PackageService.getPackagesBySuperAdmin(userId, page, limit, { status, approve });
     return createResponse(res, 200, "Get Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -223,7 +221,9 @@ export async function listPackagesAdmin(req: Request, res: Response) {
     const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const result = await PackageService.getPackagesByAdmin(userId, page, limit);
+    const status = req.query.status as string;
+    const approve = req.query.approve as string;
+    const result = await PackageService.getPackagesByAdmin(userId, page, limit, { status, approve });
     return createResponse(res, 200, "Get Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -241,11 +241,9 @@ export async function listPackagesMember(req: Request, res: Response) {
     const userId = Number((req as any).user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const result = await PackageService.getPackagesByMember(
-      userId,
-      page,
-      limit
-    );
+    const status = req.query.status as string;
+    const approve = req.query.approve as string;
+    const result = await PackageService.getPackagesByMember(userId, page, limit, { status, approve });
     return createResponse(res, 200, "Get Packages Success", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
