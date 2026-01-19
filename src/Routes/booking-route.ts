@@ -400,4 +400,76 @@ refundRoutes.patch(
   allowRoles("member"),
   RefundController.rejectRefundByMember
 );
+
+/**
+ * @swagger
+ * /api/tourist/booking-history/{bookingId}:
+ *   get:
+ *     summary: ดึงรายละเอียดการจอง (Tourist)
+ *     description: |
+ *       ใช้สำหรับนักท่องเที่ยวในการดึงรายละเอียดการจองตามรหัสการจอง  
+ *       เช่น ชื่อแพ็กเกจทัวร์ รูปปก ข้อมูลที่จำเป็นสำหรับการแสดงผล  
+ *       หรือใช้ก่อนทำการรีวิวการท่องเที่ยว  
+ *       ต้องแนบ JWT Token และต้องเป็นสิทธิ์ **Tourist** เท่านั้น
+ *     tags:
+ *       - Tourist / Booking
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: รหัสการจอง
+ *     responses:
+ *       200:
+ *         description: สำเร็จ - คืนข้อมูลรายละเอียดการจอง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateResponseBase'
+ *       400:
+ *         description: คำขอไม่ถูกต้อง (Bad Request)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       401:
+ *         description: ไม่มีสิทธิ์เข้าถึง (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       403:
+ *         description: ไม่มีสิทธิ์ใช้งาน (Forbidden - Role ไม่ถูกต้อง)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       404:
+ *         description: ไม่พบข้อมูลการจอง (Not Found)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ *       500:
+ *         description: ข้อผิดพลาดภายในเซิร์ฟเวอร์
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CreateErrorResponse'
+ */
+
+/*
+ * เส้นทาง : GET /tourist/booking-history/:bookingId
+ * คำอธิบาย : ดึงรายละเอียดการจอง (ใช้แสดงในหน้าเขียน Feedback)
+ */
+refundRoutes.get(
+  "/tourist/booking-history/:bookingId",
+  authMiddleware,
+  allowRoles("tourist"),
+  RefundController.getBookingDetail
+);
 export default refundRoutes;

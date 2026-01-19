@@ -398,3 +398,36 @@ export async function createTouristBooking(
 
   return booking;
 }
+
+/*
+ * คำอธิบาย : ดึงรายละเอียดการจองสำหรับนักท่องเที่ยว (ใช้แสดงในหน้าเขียน Feedback)
+ * Input: bookingId (รหัสการจอง), touristId (รหัสผู้ใช้)
+ * Output : ข้อมูลการจอง พร้อมชื่อแพ็กเกจและรูปปก
+ */
+export const getBookingDetailForFeedback = async (bookingId: number, touristId: number) => {
+  const booking = await prisma.bookingHistory.findFirst({
+    where: {
+      id: bookingId,
+      touristId: touristId,
+    },
+    select: {
+      id: true,
+      package: {
+        select: {
+          name: true,
+          packageFile: {
+            where: { type: "COVER" },
+            take: 1,
+            select: { filePath: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!booking) {
+    throw new Error("ไม่พบข้อมูลการจอง หรือคุณไม่มีสิทธิ์เข้าถึง");
+  }
+
+  return booking;
+};

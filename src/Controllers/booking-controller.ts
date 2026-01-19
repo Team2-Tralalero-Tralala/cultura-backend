@@ -7,6 +7,7 @@ import {
 } from "~/Libs/Types/TypedHandler.js";
 import { createResponse, createErrorResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
+import { BookingIdParamDto } from "~/Services/booking/booking-dto.js";
 
 /*
  * คำอธิบาย : DTO สำหรับดึงรายการคำขอคืนเงินของชุมชนที่ admin ดูแล
@@ -210,6 +211,43 @@ export const rejectRefundByMember: TypedHandlerFromDto<
     );
 
     return createResponse(res, 200, "ปฏิเสธคำขอคืนเงินสำเร็จ", result);
+  } catch (error: any) {
+    return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/*
+ * DTO : getBookingDetailDto
+ * คำอธิบาย : กำหนด schema สำหรับตรวจสอบพารามิเตอร์ bookingId
+ * Input : params (BookingIdParamDto)
+ * Output : ข้อมูลพารามิเตอร์ที่ถูกต้อง
+ */
+export const getBookingDetailDto = {
+  params: BookingIdParamDto,
+} satisfies commonDto;
+
+/*
+ * ฟังก์ชัน : getBookingDetail
+ * คำอธิบาย : Handler สำหรับดึงรายละเอียดการจอง (ใช้แสดงในหน้าเขียน Feedback)
+ * Input : req.params.bookingId - รหัสการจอง
+ * Output : 
+ * - 200 OK พร้อมข้อมูลการจอง (ชื่อแพ็กเกจ, รูปปก)
+ * - 400 Bad Request หากไม่พบข้อมูลหรือไม่มีสิทธิ์
+ */
+export const getBookingDetail: TypedHandlerFromDto<typeof getBookingDetailDto> = async (
+  req,
+  res
+) => {
+  try {
+    const userId = Number(req.user!.id);
+    const bookingId = Number(req.params.bookingId);
+
+    const result = await RefundService.getBookingDetailForFeedback(
+      bookingId,
+      userId
+    );
+
+    return createResponse(res, 200, "Get booking detail successfully", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
