@@ -1007,7 +1007,7 @@ bookingRoutes.get(
  *   - สร้างการจองใหม่โดยระบุแพ็กเกจและจำนวนผู้เข้าร่วม
  *   - อัปโหลดหลักฐานการโอนเงิน (optional)
  *   - ระบุบัญชีธนาคาร (optional)
- * Input : 
+ * Input :
  *   - params.bookingId - รหัสการจอง (reference)
  *   - body.packageId - รหัสแพ็กเกจ
  *   - body.totalParticipant - จำนวนผู้เข้าร่วม
@@ -1106,7 +1106,7 @@ bookingRoutes.post(
  *   - อัปโหลดไฟล์หลักฐานการชำระเงิน (รูปภาพ: jpg, jpeg, png หรือ PDF)
  *   - ไฟล์จะถูกบันทึกในโฟลเดอร์ uploads/
  *   - ไฟล์รูปภาพจะถูกบีบอัดอัตโนมัติ
- * Input : 
+ * Input :
  *   - multipart/form-data with field "paymentProof"
  *   - Authorization header with JWT token
  * Output : ข้อมูล path ของไฟล์ที่อัปโหลด
@@ -1119,5 +1119,113 @@ bookingRoutes.post(
   compressUploadedFile,
   BookingHistoryController.uploadPaymentProof
 );
-
+/**
+ * @swagger
+ * /api/tourist/booking-history/{id}:
+ *   get:
+ *     summary: ดึงรายละเอียดการจอง (Tourist)
+ *     description: |
+ *       ใช้สำหรับดึงรายละเอียดรายการการจองโดยระบุรหัส (Booking ID)
+ *       **เฉพาะของผู้ใช้ Tourist ที่เป็นเจ้าของการจอง**
+ *     tags:
+ *       - Tourist / Booking History
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: รหัสการจอง (Booking ID)
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: ดึงรายละเอียดการจองสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Get booking detail successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     status:
+ *                       type: string
+ *                       example: "PENDING"
+ *                     bookingAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-02-14T10:00:00.000Z"
+ *                     package:
+ *                       type: object
+ *                       properties:
+ *                         name:
+ *                           type: string
+ *                           example: "แพ็กเกจท่องเที่ยวเชิงวัฒนธรรม"
+ *                         startDate:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-03-01T00:00:00.000Z"
+ *                         dueDate:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-02-28T00:00:00.000Z"
+ *                         price:
+ *                           type: number
+ *                           example: 1500
+ *                         capacity:
+ *                           type: integer
+ *                           example: 20
+ *                     tourist:
+ *                       type: object
+ *                       properties:
+ *                         fname:
+ *                           type: string
+ *                           example: "Somchai"
+ *                         lname:
+ *                           type: string
+ *                           example: "Jaidee"
+ *                         email:
+ *                           type: string
+ *                           example: "somchai@example.com"
+ *                         phone:
+ *                           type: string
+ *                           example: "0812345678"
+ *       400:
+ *         description: คำขอไม่ถูกต้อง หรือไม่พบข้อมูล
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 400
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Booking not found"
+ *       401:
+ *         description: ไม่พบ Token หรือ Token ไม่ถูกต้อง
+ *       403:
+ *         description: สิทธิ์ไม่เพียงพอ (เฉพาะ Tourist)
+ */
+bookingRoutes.get(
+  "/tourist/booking-history/:id",
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.getBookingDetailForTourist
+);
 export default bookingRoutes;

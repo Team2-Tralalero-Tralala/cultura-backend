@@ -2,18 +2,18 @@ import { IsNumberString, IsOptional, IsString } from "class-validator";
 import type { Request, Response } from "express";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
-    commonDto,
-    type TypedHandlerFromDto,
+  commonDto,
+  type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
-import * as BookingHistoryService from "~/Services/booking-history-service.js";
+import * as BookingHistoryService from "~/Services/booking-history/booking-history-service.js";
 import {
-    BookingIdParamDto,
-    CreateBookingBodyDto,
+  BookingIdParamDto,
+  CreateBookingBodyDto,
 } from "~/Services/booking/booking-dto.js";
 import * as TouristBookingService from "~/Services/booking/booking-service.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
-import * as bookingService from "../Services/booking-history-service.js";
-import { getHistoriesByRole } from "../Services/booking-history-service.js";
+import * as bookingService from "../Services/booking-history/booking-history-service.js";
+import { getHistoriesByRole } from "../Services/booking-history/booking-history-service.js";
 
 /* DTO : GetHistoriesByRoleQueryDto
  * วัตถุประสงค์ :
@@ -556,7 +556,7 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
 
 /*
  * คำอธิบาย : DTO สำหรับสร้าง Booking History
- * Input : 
+ * Input :
  *   - params.bookingId - รหัสการจอง (ใช้เป็น reference, อาจจะไม่ใช้ในการสร้างจริง)
  *   - body.packageId - รหัสแพ็กเกจที่ต้องการจอง
  *   - body.totalParticipant - จำนวนผู้เข้าร่วม
@@ -603,12 +603,7 @@ export const createTouristBooking: TypedHandlerFromDto<
       touristBankId
     );
 
-    return createResponse(
-      res,
-      201,
-      "สร้างข้อมูลการจองสำเร็จ",
-      booking
-    );
+    return createResponse(res, 201, "สร้างข้อมูลการจองสำเร็จ", booking);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -637,15 +632,10 @@ export const uploadPaymentProof = async (req: Request, res: Response) => {
     const filePath = req.file.path.replace(/\\/g, "/"); // แปลง backslash เป็น forward slash
     const fileName = req.file.filename;
 
-    return createResponse(
-      res,
-      200,
-      "อัปโหลดหลักฐานการชำระเงินสำเร็จ",
-      {
-        filePath,
-        fileName,
-      }
-    );
+    return createResponse(res, 200, "อัปโหลดหลักฐานการชำระเงินสำเร็จ", {
+      filePath,
+      fileName,
+    });
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

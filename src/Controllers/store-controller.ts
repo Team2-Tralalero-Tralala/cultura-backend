@@ -190,7 +190,7 @@ export const getAllStoreDto = {
  *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
  *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
  */
-export const getAllStore:  TypedHandlerFromDto<typeof getAllStoreDto> = async (
+export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
   req,
   res
 ) => {
@@ -198,7 +198,7 @@ export const getAllStore:  TypedHandlerFromDto<typeof getAllStoreDto> = async (
     const communityId = Number(req.params.communityId);
     const { page = 1, limit = 10 } = req.query;
     if (!req.user) {
-      return createErrorResponse(res, 401 , "User not authenticated");
+      return createErrorResponse(res, 401, "User not authenticated");
     }
     const result = await StoreService.getAllStore(
       req.user.role,
@@ -206,7 +206,12 @@ export const getAllStore:  TypedHandlerFromDto<typeof getAllStoreDto> = async (
       page,
       limit
     );
-    return createResponse(res, 200, "Get all stores in community Successfully", result);
+    return createResponse(
+      res,
+      200,
+      "Get all stores in community Successfully",
+      result
+    );
   } catch (error: any) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -280,10 +285,9 @@ export const getAllStoreForAdminDto = {
  *   - 200 : ดึงข้อมูลร้านค้าสำเร็จ
  *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
  */
-export const getAllStoreForAdmin: TypedHandlerFromDto<typeof getAllStoreForAdminDto> = async (
-  req, 
-  res
-) => {
+export const getAllStoreForAdmin: TypedHandlerFromDto<
+  typeof getAllStoreForAdminDto
+> = async (req, res) => {
   try {
     if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
@@ -292,7 +296,12 @@ export const getAllStoreForAdmin: TypedHandlerFromDto<typeof getAllStoreForAdmin
     const { page = 1, limit = 10 } = req.query;
 
     const result = await StoreService.getAllStoreForAdmin(userId, page, limit);
-    return createResponse(res, 200, "Get all stores for admin successfully", result);
+    return createResponse(
+      res,
+      200,
+      "Get all stores for admin successfully",
+      result
+    );
   } catch (error: any) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
@@ -424,9 +433,59 @@ export const getStoreWithOtherStoresInCommunity: TypedHandlerFromDto<
 
     const { page = 1, limit = 12 } = req.query;
 
-    const result = await StoreService.getStoreWithOtherStoresInCommunity(communityId, storeId, page, limit);
-    return createResponse(res, 200, "Get store detail with other stores successfully", result );
+    const result = await StoreService.getStoreWithOtherStoresInCommunity(
+      communityId,
+      storeId,
+      page,
+      limit
+    );
+    return createResponse(
+      res,
+      200,
+      "Get store detail with other stores successfully",
+      result
+    );
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
+  }
+};
+
+/**
+ * DTO : storeDto
+ * วัตถุประสงค์ : ใช้เป็น DTO สำหรับการเรียกดูข้อมูลรายละเอียดร้านค้า
+ * Input : ไม่มี (รับค่าพารามิเตอร์จาก URL)
+ * Output : ใช้สำหรับตรวจสอบโครงสร้างข้อมูลก่อนเรียก Controller
+ */
+export const storeDto = {} satisfies commonDto;
+
+/**
+ * คำอธิบาย : (Admin) Handler สำหรับดึงข้อมูลร้านค้าตาม ID
+ * Input : รหัสร้านค้าจาก URL path (req.params.id)
+ * Output : ดึงข้อมูลสำเร็จ (Response 200), กรณีไม่พบข้อมูลร้านค้า (Response 404), กรณีข้อมูลไม่ถูกต้องหรือเกิดข้อผิดพลาด (Response 400)
+ */
+export const getStoreByIdShared: TypedHandlerFromDto<typeof storeDto> = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params as { id?: string };
+    if (!id) {
+      return createErrorResponse(res, 400, "Missing store id in URL path");
+    }
+
+    const storeId = Number(id);
+    if (Number.isNaN(storeId)) {
+      return createErrorResponse(res, 400, "Invalid store id format");
+    }
+
+    const result = await StoreService.getStoreByIdShared(storeId);
+    if (!result) {
+      return createErrorResponse(res, 404, "Store not found");
+    }
+
+    return createResponse(res, 200, "Fetched store successfully", result);
+  } catch (error) {
+    console.error("Error in getStoreById:", error);
+    return createErrorResponse(res, 400, "Internal server error");
   }
 };
