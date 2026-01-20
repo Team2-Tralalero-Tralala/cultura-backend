@@ -8,6 +8,8 @@ import {
     type TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
+import { GetHomestayQuery } from "~/Services/homestay/homestay-dto.js";
+
 /*
  * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอน "สร้าง Homestay (เดี่ยว)" สำหรับ SuperAdmin
  * Input  : body (HomestayDto)
@@ -221,32 +223,53 @@ export class IdParamDto {
 
 /**
  * DTO: getHomestaysAllDto
- * วัตถุประสงค์:ใช้สำหรับดึงข้อมูลที่พัก (Homestay) ทั้งหมดภายในชุมชน โดยรองรับการแบ่งหน้า (Pagination)
- * Input:
- * - params: communityId
- * - query: page, limit
- * Output:
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบข้อมูลนำเข้า เมื่อต้องการดึงรายการที่พักทั้งหมดในชุมชน
+ * Input :
+ * - params : communityId (จาก IdParamDto)
+ * - query : page, limit, search (จาก GetHomestayQuery)
+ * Output :
  * - รายการข้อมูลที่พักทั้งหมดภายในชุมชน
  * - ข้อมูล Metadata สำหรับ Pagination
  */
-export const getHomestaysAllDto = { params: IdParamDto } satisfies commonDto;
+export const getHomestaysAllDto = { 
+    params: IdParamDto,
+    query: GetHomestayQuery,
+} satisfies commonDto;
 
-/*
- * คำอธิบาย : ดึงข้อมูล Homestay ทั้งหมดในชุมชน (ใช้ได้เฉพาะ superadmin เท่านั้น)
- * Input : req.user.id (จาก middleware auth), req.params.communityId และ req.query.page, req.query.limit
- * Output : รายการ Homestay ทั้งหมดพร้อม Pagination
+/**
+ * คำอธิบาย : Controller สำหรับจัดการคำขอดึงข้อมูลรายการที่พักทั้งหมดในชุมชน (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input :
+ * - req.user.id (number) : รหัสผู้ใช้งาน (ดึงจาก Token)
+ * - req.params.communityId (number) : รหัสชุมชน (ดึงจาก URL param)
+ * - req.query :
+ * - page (number) : เลขหน้าที่ต้องการ
+ * - limit (number) : จำนวนรายการต่อหน้า
+ * - search (string) : คำค้นหา
+ * Output :
+ * - Response 200 : สำเร็จ (ส่งคืนข้อมูลจาก Service)
+ * - Response 400 : ล้มเหลว (เกิด Error จากการตรวจสอบ หรือ Service)
  */
 export const getHomestaysAll: TypedHandlerFromDto<
-    typeof getHomestaysAllDto
+  typeof getHomestaysAllDto
 > = async (req, res) => {
-    try {
-        const userId = Number(req.user!.id);
-        const communityId = Number(req.params.communityId);
-        const result = await HomestayService.getHomestaysAll(userId, communityId);
-        return createResponse(res, 200, "get homestay successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+  try {
+    const userId = Number(req.user!.id);
+    const communityId = Number(req.params.communityId);
+    
+    const { page, limit, search } = req.query;
+
+    const result = await HomestayService.getHomestaysAll(
+        userId, 
+        communityId,
+        page,   
+        limit,  
+        search  
+    );
+    
+    return createResponse(res, 200, "get homestay successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
 
 
