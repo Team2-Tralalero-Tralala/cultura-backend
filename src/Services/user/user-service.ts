@@ -465,6 +465,7 @@ export async function getMemberAllByAdmin(
       username: true,
       email: true,
       status: true,
+      activityRole: true,
       role: { select: { name: true } },
       communityMembers: {
         where: { isDeleted: false },
