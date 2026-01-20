@@ -54,14 +54,13 @@ export const getByRole = async (req: Request, res: Response) => {
 export const getDetailBooking = async (req: Request, res: Response) => {
   try {
     const bookingId = Number(req.params.id);
-
     // ฟังก์ชัน getDetailBookingById จาก bookingService เพื่อดึงข้อมูลการจอง
     const detailBooking = await bookingService.getDetailBooking(bookingId);
     return createResponse(
       res,
       200,
       "Get booking detail successfully",
-      detailBooking
+      detailBooking,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);

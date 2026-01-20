@@ -820,3 +820,78 @@ bookingRoutes.get(
 );
 
 export default bookingRoutes;
+
+/**
+ * @swagger
+ * /api/member/booking-history/{id}:
+ *   get:
+ *     tags:
+ *       - Member / Booking
+ *     summary: ดึงรายละเอียดประวัติการจองของสมาชิก
+ *     description: |
+ *       ใช้สำหรับดึงข้อมูลรายละเอียดการจอง (Booking History) ตามรหัสการจอง  
+ *       เฉพาะผู้ใช้งานที่มีสิทธิ์ **member** และต้องผ่านการยืนยันตัวตนด้วย JWT
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: รหัสการจอง (Booking ID)
+ *         schema:
+ *           type: integer
+ *           example: 4
+ *     responses:
+ *       200:
+ *         description: ดึงรายละเอียดการจองสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Get booking detail successfully
+ *                 data:
+ *                   type: object
+ *                   description: ข้อมูลรายละเอียดการจองจากตาราง bookingHistory
+ *       400:
+ *         description: เกิดข้อผิดพลาด เช่น ID ไม่ถูกต้องหรือไม่พบข้อมูลการจอง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Booking not found
+ *       401:
+ *         description: ไม่ได้ยืนยันตัวตน (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ */
+
+/*
+ * path : GET "/member/booking-history/:id"
+ * คำอธิบาย : ดึงรายละเอียดการจองตาม Booking ID
+ * สิทธิ์ที่เข้าถึงได้ : member
+ */
+
+bookingRoutes.get(
+  "/member/booking-history/:id",
+  authMiddleware,
+  allowRoles("member"),
+  BookingHistoryController.getDetailBooking,
+);

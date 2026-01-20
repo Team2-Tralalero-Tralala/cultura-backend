@@ -34,7 +34,7 @@ export const getDetailBookingById = async (id: number) => {
 };
 
 /*
- * คำอธิบาย : ฟังก์ชันสำหรับสร้าง Booking History ใหม่
+ * คำอธิบาย : ฟังก์ชันสำหรับสร้าง Booking History 
  * Input  :
  *   - data: object {
  *       touristId: number (รหัสผู้จอง),
@@ -133,7 +133,6 @@ export const getHistoriesByRole = async (
 
 /**
  * ฟังก์ชัน: getDetailBookingById
- * ----------------------------------------
  * คำอธิบาย:
  *   ใช้สำหรับดึงข้อมูลรายละเอียดการจอง (bookingHistory) จากฐานข้อมูล
  *
@@ -157,8 +156,10 @@ export const getDetailBooking = async (id: number) => {
     throw new Error("Incorrect ID");
   }
 
-  const booking = await prisma.bookingHistory.findUnique({
-    where: { id: numberId, status: BookingStatus.PENDING },
+  const booking = await prisma.bookingHistory.findFirst({
+    where: {
+      id: id,
+    },
     include: {
       package: {
         select: {
