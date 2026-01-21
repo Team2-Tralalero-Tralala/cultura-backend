@@ -94,27 +94,31 @@ export const createBooking = async (data: any) => {
  */
 export const getHistoriesByRole = async (
   user: UserPayload,
-  page: number = 1,
-  limit: number = 10
+  page = 1,
+  limit = 10
 ) => {
   let where: any = {};
   if (user.role === "tourist") {
-    where = { touristId: user.id };
+    where.touristId = user.id;
   } else if (user.role === "member") {
-    where = { package: { overseerMemberId: user.id } };
+    where.package = { overseerMemberId: user.id };
   } else if (user.role === "admin") {
-    where = { package: { community: { adminId: user.id } } };
+    where.package = { community: { adminId: user.id } };
   }
 
   where.status = {
     in: ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"],
   };
+ const skip = (page - 1) * limit;
 
-  const data = await prisma.bookingHistory.findMany({
-    skip: (page - 1) * limit,
-    take: limit,
+  const totalCount = await prisma.bookingHistory.count({ where });
+  const histories = await prisma.bookingHistory.findMany({
     where,
+    skip,
+    take: limit,
+    orderBy: { bookingAt: "desc" },
     select: {
+      id: true,
       tourist: {
         select: { fname: true, lname: true },
       },
@@ -125,10 +129,17 @@ export const getHistoriesByRole = async (
       transferSlip: true,
       bookingAt: true,
     },
-    orderBy: { bookingAt: "desc" },
   });
 
-  return data;
+  return {
+    data: histories,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+      totalCount,
+      limit,
+    },
+  };
 };
 
 /**
