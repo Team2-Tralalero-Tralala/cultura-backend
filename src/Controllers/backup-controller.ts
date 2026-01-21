@@ -12,7 +12,13 @@ import type {
   TypedHandlerFromDto,
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
-import { BackupQueryDto, CreateBackupDto, DeleteBackupByIdDto, DeleteBackupsBulkDto, GetBackupByIdDto } from "~/Services/backup/backup-dto.js";
+import {
+  BackupQueryDto,
+  CreateBackupDto,
+  DeleteBackupByIdDto,
+  DeleteBackupsBulkDto,
+  GetBackupByIdDto,
+} from "~/Services/backup/backup-dto.js";
 
 // Define backup info type to match service
 interface BackupInfo {
@@ -75,7 +81,7 @@ export const deleteBackupsBulkDto = {
 /*
  * ฟังก์ชัน : getBackups
  * คำอธิบาย : Handler สำหรับดึงข้อมูล backups แบบ paginated
- * Input : 
+ * Input :
  *   - req.query - pagination parameters (ผ่านการ validate ด้วย getBackupsDto แล้ว)
  *   - req.user - ข้อมูลผู้ใช้จาก auth middleware
  * Output :
@@ -99,7 +105,7 @@ export const getBackups: TypedHandlerFromDto<typeof getBackupsDto> = async (
     const { page = 1, limit = 10, search } = req.query;
 
     const result = await BackupService.getBackups(page, limit, search);
-    
+
     return createResponse(res, 200, "Backups retrieved successfully", result);
   } catch (error) {
     console.error("Error in getBackups:", error);
@@ -110,7 +116,7 @@ export const getBackups: TypedHandlerFromDto<typeof getBackupsDto> = async (
 /*
  * ฟังก์ชัน : getBackupById
  * คำอธิบาย : Handler สำหรับ download backup file ตาม filename
- * Input : 
+ * Input :
  *   - req.params - backup filename parameter (ผ่านการ validate ด้วย getBackupByIdDto แล้ว)
  *   - req.user - ข้อมูลผู้ใช้จาก auth middleware
  * Output :
@@ -136,16 +142,16 @@ export const getBackupById = async (req: any, res: any) => {
     }
 
     const filePath = await BackupService.getBackupById(backupId);
-    
+
     // Set headers for file download
-    res.setHeader('Content-Disposition', `attachment; filename="${backupId}"`);
-    res.setHeader('Content-Type', 'application/zip');
-    
+    res.setHeader("Content-Disposition", `attachment; filename="${backupId}"`);
+    res.setHeader("Content-Type", "application/zip");
+
     // Send file
     res.sendFile(filePath);
   } catch (error) {
     console.error("Error in getBackupById:", error);
-    if ((error as Error).message.includes('not found')) {
+    if ((error as Error).message.includes("not found")) {
       return createErrorResponse(res, 404, (error as Error).message);
     }
     return createErrorResponse(res, 400, (error as Error).message);
@@ -155,7 +161,7 @@ export const getBackupById = async (req: any, res: any) => {
 /*
  * ฟังก์ชัน : createBackup
  * คำอธิบาย : Handler สำหรับการสร้าง backup ใหม่
- * Input : 
+ * Input :
  *   - req.body - backup configuration parameters (ผ่านการ validate ด้วย createBackupDto แล้ว)
  *   - req.user - ข้อมูลผู้ใช้จาก auth middleware
  * Output :
@@ -179,7 +185,7 @@ export const createBackup: TypedHandlerFromDto<typeof createBackupDto> = async (
     const backupConfig = req.body;
 
     const result = await BackupService.createBackup();
-    
+
     return createResponse(res, 201, "Backup created successfully", result);
   } catch (error) {
     console.error("Error in createBackup:", error);
@@ -190,7 +196,7 @@ export const createBackup: TypedHandlerFromDto<typeof createBackupDto> = async (
 /*
  * ฟังก์ชัน : deleteBackupById
  * คำอธิบาย : Handler สำหรับลบ backup file ตาม filename
- * Input : 
+ * Input :
  *   - req.params - backup filename parameter (ผ่านการ validate ด้วย deleteBackupByIdDto แล้ว)
  *   - req.user - ข้อมูลผู้ใช้จาก auth middleware
  * Output :
@@ -203,10 +209,9 @@ export const createBackup: TypedHandlerFromDto<typeof createBackupDto> = async (
  *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
  *   - ลบ backup file ตาม filename ที่ระบุ
  */
-export const deleteBackupById: TypedHandlerFromDto<typeof deleteBackupByIdDto> = async (
-  req,
-  res
-) => {
+export const deleteBackupById: TypedHandlerFromDto<
+  typeof deleteBackupByIdDto
+> = async (req, res) => {
   try {
     if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
@@ -219,11 +224,11 @@ export const deleteBackupById: TypedHandlerFromDto<typeof deleteBackupByIdDto> =
     }
 
     const result = await BackupService.deleteBackupById(backupId);
-    
+
     return createResponse(res, 200, result.message, result);
   } catch (error) {
     console.error("Error in deleteBackupById:", error);
-    if ((error as Error).message.includes('not found')) {
+    if ((error as Error).message.includes("not found")) {
       return createErrorResponse(res, 404, (error as Error).message);
     }
     return createErrorResponse(res, 400, (error as Error).message);
@@ -233,7 +238,7 @@ export const deleteBackupById: TypedHandlerFromDto<typeof deleteBackupByIdDto> =
 /*
  * ฟังก์ชัน : deleteBackupsBulk
  * คำอธิบาย : Handler สำหรับลบ backup files หลายไฟล์พร้อมกัน
- * Input : 
+ * Input :
  *   - req.body - array ของ backup filenames (ผ่านการ validate ด้วย deleteBackupsBulkDto แล้ว)
  *   - req.user - ข้อมูลผู้ใช้จาก auth middleware
  * Output :
@@ -245,10 +250,9 @@ export const deleteBackupById: TypedHandlerFromDto<typeof deleteBackupByIdDto> =
  *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
  *   - ลบ backup files หลายไฟล์พร้อมกัน
  */
-export const deleteBackupsBulk: TypedHandlerFromDto<typeof deleteBackupsBulkDto> = async (
-  req,
-  res
-) => {
+export const deleteBackupsBulk: TypedHandlerFromDto<
+  typeof deleteBackupsBulkDto
+> = async (req, res) => {
   try {
     if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
@@ -257,11 +261,15 @@ export const deleteBackupsBulk: TypedHandlerFromDto<typeof deleteBackupsBulkDto>
     const { ids } = req.body;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return createErrorResponse(res, 400, "Backup IDs array is required and cannot be empty");
+      return createErrorResponse(
+        res,
+        400,
+        "Backup IDs array is required and cannot be empty"
+      );
     }
 
     const result = await BackupService.deleteBackupsBulk(ids);
-    
+
     return createResponse(res, 200, result.message, result);
   } catch (error) {
     console.error("Error in deleteBackupsBulk:", error);

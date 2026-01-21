@@ -4,7 +4,10 @@ import authRoutes from "./auth-route.js";
 import backupRoutes from "./backup-route.js";
 import bankRoutes from "./bank-route.js";
 import bannerRoutes from "./banner-route.js";
-import { default as bookingHistoriesRoutes, default as bookingRoutes } from "./booking-history-route.js";
+import {
+  default as bookingHistoriesRoutes,
+  default as bookingRoutes,
+} from "./booking-history-route.js";
 import bookingRefund from "./booking-route.js";
 import communityRoutes from "./community-route.js";
 import configRoutes from "./config-route.js";
@@ -17,8 +20,6 @@ import packageRequestsRoutes from "./package-request-route.js";
 import packageRoutes from "./package-route.js";
 import searchRoutes from "./search-route.js";
 import storeRoute from "./store-route.js";
-import storeAdminRoutes from "./storeAdmin-route.js";
-import storeSuperAdminRoutes from "./storeSuperAdmin-route.js";
 import tagRoutes from "./tag-route.js";
 import userRoutes from "./user-route.js";
 
@@ -44,8 +45,6 @@ rootRouter.use("/super/backups", backupRoutes);
 rootRouter.use(dashboardRoutes);
 rootRouter.use("/super/banner", bannerRoutes);
 rootRouter.use(bankRoutes);
-rootRouter.use("/admin/stores", storeAdminRoutes);
-rootRouter.use("/super/stores", storeSuperAdminRoutes);
 rootRouter.use(bookingRoutes);
 
 rootRouter.use(bookingRefund);

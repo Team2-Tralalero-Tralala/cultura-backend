@@ -125,7 +125,7 @@ export async function getStoreById(storeId: number, user: UserPayload) {
 
   if (!findStore) throw new Error("ไม่พบร้านค้า");
   if (
-    user.role.toLowerCase() === "admin" &&
+    user.role.toLowerCase() !== "superadmin" &&
     findStore.community.adminId !== user.id
   ) {
     throw new Error("คุณไม่มีสิทธิ์เข้าถึงร้านค้าของชุมชนอื่น");
@@ -187,7 +187,7 @@ export const getAllStore = async (
   const totalCount = await prisma.store.count({
     where: {
       isDeleted: false,
-      communityId, 
+      communityId,
     },
   });
 
@@ -503,8 +503,18 @@ export async function deleteStoreByAdmin(userId: number, storeId: number) {
  *  - store : รายละเอียดร้านค้าที่เลือก
  *  - otherStores : ร้านอื่นในชุมชน (pagination)
  */
-export const getStoreWithOtherStoresInCommunity = async (communityId: number, storeId: number, page: number = 1, limit: number = 12) => {
-  if (!Number.isInteger(communityId) || !Number.isInteger(storeId) || !Number.isInteger(page) || !Number.isInteger(limit)) {
+export const getStoreWithOtherStoresInCommunity = async (
+  communityId: number,
+  storeId: number,
+  page: number = 1,
+  limit: number = 12
+) => {
+  if (
+    !Number.isInteger(communityId) ||
+    !Number.isInteger(storeId) ||
+    !Number.isInteger(page) ||
+    !Number.isInteger(limit)
+  ) {
     throw new Error("Invalid parameter");
   }
 
@@ -591,3 +601,36 @@ export const getStoreWithOtherStoresInCommunity = async (communityId: number, st
     },
   };
 };
+/**
+ * คำอธิบาย : ดึงข้อมูลร้านค้าตาม ID
+ * Input : รหัสร้านค้าจาก URL path (req.params.id)
+ * Output : ดึงข้อมูลสำเร็จ (Response 200), กรณีไม่พบข้อมูลร้านค้า (Response 404), กรณีข้อมูลไม่ถูกต้องหรือเกิดข้อผิดพลาด (Response 400)
+ */
+export async function getStoreByIdShared(storeId: number) {
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: {
+      storeImage: {
+        select: {
+          id: true,
+          image: true,
+          type: true,
+        },
+      },
+      tagStores: {
+        select: {
+          tag: { select: { id: true, name: true } },
+        },
+      },
+      community: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      location: true,
+    },
+  });
+
+  return store;
+}

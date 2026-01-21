@@ -1,8 +1,8 @@
-import prisma from "./database-service.js";
+import prisma from "../database-service.js";
 import { BookingStatus, ImageType } from "@prisma/client";
 import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
-import type { PaginationResponse } from "./pagination-dto.js";
+import type { PaginationResponse } from "../pagination-dto.js";
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
