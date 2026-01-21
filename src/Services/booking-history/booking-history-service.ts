@@ -151,14 +151,8 @@ export const getHistoriesByRole = async (
  */
 
 export const getDetailBooking = async (id: number) => {
-  // แปลงและตรวจสอบ ID
-  const numberId = Number(id);
-  if (isNaN(numberId)) {
-    throw new Error("Incorrect ID");
-  }
-
   const booking = await prisma.bookingHistory.findUnique({
-    where: { id: numberId, status: BookingStatus.PENDING },
+    where: { id: id },
     include: {
       package: {
         select: {
