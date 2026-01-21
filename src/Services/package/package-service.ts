@@ -1841,12 +1841,25 @@ export const getPackageDetailByTourist = async (packageId: number) => {
           tag: { select: { id: true, name: true } },
         },
       },
+      bookingHistories: {
+        where: {
+          status: "BOOKED",
+        },
+        select: {
+          totalParticipant: true,
+        },
+      },
     },
   });
 
   if (!packageDetail) {
     return null;
   }
+
+  const bookedCount = packageDetail.bookingHistories.reduce(
+    (sum, history) => sum + (history.totalParticipant || 0),
+    0
+  );
 
   const currentTagIds = packageDetail.tagPackages.map(tagPackage => tagPackage.tagId);
   
@@ -1895,6 +1908,7 @@ export const getPackageDetailByTourist = async (packageId: number) => {
 
   return {
     ...packageDetail,
+    bookedCount,
     packageFiles: packageDetail.packageFile,
     relatedPackages: relatedPackages.map((relatedPackage) => ({
       id: relatedPackage.id,
