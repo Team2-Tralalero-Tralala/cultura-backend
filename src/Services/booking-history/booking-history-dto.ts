@@ -11,7 +11,6 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { BookingStatus } from "@prisma/client";
-import { LocationDto } from "./location/location-dto.js";
 import "reflect-metadata";
 
 export class BookingHistoryDto {
