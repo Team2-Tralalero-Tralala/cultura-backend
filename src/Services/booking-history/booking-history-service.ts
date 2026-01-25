@@ -109,7 +109,7 @@ export const getHistoriesByRole = async (
   where.status = {
     in: ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"],
   };
- const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
   const totalCount = await prisma.bookingHistory.count({ where });
   const histories = await prisma.bookingHistory.findMany({
@@ -672,7 +672,8 @@ export async function getTouristBookingHistory(
       from: Date;
       to: Date;
     };
-  }
+  },
+  search?: string
 ): Promise<PaginationResponse<TouristBookingHistory>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = { touristId };
@@ -687,6 +688,12 @@ export async function getTouristBookingHistory(
     };
   }
 
+  if (search) {
+    whereCondition.package = {
+      name: { contains: search },
+    };
+  }
+
   const bookingHistories = await prisma.bookingHistory.findMany({
     where: whereCondition,
     orderBy: { bookingAt: sort },
@@ -696,6 +703,7 @@ export async function getTouristBookingHistory(
       status: true,
       totalParticipant: true,
       rejectReason: true,
+      feedbacks: true,
       package: {
         select: {
           name: true,
@@ -725,7 +733,7 @@ export async function getTouristBookingHistory(
   });
   const totalPages = Math.ceil(totalCount / limit);
   return {
-    data: bookingHistories,
+    data: bookingHistories as any,
     pagination: {
       currentPage: page,
       totalPages: totalPages,

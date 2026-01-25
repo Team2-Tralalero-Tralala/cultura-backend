@@ -172,7 +172,8 @@ export const getAllStore = async (
   userRole: string,
   communityId: number,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> => {
   if (userRole != "superadmin") {
     throw new Error("ไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
@@ -184,18 +185,24 @@ export const getAllStore = async (
 
   const skip = (page - 1) * limit;
 
+  const whereCondition: any = {
+    isDeleted: false,
+    communityId,
+  };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { detail: { contains: search } },
+    ];
+  }
+
   const totalCount = await prisma.store.count({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
   });
 
   const stores = await prisma.store.findMany({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
     orderBy: { id: "asc" },
     skip,
     take: limit,
@@ -303,7 +310,8 @@ export async function createStoreByAdmin(store: StoreDto, user: UserPayload) {
 export async function getAllStoreForAdmin(
   userId: number,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> {
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new Error("รหัสผู้ใช้ต้องเป็นหมายเลข");
@@ -324,18 +332,24 @@ export async function getAllStoreForAdmin(
 
   const skip = (page - 1) * limit;
 
+  const whereCondition: any = {
+    isDeleted: false,
+    communityId,
+  };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { detail: { contains: search } },
+    ];
+  }
+
   const totalCount = await prisma.store.count({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
   });
 
   const stores = await prisma.store.findMany({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
     orderBy: { id: "asc" },
     skip,
     take: limit,

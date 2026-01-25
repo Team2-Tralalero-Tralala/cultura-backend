@@ -59,16 +59,25 @@ export async function editTag(tagId: number, tag: TagDto) {
  * Input : -
  * Output : tags (Array) - รายการประเภททั้งหมด
  */
-export async function getAllTags(page: number = 1, limit: number = 10) {
+export async function getAllTags(
+  page: number = 1,
+  limit: number = 10,
+  search?: string
+) {
+  const whereCondition: any = { isDeleted: false };
+  if (search) {
+    whereCondition.name = { contains: search };
+  }
+
   const [tags, totalCount] = await Promise.all([
     prisma.tag.findMany({
       skip: (page - 1) * limit,
       take: limit,
-      where: { isDeleted: false },
+      where: whereCondition,
       orderBy: { id: "asc" },
     }),
     prisma.tag.count({
-      where: { isDeleted: false },
+      where: whereCondition,
     }),
   ]);
 
