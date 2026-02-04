@@ -36,6 +36,10 @@ export class PaginationDto {
   @Min(1, { message: "Limit must be at least 1" })
   @Max(100, { message: "Limit cannot exceed 100" })
   limit?: number = 10;
+
+  @Expose()
+  @IsOptional()
+  search?: string;
 }
 
 /*

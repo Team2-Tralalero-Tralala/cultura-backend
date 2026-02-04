@@ -196,7 +196,7 @@ export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
 ) => {
   try {
     const communityId = Number(req.params.communityId);
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
     if (!req.user) {
       return createErrorResponse(res, 401, "User not authenticated");
     }
@@ -204,7 +204,8 @@ export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
       req.user.role,
       communityId,
       page,
-      limit
+      limit,
+      search ? String(search) : undefined
     );
     return createResponse(
       res,
@@ -293,9 +294,14 @@ export const getAllStoreForAdmin: TypedHandlerFromDto<
       return createErrorResponse(res, 401, "User not authenticated");
     }
     const userId = req.user.id;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
 
-    const result = await StoreService.getAllStoreForAdmin(userId, page, limit);
+    const result = await StoreService.getAllStoreForAdmin(
+      userId,
+      page,
+      limit,
+      search ? String(search) : undefined
+    );
     return createResponse(
       res,
       200,

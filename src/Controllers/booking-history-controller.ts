@@ -483,6 +483,8 @@ export class TouristBookingHistoryQueryDto extends PaginationDto {
 
   @IsOptional()
   @IsString()
+  @IsOptional()
+  @IsString()
   endDate?: string;
 }
 /**
@@ -515,6 +517,7 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
       status,
       startDate,
       endDate,
+      search,
     } = req.query as any;
     const filter: {
       status?: string[];
@@ -541,7 +544,8 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
       Number(page),
       Number(limit),
       sort || "desc",
-      filter
+      filter,
+      search
     );
     return createResponse(
       res,

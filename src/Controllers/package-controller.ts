@@ -27,7 +27,7 @@ import {
 } from "~/Services/package/package-dto.js";
 import * as PackageDto from "~/Services/package/package-dto.js";
 import * as PackageService from "../Services/package/package-service.js";
-import { deleteDraftPackage,bulkDeletePackages  } from "../Services/package/package-service.js";
+import { deleteDraftPackage, bulkDeletePackages } from "../Services/package/package-service.js";
 
 /*
  * DTO: createPackageDto
@@ -889,7 +889,6 @@ export async function getPackageHistoryDetailAdmin(
  * Output : รายการข้อมูลแพ็กเกจที่สิ้นสุดแล้วของ Admin พร้อม pagination
  */
 export const getHistoriesPackageByAdminDto = {
-  params: IdParamDto,
   query: PackageDto.HistoryPackageQueryDto,
 } satisfies commonDto;
 
@@ -906,11 +905,13 @@ export const getHistoriesPackageAdmin: TypedHandlerFromDto<
     const userId = Number(req.user?.id);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
+    const search = req.query.search as string;
 
     const result = await PackageService.getHistoriesPackageByAdmin(
       userId,
       page,
-      limit
+      limit,
+      search
     );
 
     return createResponse(
@@ -972,7 +973,6 @@ export async function getPackageDetailByMember(req: Request, res: Response) {
  * Output : รายการข้อมูลแพ็กเกจที่สิ้นสุดแล้วของ Member พร้อม pagination
  */
 export const getHistoriesPackageByMemberDto = {
-  params: IdParamDto,
   query: PackageDto.HistoryPackageQueryDto,
 } satisfies commonDto;
 
@@ -989,10 +989,13 @@ export const getHistoriesPackageByMember: TypedHandlerFromDto<
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
+    const search = req.query.search as string;
+
     const result = await PackageService.getHistoriesPackageByMember(
       Number(req.user?.id),
       page,
-      limit
+      limit,
+      search
     );
     return createResponse(
       res,

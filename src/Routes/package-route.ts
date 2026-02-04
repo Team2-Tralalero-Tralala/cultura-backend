@@ -1187,7 +1187,7 @@ packageRoutes.get(
  *         description: Internal Server Error
  */
 packageRoutes.get(
-  "/admin/package/histories/all",
+  "/admin/packages/histories/all",
   authMiddleware,
   allowRoles("admin"),
   validateDto(PackageController.getHistoriesPackageByAdminDto),

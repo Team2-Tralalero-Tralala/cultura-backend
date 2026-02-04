@@ -423,6 +423,9 @@ export class HistoryPackageQueryDto {
   @IsOptional()
   @IsNumberString()
   limit?: string;
+
+  @IsOptional()
+  search?: string;
 }
 
 export class UpdateParticipantStatusBodyDto {

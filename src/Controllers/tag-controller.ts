@@ -126,8 +126,12 @@ export const getAllTags: TypedHandlerFromDto<typeof getAllTagsDto> = async (
   res
 ) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const result = await TagService.getAllTags(Number(page), Number(limit));
+    const { page = 1, limit = 10, search } = req.query;
+    const result = await TagService.getAllTags(
+      Number(page),
+      Number(limit),
+      search ? String(search) : undefined
+    );
 
     return createResponse(res, 200, "Tags retrieved successfully", result);
   } catch (error) {

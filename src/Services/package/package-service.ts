@@ -1363,7 +1363,8 @@ export async function getPackageHistoryDetailById(packageId: number) {
 export const getHistoriesPackageByAdmin = async (
   userId: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -1380,11 +1381,19 @@ export const getHistoriesPackageByAdmin = async (
 
   const now = new Date();
 
-  const whereCondition = {
+  const whereCondition: any = {
     isDeleted: false,
     communityId: { in: adminCommunityIds },
     dueDate: { lt: now },
   };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { location: { name: { contains: search } } },
+    ];
+  }
 
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
@@ -1599,7 +1608,8 @@ export const getPackageDetailByMember = async (
 export const getHistoriesPackageByMember = async (
   userId: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -1612,11 +1622,19 @@ export const getHistoriesPackageByMember = async (
 
   const now = new Date();
 
-  const whereCondition = {
+  const whereCondition: any = {
     isDeleted: false,
     overseerMemberId: user.id,
     dueDate: { lt: now },
   };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { location: { name: { contains: search } } },
+    ];
+  }
 
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
