@@ -60,3 +60,39 @@ export class BookingHistoryDto {
     @MaxLength(100, { message: "tranferSlip ยาวเกิน 256 ตัวอักษร" })
     tranferSlip: string;
 }
+
+export class GetBookingQuery {
+  @IsOptional()
+  @Type(() => Number)
+  page: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  limit: number = 10;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+}
+
+export class GetBookingMemberQuery {
+  @IsOptional()
+  @Type(() => Number)
+  page: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  limit: number = 10;
+
+  @IsOptional()
+  @IsString()
+  search?: string; 
+
+  @IsOptional()
+  @IsString()
+  status?: string; 
+}

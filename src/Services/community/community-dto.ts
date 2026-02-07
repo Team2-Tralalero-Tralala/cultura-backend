@@ -180,3 +180,21 @@ export class CommunityImageDto {
   @IsEnum(ImageType)
   type: ImageType;
 }
+
+export class GetCommunityQuery {
+  @IsOptional()
+  @Type(() => Number)
+  page: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  limit: number = 10;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+}

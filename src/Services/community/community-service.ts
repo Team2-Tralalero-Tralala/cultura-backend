@@ -8,6 +8,7 @@ import {
   PackageApproveStatus,
   PackagePublishStatus,
 } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
@@ -241,41 +242,67 @@ export async function deleteCommunityById(communityId: number) {
   });
 }
 
-/*
- * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการชุมชนทั้งหมด (เฉพาะ SuperAdmin)
+/**
+ * คำอธิบาย : ดึงข้อมูลรายการชุมชนทั้งหมด พร้อมระบบค้นหาและกรองสถานะ (เฉพาะ SuperAdmin)
  * Input :
- *   - id (number) : รหัสผู้ใช้ที่ร้องขอ (ต้องเป็น SuperAdmin)
- *   - page (number) : หน้าปัจจุบัน
- *   - limit (number) : จำนวนต่อหน้า
+ * - id (number) : รหัสผู้ใช้งาน (ใช้ตรวจสอบสิทธิ์)
+ * - page (number) : เลขหน้าที่ต้องการ (default = 1)
+ * - limit (number) : จำนวนรายการต่อหน้า (default = 10)
+ * - search (string) : คำค้นหา กรองจากชื่อชุมชน, จังหวัด หรือชื่อแอดมิน (default = "")
+ * - status (string) : สถานะชุมชนที่ต้องการกรอง เช่น "all", "OPEN", "CLOSED" (default = "all")
  * Output :
- *   - PaginationResponse : ข้อมูลรายการชุมชนพร้อม pagination
+ * - Promise<PaginationResponse<any>> : Object ที่ประกอบด้วยข้อมูลชุมชน (data) และข้อมูลการแบ่งหน้า (pagination)
  */
 export const getCommunityAll = async (
   id: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  search = "",      
+  status = "all"   
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(id)) throw new Error("ID must be Number");
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({ 
     where: { id },
-    include: { role: true },
+     include: { role: true } 
   });
-  if (!user) throw new Error("User not found");
-  if (user.role?.name !== "superadmin") {
-    return {
-      data: [],
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+  if (!user || user.role?.name !== "superadmin") {
+    return { 
+      data: [], 
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit } 
     };
   }
 
+  const whereCondition: Prisma.CommunityWhereInput = {
+    isDeleted: false,
+  };
+  
+  if (status && status !== 'all') {
+    // แปลง string เป็น Enum (OPEN/CLOSED)
+    const statusEnum = status.toUpperCase() as CommunityStatus;
+    if (Object.values(CommunityStatus).includes(statusEnum)) {
+        whereCondition.status = statusEnum;
+    }
+  }
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } }, // ค้นจากชื่อชุมชน
+      { location: { province: { contains: search } } }, // ค้นจากจังหวัด (ผ่าน relation location)
+      { admin: { fname: { contains: search } } }, // ค้นจากชื่อจริงแอดมิน (ผ่าน relation admin)
+      { admin: { lname: { contains: search } } }, // ค้นจากนามสกุลแอดมิน
+    ];
+  }
+
   const skip = (page - 1) * limit;
+
+  // ใช้ whereCondition ในการนับจำนวนทั้งหมด (Count)
   const totalCount = await prisma.community.count({
-    where: { isDeleted: false },
+    where: whereCondition,
   });
 
+  // ใช้ whereCondition ในการดึงข้อมูล (FindMany)
   const communities = await prisma.community.findMany({
-    where: { isDeleted: false },
+    where: whereCondition,
     orderBy: { id: "asc" },
     skip,
     take: limit,

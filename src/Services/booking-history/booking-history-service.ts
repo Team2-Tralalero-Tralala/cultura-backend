@@ -3,6 +3,7 @@ import { BookingStatus, ImageType } from "@prisma/client";
 import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import { PrismaClient, Prisma} from '@prisma/client';
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
@@ -192,19 +193,24 @@ export const getDetailBooking = async (id: number) => {
   return booking;
 };
 
-/*
- * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชน (เฉพาะ Admin)
+/**
+ * คำอธิบาย : ดึงข้อมูลรายการจองสำหรับแอดมินชุมชน พร้อมคำนวณราคารวม (เฉพาะ Admin)
+ * กรณี status เป็น "all" จะดึงเฉพาะรายการที่ "รอตรวจสอบ" และ "รอคืนเงิน"
  * Input :
- *   - adminId (number) : รหัสผู้ดูแลที่ร้องขอ (ต้องเป็น Admin)
- *   - page (number) : หน้าปัจจุบัน
- *   - limit (number) : จำนวนต่อหน้า
+ * - adminId (number) : รหัสผู้ใช้งาน (ต้องเป็น Admin และสังกัดชุมชน)
+ * - page (number) : เลขหน้าที่ต้องการ (default = 1)
+ * - limit (number) : จำนวนรายการต่อหน้า (default = 10)
+ * - search (string) : คำค้นหา กรองจากชื่อนักท่องเที่ยว หรือชื่อแพ็กเกจ (default = "")
+ * - status (string) : สถานะการจอง (default = "all" คือแสดงเฉพาะ PENDING และ REFUND_PENDING)
  * Output :
- *   - PaginationResponse : ข้อมูลรายการการจองทั้งหมดของแพ็กเกจในชุมชน พร้อม pagination
+ * - Promise<PaginationResponse<any>> : Object ข้อมูลการจอง พร้อมฟิลด์ totalPrice (ราคา x จำนวนคน)
  */
 export const getBookingsByAdmin = async (
   adminId: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  search = "",      
+  status = "all"    
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(adminId)) throw new Error("ID must be Number");
 
@@ -213,12 +219,11 @@ export const getBookingsByAdmin = async (
     where: { id: adminId },
     include: { role: true },
   });
-  if (!user) throw new Error("User not found");
-  if (user.role?.name?.toLowerCase() !== "admin") {
+  if (!user || user.role?.name?.toLowerCase() !== "admin") {
     return {
-      data: [],
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
-    };
+      data: [], 
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit }
+     };
   }
 
   // ตรวจสอบว่าแอดมินมีชุมชนอยู่จริง
@@ -228,44 +233,53 @@ export const getBookingsByAdmin = async (
   });
   if (!community) throw new Error("ไม่พบชุมชนที่ผู้ดูแลนี้ดูแลอยู่");
 
-  // คำนวณ pagination
+  const whereCondition: Prisma.BookingHistoryWhereInput = {
+    package: {
+      communityId: community.id,
+      isDeleted: false,
+    },
+  };
+
+  if (status && status !== "all") {
+    // กรณี User เลือกเจาะจงจาก Dropdown (เช่น "รอตรวจสอบ", "รอคืนเงิน")
+    whereCondition.status = status as BookingStatus;
+  } else {
+    // กรณีเลือก "ทั้งหมด" (all) หรือค่า Default 
+    // ให้แสดงแค่ "รายการรอจัดการ" (PENDING + REFUND_PENDING) เท่านั้น
+    whereCondition.status = { in: ["PENDING", "REFUND_PENDING"] };
+  }
+
+  if (search) {
+    whereCondition.OR = [
+      { tourist: { fname: { contains: search } } },
+      { tourist: { lname: { contains: search } } },
+      { package: { name: { contains: search } } },
+    ];
+  }
+
   const skip = (page - 1) * limit;
 
-  // นับจำนวนทั้งหมดของการจองในชุมชนนี้ (PENDING หรือ REFUND_PENDING)
   const totalCount = await prisma.bookingHistory.count({
-    where: {
-      package: {
-        communityId: community.id,
-        isDeleted: false,
-      },
-      status: { in: ["PENDING", "REFUND_PENDING"] }, // เพิ่ม filter
-    },
+    where: whereCondition,
   });
 
-  // ดึงข้อมูลการจอง พร้อม tourist และ package
   const bookings = await prisma.bookingHistory.findMany({
-    where: {
-      package: {
-        communityId: community.id,
-        isDeleted: false,
-      },
-      status: { in: ["PENDING", "REFUND_PENDING"] },
-    },
-    orderBy: { bookingAt: "asc" },
+    where: whereCondition,
+    orderBy: { bookingAt: "asc" }, 
     skip,
     take: limit,
     select: {
       id: true,
       tourist: {
-        select: {
-          fname: true,
-          lname: true,
+        select: { 
+          fname: true, 
+          lname: true 
         },
       },
       package: {
-        select: {
-          name: true,
-          price: true,
+        select: { 
+          name: true, 
+          price: true 
         },
       },
       totalParticipant: true,
@@ -284,7 +298,6 @@ export const getBookingsByAdmin = async (
     transferSlip: b.transferSlip,
   }));
 
-  // ส่งผลลัพธ์พร้อม pagination
   return {
     data: result,
     pagination: {
@@ -343,21 +356,24 @@ export const updateBookingStatus = async (
   return booking;
 };
 
-/*
- * คำอธิบาย : ฟังก์ชันสำหรับดึงรายการการจองเฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (เฉพาะ Member)
+/**
+ * คำอธิบาย : ดึงข้อมูลรายการจองที่สมาชิก (Member) เป็นผู้ดูแลแพ็กเกจ (เฉพาะ Member)
+ * กรณี status เป็น "all" จะดึงเฉพาะรายการที่ "รอตรวจสอบ" และ "รอคืนเงิน"
  * Input :
- *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
- *   - page (number) : หน้าปัจจุบัน
- *   - limit (number) : จำนวนต่อหน้า
- *   - status (string | undefined) : สถานะที่ต้องการกรอง (เช่น PENDING, REFUND_PENDING หรือ PENDING,REFUND_PENDING)
+ * - memberId (number) : รหัสผู้ใช้งาน (ต้องเป็น Member และเป็นผู้ดูแลแพ็กเกจนั้นๆ)
+ * - page (number) : เลขหน้าที่ต้องการ (default = 1)
+ * - limit (number) : จำนวนรายการต่อหน้า (default = 10)
+ * - search (string) : คำค้นหา กรองจากชื่อนักท่องเที่ยว หรือชื่อแพ็กเกจ (default = "")
+ * - status (string) : สถานะการจอง (default = "all" คือแสดงเฉพาะ PENDING และ REFUND_PENDING)
  * Output :
- *   - PaginationResponse : ข้อมูลรายการการจองเฉพาะแพ็กเกจที่ member คนนั้นดูแล พร้อม pagination
+ * - Promise<PaginationResponse<any>> : Object ข้อมูลการจอง พร้อมฟิลด์ totalPrice (ราคา x จำนวนคน)
  */
 export const getBookingsByMember = async (
   memberId: number,
   page = 1,
   limit = 10,
-  status?: string
+  search = "",      
+  status = "all"    
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(memberId)) throw new Error("ID must be Number");
 
@@ -367,73 +383,57 @@ export const getBookingsByMember = async (
     include: { role: true },
   });
   if (!user) throw new Error("User not found");
-
   if (user.role?.name?.toLowerCase() !== "member") {
-    return {
-      data: [],
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
-    };
+    return { 
+      data: [], 
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit } };
   }
 
-  // คำนวณ pagination
-  const skip = (page - 1) * limit;
-
-  // filter
-  let statusFilter: BookingStatus | { in: BookingStatus[] } | undefined;
-
-  if (status) {
-    // รองรับหลายค่า เช่น ?status=PENDING,REFUND_PENDING
-    const statuses = status
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean) as BookingStatus[];
-
-    if (statuses.length === 1) {
-      statusFilter = statuses[0]; // status: "PENDING"
-    } else if (statuses.length > 1) {
-      statusFilter = { in: statuses }; // status: { in: ["PENDING", "REFUND_PENDING"] }
-    }
-  } else {
-    // ถ้าไม่ส่ง status มาเลย → ใช้ค่าเดิม PENDING + REFUND_PENDING
-    statusFilter = {
-      in: ["PENDING", "REFUND_PENDING"] as BookingStatus[],
-    };
-  }
-
-  const baseWhere: any = {
+  const whereCondition: Prisma.BookingHistoryWhereInput = {
     package: {
-      overseerMemberId: memberId,
+      overseerMemberId: memberId, 
       isDeleted: false,
     },
   };
 
-  if (statusFilter) {
-    baseWhere.status = statusFilter;
+  if (status && status !== "all") {
+    // กรณีเลือกเจาะจง (เช่น "BOOKED", "REJECTED")
+    whereCondition.status = status as BookingStatus;
+  } else {
+    whereCondition.status = { in: ["PENDING", "REFUND_PENDING"] };
   }
 
-  // นับจำนวนทั้งหมดของการจอง
+  if (search) {
+    whereCondition.OR = [
+      { tourist: { fname: { contains: search } } },
+      { tourist: { lname: { contains: search } } },
+      { package: { name: { contains: search } } },
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+
   const totalCount = await prisma.bookingHistory.count({
-    where: baseWhere,
+    where: whereCondition,
   });
 
-  // ดึงข้อมูลการจอง พร้อม tourist และ package
   const bookings = await prisma.bookingHistory.findMany({
-    where: baseWhere,
-    orderBy: { bookingAt: "asc" },
+    where: whereCondition,
+    orderBy: { bookingAt: "asc" }, 
     skip,
     take: limit,
     select: {
       id: true,
       tourist: {
-        select: {
-          fname: true,
-          lname: true,
+        select: { 
+          fname: true, 
+          lname: true 
         },
       },
       package: {
-        select: {
-          name: true,
-          price: true,
+        select: { 
+          name: true, 
+          price: true 
         },
       },
       totalParticipant: true,
@@ -452,7 +452,6 @@ export const getBookingsByMember = async (
     transferSlip: booking.transferSlip,
   }));
 
-  // ส่งผลลัพธ์พร้อม pagination
   return {
     data: result,
     pagination: {

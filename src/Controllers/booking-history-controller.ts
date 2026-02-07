@@ -14,6 +14,8 @@ import * as TouristBookingService from "~/Services/booking/booking-service.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import * as bookingService from "../Services/booking-history/booking-history-service.js";
 import { getHistoriesByRole } from "../Services/booking-history/booking-history-service.js";
+import { GetBookingQuery } from "~/Services/booking-history/booking-history-dto.js";
+import { GetBookingMemberQuery } from "~/Services/booking-history/booking-history-dto.js";
 
 /* DTO : GetHistoriesByRoleQueryDto
  * วัตถุประสงค์ :
@@ -110,41 +112,46 @@ export const getDetailBooking = async (req: Request, res: Response) => {
   }
 };
 
-/*
- * คำอธิบาย : DTO สำหรับดึงรายการการจองทั้งหมดของแอดมิน (รองรับ pagination)
+/**
+ * DTO: getBookingsByAdminDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบข้อมูลนำเข้า เมื่อต้องการดึงรายการจองของชุมชน (สำหรับ Admin)
  * Input :
- *   - query (page, limit)
+ * - query : page, limit, search, status (จาก GetBookingQuery)
  * Output :
- *   - รายการการจองทั้งหมดของแพ็กเกจในชุมชน + pagination metadata
+ * - รายการข้อมูลการจอง
+ * - ข้อมูล Metadata สำหรับ Pagination
  */
 export const getBookingsByAdminDto = {
-  query: PaginationDto,
+  query: GetBookingQuery, 
 } satisfies commonDto;
 
-/*
- * ฟังก์ชัน : getBookingsByAdmin
- * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล
- * Route : GET /admin/bookings/all
+/**
+ * คำอธิบาย : Controller สำหรับจัดการคำขอดึงข้อมูลรายการจองสำหรับแอดมินชุมชน 
  * Input :
- *   - req.user.id (จาก middleware auth)
- *   - req.query.page, req.query.limit
+ * - req.user.id (number) : รหัสผู้ใช้งาน (Admin) ที่ดึงจาก Token
+ * - req.query :
+ * - page (number) : เลขหน้าที่ต้องการ
+ * - limit (number) : จำนวนรายการต่อหน้า
+ * - search (string) : คำค้นหา
+ * - status (string) : สถานะการจอง (เช่น "all", "PENDING", "CONFIRMED")
  * Output :
- *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
- * หมายเหตุ :
- *   - ใช้ข้อมูล adminId จาก token (req.user)
- *   - เฉพาะผู้ใช้ role "admin" เท่านั้นที่เข้าถึงได้
+ * - Response 200 : สำเร็จ (ส่งคืนข้อมูลรายการจองจาก Service)
+ * - Response 400 : ล้มเหลว (เกิด Error จากการตรวจสอบ หรือ Service)
  */
 export const getBookingsByAdmin: TypedHandlerFromDto<
   typeof getBookingsByAdminDto
 > = async (req, res) => {
   try {
     const adminId = Number(req.user!.id);
-    const { page = 1, limit = 10 } = req.query;
+    
+    const { page, limit, search, status } = req.query;
 
     const result = await bookingService.getBookingsByAdmin(
       adminId,
-      Number(page),
-      Number(limit)
+      page,
+      limit,
+      search, 
+      status  
     );
 
     return createResponse(
@@ -159,7 +166,7 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : updateBookingStatusController
+ * ฟังก์ชัน : updateBookingStatus
  * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง (เฉพาะ Admin)
  * Route : PATCH /admin/bookings/:id/status
  * Input :
@@ -217,50 +224,46 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (
   }
 };
 
-/*
- * คำอธิบาย : DTO สำหรับดึงรายการการจองทั้งหมดของ Member (รองรับ pagination)
+/**
+ * DTO: getBookingsByMemberDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบข้อมูลนำเข้า เมื่อต้องการดึงรายการจองของแพ็กเกจตนเอง (สำหรับ Member)
  * Input :
- *   - query (page, limit)
+ * - query : page, limit, search, status (จาก GetBookingMemberQuery)
  * Output :
- *   - รายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นดูแล + pagination metadata
+ * - รายการข้อมูลการจอง
+ * - ข้อมูล Metadata สำหรับ Pagination
  */
 export const getBookingsByMemberDto = {
-  query: PaginationDto,
+  query: GetBookingMemberQuery, 
 } satisfies commonDto;
 
-/*
- * ฟังก์ชัน : getBookingsByMember
- * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
- * Route : GET /member/bookings/all
+/**
+ * คำอธิบาย : Controller สำหรับจัดการคำขอดึงข้อมูลรายการจองสำหรับสมาชิก (Member) ที่ดูแลแพ็กเกจ
  * Input :
- *   - req.user.id
- *   - req.query.page, req.query.limit, req.query.status (ไม่บังคับ)
+ * - req.user.id (number) : รหัสผู้ใช้งาน (Member) ที่ดึงจาก Token
+ * - req.query :
+ * - page (number) : เลขหน้าที่ต้องการ
+ * - limit (number) : จำนวนรายการต่อหน้า
+ * - search (string) : คำค้นหา
+ * - status (string) : สถานะการจอง (เช่น "all", "PENDING", "CONFIRMED")
  * Output :
- *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
- * หมายเหตุ :
- *   - ใช้ข้อมูล memberId จาก token (req.user)
- *   - เฉพาะผู้ใช้ role "member" เท่านั้นที่เข้าถึงได้
+ * - Response 200 : สำเร็จ (ส่งคืนข้อมูลรายการจองจาก Service)
+ * - Response 400 : ล้มเหลว (เกิด Error จากการตรวจสอบ หรือ Service)
  */
 export const getBookingsByMember: TypedHandlerFromDto<
   typeof getBookingsByMemberDto
 > = async (req, res) => {
   try {
     const memberId = Number(req.user!.id);
-    // const { page = 1, limit = 10, status } = req.query as any;
-    const {
-      page = 1,
-      limit = 10,
-      status,
-    } = req.query as {
-      page?: number;
-      limit?: number;
-      status?: string;
-    };
+    
+    const { page, limit, search, status } = req.query;
+
     const result = await bookingService.getBookingsByMember(
       memberId,
       Number(page),
       Number(limit),
-      status as string | undefined
+      search, 
+      status
     );
 
     return createResponse(

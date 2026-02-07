@@ -13,6 +13,7 @@ import {
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import { CommunityDetailPublicQueryDto } from "~/Libs/Types/communityDetailPublicQuery-dto.js";
+import { GetCommunityQuery } from "~/Services/community/community-dto.js";
 
 /*
  * คำอธิบาย : DTO สำหรับสร้างข้อมูลชุมชนใหม่
@@ -210,31 +211,49 @@ export const getUnassignedMembers: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-/*
- * คำอธิบาย : DTO สำหรับดึงข้อมูลชุมชนทั้งหมด (รองรับ pagination)
- * Input : query (page, limit)
- * Output : รายการข้อมูลชุมชนทั้งหมด + pagination metadata
+
+/**
+ * DTO: getCommunityAllDto
+ * วัตถุประสงค์ : ใช้สำหรับตรวจสอบข้อมูลนำเข้า เมื่อต้องการดึงรายการชุมชนทั้งหมด (สำหรับ SuperAdmin)
+ * Input :
+ * - query : page, limit, search, status (จาก GetCommunityQuery)
+ * Output :
+ * - รายการข้อมูลชุมชนทั้งหมด
+ * - ข้อมูล Metadata สำหรับ Pagination
  */
 export const getCommunityAllDto = {
-  query: PaginationDto,
+  query: GetCommunityQuery, 
 } satisfies commonDto;
 
-/*
- * อธิบาย : ดึง community ทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
- * Input : req.user.id (จาก middleware auth) และ req.query.page, req.query.limit
+/**
+ * คำอธิบาย : Controller สำหรับจัดการคำขอดึงข้อมูลรายการชุมชนทั้งหมด (ใช้ได้เฉพาะ superadmin เท่านั้น)
+ * Input :
+ * - req.user.id (number) : รหัสผู้ใช้งาน (ดึงจาก Token)
+ * - req.query :
+ * - page (number) : เลขหน้าที่ต้องการ (default = 1)
+ * - limit (number) : จำนวนรายการต่อหน้า (default = 10)
+ * - search (string) : คำค้นหา (default = "")
+ * - status (string) : สถานะชุมชน "all", "OPEN", "CLOSED" (default = "all")
  * Output :
- *   - ถ้าเป็น superadmin → ได้ community ทั้งหมดพร้อม pagination
- *   - ถ้าไม่ใช่ superadmin → ได้ []
+ * - Response 200 : สำเร็จ (ส่งคืนข้อมูลรายการชุมชนจาก Service)
  */
 export const getCommunityAll: TypedHandlerFromDto<
   typeof getCommunityAllDto
 > = async (req, res) => {
   try {
-    // ใช้ non-null assertion เพราะมั่นใจว่า middleware ใส่ req.user แน่ ๆ
     const userId = Number(req.user!.id);
-    const { page = 1, limit = 10 } = req.query;
+    
+    // ค่าที่รับมาผ่าน class-transformer จะถูกแปลง type ให้แล้ว
+    const { page, limit, search, status } = req.query; 
 
-    const result = await CommunityService.getCommunityAll(userId, page, limit);
+    const result = await CommunityService.getCommunityAll(
+      userId,
+      Number(page || 1),
+      Number(limit || 10),
+      String(search || ""),
+      String(status || "all")
+    );
+    
     return createResponse(res, 200, "All communities list", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
