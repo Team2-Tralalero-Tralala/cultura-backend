@@ -1,10 +1,3 @@
-/*
- * คำอธิบาย : Controller สำหรับรายการคำขอแพ็กเกจ (เฉพาะฟิลด์ที่จำเป็นต่อหน้า list)
- * เส้นทาง : GET /api/super/package-requests
- * ฟิลด์ค้นหา/กรอง : search, statusApprove
- * รองรับ pagination : page, limit
- */
-
 import type { Request, Response } from "express";
 import * as PackageRequestService from "~/Services/package/package-request-service.js";
 import type { commonDto, TypedHandlerFromDto } from "~/Libs/Types/TypedHandler.js";
@@ -15,18 +8,23 @@ import {
 } from "~/Services/package/package-request-dto.js";
 import { IsNumberString } from "class-validator";
 
-/* ===========================
+/**
  * DTO : getPackageRequestAllDto
- * อธิบาย : กำหนด schema ของ query สำหรับดึงรายการคำขอแพ็กเกจ
- * =========================== */
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงรายการคำขอแพ็กเกจ
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const getPackageRequestAllDto = {
     query: PackageRequestQueryDto, // page, limit, search, statusApprove
 } satisfies commonDto;
 
-/* ===========================
- * Handler : GET /api/super/package-requests
- * อธิบาย : ดึงรายการคำขอแพ็กเกจตามสิทธิ์ผู้ใช้ พร้อมค้นหา/กรองและ pagination
- * =========================== */
+/**
+ * คำอธิบาย : ดึงรายการคำขอแพ็กเกจตามสิทธิ์ผู้ใช้ พร้อมค้นหา/กรองและ pagination
+ * Input : req.user - user object, req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const getPackageRequestAll: TypedHandlerFromDto<
     typeof getPackageRequestAllDto
 > = async (req, res) => {
@@ -55,11 +53,12 @@ export const getPackageRequestAll: TypedHandlerFromDto<
         return createErrorResponse(res, 400, (error as Error).message);
     }
 };
-
-/* ===========================
- * Handler : PATCH /api/super/package-requests/:packageId/approve
- * อธิบาย : อนุมัติคำขอแพ็กเกจ → เปลี่ยนเป็น APPROVE
- * =========================== */
+/**
+ * คำอธิบาย : อนุมัติคำขอแพ็กเกจ → เปลี่ยนเป็น APPROVE
+ * Input : req.user - user object, req.params - packageId
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const patchApprovePackageRequest = async (
     req: Request,
     res: Response
@@ -90,10 +89,13 @@ export const patchApprovePackageRequest = async (
     }
 };
 
-/* ===========================
+/**
  * DTO : patchRejectPackageRequestDto
- * อธิบาย : validate params + body (เหตุผลการปฏิเสธ)
- * =========================== */
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงรายการคำขอแพ็กเกจ
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const patchRejectPackageRequestDto = {
     params: {
         packageId: "number",
@@ -101,11 +103,12 @@ export const patchRejectPackageRequestDto = {
     body: RejectReasonDto,
 } satisfies commonDto;
 
-/* ===========================
- * Handler : PATCH /api/super/package-requests/:packageId/reject
- * อธิบาย : ปฏิเสธคำขอแพ็กเกจ → บันทึกเหตุผลลง rejectReason
- * Body: { reason: string }
- * =========================== */
+/**
+ * คำอธิบาย : ปฏิเสธคำขอแพ็กเกจ → บันทึกเหตุผลลง rejectReason
+ * Input : req.user - user object, req.params - packageId, req.body - reason
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const patchRejectPackageRequest: TypedHandlerFromDto<
     typeof patchRejectPackageRequestDto
 > = async (req, res) => {
@@ -148,11 +151,9 @@ export const patchRejectPackageRequest: TypedHandlerFromDto<
 /* DTO : RequestIdParamDto
  * วัตถุประสงค์ :
  *  - ใช้ตรวจสอบ route parameter สำหรับ requestId
- *
  * Input :
  *  - params :
  *    - requestId : รหัสของ request (ต้องเป็นตัวเลขในรูปแบบ string)
- *
  * Output :
  *  - หากข้อมูลถูกต้อง จะผ่านการ validate และนำไปใช้งานต่อได้
  *  - หากข้อมูลไม่ถูกต้อง จะส่ง validation error กลับ
@@ -225,11 +226,12 @@ export const getDetailRequestForAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, error.message);
   }
 };
-
-/* ===========================
- * Handler : PATCH /api/admin/package-requests/:packageId/approve
- * อธิบาย : อนุมัติคำขอแพ็กเกจโดย Admin → เปลี่ยนเป็น APPROVE (สำหรับคำขอสถานะ PENDING)
- * =========================== */
+/**
+ * คำอธิบาย : อนุมัติคำขอแพ็กเกจโดย Admin → เปลี่ยนเป็น APPROVE (สำหรับคำขอสถานะ PENDING)
+ * Input : req.user - user object, req.params - packageId
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const patchApprovePackageRequestForAdmin = async (
     req: Request,
     res: Response
@@ -260,11 +262,12 @@ export const patchApprovePackageRequestForAdmin = async (
     }
 };
 
-/* ===========================
- * Handler : PATCH /api/admin/package-requests/:packageId/reject
- * อธิบาย : ปฏิเสธคำขอแพ็กเกจโดย Admin → บันทึกเหตุผลลง rejectReason (สำหรับคำขอสถานะ PENDING)
- * Body: { reason: string }
- * =========================== */
+/**
+ * คำอธิบาย : ปฏิเสธคำขอแพ็กเกจโดย Admin → บันทึกเหตุผลลง rejectReason (สำหรับคำขอสถานะ PENDING)
+ * Input : req.user - user object, req.params - packageId, req.body - reason
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const patchRejectPackageRequestForAdmin: TypedHandlerFromDto<
     typeof patchRejectPackageRequestDto // ใช้ DTO เดียวกัน
 > = async (req, res) => {

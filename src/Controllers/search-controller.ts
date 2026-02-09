@@ -1,8 +1,3 @@
-/*
- * คำอธิบาย : Controller สำหรับการค้นหาแพ็กเกจและชุมชน
- * รองรับการค้นหาแพ็กเกจตาม tag (หลาย tag) และการค้นหาทั้งแพ็กเกจและชุมชนตาม keyword
- * สามารถใช้ search และ tag ร่วมกันได้
- */
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
   commonDto,
@@ -11,31 +6,19 @@ import {
 import { SearchQueryDto } from "../Services/search/search-dto.js";
 import * as SearchService from "../Services/search/search-service.js";
 
-/*
- * คำอธิบาย : DTO สำหรับค้นหาแพ็กเกจและชุมชน
- * Input : 
- *   - query.search - คำค้นหา (optional)
- *   - query.tag - array ของ tag names (optional, สามารถระบุหลาย tag ได้)
- *   - query.tags - comma-separated tags (optional, เช่น "tag1,tag2")
- *   - query.priceMin - ราคาขั้นต่ำ (optional)
- *   - query.priceMax - ราคาสูงสุด (optional)
- *   - query.sort - การเรียงลำดับ (optional, ค่าที่อนุญาต: latest, price-low, price-high, popular)
- *   - query.page, query.limit - pagination
- * Output : ข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
+/**
+ * DTO : searchDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับค้นหาแพ็กเกจและชุมชน
+ * Input : req.query - search, tag, tags, priceMin, priceMax, sort, page, limit
+ * Output : 200 - ข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
+ * 400 - Error message
  */
 export const searchDto = {
   query: SearchQueryDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : search
  * คำอธิบาย : Handler สำหรับค้นหาแพ็กเกจและชุมชน
- * รองรับ:
- *   - ค้นหาตาม keyword เท่านั้น: ?search=keyword
- *   - ค้นหาตาม tag(s) เท่านั้น: ?tag=tag1&tag=tag2 หรือ ?tags=tag1,tag2
- *   - ค้นหาตาม keyword และ tag(s) ร่วมกัน: ?search=keyword&tag=tag1&tag=tag2
- *   - กรองตามราคา: ?priceMin=1000&priceMax=5000
- *   - เรียงลำดับผลลัพธ์: ?sort=latest|price-low|price-high|popular
  * Input : req.query.search, req.query.tag (array), req.query.tags (comma-separated), req.query.priceMin, req.query.priceMax, req.query.sort, req.query.page, req.query.limit
  * Output :
  *   - 200 OK พร้อมข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง

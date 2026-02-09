@@ -22,24 +22,28 @@ import type {
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import { PasswordDto } from "~/Services/user/password-dto.js";
 import {
+  CreateAccountDto,
   IdParamDto,
 } from "~/Services/user/user-dto.js";
 import * as UserService from "../Services/user/user-service.js";
 
 /**
  * DTO : getUserByIdDto
- * คำอธิบาย : ใช้ตรวจสอบพารามิเตอร์ userId ใน endpoint /users/:userId
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const getUserByIdDto = {
   params: IdParamDto,
 } satisfies commonDto;
 
 /**
- * ฟังก์ชัน: getUserById
- * วัตถุประสงค์: ดึงข้อมูลผู้ใช้จาก userId
- * Input:
+ * คำอธิบาย :
+ *   ดึงข้อมูลผู้ใช้จาก userId
+ * Input :
  *   - req.params.userId (string → number)
- * Output:
+ * Output :
  *   - 200 OK : คืนข้อมูลผู้ใช้
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
@@ -55,27 +59,36 @@ export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (
     return createErrorResponse(res, 404, (caughtError as Error).message);
   }
 };
-
+/**
+ * DTO : StatusParamDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 class StatusParamDto {
   @IsEnum(UserStatus)
   status?: UserStatus;
 }
 
 /**
- * DTO: getAccountsDto
- * ใช้ตรวจสอบ Query Parameter ของ endpoint /super/accounts
+ * DTO : getAccountsDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const getAccountsDto = {
   query: PaginationDto,
 } satisfies commonDto;
 
 /**
- * ฟังก์ชัน: getAccountAll
- * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ทั้งหมดตามสิทธิ์ของผู้เรียก
- * Input:
+ * คำอธิบาย :
+ *   ดึงข้อมูลผู้ใช้ทั้งหมดตามสิทธิ์ของผู้เรียก
+ * Input :
  *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
  *   - req.query.page, req.query.limit, req.query.searchName, req.query.filterRole
- * Output:
+ * Output :
  *   - 200 OK : คืนรายการผู้ใช้พร้อม pagination
  *   - 401 Unauthorized : ถ้าไม่มีข้อมูลผู้ใช้ที่ล็อกอิน
  */
@@ -100,8 +113,11 @@ export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
 };
 
 /**
- * DTO: getUserByStatusDto
- * ใช้ตรวจสอบ Query และ Params ของ endpoint /super/accounts/status/:status
+ * DTO : getUserByStatusDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const getUserByStatusDto = {
   params: StatusParamDto,
@@ -109,9 +125,9 @@ export const getUserByStatusDto = {
 } satisfies commonDto;
 
 /**
- * ฟังก์ชัน: getUserByStatus
- * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ตามสถานะ (ACTIVE หรือ BLOCKED)
- * Input:
+ * คำอธิบาย :
+ *   ดึงข้อมูลผู้ใช้ตามสถานะ (ACTIVE หรือ BLOCKED)
+ * Input :
  *   - req.user : ผู้ใช้ที่ล็อกอินอยู่
  *   - req.params.status : สถานะที่ต้องการดึง (ACTIVE / BLOCKED)
  *   - req.query.page, req.query.limit : สำหรับแบ่งหน้า
@@ -149,17 +165,37 @@ export const getUserByStatus: TypedHandlerFromDto<
     return createErrorResponse(res, 500, (caughtError as Error).message);
   }
 };
-
+/**
+ * DTO : deleteAccountByIdDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับลบบัญชีผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const deleteAccountByIdDto = { params: IdParamDto } satisfies commonDto;
+/**
+ * DTO : blockAccountByIdDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับบล็อกบัญชีผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const blockAccountByIdDto = { params: IdParamDto } satisfies commonDto;
+/**
+ * DTO : unblockAccountByIdDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับยกเลิกบล็อกบัญชีผู้ใช้
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const unblockAccountByIdDto = { params: IdParamDto } satisfies commonDto;
 
 /**
- * ฟังก์ชัน: deleteAccountById
- * วัตถุประสงค์: ลบบัญชีผู้ใช้ตาม ID (soft delete)
- * Input:
+ * คำอธิบาย :
+ *   ลบบัญชีผู้ใช้ตาม ID (soft delete)
+ * Input :
  *   - req.params.userId : หมายเลขผู้ใช้
- * Output:
+ * Output :
  *   - 200 OK : ลบสำเร็จ
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
@@ -176,11 +212,11 @@ export const deleteAccountById: TypedHandlerFromDto<
 };
 
 /**
- * ฟังก์ชัน: blockAccountById
- * วัตถุประสงค์: ระงับบัญชีผู้ใช้ (เปลี่ยนสถานะเป็น BLOCKED)
- * Input:
+ * คำอธิบาย :
+ *   ระงับบัญชีผู้ใช้ (เปลี่ยนสถานะเป็น BLOCKED)
+ * Input :
  *   - req.params.userId : หมายเลขผู้ใช้
- * Output:
+ * Output :
  *   - 200 OK : ระงับสำเร็จ
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
@@ -197,11 +233,11 @@ export const blockAccountById: TypedHandlerFromDto<
 };
 
 /**
- * ฟังก์ชัน: unblockAccountById
- * วัตถุประสงค์: ปลดระงับบัญชีผู้ใช้ (เปลี่ยนสถานะเป็น ACTIVE)
- * Input:
+ * คำอธิบาย :
+ *   ปลดระงับบัญชีผู้ใช้ (เปลี่ยนสถานะเป็น ACTIVE)
+ * Input :
  *   - req.params.userId : หมายเลขผู้ใช้
- * Output:
+ * Output :
  *   - 200 OK : ปลดระงับสำเร็จ
  *   - 404 Not Found : ไม่พบผู้ใช้
  */
@@ -221,100 +257,23 @@ export const unblockAccountById: TypedHandlerFromDto<
     return createErrorResponse(res, 404, (caughtError as Error).message);
   }
 };
-
 /**
- * DTO: CreateAccountDto
- * ใช้สำหรับตรวจสอบข้อมูลที่ใช้สร้างบัญชีผู้ใช้ใหม่
+ * DTO : createAccountDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับสร้างบัญชีผู้ใช้ใหม่
+ * Input : req.body - roleId, memberOfCommunity, profileImage, username, email, password, fname, lname, phone, gender, birthDate, subDistrict, district, province, postalCode, activityRole, status
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
-export class CreateAccountDto {
-  @IsNumber()
-  @Type(() => Number)
-  roleId!: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  memberOfCommunity?: number;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(256)
-  profileImage?: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(50)
-  username!: string;
-
-  @IsEmail()
-  @MaxLength(65)
-  email!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(255)
-  password!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(100)
-  fname!: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(100)
-  lname!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(10)
-  phone?: string;
-
-  @IsOptional()
-  @IsEnum(Gender)
-  gender?: Gender;
-
-  @IsOptional()
-  @IsDateString()
-  birthDate?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  subDistrict?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  district?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  province?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(5)
-  postalCode?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  activityRole?: string;
-
-  @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus;
-}
-
 export const createAccountDto = {
   body: CreateAccountDto,
 } satisfies commonDto;
 
 /**
- * DTO: FileDto
- * ใช้ตรวจสอบข้อมูลไฟล์แนบในกรณีอัปโหลดรูปโปรไฟล์
+ * DTO : FileDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับอัปโหลดรูปโปรไฟล์
+ * Input : req.body - userId
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export class FileDto {
   @IsNumberString()
@@ -322,8 +281,8 @@ export class FileDto {
 }
 
 /**
- * ฟังก์ชัน: createAccount
- * วัตถุประสงค์: สร้างบัญชีผู้ใช้ใหม่และบันทึกรูปโปรไฟล์
+ * คำอธิบาย :
+ *   สร้างบัญชีผู้ใช้ใหม่และบันทึกรูปโปรไฟล์
  * Input:
  *   - req.body: ข้อมูลผู้ใช้
  *   - req.file: ไฟล์รูปโปรไฟล์
@@ -348,8 +307,8 @@ export const createAccount: TypedHandlerFromDto<
 };
 
 /**
- * ฟังก์ชัน: updateProfileImage
- * วัตถุประสงค์: อัปเดตรูปโปรไฟล์ (ลบไฟล์เก่าแล้วบันทึกใหม่)
+ * คำอธิบาย :
+ *   อัปเดตรูปโปรไฟล์ (ลบไฟล์เก่าแล้วบันทึกใหม่)
  * Input:
  *   - req.params.userId : หมายเลขผู้ใช้
  *   - req.file : ไฟล์ใหม่ที่อัปโหลด
@@ -390,8 +349,8 @@ export const updateProfileImage = async (req: Request, res: Response) => {
 };
 
 /**
- * ฟังก์ชัน: getMemberByAdmin
- * วัตถุประสงค์: แสดงข้อมูลสมาชิกที่อยู่ในชุมชนของแอดมิน
+ * คำอธิบาย :
+ *   แสดงข้อมูลสมาชิกที่อยู่ในชุมชนของแอดมิน
  * Input:
  *   - req.user.id : รหัสแอดมิน
  *   - req.params.userId : รหัสผู้ใช้ที่ต้องการดู
@@ -415,8 +374,11 @@ export const getMemberByAdmin: TypedHandlerFromDto<
   }
 };
 /*
- * DTO : unblockAccountByIdDto
- * คำอธิบาย : ใช้ตรวจสอบพารามิเตอร์ userId password สำหรับรีเซ็ตรหัสผ่านใหม่
+ * DTO : resetPasswordDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับรีเซ็ตรหัสผ่านใหม่
+ * Input : req.params.userId, req.body.newPassword
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const resetPasswordDto = {
   params: IdParamDto,
@@ -424,7 +386,6 @@ export const resetPasswordDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : forgetPassword
  * คำอธิบาย : สำหรับตั้งรหัสผ่านใหม่
  * Input :
  *   - req.params.userId : รหัสผู้ใช้ (string → number)
@@ -444,11 +405,12 @@ export const resetPassword: TypedHandlerFromDto<
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
-
 /* 
- * คำอธิบาย: Controller สำหรับเปลี่ยนรหัสผ่านของผู้ใช้งาน
- * ตรวจสอบข้อมูลจาก DTO และส่งต่อให้ UserService.changePassword ดำเนินการ
+ * DTO : ChangePasswordDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับเปลี่ยนรหัสผ่าน
+ * Input : req.body - currentPassword, newPassword, confirmNewPassword
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export class ChangePasswordDto {
     @IsString()
@@ -461,21 +423,26 @@ export class ChangePasswordDto {
     confirmNewPassword?: string;
 }
 
-
 /* 
  * DTO: ChangePasswordDto
- * Input : currentPassword, newPassword, confirmNewPassword (string)
- * ใช้ตรวจสอบและ validate ค่าที่รับจาก body ของ request
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับเปลี่ยนรหัสผ่าน
+ * Input : req.body - currentPassword, newPassword, confirmNewPassword
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const changePasswordDto = {
     body: ChangePasswordDto,
 } satisfies commonDto;
 
 /* 
- * Function: changePassword
- * Input : req (Request) → รับ body จาก changePasswordDto
- *         res (Response)
- * Output: Response JSON (200 เมื่อเปลี่ยนรหัสสำเร็จ / 404 เมื่อผิดพลาด)
+ * คำอธิบาย : 
+ *   เปลี่ยนรหัสผ่านของผู้ใช้งาน
+ * Input :
+ *   - req.user.id : รหัสผู้ใช้ (number)
+ *   - req.body : currentPassword, newPassword, confirmNewPassword (string)
+ * Output :
+ *   - 200 OK พร้อมข้อมูลผู้ใช้ที่ถูกเปลี่ยนรหัสผ่าน
+ *   - 400 Bad request
  */
 export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = async (req, res) => {
     try {
@@ -487,7 +454,13 @@ export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = asy
         return createErrorResponse(res, 404, (error as Error).message);
     }
 };
-
+/**
+ * DTO : deleteCommunityMemberByIdDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับลบสมาชิกออกจากชุมชน
+ * Input : req.params.userId
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const deleteCommunityMemberByIdDto = { 
   params: IdParamDto 
 } satisfies commonDto;
@@ -512,15 +485,18 @@ export const deleteCommunityMemberById: TypedHandlerFromDto<
 
 /**
 * DTO: getMembersByAdminDto
-* ใช้ตรวจสอบ Query Parameter ของ endpoint (Admin) สำหรับดึงรายชื่อสมาชิก
+* วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงรายชื่อสมาชิก
+* Input : req.query.page, req.query.limit
+* Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+* 400 - Error message
 */
 export const getMemberAllByAdminDto = {
   query: PaginationDto,
 } satisfies commonDto;
 
 /**
- * ฟังก์ชัน: getMemberAllByAdmin
- * วัตถุประสงค์: แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
+ * คำอธิบาย : 
+ *   แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
  * Input:
  *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
  *   - req.query.page, req.query.limit
@@ -554,10 +530,15 @@ export const softDeleteCommunityMemberByIdDto = {
 } satisfies commonDto;
 
 /**
- * ฟังก์ชัน : deleteCommunityMemberById
  * คำอธิบาย :
  *   Handler สำหรับแอดมินลบสมาชิกออกจากชุมชน (Soft Delete)
  *   ไม่ลบบัญชีผู้ใช้ (User)
+ * Input:
+ *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
+ *   - req.params.userId : รหัสสมาชิกที่ต้องการลบ
+ * Output:
+ *   - 200 OK : คืนข้อมูลสมาชิกที่ถูกลบ
+ *   - 401 Unauthorized : ถ้าไม่มีข้อมูลผู้ใช้ที่ล็อกอิน
  */
 export const softDeleteCommunityMemberById: TypedHandlerFromDto<
   typeof softDeleteCommunityMemberByIdDto

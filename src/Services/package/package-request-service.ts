@@ -22,7 +22,6 @@ export type PackageRequestListItem = {
 };
 
 /**
- * ฟังก์ชัน : getPackageRequestAll
  * คำอธิบาย :
  *  - ดึงรายการคำขออนุมัติแพ็กเกจตามสิทธิ์ผู้ใช้ พร้อมค้นหา/กรอง และรองรับ pagination
  * Input :
@@ -120,7 +119,6 @@ export async function getPackageRequestAll(
 }
 
 /**
- * ฟังก์ชัน : approvePackageRequest
  * คำอธิบาย : อนุมัติคำขอ → เปลี่ยนสถานะเป็น APPROVE และล้างเหตุผลการปฏิเสธ
  * สิทธิ์ : superadmin, admin
  */
@@ -141,7 +139,6 @@ export async function approvePackageRequest(
 }
 
 /**
- * ฟังก์ชัน : rejectPackageRequest
  * คำอธิบาย : ปฏิเสธคำขอ → บันทึกเหตุผล และตั้งสถานะเป็น REJECTED
  * สิทธิ์ : superadmin, admin
  */
@@ -333,7 +330,6 @@ export async function approvePackageRequestForAdmin(
 }
 
 /**
- * ฟังก์ชัน : rejectPackageRequestForAdmin
  * คำอธิบาย : Admin ปฏิเสธคำขอ → ตรวจสอบต้องเป็นสถานะ PENDING แล้วบันทึกเหตุผล และตั้งสถานะเป็น REJECTED
  * สิทธิ์ : admin
  */

@@ -1,7 +1,3 @@
-/*
- * คำอธิบาย : Service สำหรับจัดการประเภท
- * ประกอบด้วยการสร้าง (create), แก้ไข (edit), ลบ (delete), และดึงข้อมูล Tag ทั้งหมด (get)
- */
 import prisma from "../database-service.js";
 import { TagDto } from "./tag-dto.js";
 

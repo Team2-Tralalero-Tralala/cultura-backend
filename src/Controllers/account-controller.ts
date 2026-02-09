@@ -1,49 +1,47 @@
-/*
- * Controller: Account
- * Description:
- *  - จัดการบัญชีผู้ใช้ทั้งหมด (Create / Edit / Get / Filter)
- *  - ใช้ร่วมกับ role-based access (SuperAdmin, Admin, Member)
- *  - รองรับการ validate ด้วย DTO
- */
-
 import { IsNumberString } from "class-validator";
 import { createResponse, createErrorResponse } from "../Libs/createResponse.js";
 import * as AccountService from "../Services/account/account-service.js";
-import {
-  CreateAccountDto,
-  EditAccountDto,
-} from "../Services/account/account-dto.js";
+import * as AccountDto from "../Services/account/account-dto.js";
 import type {
   commonDto,
   TypedHandlerFromDto,
 } from "../Libs/Types/TypedHandler.js";
 import type { Request, Response } from "express";
-import { log } from "console";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 
-
-/** ----------------------------- DTOs ----------------------------- **/
-
-// ใช้กับการสร้างบัญชี
+/**
+ * DTO: createAccountDto
+ * วัตถุประสงค์: กำหนด schema สำหรับ createAccount
+ * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
+ */
 export const createAccountDto = {
-  body: CreateAccountDto,
+  body: AccountDto.CreateAccountDto,
 } satisfies commonDto;
 
-// ใช้กับการแก้ไขบัญชี
+/**
+ * DTO: AccountIdParamDto
+ * วัตถุประสงค์: กำหนด schema สำหรับ AccountIdParam
+ * Input : ข้อมูลจาก params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
+ */
 export class AccountIdParamDto {
   @IsNumberString()
   id?: number;
 }
-
+/**
+ * DTO: editAccountDto
+ * วัตถุประสงค์: กำหนด schema สำหรับ editAccount
+ * Input : ข้อมูลจาก body และ params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
+ */
 export const editAccountDto = {
-  body: EditAccountDto,
+  body: AccountDto.EditAccountDto,
   params: AccountIdParamDto,
 } satisfies commonDto;
 
-/** ----------------------------- Controller: Create Account ----------------------------- **/
 
 /*
- * Controller: Account
  * คำอธิบาย : จัดการคำขอสร้างบัญชีผู้ใช้ (เฉพาะ superadmin สร้าง admin)
  * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
  * Output : Response มาตรฐาน createResponse / createErrorResponse
@@ -54,7 +52,7 @@ export const createAccount: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const result = await AccountService.createAccount(
-      req.body as CreateAccountDto
+      req.body as AccountDto.CreateAccountDto
     );
     return createResponse(res, 201, "Account created successfully", result);
   } catch (error) {
@@ -64,36 +62,30 @@ export const createAccount: TypedHandlerFromDto<
     // Map error messages to standard response
     switch (message) {
       case "role_not_found":
-        return createErrorResponse(res, 404, "Role not found");
+        return createErrorResponse(res, 404, "ไม่พบบทบาท");
       case "role_not_allowed":
         return createErrorResponse(
           res,
           403,
-          "You are not allowed to create this account type"
+          "ไม่สามารถสร้างบัญชีประเภทนี้ได้"
         );
       case "duplicate":
         return createErrorResponse(
           res,
           409,
-          "Duplicate data (username, email, or phone)"
+          "มีข้อมูลซ้ำ (username, email, หรือ phone)"
         );
       default:
-        return createErrorResponse(res, 400, "Failed to create account");
+        return createErrorResponse(res, 400, "ไม่สามารถสร้างบัญชีได้");
     }
   }
 };
-/** ----------------------------- Controller: SuperAdmin Create Member ----------------------------- **/
+
 
 /**
- * Controller: สร้างบัญชี Member (เฉพาะ SuperAdmin)
- * Role Access: SuperAdmin
- */
-
-/** ----------------------------- Controller: Edit Account ----------------------------- **/
-
-/**
- * Controller: Edit Account
- * Description: ใช้แก้ไขข้อมูลบัญชีผู้ใช้ตาม id
+ * คำอธิบาย : จัดการคำขอแก้ไขข้อมูลบัญชีผู้ใช้ตาม id
+ * Input : ข้อมูลจาก body และ params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (
   req,
@@ -102,7 +94,7 @@ export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (
   try {
     const result = await AccountService.editAccount(
       Number(req.params.id),
-      req.body as EditAccountDto
+      req.body as AccountDto.EditAccountDto
     );
     return createResponse(res, 200, "Account updated successfully", result);
   } catch (error) {
@@ -110,12 +102,11 @@ export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (
   }
 };
 
-/** ----------------------------- Controller: Get All Accounts ----------------------------- **/
 
 /**
- * Controller: Get All Users
- * Role Access: SuperAdmin
- * Description: ดึงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า (pagination)
+ * คำอธิบาย : จัดการคำขอแสดงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า (pagination)
+ * Input : ข้อมูลจาก query ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const getAll = async (req: Request, res: Response) => {
   try {
@@ -130,12 +121,10 @@ export const getAll = async (req: Request, res: Response) => {
   }
 };
 
-/** ----------------------------- Controller: Get Members by Admin ----------------------------- **/
-
 /**
- * Controller: Get Member by Admin
- * Role Access: Admin
- * Description: ดึงข้อมูลสมาชิกในชุมชนที่ admin นั้นดูแลอยู่
+ * คำอธิบาย : จัดการคำขอแสดงข้อมูลสมาชิกในชุมชนที่ admin นั้นดูแลอยู่
+ * Input : ข้อมูลจาก query ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const getMemberByAdmin = async (req: Request, res: Response) => {
   try {
@@ -152,8 +141,11 @@ export const getMemberByAdmin = async (req: Request, res: Response) => {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
-/** ----------------------------- Controller: Get Account by ID ----------------------------- **/
+/**
+ * คำอธิบาย : จัดการคำขอแสดงข้อมูลบัญชีผู้ใช้ตาม id
+ * Input : ข้อมูลจาก params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
+ */
 export const getAccountById = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -172,23 +164,29 @@ export const getAccountById = async (req: Request, res: Response) => {
   }
 };
 /**
- * DTO สำหรับ params communityId
+ * DTO: CommunityIdParamDto
+ * วัตถุประสงค์: กำหนด schema สำหรับ CommunityIdParam
+ * Input : ข้อมูลจาก params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export class CommunityIdParamDto {
   @IsNumberString()
   communityId?: string;
 }
 /*
- * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * DTO: getAccountInCommunityDto
+ * วัตถุประสงค์: กำหนด schema สำหรับ getAccountInCommunity
+ * Input : ข้อมูลจาก params และ query ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const getAccountInCommunityDto = {
   params: CommunityIdParamDto,
   query: PaginationDto,
 } satisfies commonDto;
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
- * input: communityId, page, limit
- * output: account in community
+ * คำอธิบาย : จัดการคำขอแสดงข้อมูลบัญชีผู้ใช้ตาม id
+ * Input : ข้อมูลจาก params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const getAccountInCommunity: TypedHandlerFromDto<
   typeof getAccountInCommunityDto
@@ -202,7 +200,7 @@ export const getAccountInCommunity: TypedHandlerFromDto<
     return createResponse(
       res,
       200,
-      "get account in community successfully",
+      "ดึงข้อมูลสมาชิกในชุมชนสำเร็จ",
       result
     );
   } catch (error) {
@@ -210,11 +208,11 @@ export const getAccountInCommunity: TypedHandlerFromDto<
   }
 };
 
-/** ----------------------------- Controller: Admin Create Member ----------------------------- **/
 
 /*
- * Controller: Admin Create Member
- * คำอธิบาย : Admin สร้างสมาชิกใหม่
+ * คำอธิบาย : จัดการคำขอสร้างบัญชีผู้ใช้ใหม่
+ * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const createMemberByAdmin: TypedHandlerFromDto<
   typeof createAccountDto
@@ -228,7 +226,7 @@ export const createMemberByAdmin: TypedHandlerFromDto<
       ...req.body,
       memberOfCommunity: communityId,
       communityRole: req.body.communityRole || "General Member",
-    } as CreateAccountDto;
+    } as AccountDto.CreateAccountDto;
 
     const result = await AccountService.createAccount(payload);
 
@@ -246,12 +244,11 @@ export const createMemberByAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, message);
   }
 };
-/** ----------------------------- Controller: Admin Edit Member ----------------------------- **/
 
 /*
- * Controller: Admin Edit Member
- * คำอธิบาย : Admin แก้ไขข้อมูลสมาชิกในชุมชนของตัวเอง
- * Access: Admin
+ * คำอธิบาย : จัดการคำขอแก้ไขข้อมูลสมาชิกในชุมชนของตัวเอง
+ * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const editMemberByAdmin: TypedHandlerFromDto<
   typeof editAccountDto
@@ -259,7 +256,7 @@ export const editMemberByAdmin: TypedHandlerFromDto<
   try {
     const adminId = Number(req.user!.id);
     const targetUserId = Number(req.params.id);
-    const body = req.body as EditAccountDto;
+    const body = req.body as AccountDto.EditAccountDto;
 
     const adminCommunityId = await AccountService.getCommunityIdByAdminId(
       adminId
@@ -289,6 +286,12 @@ export const editMemberByAdmin: TypedHandlerFromDto<
     return createErrorResponse(res, 400, message);
   }
 };
+/**
+ * DTO: ProfileIdParamDto
+ * วัตถุประสงค์: กำหนด schema สำหรับ ProfileIdParam
+ * Input : ข้อมูลจาก params ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
+ */
 export class ProfileIdParamDto {
   @IsNumberString()
   accountId?: string;
@@ -307,7 +310,7 @@ export class ProfileIdParamDto {
  *   - หากข้อมูลถูกต้อง ระบบจะส่งต่อไปยัง controller เพื่อประมวลผล
  */
 export const editProfileDto = {
-  body: EditAccountDto, 
+  body: AccountDto.EditAccountDto, 
 } satisfies commonDto;
 
 /*
@@ -360,23 +363,18 @@ export const editProfile = async (req: Request, res: Response) => {
  * วัตถุประสงค์ :
  *   ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
  *   โดยไม่ต้องรับข้อมูลเพิ่มเติมจาก client
- *
  * Input :
  *   - ไม่มี
- *
  * Output :
  *   - ข้อมูลโปรไฟล์ของผู้ใช้งาน (จาก token)
  */
 export const getMeDto = {} satisfies commonDto;
 
 /**
- * ฟังก์ชัน : getMe
  * คำอธิบาย :
- *   Controller สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
- *
+ *   ดึงข้อมูลโปรไฟล์ของผู้ใช้งานที่กำลังล็อกอินอยู่
  * Input :
  *   - req.user.id : รหัสผู้ใช้งานจาก token
- *
  * Output :
  *   - Response 200 : ข้อมูลโปรไฟล์ของผู้ใช้งาน
  *   - Response 400 : กรณีเกิดข้อผิดพลาด
@@ -384,7 +382,7 @@ export const getMeDto = {} satisfies commonDto;
 export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
   try {
     const result = await AccountService.getMe(Number(req.user?.id));
-    return createResponse(res, 200, "get my profile data successfully", result);
+    return createResponse(res, 200, "ดึงข้อมูลโปรไฟล์สำเร็จ", result);
   } catch (error: any) {
     return createErrorResponse(res, 400, error.message);
   }
@@ -399,19 +397,17 @@ export const getMe: TypedHandlerFromDto<typeof getMeDto> = async (req, res) => {
  * หากข้อมูลไม่ถูกต้อง ระบบจะเเจ้งข้อผิดพลาดกลับไปยังผู้ใช้งานทันที
  */
 export const editProfileTouristDto = {
-  body: EditAccountDto,
+  body: AccountDto.EditAccountDto,
 } satisfies commonDto;
 
 /**
- * Controller : editProfileTourist
- * Role Access : Tourist
- * Description : สำหรับแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
- * Input : รหัสผู้ใช้งานจาก token (req.user.id), ข้อมูลโปรไฟล์ที่ต้องการแก้ไข (req.body)
- * Output : แก้ไขข้อมูลสำเร็จ (Response 200), กรณีเกิดข้อผิดพลาด(Response 400)
+ * คำอธิบาย : จัดการคำขอแก้ไขข้อมูลโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
+ * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
+ * Output : Response มาตรฐาน createResponse / createErrorResponse
  */
 export const editProfileTourist = async (req: Request, res: Response) => {
   try {
-    const body = req.body as EditAccountDto;
+    const body = req.body as AccountDto.EditAccountDto;
 
     if (req.file) {
       body.profileImage = req.file.path.replace(/\\/g, "/");

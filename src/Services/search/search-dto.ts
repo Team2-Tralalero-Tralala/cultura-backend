@@ -1,12 +1,3 @@
-/*
- * คำอธิบาย : DTO สำหรับการค้นหาแพ็กเกจและชุมชน
- * รองรับการค้นหาแพ็กเกจตาม tag (หลาย tag) และการค้นหาทั้งแพ็กเกจและชุมชนตาม keyword
- * สามารถใช้ search และ tag ร่วมกันได้
- * รองรับการกรองตามราคา (priceMin, priceMax)
- * รองรับการเรียงลำดับผลลัพธ์ (sort: latest, price-low, price-high, popular)
- * 
- * หมายเหตุ: การตรวจสอบว่ามี search หรือ tag อย่างน้อยหนึ่งอย่างจะทำใน controller
- */
 import { Expose, Transform } from "class-transformer";
 import {
   IsArray,
@@ -19,24 +10,13 @@ import {
 
 import { PaginationDto } from "../pagination-dto.js";
 
-/*
- * ชนิดข้อมูล : SearchQueryDto
- * คำอธิบาย : Query DTO สำหรับค้นหาแพ็กเกจและชุมชน (สืบทอด page, limit จาก PaginationDto)
- * Input :
- *   - search (string | undefined) - คำค้นหา (optional)
- *   - tag (string[] | undefined) - รายชื่อ tag (optional, รองรับหลายค่า)
- *   - tags (string[] | undefined) - รายชื่อ tag จาก comma-separated (optional)
- *   - priceMin (number | undefined) - ราคาขั้นต่ำ (optional)
- *   - priceMax (number | undefined) - ราคาสูงสุด (optional)
- *   - sort ("latest" | "price-low" | "price-high" | "popular" | undefined) - การเรียงลำดับ (optional)
- * Output : SearchQueryDto
+/**
+ * DTO: SearchQueryDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อค้นหาแพ็กเกจและชุมชน
+ * Input: body parameters (search, tag, tags, priceMin, priceMax, sort)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class SearchQueryDto extends PaginationDto {
-  @Expose()
-  @IsOptional()
-  @IsString({ message: "คำค้นหาต้องเป็นข้อความ" })
-  search?: string;
-
   @Expose()
   @IsOptional()
   @Transform(({ value }) => {

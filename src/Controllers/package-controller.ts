@@ -1,10 +1,3 @@
-/*
- * คำอธิบาย : Controller
- * จัดการ Request/Response ที่เกี่ยวข้องกับ "แพ็กเกจ" (Package)
- * ทำหน้าที่เป็นตัวกลางรับข้อมูลจาก Route, ตรวจสอบสิทธิ์เบื้องต้น,
- * ส่งต่อไปยัง Service, และจัดรูปแบบ Response กลับไปยัง Client
- */
-
 import type { Request, Response } from "express";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import type {
@@ -131,13 +124,6 @@ export async function createPackageAdmin(req: Request, res: Response) {
  * Input: req.body - (PackageDto), req.user.id - (UserId from auth)
  * Output: 200 - ข้อมูลแพ็กเกจที่สร้างสำเร็จ
  * 400 - Error message
- */
-// Controllers/package-controller.ts
-
-/*
- * คำอธิบาย : (Member) Handler สำหรับสร้างแพ็กเกจใหม่
- * Input: req.body - (FormData: data string + files), req.user.id
- * Output: 200 - ข้อมูลแพ็กเกจที่สร้างสำเร็จ
  */
 export async function createPackageMember(req: Request, res: Response) {
   try {
@@ -816,19 +802,10 @@ export const listAllHomestaysSuperAdmin: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : getAllFeedbacks
  * คำอธิบาย : (Admin/Member) Handler สำหรับดึงรายการ Feedback ทั้งหมดในระบบ
- * เงื่อนไข :
- *   - ตรวจสอบสิทธิ์ผู้ใช้จาก req.user (ต้องล็อกอินก่อน)
- *   - ใช้ userId จาก token เพื่อกรองข้อมูล Feedback ของผู้ใช้
- * การทำงาน :
- *   1. ตรวจสอบว่า req.user มีค่าหรือไม่ → ถ้าไม่มีให้ตอบกลับ 401 Unauthorized
- *   2. เรียกใช้ Service: PackageService.getAllFeedbacks(userId)
- *   3. ส่งผลลัพธ์กลับพร้อมสถานะ 200 และข้อความ “Get FeedBacks Successfully”
- * การตอบกลับ :
- *   - 200 : ดึง Feedback ทั้งหมดสำเร็จ
- *   - 401 : ไม่มีสิทธิ์เข้าถึง (ไม่ได้ล็อกอิน)
- *   - 404 : เกิดข้อผิดพลาดขณะดึงข้อมูล
+ * Input: req.user.id
+ * Output: 200 - Array ของข้อมูล Feedback
+ * 400 - Error message
  */
 export const getAllFeedbacks = async (req: Request, res: Response) => {
   try {
@@ -845,17 +822,10 @@ export const getAllFeedbacks = async (req: Request, res: Response) => {
 
 /*
  * คำอธิบาย : (Admin) Handler สำหรับดึงรายละเอียดประวัติแพ็กเกจ
- * Method : GET
- * Endpoint : /api/admin/package/history/:packageId
  * Input  : req.params.packageId (หมายเลขไอดีของแพ็กเกจ)
  * Output : 200 - รายละเอียดแพ็กเกจพร้อมข้อมูลประวัติการใช้งาน Homestay และ Booking
  *           404 - หากไม่พบแพ็กเกจ
  *           400 - หากเกิดข้อผิดพลาดอื่น
- * การทำงาน :
- *   1. อ่านค่า packageId จากพารามิเตอร์ URL
- *   2. เรียกใช้ Service ชั้น package-service เพื่อดึงข้อมูลแพ็กเกจและประวัติทั้งหมด
- *   3. หากไม่พบข้อมูลให้ส่ง Response 404
- *   4. หากพบให้จัดรูปแบบ Response และส่งกลับให้ Client
  */
 
 export async function getPackageHistoryDetailAdmin(
@@ -1033,9 +1003,7 @@ export const getDraftPackages: TypedHandlerFromDto<
 };
 
 /**
- * Controller : deleteDraftPackageController
- * Role Access : Admin, Member
- * Description : สำหรับลบแพ็กเกจที่อยู่ในสถานะ Draft ของผู้ใช้งาน
+ * คำอธิบาย : สำหรับลบแพ็กเกจที่อยู่ในสถานะ Draft ของผู้ใช้งาน
  * Input : รหัสผู้ใช้งานจาก token (req.user.id), รหัสแพ็กเกจจากพารามิเตอร์ (req.params.id)
  * Output : ลบแพ็กเกจสำเร็จ (Response 200), กรณีไม่มีสิทธิ์เข้าถึง (Response 401), กรณีเกิดข้อผิดพลาด (Response 400)
  */
@@ -1109,8 +1077,6 @@ export const bulkDeleteDraftPackages = async (req: Request, res: Response) => {
     });
   }
 };
-
-
 /*
  * DTO: getPackageByIdTouristDto
  * วัตถุประสงค์: ใช้สำหรับตรวจสอบความถูกต้องของ params (packageId)

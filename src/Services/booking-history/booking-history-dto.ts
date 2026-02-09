@@ -12,7 +12,12 @@ import {
 import { Type } from "class-transformer";
 import { BookingStatus } from "@prisma/client";
 import "reflect-metadata";
-
+/**
+ * DTO: BookingHistoryDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Booking History
+ * Input: body parameters (touristId, packageId, bookingAt, cancelAt, refundAt, status, totalParticipant, rejectReason, tranferSlip)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class BookingHistoryDto {
     @IsNumber()
     @IsNotEmpty({ message: "touristId ห้ามว่าง" })

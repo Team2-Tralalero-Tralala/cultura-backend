@@ -1,8 +1,3 @@
-/*
- * คำอธิบาย : Controller สำหรับการจัดการข้อมูลหน้าแรก (Home)
- * ประกอบด้วยการดึงข้อมูล carousel images และ activity tags
- * โดยใช้ HomeService ในการทำงานหลัก และส่งผลลัพธ์กลับด้วย createResponse / createErrorResponse
- */
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import {
     commonDto,
@@ -11,14 +6,14 @@ import {
 import * as HomeService from "../Services/home/home-service.js";
 
 /*
- * คำอธิบาย : DTO สำหรับดึงข้อมูลหน้าแรก
+ * DTO : getHomeDto
+ * วัตถุประสงค์ : สำหรับดึงข้อมูลหน้าแรก
  * Input : -
  * Output : ข้อมูล carousel images และ activity tags
  */
 export const getHomeDto = {} satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getHome
  * คำอธิบาย : Handler สำหรับดึงข้อมูลหน้าแรก
  * Input : -
  * Output :

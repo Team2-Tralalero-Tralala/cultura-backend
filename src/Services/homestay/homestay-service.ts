@@ -470,7 +470,6 @@ export const getHomestaysAll = async (
 };
 
 /**
- * ฟังก์ชัน : getHomestaysAllAdmin
  * อธิบาย : ดึง homestay ทั้งหมดของชุมชนที่ admin คนนั้นดูแล
  * Mapping : GET /admin/community/homestays/all
  */
@@ -566,7 +565,6 @@ function getAdminCommunityId(user: {
 }
 
 /*
- * (ปรับปรุง)
  * คำอธิบาย : ตรวจสิทธิ์ Admin และ "สร้าง" Homestay ในชุมชนของตนเอง
  * Input  : userId (ID ของ Admin), data (ข้อมูลที่พัก)
  * Output : homestay ที่ถูกสร้าง
@@ -583,7 +581,6 @@ export async function createHomestayByAdmin(userId: number, data: HomestayDto) {
 }
 
 /*
- * (ฟังก์ชันใหม่ที่ต้องเพิ่ม)
  * คำอธิบาย : ตรวจสิทธิ์ Admin และดึงรายละเอียด Homestay ตาม id (สำหรับหน้า Edit)
  * Input  : userId (ID ของ Admin), homestayId (ID ที่พักที่จะดึง)
  * Output : homestay (รวมความสัมพันธ์) หรือ null/throw
@@ -642,7 +639,6 @@ export async function getHomestayDetailByIdByAdmin(
 }
 
 /*
- * (ปรับปรุง)
  * คำอธิบาย : ตรวจสิทธิ์ Admin และ "แก้ไข" Homestay ที่อยู่ในชุมชนของตนเอง
  * Input  : userId (ID ของ Admin), homestayId (ID ที่พักที่จะแก้), data (ข้อมูลใหม่)
  * Output : homestay ที่อัปเดตแล้ว
@@ -680,7 +676,7 @@ export async function editHomestayByAdmin(
 }
 
 /**
-ฟังก์ชัน : deleteHomestayBySuperAdmin
+ * คำอธิบาย : ลบ homestay ที่อยู่ในชุมชนที่ super admin คนนั้นดูแล (soft delete)
  * Input :
  *   - homestayId : หมายเลข Homestay ที่ต้องการลบ
  * Output :
@@ -703,10 +699,14 @@ export const deleteHomestayBySuperAdmin = async (homestayId: number) => {
 };
 
 /**
-ฟังก์ชัน : deleteHomestayByAdmin
-อธิบาย : ลบ homestay ที่อยู่ในชุมชนที่ admin คนนั้นดูแล (soft delete)
-*/
-
+ * คำอธิบาย : ลบ homestay ที่อยู่ในชุมชนที่ admin คนนั้นดูแล (soft delete)
+ * Input :
+ *   - userId : ID ของ Admin
+ *   - homestayId : ID ของ Homestay ที่ต้องการลบ
+ * Output :
+ *   - ตัวข้อมูล Homestay ที่ถูก Soft Delete แล้ว
+ *   - Error หากไม่พบ Homestay หรือ Admin ไม่มีสิทธิ์ลบ
+ */
 export const deleteHomestayByAdmin = async (
   userId: number,
   homestayId: number
