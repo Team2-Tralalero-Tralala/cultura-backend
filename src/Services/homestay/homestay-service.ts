@@ -1,6 +1,7 @@
 import prisma from "../database-service.js";
 import type { HomestayDto, HomestayImageDto } from "./homestay-dto.js";
 import type { PaginationResponse } from "../pagination-dto.js";
+import { PrismaClient, Prisma } from '@prisma/client';
 /*
  * คำอธิบาย : ดึงผู้ใช้ตาม userId; ไม่พบให้ throw
  * Input  : userId:number
@@ -402,12 +403,13 @@ export async function getHomestayDetailById(id: number) {
 // services/homestay-service.ts
 
 /**
- * คำอธิบาย : ดึงข้อมูลรายการที่พักทั้งหมดในชุมชน (เฉพาะ SuperAdmin)
+ * คำอธิบาย : ดึงข้อมูลรายการที่พักทั้งหมดในชุมชน พร้อมรองรับการค้นหา (เฉพาะ SuperAdmin)
  * Input :
  * - userId (number) : รหัสผู้ใช้งาน (ใช้ตรวจสอบสิทธิ์)
  * - communityId (number) : รหัสชุมชนที่ต้องการดึงข้อมูล
  * - page (number) : เลขหน้าที่ต้องการ (default = 1)
  * - limit (number) : จำนวนรายการต่อหน้า (default = 10)
+ * - search (string) : คำค้นหา กรองจากชื่อ, ประเภท หรือสิ่งอำนวยความสะดวก (default = "")
  * Output :
  * - Promise<PaginationResponse<any>> : Object ที่ประกอบด้วยข้อมูลรายการที่พัก (data) และข้อมูลการแบ่งหน้า (pagination)
  */
@@ -415,38 +417,54 @@ export const getHomestaysAll = async (
   userId: number,
   communityId: number,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  search: string = "" // เพิ่มรับค่า search
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(userId) || !Number.isInteger(communityId)) {
     throw new Error("ID must be a number");
   }
 
-  // ตรวจสอบสิทธิ์ผู้ใช้ 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { role: true },
+  // ตรวจสอบสิทธิ์ผู้ใช้
+  const user = await prisma.user.findUnique({ 
+    where: { id: userId }, 
+    include: { role: true } 
   });
-  if (!user) throw new Error("User not found");
 
-  const role = user.role?.name?.toLowerCase();
-  if (role !== "superadmin") {
-    throw new Error("Forbidden: Only SuperAdmin can access this route");
+  if (!user || user.role?.name?.toLowerCase() !== "superadmin") {
+     throw new Error("Forbidden: Only SuperAdmin can access this route");
   }
 
-  // ตรวจสอบว่าชุมชนมีอยู่จริง
-  const community = await prisma.community.findFirst({
-    where: { id: communityId, isDeleted: false },
+  const community = await prisma.community.findFirst({ 
+    where: { id: communityId, isDeleted: false } 
   });
   if (!community) throw new Error("Community not found");
 
+
+  // สร้างเงื่อนไข Where Clause
+  const whereCondition: Prisma.HomestayWhereInput = {
+    communityId: communityId, // ต้องอยู่ในชุมชนนี้
+    isDeleted: false,         // ต้องไม่ถูกลบ
+  };
+
+  // ถ้ามี Search ให้ค้นหาจาก ชื่อ, ประเภท, หรือ สิ่งอำนวยความสะดวก
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { type: { contains: search } },
+      { facility: { contains: search } },
+    ];
+  }
+
   const skip = (page - 1) * limit;
 
+  // ใช้ whereCondition ใน count
   const totalCount = await prisma.homestay.count({
-    where: { communityId, isDeleted: false },
+    where: whereCondition,
   });
 
+  // ใช้ whereCondition ใน findMany
   const homestays = await prisma.homestay.findMany({
-    where: { communityId, isDeleted: false },
+    where: whereCondition,
     orderBy: { id: "asc" },
     skip,
     take: limit,
