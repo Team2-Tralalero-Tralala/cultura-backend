@@ -8,8 +8,13 @@ import { PaginationDto } from "~/Services/pagination-dto.js";
 import { StoreDto, StoreImageDto } from "~/Services/store/store-dto.js";
 import * as StoreService from "~/Services/store/store-service.js";
 
-/* ----------------------------- DTO ----------------------------- */
-
+/**
+ * DTO : CommunityIdParamDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลร้านค้าทั้งหมดในชุมชน
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export class CommunityIdParamDto {
   @IsNumberString()
   communityId?: string;
@@ -30,8 +35,7 @@ export const createStoreDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : createStore
- * รายละเอียด :
+ * คำอธิบาย :
  *   รับข้อมูลร้านค้าใหม่จากผู้ใช้ แล้วส่งต่อให้ StoreService.createStore
  *   เพื่อลงฐานข้อมูล พร้อมตรวจสอบสิทธิ์ผู้ใช้งาน
  * Input :
@@ -56,8 +60,8 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
 
     const parsed = JSON.parse((req.body as any).data);
     const storeImage = [
-      ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+      ...(files.cover?.map((file) => ({ image: file.path, type: "COVER" })) || []),
+      ...(files.gallery?.map((file) => ({ image: file.path, type: "GALLERY" })) ||
         []),
     ];
 
@@ -72,24 +76,23 @@ export const createStore: TypedHandlerFromDto<typeof createStoreDto> = async (
   }
 };
 
-/*
- * ฟังก์ชัน : IdParamDto
- * รายละเอียด :
- *   ใช้ตรวจสอบค่าพารามิเตอร์ storeId จาก URL
+/**
+ * DTO : IdParamDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลร้านค้าทั้งหมดในชุมชน
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export class IdParamDto {
   @IsNumberString()
   storeId?: string;
 }
 /*
- * ฟังก์ชัน : editStoreDto
- * รายละเอียด :
- *   ใช้กำหนดโครงสร้างข้อมูล (DTO) สำหรับแก้ไขร้านค้า
- * Input :
- *   - params : IdParamDto
- *   - body : StoreDto
- * Output :
- *   - ข้อมูลร้านค้าที่อัปเดตแล้ว
+ * DTO : editStoreDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับแก้ไขร้านค้า
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const editStoreDto = {
   body: StoreDto,
@@ -97,8 +100,7 @@ export const editStoreDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : editStore
- * รายละเอียด :
+ * คำอธิบาย :
  *   อัปเดตรายละเอียดร้านค้า เช่น ชื่อ ที่อยู่ รูปภาพ และป้ายกำกับ
  *   โดยตรวจสอบสิทธิ์ก่อนแก้ไข
  * Input :
@@ -125,8 +127,8 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
 
     const parsed = JSON.parse((req.body as any).data);
     const storeImage = [
-      ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+      ...(files.cover?.map((file) => ({ image: file.path, type: "COVER" })) || []),
+      ...(files.gallery?.map((file) => ({ image: file.path, type: "GALLERY" })) ||
         []),
     ];
 
@@ -143,12 +145,27 @@ export const editStore: TypedHandlerFromDto<typeof editStoreDto> = async (
   }
 };
 
-/* ----------------------------- GET STORE BY ID ----------------------------- */
-
+/**
+ * DTO : getStoreByIdDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงข้อมูลร้านค้าทั้งหมดในชุมชน
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const getStoreByIdDto = {
   params: IdParamDto,
 } satisfies commonDto;
 
+/**
+ * คำอธิบาย :
+ *   ดึงข้อมูลร้านค้าตาม storeId
+ * Input :
+ *   - req.params.storeId : string (รหัสร้านค้า)
+ * Output :
+ *   - 200 : ดึงข้อมูลร้านค้าสำเร็จ
+ *   - 400 : ข้อมูลไม่ถูกต้อง หรือเกิดข้อผิดพลาด
+ *   - 401 : ผู้ใช้ยังไม่ได้รับการยืนยันตัวตน
+ */
 export const getStoreById: TypedHandlerFromDto<typeof getStoreByIdDto> = async (
   req,
   res
@@ -219,8 +236,7 @@ export const getAllStore: TypedHandlerFromDto<typeof getAllStoreDto> = async (
 };
 
 /*
- * ฟังก์ชัน : createStore
- * รายละเอียด :
+ * คำอธิบาย :
  *   รับข้อมูลร้านค้าใหม่จากผู้ใช้ แล้วส่งต่อให้ StoreService.createStore
  *   เพื่อลงฐานข้อมูล พร้อมตรวจสอบสิทธิ์ผู้ใช้งาน
  * Input :
@@ -249,8 +265,8 @@ export const createStoreByAdmin: TypedHandlerFromDto<
 
     // รวมไฟล์พร้อม type
     const storeImage = [
-      ...(files.cover?.map((f) => ({ image: f.path, type: "COVER" })) || []),
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+      ...(files.cover?.map((file) => ({ image: file.path, type: "COVER" })) || []),
+      ...(files.gallery?.map((file) => ({ image: file.path, type: "GALLERY" })) ||
         []),
     ];
 
@@ -314,16 +330,13 @@ export const getAllStoreForAdmin: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : deleteStore
  * คำอธิบาย :
  *   ลบร้านค้าออกจากระบบ (แบบ Soft Delete)
  *   โดยจำกัดสิทธิ์เฉพาะผู้ใช้ที่เป็น superadmin หรือ admin เท่านั้น
  *   ตรวจสอบสิทธิ์ผ่าน middleware ก่อนดำเนินการ
- *
  * Input :
  *   - req.params.storeId : หมายเลขรหัสร้านค้า (string → number)
  *   - req.user            : ข้อมูลผู้ใช้จาก token (UserPayload)
- *
  * Output :
  *   - 200 : ลบร้านค้าสำเร็จ พร้อมส่งข้อมูลร้านที่ถูกลบกลับ
  *   - 400 : ไม่พบร้านค้าหรือผู้ใช้ไม่มีสิทธิ์
@@ -356,7 +369,11 @@ export const deleteStore: TypedHandlerFromDto<typeof deleteStoreDto> = async (
   }
 };
 /*
- * ✅ สร้าง class DTO สำหรับ params.id
+ * DTO : deleteStoreByAdminDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับลบร้านค้า
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 class DeleteStoreParamsDto {
   @IsNumberString()
@@ -364,14 +381,27 @@ class DeleteStoreParamsDto {
 }
 
 /*
- * ✅ สร้าง DTO object สำหรับ validateDto()
+ * DTO : deleteStoreByAdminDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับลบร้านค้า
+ * Input : req.query - page, limit, search, statusApprove
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
  */
 export const deleteStoreByAdminDto = {
   params: DeleteStoreParamsDto,
 } satisfies commonDto;
 
 /*
- * ✅ Controller function
+ * คำอธิบาย :
+ *   ลบร้านค้าออกจากระบบ (แบบ Soft Delete)
+ *   โดยจำกัดสิทธิ์เฉพาะผู้ใช้ที่เป็น superadmin หรือ admin เท่านั้น
+ *   ตรวจสอบสิทธิ์ผ่าน middleware ก่อนดำเนินการ
+ * Input :
+ *   - req.params.storeId : หมายเลขรหัสร้านค้า (string → number)
+ *   - req.user            : ข้อมูลผู้ใช้จาก token (UserPayload)
+ * Output :
+ *   - 200 : ลบร้านค้าสำเร็จ พร้อมส่งข้อมูลร้านที่ถูกลบกลับ
+ *   - 400 : ไม่พบร้านค้าหรือผู้ใช้ไม่มีสิทธิ์
  */
 export const deleteStoreByAdmin: TypedHandlerFromDto<
   typeof deleteStoreByAdminDto

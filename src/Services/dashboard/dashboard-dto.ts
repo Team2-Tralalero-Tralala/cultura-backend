@@ -33,10 +33,6 @@ export class GetSuperAdminDashboardDto extends PaginationDto {
   @IsOptional()
   @IsString({ message: "region ต้องเป็น string" })
   region?: string;
-
-  @IsOptional()
-  @IsString({ message: "search ต้องเป็น string" })
-  search?: string;
 }
 /**
  * DTO: GetAdminDashboardDto

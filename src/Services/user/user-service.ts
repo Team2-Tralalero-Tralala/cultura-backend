@@ -8,12 +8,9 @@ import type { ChangePasswordDto } from "~/Controllers/user-controller.js";
 import { createErrorResponse } from "~/Libs/createResponse.js";
 
 /**
- * ฟังก์ชัน: getAccountAll
- * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
- * รองรับ:
- *   - SuperAdmin → เห็นทุกคน
- *   - Admin → เห็นเฉพาะสมาชิกในชุมชนตัวเอง
- *   - Member/Tourist → เห็นเฉพาะบัญชีตัวเอง
+ * คำอธิบาย : ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
+ * input: user: UserPayload, page: number, limit: number
+ * output: ข้อมูลผู้ใช้พร้อม pagination
  */
 export async function getAccountAll(
   user: UserPayload,
@@ -78,9 +75,8 @@ export async function getAccountAll(
 }
 
 /**
- * ฟังก์ชัน: getUserByStatus
- * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ตามสถานะ (BLOCKED / ACTIVE)
- * Input:
+ * คำอธิบาย : ดึงข้อมูลผู้ใช้ตามสถานะ (BLOCKED / ACTIVE)
+ * Input :
  *   - user: ผู้ใช้ที่ล็อกอิน
  *   - status: สถานะของบัญชี (UserStatus)
  *   - page, limit, searchName
@@ -148,8 +144,9 @@ export async function getUserByStatus(
 }
 
 /**
- * ฟังก์ชัน: getUserById
- * วัตถุประสงค์: ดึงข้อมูลผู้ใช้ตาม ID
+ * คำอธิบาย : ดึงข้อมูลผู้ใช้ตาม ID
+ * Input : userId : number (รหัสผู้ใช้ที่ต้องการดึงข้อมูล)
+ * Output : ข้อมูลผู้ใช้ (id, profileImage, username, email, fname, lname, phone, activityRole, role, communityAdmin, communityMembers)
  */
 export async function getUserById(userId: number): Promise<any> {
   const user = await prisma.user.findUnique({
@@ -176,8 +173,9 @@ export async function getUserById(userId: number): Promise<any> {
 }
 
 /**
- * ฟังก์ชัน: deleteAccount
- * วัตถุประสงค์: ลบบัญชีผู้ใช้ (Soft Delete)
+ * คำอธิบาย : ลบบัญชีผู้ใช้
+ * Input : userId : number (รหัสผู้ใช้ที่ต้องการลบบัญชี)
+ * Output : ข้อมูลผู้ใช้ที่ถูกลบบัญชีแล้ว (id, username, status)
  */
 export async function deleteAccount(userId: number): Promise<any> {
   const targetUser = await prisma.user.findUnique({ where: { id: userId } });
@@ -194,8 +192,9 @@ export async function deleteAccount(userId: number): Promise<any> {
 }
 
 /**
- * ฟังก์ชัน: blockAccount
- * วัตถุประสงค์: บล็อกบัญชีผู้ใช้
+ * คำอธิบาย : บล็อกบัญชีผู้ใช้
+ * Input : userId : number (รหัสผู้ใช้ที่ต้องการบล็อก)
+ * Output : ข้อมูลผู้ใช้ที่บล็อกแล้ว (id, username, status)
  */
 export async function blockAccount(userId: number): Promise<any> {
   const user = await prisma.user.update({
@@ -208,8 +207,9 @@ export async function blockAccount(userId: number): Promise<any> {
 }
 
 /**
- * ฟังก์ชัน: unblockAccount
- * วัตถุประสงค์: ปลดบล็อกบัญชีผู้ใช้
+ * คำอธิบาย : ปลดบล็อกบัญชีผู้ใช้
+ * Input : userId : number (รหัสผู้ใช้ที่ต้องการปลดบล็อก)
+ * Output : ข้อมูลผู้ใช้ที่ปลดบล็อกแล้ว (id, username, status)
  */
 export async function unblockAccount(userId: number): Promise<any> {
   const user = await prisma.user.update({
@@ -222,12 +222,11 @@ export async function unblockAccount(userId: number): Promise<any> {
 }
 
 /**
- * ฟังก์ชัน: createAccount
- * วัตถุประสงค์: สร้างบัญชีผู้ใช้ใหม่
- * Input:
+ * คำอธิบาย : สร้างบัญชีผู้ใช้ใหม่
+ * Input :
  *   - payload: ข้อมูลผู้ใช้
  *   - pathFile: path ของไฟล์รูปโปรไฟล์
- * Output:
+ * Output :
  *   - ข้อมูลผู้ใช้ที่สร้างใหม่ (id, username, email, status)
  */
 export async function createAccount(
@@ -251,8 +250,10 @@ export async function createAccount(
 }
 
 /**
- * ฟังก์ชัน: updateProfileImage
- * วัตถุประสงค์: อัปเดตรูปโปรไฟล์ของผู้ใช้ในฐานข้อมูล
+ * คำอธิบาย : อัปเดตรูปโปรไฟล์ของผู้ใช้ในฐานข้อมูล
+ * Input : userId : number (รหัสผู้ใช้ที่ต้องการอัปเดตรูปโปรไฟล์)
+ *         pathFile : string (path ของไฟล์รูปโปรไฟล์)
+ * Output : ข้อมูลผู้ใช้ที่อัปเดตรูปโปรไฟล์แล้ว (id, username, email, profileImage)
  */
 export async function updateProfileImage(
   userId: number,
@@ -279,8 +280,11 @@ export async function updateProfileImage(
 }
 
 /**
- * ฟังก์ชัน: getMemberByAdmin
- * วัตถุประสงค์: แอดมินสามารถดูข้อมูลสมาชิกในชุมชนที่ตัวเองดูแลได้เท่านั้น
+ * คำอธิบาย : แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
+ * Input : user : UserPayload (ข้อมูลผู้ใช้ที่กำลังล็อกอิน)
+ *         page : number (หน้าปัจจุบัน)
+ *         limit : number (จำนวนรายการต่อหน้า)
+ * Output : PaginationResponse<any> (ข้อมูลผู้ใช้ที่ถูกแบ่งหน้า)
  */
 export async function getMemberByAdmin(
   userId: number,
@@ -356,7 +360,6 @@ export async function resetPassword(userId: number, newPassword: PasswordDto) {
  * ตรวจสอบรหัสผ่านปัจจุบัน เปรียบเทียบรหัสใหม่ และอัปเดตข้อมูลในฐานข้อมูล
  */
 /*
- * Function: changePassword
  * Input : userId (number) → รหัสผู้ใช้ที่ต้องการเปลี่ยนรหัสผ่าน
  *         payload (ChangePasswordDto) → ข้อมูลรหัสผ่านปัจจุบันและรหัสใหม่
  * Output: ข้อมูลผู้ใช้ที่อัปเดตแล้ว (เฉพาะ username)
@@ -420,12 +423,11 @@ export async function deleteCommunityMember(memberId: number) {
 }
 
 /**
- * ฟังก์ชัน: getMemberAllByAdmin
- * วัตถุประสงค์: แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
- * เงื่อนไข:
- *   - ดูได้เฉพาะ user ที่เป็นสมาชิก (อยู่ใน community_members)
- *   - community ต้องเป็นชุมชนที่มี adminId = user.id
- *   - รองรับ soft delete (isDeleted = false)
+ * คำอธิบาย : แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
+ * Input : user : UserPayload (ข้อมูลผู้ใช้ที่กำลังล็อกอิน)
+ *         page : number (หน้าปัจจุบัน)
+ *         limit : number (จำนวนรายการต่อหน้า)
+ * Output : PaginationResponse<any> (ข้อมูลผู้ใช้ที่ถูกแบ่งหน้า)
  */
 export async function getMemberAllByAdmin(
   user: UserPayload,
@@ -488,7 +490,6 @@ export async function getMemberAllByAdmin(
 }
 
 /**
- * ฟังก์ชัน : softDeleteCommunityMemberByAdmin
  * คำอธิบาย :
  *   แอดมินชุมชนลบ "สมาชิกออกจากชุมชน" แบบ Soft Delete
  *   (ลบที่ตาราง community_members เท่านั้น ไม่ลบบัญชีผู้ใช้)

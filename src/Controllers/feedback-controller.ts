@@ -11,11 +11,9 @@ import { IsNumberString } from "class-validator";
 /* DTO : PackageIdParamDto
  * วัตถุประสงค์ :
  *  - ใช้ตรวจสอบ route parameter สำหรับ packageId
- *
  * Input :
  *  - params :
  *    - packageId : รหัสของ package (ต้องเป็นตัวเลขในรูปแบบ string)
- *
  * Output :
  *  - หากข้อมูลถูกต้อง จะผ่านการ validate และนำไปใช้งานต่อได้
  *  - หากข้อมูลไม่ถูกต้อง จะส่ง validation error กลับ
@@ -29,10 +27,8 @@ export class PackageIdParamDto {
  * วัตถุประสงค์ :
  *  - ใช้ตรวจสอบพารามิเตอร์ packageId
  *  - สำหรับฟังก์ชัน getPackageFeedbacksForAdmin
- *
  * Input :
  *  - params : PackageIdParamDto (ตรวจสอบ packageId)
- *
  * Output :
  *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
  *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
@@ -45,9 +41,10 @@ export const getPackageFeedbacksForAdminDto = {
  * คำอธิบาย :
  *  - ดึงรายการ Feedback ของแพ็กเกจสำหรับแอดมิน
  *  - ตรวจสอบสิทธิ์และความเป็นเจ้าของ community ภายใน service
- * 
  * Input :
  *  - packageId : number (รหัสแพ็กเกจจาก URL params)
+ * Output :
+ *  - JSON response พร้อมข้อมูล Feedback
  */
 export const getPackageFeedbacksForAdmin: TypedHandlerFromDto<
   typeof getPackageFeedbacksForAdminDto
@@ -67,8 +64,11 @@ export const getPackageFeedbacksForAdmin: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : getMemberAllFeedbacks
  * คำอธิบาย : ดึงรายการ Feedback ทั้งหมดของทุกแพ็กเกจที่สมาชิกคนนี้เป็นคนสร้าง
+ * Input :
+ *  - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
+ * Output :
+ *  - JSON response พร้อมข้อมูล Feedback
  */
 export const getMemberAllFeedbacks = async (req: Request, res: Response) => {
   try {
@@ -92,11 +92,9 @@ export const getMemberAllFeedbacks = async (req: Request, res: Response) => {
  * วัตถุประสงค์ :
  *  - ใช้ตรวจสอบพารามิเตอร์ feedbackId
  *  - ใช้ตรวจสอบ body สำหรับการตอบกลับ feedback
- *
  * Input :
  *  - params : FeedbackIdParamDto (ตรวจสอบ feedbackId)
  *  - body : ReplyFeedbackDto (ตรวจสอบข้อความตอบกลับ)
- *
  * Output :
  *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
  *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ
@@ -140,10 +138,8 @@ export const replyFeedback: TypedHandlerFromDto<
  * วัตถุประสงค์ :
  *  - ใช้ตรวจสอบพารามิเตอร์ packageId
  *  - สำหรับฟังก์ชัน getPackageFeedbacksForMember
- *
  * Input :
  *  - params : PackageIdParamDto (ตรวจสอบ packageId)
- *
  * Output :
  *  - หากข้อมูลถูกต้อง จะอนุญาตให้ดำเนินการต่อ
  *  - หากไม่ถูกต้อง จะส่งข้อผิดพลาดกลับ

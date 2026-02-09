@@ -38,9 +38,9 @@ const selectSafe = {
 } as const;
 
 /*
- * ฟังก์ชัน: createAccount
  * คำอธิบาย: สร้างบัญชีผู้ใช้ใหม่ และเข้ารหัสรหัสผ่านก่อนบันทึก
- * [Modified]: ปรับปรุงให้รองรับการ Connect Role ด้วย Name (แก้ปัญหา Role ID เปลี่ยน)
+ * input : CreateAccountDto
+ * output : User
  */
 export async function createAccount(body: CreateAccountDto) {
   // 1. เตรียม Role Connect (แก้ปัญหา Seed แล้ว ID เปลี่ยน)
@@ -68,7 +68,7 @@ export async function createAccount(body: CreateAccountDto) {
   }
 
   // 3. Check Duplicate
-  const dup = await prisma.user.findFirst({
+  const duplicate = await prisma.user.findFirst({
     where: {
       OR: [
         { username: body.username },
@@ -78,7 +78,7 @@ export async function createAccount(body: CreateAccountDto) {
     },
     select: { id: true },
   });
-  if (dup) throw new Error("duplicate");
+  if (duplicate) throw new Error("duplicate");
 
   // แยก roleId ออกจาก body เพราะเราจะใช้ connect แทน
   const { roleId, ...restBody } = body;
@@ -131,8 +131,9 @@ export async function createAccount(body: CreateAccountDto) {
 }
 
 /*
- * ฟังก์ชัน: editAccount
  * คำอธิบาย: แก้ไขข้อมูลบัญชีผู้ใช้ตาม ID และอัปเดตเฉพาะฟิลด์ที่ส่งมา
+ * input : userId, EditAccountDto
+ * output : User
  */
 export async function editAccount(userId: number, body: EditAccountDto) {
   if (!Number.isFinite(userId) || userId <= 0)
@@ -151,7 +152,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
 
   // Check Duplicate
   if (body.username || body.email || body.phone) {
-    const dup = await prisma.user.findFirst({
+    const duplicate = await prisma.user.findFirst({
       where: {
         id: { not: userId },
         OR: [
@@ -162,7 +163,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
       },
       select: { id: true },
     });
-    if (dup) throw new Error("duplicate");
+    if (duplicate) throw new Error("duplicate");
   }
 
   // Prepare Data
@@ -241,8 +242,9 @@ export async function editAccount(userId: number, body: EditAccountDto) {
 }
 
 /*
- * ฟังก์ชัน: getAccountById
  * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ตาม ID
+ * input : userId
+ * output : User
  */
 export async function getAccountById(userId: number) {
   if (!Number.isFinite(userId) || userId <= 0)
@@ -286,8 +288,9 @@ export async function getAccountById(userId: number) {
 }
 
 /*
- * ฟังก์ชัน: getAllUser
  * คำอธิบาย: ดึงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า
+ * input : page, limit
+ * output : PaginationResponse<User>
  */
 export const getAllUser = async (
   page: number = 1,
@@ -326,8 +329,9 @@ export const getAllUser = async (
 };
 
 /*
- * ฟังก์ชัน: getMemberByAdmin
  * คำอธิบาย: ดึงข้อมูลสมาชิกในชุมชนของแอดมิน
+ * input : adminId
+ * output : User[]
  */
 export const getMemberByAdmin = async (adminId: number) => {
   const community = await prisma.community.findFirst({
@@ -350,8 +354,9 @@ export const getMemberByAdmin = async (adminId: number) => {
 };
 
 /*
- * ฟังก์ชัน: getAccountAll
  * คำอธิบาย: ดึงข้อมูลบัญชีผู้ใช้ทั้งหมด (เฉพาะ SuperAdmin)
+ * input : id
+ * output : User[]
  */
 export const getAccountAll = async (id: number) => {
   if (!Number.isInteger(id)) throw new Error("ID must be number");
@@ -392,7 +397,9 @@ export type AccountInCommunity = {
 };
 
 /*
- * ฟังก์ชัน: getAccountInCommunity
+ * คำอธิบาย: ดึงข้อมูลสมาชิกในชุมชน
+ * input : communityId, page, limit, searchName
+ * output : PaginationResponse<AccountInCommunity>
  */
 export async function getAccountInCommunity(
   communityId: number,
@@ -448,8 +455,9 @@ export async function getAccountInCommunity(
 }
 
 /*
- * ฟังก์ชัน: getCommunityIdByAdminId
  * คำอธิบาย: ช่วยหาว่า Admin คนนี้ดูแลชุมชน ID อะไร
+ * input : adminId
+ * output : number
  */
 export async function getCommunityIdByAdminId(adminId: number) {
   const community = await prisma.community.findFirst({
@@ -508,6 +516,8 @@ export async function editProfile(userId: number, data: EditAccountDto) {
    * คำอธิบาย : เตรียมข้อมูลสำหรับอัปเดต
    *   - ใช้รูปแบบ spread เงื่อนไข (&&) เพื่ออัปเดตเฉพาะฟิลด์ที่ถูกส่งมาใน data
    *   - ป้องกันไม่ให้เขียนทับค่าด้วย undefined โดยไม่ตั้งใจ
+   *   - input : data
+   *   - output : updateData
    */
   const updateData: any = {
     ...(data.fname && { fname: data.fname }),
@@ -544,6 +554,8 @@ export async function editProfile(userId: number, data: EditAccountDto) {
     /*
      * คำอธิบาย : จัดการกรณีเกิด Prisma Unique Constraint Error (รหัส P2002)
      *         - ตรวจสอบ target ว่าฟิลด์ไหนซ้ำ แล้วแปลงเป็นข้อความภาษาไทยที่ผู้ใช้เข้าใจง่าย
+     * input : error
+     * output : Error
      */
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

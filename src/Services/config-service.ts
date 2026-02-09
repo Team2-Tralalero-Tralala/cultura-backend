@@ -17,7 +17,6 @@ export interface ConfigData {
 }
 
 /*
- * ฟังก์ชัน : ensureConfigExists
  * คำอธิบาย : ตรวจสอบและสร้าง config.json จาก config.template.json หากไม่มีอยู่
  * Output : void
  * Error : throw error หากไม่สามารถอ่านหรือเขียนไฟล์ได้
@@ -41,7 +40,6 @@ function ensureConfigExists(): void {
 }
 
 /*
- * ฟังก์ชัน : readConfig
  * คำอธิบาย : อ่านข้อมูลจาก config.json
  * Output : ConfigData - ข้อมูล configuration
  * Error : throw error หากไม่สามารถอ่านไฟล์ได้
@@ -60,11 +58,9 @@ export function readConfig(): ConfigData {
 }
 
 /*
- * ฟังก์ชัน : writeConfig
  * คำอธิบาย : เขียนข้อมูลลงใน config.json
  * Input : config (ConfigData) - ข้อมูล configuration ที่ต้องการบันทึก
  * Output : void
- * Error : throw error หากไม่สามารถเขียนไฟล์ได้
  */
 export function writeConfig(config: ConfigData): void {
   ensureConfigExists();
@@ -80,9 +76,9 @@ export function writeConfig(config: ConfigData): void {
 }
 
 /*
- * ฟังก์ชัน : getServerStatus
  * คำอธิบาย : ดึงสถานะการทำงานของเซิร์ฟเวอร์
- * Output : boolean - สถานะการทำงานของเซิร์ฟเวอร์
+ * input : -
+ * output : boolean - สถานะการทำงานของเซิร์ฟเวอร์
  */
 export function getServerStatus(): boolean {
   const config = readConfig();
@@ -90,7 +86,6 @@ export function getServerStatus(): boolean {
 }
 
 /*
- * ฟังก์ชัน : setServerStatus
  * คำอธิบาย : ตั้งค่าสถานะการทำงานของเซิร์ฟเวอร์
  * Input : status (boolean) - สถานะที่ต้องการตั้งค่า
  * Output : void

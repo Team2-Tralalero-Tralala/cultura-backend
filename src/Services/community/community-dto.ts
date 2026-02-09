@@ -21,6 +21,12 @@ import { HomestayDto } from "../homestay/homestay-dto.js";
 import { StoreDto } from "../store/store-dto.js";
 import { ImageType } from "@prisma/client";
 
+/**
+ * DTO: CommunityDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Community
+ * Input: body parameters (adminId, name, alias, type, registerNumber, registerDate, description, bankName, accountName, accountNumber, mainActivityName, mainActivityDescription, status, phone, rating, email, mainAdmin, mainAdminPhone, coordinatorName, coordinatorPhone, urlWebsite, urlFacebook, urlLine, urlTiktok, urlOther)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class CommunityDto {
   @IsNotEmpty({ message: "adminId ห้ามว่าง" })
   adminId: number;
@@ -171,7 +177,12 @@ export class CommunityDto {
   @IsOptional()
   communityImage?: CommunityImageDto[];
 }
-
+/**
+ * DTO: CommunityImageDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Community Image
+ * Input: body parameters (image, type)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class CommunityImageDto {
   @IsString()
   @MaxLength(256, { message: "image ต้องไม่เกิน 256 ตัวอักษร" })

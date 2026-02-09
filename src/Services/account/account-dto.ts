@@ -1,5 +1,4 @@
 import {
-  IsDateString,
   IsEmail,
   IsInt,
   IsOptional,
@@ -7,7 +6,12 @@ import {
   IsString,
   MinLength,
 } from "class-validator";
-
+/**
+ * DTO: CreateAccountDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Account
+ * Input: body parameters (profileImage, roleId, fname, lname, username, email, phone, password, memberOfCommunity, communityRole, gender, birthDate, province, district, subDistrict, postalCode)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class CreateAccountDto {
   @IsOptional()
   @IsString()
@@ -73,7 +77,12 @@ export class CreateAccountDto {
   @IsString()
   postalCode?: string;
 }
-
+/**
+ * DTO: EditAccountDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Account
+ * Input: body parameters (profileImage, roleId, fname, lname, username, email, phone, password, memberOfCommunity, communityRole, gender, birthDate, province, district, subDistrict, postalCode)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class EditAccountDto {
   @IsOptional()
   @IsString()
@@ -145,7 +154,12 @@ export class EditAccountDto {
   @IsString()
   postalCode?: string;
 }
-
+/**
+ * DTO: ProfileDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อดึงข้อมูล Profile
+ * Input: body parameters (profileImage, fname, lname, username, email, phone)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class ProfileDto {
   @IsOptional()
   @IsString()

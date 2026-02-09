@@ -6,11 +6,9 @@
 import prisma from "../database-service.js";
 
 /*
- * ฟังก์ชัน : getHomeData
  * คำอธิบาย : ดึงข้อมูลสำหรับหน้าแรก รวมถึง carousel images และ activity tags
  * Input : -
  * Output : object ประกอบด้วย carouselImages และ activityTags
- * Error : throw error ถ้าไม่สามารถดึงข้อมูลได้
  */
 export async function getHomeData() {
   // ดึง tags ทั้งหมดที่ยังไม่ถูกลบ พร้อมนับจำนวน package ที่อ้างอิง

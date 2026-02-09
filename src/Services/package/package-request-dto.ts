@@ -12,11 +12,6 @@ import { PaginationDto } from "../pagination-dto.js";
 export class PackageRequestQueryDto extends PaginationDto {
     @Expose()
     @IsOptional()
-    @IsString({ message: "คำค้นหาต้องเป็นข้อความ" })
-    search?: string;
-
-    @Expose()
-    @IsOptional()
     @IsString({ message: "สถานะต้องเป็นข้อความ" })
     @IsIn(["PENDING", "APPROVE", "PENDING_SUPER", "all"], {
         message:

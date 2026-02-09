@@ -4,7 +4,6 @@ import prisma from "../database-service.js";
 import type { StoreDto } from "./store-dto.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 /*
- * ฟังก์ชัน : createStore
  * คำอธิบาย :
  *   สร้างร้านค้าใหม่ในชุมชน โดยเชื่อมโยงกับ:
  *     - ชุมชน (communityId)
@@ -108,7 +107,6 @@ export async function editStore(
   });
 }
 /**
- * ฟังก์ชัน : getStoreById
  * คำอธิบาย : ดึงข้อมูลร้านค้าตามรหัสร้านค้า
  * Input :
  *   - storeId : รหัสร้านค้า
@@ -237,7 +235,6 @@ export const getAllStore = async (
 };
 
 /*
- * ฟังก์ชัน : createStoreByAdmin
  * คำอธิบาย :
  *   สร้างร้านค้าใหม่ในชุมชน โดยให้ระบบค้นหา communityId
  *   จาก admin ที่กำลังล็อกอิน (user.id)
@@ -383,7 +380,6 @@ export async function getAllStoreForAdmin(
 }
 
 /*
- * ฟังก์ชัน : deleteStore
  * คำอธิบาย :
  *   ฟังก์ชันสำหรับลบร้านค้าแบบ Soft Delete (ตั้งค่า isDeleted = true)
  *   โดยตรวจสอบสิทธิ์ของผู้ใช้ก่อนดำเนินการ
@@ -436,7 +432,6 @@ export async function deleteStore(storeId: number, user: UserPayload) {
 }
 
 /**
- * ฟังก์ชัน : deleteStoreByAdmin
  * อธิบาย : ลบร้านค้าแบบ soft delete เฉพาะร้านในชุมชนของ admin เท่านั้น
  * Input :
  *   - userId : รหัสผู้ใช้ (admin)

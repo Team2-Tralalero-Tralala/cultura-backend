@@ -767,7 +767,6 @@ export async function getAdminDashboard(
 }
 
 /**
- * ฟังก์ชัน: calculateDateRanges
  * คำอธิบาย: ฟังก์ชันสำหรับคำนวณช่วงวันที่ตามประเภท
  * input: filter (periodType, dates)
  * output: { start: Date; end: Date; label: string }[]
@@ -1019,7 +1018,6 @@ async function buildGraphData(
   return { labels, data };
 }
 /**
- * ฟังก์ชัน: getMemberDashboard
  * คำอธิบาย: ฟังก์ชันสำหรับดึงข้อมูล Dashboard ของ Member
  * Input: userId, bookingFilter, revenueFilter, packageFilter
  * Output: JSON response พร้อมข้อมูล Dashboard

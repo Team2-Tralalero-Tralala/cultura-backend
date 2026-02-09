@@ -1243,7 +1243,6 @@ export async function listAllHomestaysSuperAdmin({
 }
 
 /*
- * ฟังก์ชัน : getAllFeedbacks
  * คำอธิบาย : (Admin) ดึง Feedback ทั้งหมดของแพ็กเกจในชุมชนของผู้ใช้
  * Input:
  *   - userId : number (รหัสผู้ใช้จาก token)
@@ -1427,7 +1426,6 @@ export const getHistoriesPackageByAdmin = async (
 };
 
 /*
- * ฟังก์ชัน : getPackageDetailByMember
  * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับ Member โดยเช็คสิทธิ์
  * Input  : memberId (user.id ที่เป็น member), packageId
  * Output : รายละเอียดแพ็กเกจ (โครงเหมือน getPackageDetailById)

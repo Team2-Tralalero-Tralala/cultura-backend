@@ -4,24 +4,13 @@
  * โดยเชื่อมต่อกับฐานข้อมูลผ่าน Prisma, เข้ารหัสรหัสผ่านด้วย bcrypt,
  * และสร้าง token ด้วย JWT
  */
-import { Gender, UserStatus } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { Type } from "class-transformer";
-import {
-  IsDate,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  Matches,
-} from "class-validator";
 import crypto from "crypto";
 import { generateToken } from "~/Libs/token.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
-import prisma from "./database-service.js";
-
-// JWT token expiration time (should match the value in token.ts)
-const JWT_EXPIRATION_HOURS = 1;
+import prisma from "../database-service.js";
+import type { ForgetPasswordDto, LoginDto, SetPasswordDto, SignupDto } from "./auth-dto.js";
+import { UserStatus } from "@prisma/client";
 
 /*
  * คำอธิบาย : ค้นหา roleId จากชื่อ role ที่กำหนด
@@ -71,67 +60,6 @@ async function handleExpiredSessions(
   }
 
   return expiredLogs.length;
-}
-
-/*
- * DTO : signupDto
- * คำอธิบาย : โครงสร้างข้อมูลที่ใช้สมัครสมาชิก
- * input: username, password, email, fname, lname, phone, role, gender, birthDate, province, district, subDistrict, postalCode
- * output: User
- */
-export class SignupDto {
-  @IsString()
-  @IsNotEmpty({ message: "ชื่อผู้ใช้ห้ามว่าง" })
-  username: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "รหัสผ่านห้ามว่าง" })
-  password: string;
-
-  @IsString()
-  @IsEmail({}, { message: "รูปแบบอีเมลไม่ถูกต้อง" })
-  @IsNotEmpty({ message: "อีเมลห้ามว่าง" })
-  email: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "ชื่อจริงห้ามว่าง" })
-  fname: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "นามสกุลห้ามว่าง" })
-  lname: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "เบอร์โทรศัพท์ห้ามว่าง" })
-  phone: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "บทบาทห้ามว่าง" })
-  role: string;
-
-  @IsEnum(Gender, { message: "เพศไม่ถูกต้อง" })
-  gender: Gender;
-
-  @IsDate()
-  @Type(() => Date)
-  @IsNotEmpty({ message: "วันเกิดห้ามว่าง" })
-  birthDate: Date;
-
-  @IsString()
-  @IsNotEmpty({ message: "จังหวัดห้ามว่าง" })
-  province: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "อำเภอ/เขตห้ามว่าง" })
-  district: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "ตำบล/แขวงห้ามว่าง" })
-  subDistrict: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "รหัสไปรษณีย์ห้ามว่าง" })
-  postalCode: string;
 }
 
 /*
@@ -185,64 +113,6 @@ export async function signup(data: SignupDto) {
   const { password: _, ...userWithoutPassword } = user;
   return userWithoutPassword;
 }
-/*
- * DTO : loginDto
- * คำอธิบาย : โครงสร้างข้อมูลที่ใช้เข้าสู่ระบบ
- * input: username, password
- * output: User
- */
-export class LoginDto {
-  @IsString()
-  @IsNotEmpty({ message: "ชื่อผู้ใช้หรืออีเมลห้ามว่าง" })
-  username: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "รหัสผ่านห้ามว่าง" })
-  password: string;
-}
-
-/* ============================== Forget/Set Password ============================== */
-
-/*
- * DTO : ForgetPasswordDto
- * คำอธิบาย : โครงสร้างข้อมูลสำหรับขอรหัสเปลี่ยนรหัสผ่าน (forget password)
- * Input : contact (email หรือ phone), birthDateBE (วันเกิดรูปแบบ dd/MM/yyyy เป็นปี พ.ศ.)
- * Output : ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
- */
-export class ForgetPasswordDto {
-  @IsString()
-  @IsNotEmpty({ message: "กรุณากรอกอีเมลหรือเบอร์โทรศัพท์" })
-  contact: string;
-
-  // วัน-เดือน-ปีเกิด (พ.ศ) รูปแบบ dd/MM/yyyy
-  @IsString()
-  @Matches(/^(\d{2})\/(\d{2})\/(\d{4})$/, {
-    message: "รูปแบบวันเกิดไม่ถูกต้อง (วว/ดด/ปปปป)",
-  })
-  @IsNotEmpty({ message: "กรุณาระบุวันเกิด" })
-  birthDateBE: string;
-}
-
-/*
- * DTO : SetPasswordDto
- * คำอธิบาย : โครงสร้างข้อมูลสำหรับตั้งรหัสผ่านใหม่ด้วย changePasswordCode
- * Input : changePasswordCode, newPassword
- * Output : ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
- */
-export class SetPasswordDto {
-  @IsString()
-  @IsNotEmpty({ message: "กรุณากรอก changePasswordCode" })
-  changePasswordCode: string;
-
-  @IsString()
-  @IsNotEmpty({ message: "กรุณากรอกรหัสผ่านใหม่" })
-  // อย่างน้อย 8 ตัวอักษร, มี a-z, A-Z, 0-9
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/, {
-    message:
-      "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วย A-Z, a-z และ 0-9",
-  })
-  newPassword: string;
-}
 
 function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
@@ -267,10 +137,10 @@ function parseBirthDateBE(birthDateBE: string) {
   return dateCandidate;
 }
 
-function sameDateOnly(a: Date, b: Date) {
+function isSameDate(a: Date, b: Date) {
   return (
     a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
+    a.getMonth() === b.getMonth() &&  
     a.getDate() === b.getDate()
   );
 }
@@ -296,7 +166,7 @@ export async function forgetPassword(payload: ForgetPasswordDto) {
   });
 
   if (!user || !user.birthDate) throw new Error("ไม่พบผู้ใช้งาน");
-  if (!sameDateOnly(user.birthDate, birthDateAD)) throw new Error("ข้อมูลไม่ถูกต้อง");
+  if (!isSameDate(user.birthDate, birthDateAD)) throw new Error("ข้อมูลไม่ถูกต้อง");
 
   const changePasswordCode =
     typeof crypto.randomUUID === "function"
@@ -453,7 +323,6 @@ export async function logout(user: UserPayload | undefined, ipAddress: string) {
  * คำอธิบาย : ดึงข้อมูลโปรไฟล์ของผู้ใช้จากฐานข้อมูล
  * Input : userId (number) - รหัสผู้ใช้
  * Output : ข้อมูลผู้ใช้ (fname, lname, email, role)
- * Error : throw error ถ้าไม่พบผู้ใช้s
  */
 export async function getProfile(userId: number) {
   const user = await prisma.user.findUnique({

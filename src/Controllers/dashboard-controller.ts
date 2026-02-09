@@ -7,7 +7,8 @@ import * as DashboardDto from "~/Services/dashboard/dashboard-dto.js";
 import * as DashboardService from "~/Services/dashboard/dashboard-service.js";
 
 /*
- * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Super Admin
+ * DTO : getSuperAdminDashboardDto
+ * วัตถุประสงค์ : สำหรับดึงข้อมูล Dashboard ของ Super Admin
  * Input : query (dateStart, dateEnd, page, limit, groupBy, province, region, search)
  * Output : ข้อมูล Dashboard
  */
@@ -118,7 +119,8 @@ export const getAdminDashboard: TypedHandlerFromDto<
   }
 };
 /*
- * คำอธิบาย : DTO สำหรับดึงข้อมูล Dashboard ของ Member
+ * DTO : getMemberDashboardDto
+ * วัตถุประสงค์ : สำหรับดึงข้อมูล Dashboard ของ Member
  * Input : query (bookingPeriodType, bookingDates, revenuePeriodType, revenueDates, packagePeriodType, packageDates)
  * Output : ข้อมูล Dashboard
  */
