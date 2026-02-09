@@ -110,7 +110,7 @@ export const getHistoriesByRole = async (
   where.status = {
     in: ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"],
   };
- const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
   const totalCount = await prisma.bookingHistory.count({ where });
   const histories = await prisma.bookingHistory.findMany({
@@ -144,8 +144,6 @@ export const getHistoriesByRole = async (
 };
 
 /**
- * ฟังก์ชัน: getDetailBookingById
- * ----------------------------------------
  * คำอธิบาย:
  *   ใช้สำหรับดึงข้อมูลรายละเอียดการจอง (bookingHistory) จากฐานข้อมูล
  *
@@ -310,12 +308,9 @@ export const getBookingsByAdmin = async (
 };
 
 /*
- * ฟังก์ชัน : updateBookingStatus
  * คำอธิบาย : อัปเดตสถานะของการจอง + จัดการเหตุผลการปฏิเสธ (rejectReason)
- * เงื่อนไข :
- *   - สถานะที่อนุญาต: BOOKED, REJECTED, REFUNDED, REFUND_REJECTED
- *   - ถ้าเป็นสถานะปฏิเสธ (REJECTED, REFUND_REJECTED) → สามารถเซต rejectReason ได้
- *   - ถ้าไม่ใช่สถานะปฏิเสธ → ล้าง rejectReason ให้เป็น null
+ * input : id, newStatus, rejectReason
+ * output : BookingHistory
  */
 
 export const updateBookingStatus = async (
@@ -464,7 +459,6 @@ export const getBookingsByMember = async (
 };
 
 /*
- * ฟังก์ชัน : updateBookingStatusByMember
  * คำอธิบาย : อัปเดตสถานะของการจอง + จัดการเหตุผลการปฏิเสธ (rejectReason)
  * เฉพาะแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
  * เงื่อนไข :
@@ -548,9 +542,8 @@ export const updateBookingStatusByMember = async (
   return updated;
 };
 /*
- * ฟังก์ชัน : getMemberBookingHistories
  * คำอธิบาย : ฟังก์ชันสำหรับดึงประวัติการจองของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล
- * Input :
+ * input :
  *   - memberId (number) : รหัสสมาชิกที่ร้องขอ (ต้องเป็น Member)
  *   - page (number) : หน้าปัจจุบัน
  *   - limit (number) : จำนวนต่อหน้า
@@ -671,7 +664,8 @@ export async function getTouristBookingHistory(
       from: Date;
       to: Date;
     };
-  }
+  },
+  search?: string
 ): Promise<PaginationResponse<TouristBookingHistory>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = { touristId };
@@ -686,6 +680,12 @@ export async function getTouristBookingHistory(
     };
   }
 
+  if (search) {
+    whereCondition.package = {
+      name: { contains: search },
+    };
+  }
+
   const bookingHistories = await prisma.bookingHistory.findMany({
     where: whereCondition,
     orderBy: { bookingAt: sort },
@@ -695,6 +695,7 @@ export async function getTouristBookingHistory(
       status: true,
       totalParticipant: true,
       rejectReason: true,
+      feedbacks: true,
       package: {
         select: {
           name: true,
@@ -724,7 +725,7 @@ export async function getTouristBookingHistory(
   });
   const totalPages = Math.ceil(totalCount / limit);
   return {
-    data: bookingHistories,
+    data: bookingHistories as any,
     pagination: {
       currentPage: page,
       totalPages: totalPages,

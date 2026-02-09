@@ -13,21 +13,21 @@ import { Prisma } from "@prisma/client";
 /*
  * คำอธิบาย : ฟังก์ชันช่วยแปลงข้อมูล LocationDto ให้เป็น object ที่ Prisma ใช้ได้
  * Input :
- *   - loc (LocationDto) : ข้อมูลที่อยู่ของชุมชน
+ *   - location (LocationDto) : ข้อมูลที่อยู่ของชุมชน
  * Output :
  *   - Object ที่พร้อมสำหรับสร้างหรืออัปเดตข้อมูลใน Prisma
  */
-export const mapLocation = (loc: LocationDto) => ({
-  houseNumber: loc.houseNumber,
-  villageNumber: loc.villageNumber ?? null,
-  alley: loc.alley ?? null,
-  subDistrict: loc.subDistrict,
-  district: loc.district,
-  province: loc.province,
-  postalCode: loc.postalCode,
-  latitude: loc.latitude,
-  longitude: loc.longitude,
-  detail: loc.detail ?? null,
+export const mapLocation = (location: LocationDto) => ({
+  houseNumber: location.houseNumber,
+  villageNumber: location.villageNumber ?? null,
+  alley: location.alley ?? null,
+  subDistrict: location.subDistrict,
+  district: location.district,
+  province: location.province,
+  postalCode: location.postalCode,
+  latitude: location.latitude,
+  longitude: location.longitude,
+  detail: location.detail ?? null,
 });
 
 /*
@@ -469,7 +469,7 @@ export async function getUnassignedMembers() {
       where: { isDeleted: true },
       select: { id: true },
     })
-  ).map((c) => c.id);
+  ).map((community) => community.id);
 
   const memberIds = await prisma.communityMembers.findMany({
     where: { communityId: { notIn: deletedCommunityIds } },

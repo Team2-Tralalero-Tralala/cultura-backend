@@ -1,10 +1,3 @@
-/*
- * คำอธิบาย : Controller สำหรับการจัดการ Backups
- * ประกอบด้วยการดึงข้อมูล backups แบบ paginated และการสร้าง backup ใหม่
- * - superadmin เท่านั้นที่สามารถเข้าถึงได้
- * - รองรับการ pagination สำหรับการแสดงรายการ backups
- * - รองรับการสร้าง backup ใหม่ของระบบ
- */
 import * as BackupService from "~/Services/backup/backup-service.js";
 
 import type {
@@ -30,7 +23,7 @@ interface BackupInfo {
 
 /*
  * DTO : getBackupsDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint GET /backups
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint GET /backups
  * Input : query (BackupQueryDto) - pagination parameters
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
@@ -40,7 +33,7 @@ export const getBackupsDto = {
 
 /*
  * DTO : getBackupByIdDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint GET /backups/:backupId
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint GET /backups/:backupId
  * Input : params (GetBackupByIdDto) - backup ID parameter
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
@@ -50,7 +43,7 @@ export const getBackupByIdDto = {
 
 /*
  * DTO : createBackupDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint POST /backups
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint POST /backups
  * Input : body (CreateBackupDto) - backup configuration parameters
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
@@ -60,7 +53,7 @@ export const createBackupDto = {
 
 /*
  * DTO : deleteBackupByIdDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint DELETE /backups/:backupId
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint DELETE /backups/:backupId
  * Input : params (DeleteBackupByIdDto) - backup ID parameter
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
@@ -70,7 +63,7 @@ export const deleteBackupByIdDto = {
 
 /*
  * DTO : deleteBackupsBulkDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint POST /backups/delete-bulk
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint POST /backups/delete-bulk
  * Input : body (DeleteBackupsBulkDto) - array ของ backup IDs
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
@@ -79,7 +72,6 @@ export const deleteBackupsBulkDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getBackups
  * คำอธิบาย : Handler สำหรับดึงข้อมูล backups แบบ paginated
  * Input :
  *   - req.query - pagination parameters (ผ่านการ validate ด้วย getBackupsDto แล้ว)
@@ -89,9 +81,6 @@ export const deleteBackupsBulkDto = {
  *   - 401 Unauthorized ถ้าไม่มีการ authenticate
  *   - 403 Forbidden ถ้าไม่มีสิทธิ์ superadmin
  *   - 400 Bad Request ถ้ามี error
- * Logic :
- *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
- *   - รองรับการ pagination
  */
 export const getBackups: TypedHandlerFromDto<typeof getBackupsDto> = async (
   req,
@@ -114,7 +103,6 @@ export const getBackups: TypedHandlerFromDto<typeof getBackupsDto> = async (
 };
 
 /*
- * ฟังก์ชัน : getBackupById
  * คำอธิบาย : Handler สำหรับ download backup file ตาม filename
  * Input :
  *   - req.params - backup filename parameter (ผ่านการ validate ด้วย getBackupByIdDto แล้ว)
@@ -125,9 +113,6 @@ export const getBackups: TypedHandlerFromDto<typeof getBackupsDto> = async (
  *   - 403 Forbidden ถ้าไม่มีสิทธิ์ superadmin
  *   - 404 Not Found ถ้าไม่พบ backup file
  *   - 400 Bad Request ถ้ามี error
- * Logic :
- *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
- *   - download backup file ตาม filename ที่ระบุ
  */
 export const getBackupById = async (req: any, res: any) => {
   try {
@@ -159,7 +144,6 @@ export const getBackupById = async (req: any, res: any) => {
 };
 
 /*
- * ฟังก์ชัน : createBackup
  * คำอธิบาย : Handler สำหรับการสร้าง backup ใหม่
  * Input :
  *   - req.body - backup configuration parameters (ผ่านการ validate ด้วย createBackupDto แล้ว)
@@ -169,9 +153,6 @@ export const getBackupById = async (req: any, res: any) => {
  *   - 401 Unauthorized ถ้าไม่มีการ authenticate
  *   - 403 Forbidden ถ้าไม่มีสิทธิ์ superadmin
  *   - 400 Bad Request ถ้ามี error
- * Logic :
- *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
- *   - สร้าง backup ตาม configuration ที่ระบุ
  */
 export const createBackup: TypedHandlerFromDto<typeof createBackupDto> = async (
   req,
@@ -194,7 +175,6 @@ export const createBackup: TypedHandlerFromDto<typeof createBackupDto> = async (
 };
 
 /*
- * ฟังก์ชัน : deleteBackupById
  * คำอธิบาย : Handler สำหรับลบ backup file ตาม filename
  * Input :
  *   - req.params - backup filename parameter (ผ่านการ validate ด้วย deleteBackupByIdDto แล้ว)
@@ -205,9 +185,6 @@ export const createBackup: TypedHandlerFromDto<typeof createBackupDto> = async (
  *   - 403 Forbidden ถ้าไม่มีสิทธิ์ superadmin
  *   - 404 Not Found ถ้าไม่พบ backup file
  *   - 400 Bad Request ถ้ามี error
- * Logic :
- *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
- *   - ลบ backup file ตาม filename ที่ระบุ
  */
 export const deleteBackupById: TypedHandlerFromDto<
   typeof deleteBackupByIdDto
@@ -236,7 +213,6 @@ export const deleteBackupById: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : deleteBackupsBulk
  * คำอธิบาย : Handler สำหรับลบ backup files หลายไฟล์พร้อมกัน
  * Input :
  *   - req.body - array ของ backup filenames (ผ่านการ validate ด้วย deleteBackupsBulkDto แล้ว)
@@ -246,9 +222,6 @@ export const deleteBackupById: TypedHandlerFromDto<
  *   - 401 Unauthorized ถ้าไม่มีการ authenticate
  *   - 403 Forbidden ถ้าไม่มีสิทธิ์ superadmin
  *   - 400 Bad Request ถ้ามี error
- * Logic :
- *   - superadmin เท่านั้นที่สามารถเข้าถึงได้
- *   - ลบ backup files หลายไฟล์พร้อมกัน
  */
 export const deleteBackupsBulk: TypedHandlerFromDto<
   typeof deleteBackupsBulkDto

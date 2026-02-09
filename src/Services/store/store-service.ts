@@ -4,7 +4,6 @@ import prisma from "../database-service.js";
 import type { StoreDto } from "./store-dto.js";
 import type { PaginationResponse } from "~/Libs/Types/pagination-dto.js";
 /*
- * ฟังก์ชัน : createStore
  * คำอธิบาย :
  *   สร้างร้านค้าใหม่ในชุมชน โดยเชื่อมโยงกับ:
  *     - ชุมชน (communityId)
@@ -108,7 +107,6 @@ export async function editStore(
   });
 }
 /**
- * ฟังก์ชัน : getStoreById
  * คำอธิบาย : ดึงข้อมูลร้านค้าตามรหัสร้านค้า
  * Input :
  *   - storeId : รหัสร้านค้า
@@ -172,7 +170,8 @@ export const getAllStore = async (
   userRole: string,
   communityId: number,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> => {
   if (userRole != "superadmin") {
     throw new Error("ไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
@@ -184,18 +183,24 @@ export const getAllStore = async (
 
   const skip = (page - 1) * limit;
 
+  const whereCondition: any = {
+    isDeleted: false,
+    communityId,
+  };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { detail: { contains: search } },
+    ];
+  }
+
   const totalCount = await prisma.store.count({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
   });
 
   const stores = await prisma.store.findMany({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
     orderBy: { id: "asc" },
     skip,
     take: limit,
@@ -230,7 +235,6 @@ export const getAllStore = async (
 };
 
 /*
- * ฟังก์ชัน : createStoreByAdmin
  * คำอธิบาย :
  *   สร้างร้านค้าใหม่ในชุมชน โดยให้ระบบค้นหา communityId
  *   จาก admin ที่กำลังล็อกอิน (user.id)
@@ -303,7 +307,8 @@ export async function createStoreByAdmin(store: StoreDto, user: UserPayload) {
 export async function getAllStoreForAdmin(
   userId: number,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> {
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new Error("รหัสผู้ใช้ต้องเป็นหมายเลข");
@@ -324,18 +329,24 @@ export async function getAllStoreForAdmin(
 
   const skip = (page - 1) * limit;
 
+  const whereCondition: any = {
+    isDeleted: false,
+    communityId,
+  };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { detail: { contains: search } },
+    ];
+  }
+
   const totalCount = await prisma.store.count({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
   });
 
   const stores = await prisma.store.findMany({
-    where: {
-      isDeleted: false,
-      communityId,
-    },
+    where: whereCondition,
     orderBy: { id: "asc" },
     skip,
     take: limit,
@@ -369,7 +380,6 @@ export async function getAllStoreForAdmin(
 }
 
 /*
- * ฟังก์ชัน : deleteStore
  * คำอธิบาย :
  *   ฟังก์ชันสำหรับลบร้านค้าแบบ Soft Delete (ตั้งค่า isDeleted = true)
  *   โดยตรวจสอบสิทธิ์ของผู้ใช้ก่อนดำเนินการ
@@ -422,7 +432,6 @@ export async function deleteStore(storeId: number, user: UserPayload) {
 }
 
 /**
- * ฟังก์ชัน : deleteStoreByAdmin
  * อธิบาย : ลบร้านค้าแบบ soft delete เฉพาะร้านในชุมชนของ admin เท่านั้น
  * Input :
  *   - userId : รหัสผู้ใช้ (admin)

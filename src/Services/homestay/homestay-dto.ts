@@ -16,7 +16,12 @@ import { LocationDto } from "../location/location-dto.js";
 import { ImageType } from "@prisma/client";
 
 import { Type } from "class-transformer";
-
+/**
+ * DTO: HomestayDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Homestay
+ * Input: body parameters (name, type, guestPerRoom, totalRoom, facility, location, homestayImage, tagHomestays)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class HomestayDto {
   @IsString()
   @IsNotEmpty({ message: "ชื่อโฮมสเตย์ห้ามว่าง" })
@@ -61,7 +66,12 @@ export class HomestayDto {
   @Type(() => Number) // แปลง string -> number อัตโนมัติเมื่อมาจาก JSON/form
   tagHomestays?: number[];
 }
-
+/**
+ * DTO: HomestayImageDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Homestay Image
+ * Input: body parameters (image, type)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class HomestayImageDto {
   @IsString()
   @MaxLength(256, { message: "image ต้องไม่เกิน 256 ตัวอักษร" })

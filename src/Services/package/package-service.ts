@@ -1243,7 +1243,6 @@ export async function listAllHomestaysSuperAdmin({
 }
 
 /*
- * ฟังก์ชัน : getAllFeedbacks
  * คำอธิบาย : (Admin) ดึง Feedback ทั้งหมดของแพ็กเกจในชุมชนของผู้ใช้
  * Input:
  *   - userId : number (รหัสผู้ใช้จาก token)
@@ -1363,7 +1362,8 @@ export async function getPackageHistoryDetailById(packageId: number) {
 export const getHistoriesPackageByAdmin = async (
   userId: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -1380,11 +1380,19 @@ export const getHistoriesPackageByAdmin = async (
 
   const now = new Date();
 
-  const whereCondition = {
+  const whereCondition: any = {
     isDeleted: false,
     communityId: { in: adminCommunityIds },
     dueDate: { lt: now },
   };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { location: { name: { contains: search } } },
+    ];
+  }
 
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });
@@ -1418,7 +1426,6 @@ export const getHistoriesPackageByAdmin = async (
 };
 
 /*
- * ฟังก์ชัน : getPackageDetailByMember
  * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับ Member โดยเช็คสิทธิ์
  * Input  : memberId (user.id ที่เป็น member), packageId
  * Output : รายละเอียดแพ็กเกจ (โครงเหมือน getPackageDetailById)
@@ -1599,7 +1606,8 @@ export const getPackageDetailByMember = async (
 export const getHistoriesPackageByMember = async (
   userId: number,
   page = 1,
-  limit = 10
+  limit = 10,
+  search?: string
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -1612,11 +1620,19 @@ export const getHistoriesPackageByMember = async (
 
   const now = new Date();
 
-  const whereCondition = {
+  const whereCondition: any = {
     isDeleted: false,
     overseerMemberId: user.id,
     dueDate: { lt: now },
   };
+
+  if (search) {
+    whereCondition.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { location: { name: { contains: search } } },
+    ];
+  }
 
   const skip = (page - 1) * limit;
   const totalCount = await prisma.package.count({ where: whereCondition });

@@ -7,7 +7,6 @@ import { ImageType, PackageApproveStatus, PackagePublishStatus } from "@prisma/c
 import prisma from "../database-service.js";
 
 /*
- * ฟังก์ชัน : searchPackagesAndCommunities
  * คำอธิบาย : ค้นหาแพ็กเกจและชุมชนตาม keyword และ/หรือ tag(s) พร้อมการกรองราคาและการเรียงลำดับ
  * Input : 
  *   - search (string | undefined) - คำค้นหา (optional)
@@ -45,7 +44,6 @@ export async function searchPackagesAndCommunities(
   const tagNames = tags?.filter((tag) => tag && tag.trim() !== "").map((tag) => tag.trim()) || [];
 
   /*
-   * ฟังก์ชัน: parseSearchDateParam
    * คำอธิบาย: รองรับทั้ง "YYYY-MM-DD" และ ISO date-time
    * - หากเป็น "YYYY-MM-DD": แปลงเป็น local start-of-day / end-of-day เพื่อให้ค้นหาถูกต้องตามวัน
    */

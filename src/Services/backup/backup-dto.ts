@@ -1,16 +1,11 @@
-/*
- * DTO: backup-dto
- * วัตถุประสงค์: ตรวจสอบข้อมูลสำหรับการจัดการ backups
- * Input: query parameters สำหรับ pagination และ body สำหรับการสร้าง backup
- * Output: ผ่าน/ไม่ผ่านการตรวจสอบ พร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
- */
 import { Transform } from "class-transformer";
 import { IsArray, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
-/*
+/**
  * DTO: BackupQueryDto
- * คำอธิบาย: กำหนด schema สำหรับ query parameters ของการดึงข้อมูล backups
- * ใช้สำหรับ pagination และการกรองข้อมูล
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อดึงข้อมูล Backups
+ * Input: query parameters (page, limit, search)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class BackupQueryDto {
   @IsOptional()
@@ -31,37 +26,42 @@ export class BackupQueryDto {
   search?: string;
 }
 
-/*
+/**
  * DTO: GetBackupByIdDto
- * คำอธิบาย: กำหนด schema สำหรับการดึงข้อมูล backup ตาม filename
- * ใช้สำหรับการตรวจสอบ parameter backup filename (including .zip)
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อดึงข้อมูล Backup ตาม filename
+ * Input: body parameters (backupId)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class GetBackupByIdDto {
   @IsString()
   backupId?: string; // This will be the filename including .zip extension
 }
 
-/*
+/**
  * DTO: CreateBackupDto
- * คำอธิบาย: กำหนดสำหรับการสร้าง backup ใหม่
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Backup ใหม่
+ * Input: body parameters (backupId)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class CreateBackupDto {
 }
 
-/*
+/**
  * DTO: DeleteBackupByIdDto
- * คำอธิบาย: กำหนด schema สำหรับการลบ backup ตาม filename
- * ใช้สำหรับการตรวจสอบ parameter backup filename (including .zip)
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อลบ Backup ตาม filename
+ * Input: body parameters (backupId)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class DeleteBackupByIdDto {
   @IsString()
   backupId?: string; // This will be the filename including .zip extension
 }
 
-/*
+/**
  * DTO: DeleteBackupsBulkDto
- * คำอธิบาย: กำหนด schema สำหรับการลบ backup หลายไฟล์พร้อมกัน
- * ใช้สำหรับการตรวจสอบ array ของ backup filenames
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อลบ Backup หลายไฟล์พร้อมกัน
+ * Input: body parameters (ids)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class DeleteBackupsBulkDto {
   @IsArray()

@@ -11,8 +11,9 @@ import type { PaginationResponse } from "~/Services/pagination-dto.js";
 import prisma from "../database-service.js";
 
 /*
- * Type : LogWithUser
  * คำอธิบาย : Type สำหรับ log พร้อมข้อมูลผู้ใช้
+ * input : id, loginTime, logoutTime, ipAddress, user
+ * output : LogWithUser
  */
 export type LogWithUser = {
   id: number;
@@ -30,9 +31,8 @@ export type LogWithUser = {
 };
 
 /*
- * ฟังก์ชัน : getUserLogs
  * คำอธิบาย : ดึงข้อมูล logs ตาม role ของผู้ใช้
- * Input :
+ * input :
  *   - user (UserPayload) - ข้อมูลผู้ใช้จาก token
  *   - page (number) - หน้าที่ต้องการ
  *   - limit (number) - จำนวนรายการต่อหน้า

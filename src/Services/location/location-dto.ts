@@ -10,7 +10,12 @@ import {
   IsLongitude,
   IsInt,
 } from "class-validator";
-
+/**
+ * DTO: LocationDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Location
+ * Input: body parameters (houseNumber, villageNumber, alley, subDistrict, district, province, postalCode, latitude, longitude, detail)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class LocationDto {
   @IsString()
   @IsNotEmpty({ message: "บ้านเลขที่ห้ามว่าง" })

@@ -23,10 +23,9 @@ interface BackupInfo {
 }
 
 /*
- * ฟังก์ชัน : getBackups
  * คำอธิบาย : ดึงข้อมูล backups แบบ paginated พร้อมการค้นหาตาม filename
- * Input : page (number), limit (number), search (string, optional)
- * Output : PaginationResponse<BackupInfo>
+ * input : page, limit, search
+ * output : PaginationResponse<BackupInfo>
  */
 export const getBackups = async (page: number, limit: number, search?: string): Promise<PaginationResponse<BackupInfo>> => {
   try {
@@ -132,10 +131,9 @@ export const getBackups = async (page: number, limit: number, search?: string): 
 };
 
 /*
- * ฟังก์ชัน : getBackupById
  * คำอธิบาย : ดึงข้อมูล backup file path สำหรับการ download
- * Input : backupId (string) - filename ของ backup ที่ต้องการ download (including .zip)
- * Output : file path ของ backup file
+ * input : backupId
+ * output : string
  */
 export const getBackupById = async (backupId: string): Promise<string> => {
   try {
@@ -158,10 +156,9 @@ export const getBackupById = async (backupId: string): Promise<string> => {
 };
 
 /*
- * ฟังก์ชัน : createBackup
- * คำอธิบาย : สร้าง backup ใหม่ตาม configuration ที่ระบุ
- * Input : backupConfig (CreateBackupDto) - configuration parameters
- * Output : ข้อมูล backup ที่สร้างใหม่
+ * คำอธิบาย : สร้าง backup ใหม่
+ * input : 
+ * output : BackupInfo
  */
 export const createBackup = async (): Promise<BackupInfo> => {
   try {
@@ -393,10 +390,9 @@ SELECT 'Backup info file created - manual backup required' as status;
 };
 
 /*
- * ฟังก์ชัน : deleteBackupById
  * คำอธิบาย : ลบ backup file ตาม filename
- * Input : backupId (string) - filename ของ backup ที่ต้องการลบ (including .zip)
- * Output : success message
+ * input : backupId
+ * output : { message: string }
  */
 export const deleteBackupById = async (backupId: string): Promise<{ message: string }> => {
   try {
@@ -422,10 +418,9 @@ export const deleteBackupById = async (backupId: string): Promise<{ message: str
 };
 
 /*
- * ฟังก์ชัน : deleteBackupsBulk
  * คำอธิบาย : ลบ backup files หลายไฟล์พร้อมกัน
- * Input : backupIds (string[]) - array ของ backup filenames ที่ต้องการลบ (including .zip)
- * Output : success message พร้อมรายละเอียดการลบ
+ * input : backupIds
+ * output : { message: string, deletedCount: number, failedDeletions: string[] }
  */
 export const deleteBackupsBulk = async (backupIds: string[]): Promise<{ 
   message: string; 

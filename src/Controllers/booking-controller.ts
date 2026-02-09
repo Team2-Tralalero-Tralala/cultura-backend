@@ -19,10 +19,9 @@ export const getRefundRequestsByAdminDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getRefundRequestsByAdmin
- * อธิบาย : ดึงคำขอคืนเงินทั้งหมดของชุมชนที่ admin ดูแล
- * Route : GET /admin/refunds
- * Output : PaginationResponse<BookingHistory>
+ * คำอธิบาย : ดึงคำขอคืนเงินทั้งหมดของชุมชนที่ admin ดูแล
+ * input : req, res
+ * output : PaginationResponse<BookingHistory>
  */
 export const getRefundRequestsByAdmin: TypedHandlerFromDto<
   typeof getRefundRequestsByAdminDto
@@ -45,20 +44,28 @@ export const getRefundRequestsByAdmin: TypedHandlerFromDto<
 
 /*
  * DTO : สำหรับอนุมัติคำขอคืนเงิน
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
  */
 export class RefundIdParamDto {
   @IsNumberString()
   bookingId!: string;
 }
-
+/**
+ * DTO : สำหรับอนุมัติคำขอคืนเงิน
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
+ */
 export const approveRefundByAdminDto = {
   params: RefundIdParamDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : approveRefundByAdmin
- * อธิบาย : อนุมัติคำขอคืนเงิน
- * Route : PATCH /admin/refunds/:id/approve
+ * คำอธิบาย : อนุมัติคำขอคืนเงิน
+ * input : req, res
+ * output : 
  */
 export const approveRefundByAdmin: TypedHandlerFromDto<
   typeof approveRefundByAdminDto
@@ -76,22 +83,30 @@ export const approveRefundByAdmin: TypedHandlerFromDto<
 
 /*
  * DTO : สำหรับปฏิเสธคำขอคืนเงิน
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
  */
 export class RejectRefundBodyDto {
   @IsOptional()
   @IsString()
   reason?: string;
 }
-
+/**
+ * DTO : สำหรับปฏิเสธคำขอคืนเงิน
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
+ */
 export const rejectRefundByAdminDto = {
   params: RefundIdParamDto,
   body: RejectRefundBodyDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : rejectRefundByAdmin
- * อธิบาย : ปฏิเสธคำขอคืนเงิน พร้อมเหตุผล
- * Route : PATCH /admin/refunds/:id/reject
+ * คำอธิบาย : ปฏิเสธคำขอคืนเงsิน พร้อมเหตุผล
+ * input : req, res
+ * output : 
  */
 export const rejectRefundByAdmin: TypedHandlerFromDto<
   typeof rejectRefundByAdminDto
@@ -114,19 +129,19 @@ export const rejectRefundByAdmin: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับดึงรายการคำขอคืนเงินของ Package ที่ Member ดูแล
- * Input : query (page, limit)
- * Output : ข้อมูลคำขอคืนเงินพร้อม pagination
+ * DTO : สำหรับดึงรายการคำขอคืนเงินของ Package ที่ Member ดูแล
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
  */
 export const getRefundRequestsByMemberDto = {
   query: PaginationDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getRefundRequestsByMember
- * อธิบาย : ดึงคำขอคืนเงินทั้งหมดของ Package ที่ Member ดูแล (overseer)
- * Route : GET /member/refunds
- * Output : PaginationResponse<BookingHistory>
+ * คำอธิบาย : ดึงคำขอคืนเงินทั้งหมดของ Package ที่ Member ดูแล (overseer)
+ * input : req, res
+ * output : 
  */
 export const getRefundRequestsByMember: TypedHandlerFromDto<
   typeof getRefundRequestsByMemberDto
@@ -148,16 +163,17 @@ export const getRefundRequestsByMember: TypedHandlerFromDto<
 };
 
 /*
- * Configuration DTO : สำหรับ Member อนุมัติคำขอคืนเงิน
+ * DTO : สำหรับ Member อนุมัติคำขอคืนเงิน
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
  */
 export const approveRefundByMemberDto = {
   params: RefundIdParamDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : approveRefundByMember
  * อธิบาย : อนุมัติคำขอคืนเงิน (สำหรับ Member)
- * Route : PATCH /member/refunds/:id/approve
  * Input :
  * - req.params.bookingId : รหัสการจอง (bookingId)
  * - req.user.id : รหัสสมาชิกผู้ดำเนินการ (userId จาก Token)
@@ -179,7 +195,10 @@ export const approveRefundByMember: TypedHandlerFromDto<
 };
 
 /*
- * Configuration DTO : สำหรับ Member ปฏิเสธคำขอคืนเงิน
+ * DTO : สำหรับ Member ปฏิเสธคำขอคืนเงิน
+ * วัตถุประสงค์ : รับรหัสการจอง
+ * input : req.params.bookingId
+ * output : 
  */
 export const rejectRefundByMemberDto = {
   params: RefundIdParamDto,
@@ -187,10 +206,9 @@ export const rejectRefundByMemberDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : rejectRefundByMember
  * อธิบาย : ปฏิเสธคำขอคืนเงิน พร้อมเหตุผล (สำหรับ Member)
- * Route : PATCH /member/refunds/:id/reject
- * Input :
+ * input : req, res
+ * output : 
  * - req.params.bookingId : รหัสการจอง (bookingId)
  * - req.body.reason : เหตุผลการปฏิเสธ (reason)
  * - req.user.id : รหัสสมาชิกผู้ดำเนินการ (userId จาก Token)
@@ -218,7 +236,7 @@ export const rejectRefundByMember: TypedHandlerFromDto<
 
 /*
  * DTO : getBookingDetailDto
- * คำอธิบาย : กำหนด schema สำหรับตรวจสอบพารามิเตอร์ bookingId
+ * วัตถุประสงค์ : กำหนด schema สำหรับตรวจสอบพารามิเตอร์ bookingId
  * Input : params (BookingIdParamDto)
  * Output : ข้อมูลพารามิเตอร์ที่ถูกต้อง
  */
@@ -227,7 +245,6 @@ export const getBookingDetailDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getBookingDetail
  * คำอธิบาย : Handler สำหรับดึงรายละเอียดการจอง (ใช้แสดงในหน้าเขียน Feedback)
  * Input : req.params.bookingId - รหัสการจอง
  * Output : 

@@ -11,10 +11,9 @@ import { PaginationDto } from "~/Services/pagination-dto.js";
 import { GetHomestayQuery } from "~/Services/homestay/homestay-dto.js";
 
 /*
- * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอน "สร้าง Homestay (เดี่ยว)" สำหรับ SuperAdmin
+ * DTO : createHomestayDto
+ * วัตถุประสงค์ : สำหรับ validate ข้อมูลตอน "สร้าง Homestay (เดี่ยว)" สำหรับ SuperAdmin
  * Input  : body (HomestayDto)
- * Notice : เส้นทางจะมี params.communityId (ตรวจใน route/controller ไม่อยู่ใน DTO)
- * Routes : POST /super/community/:communityId/homestay
  * Output : commonDto object
 */
 export const createHomestayDto = {
@@ -22,9 +21,7 @@ export const createHomestayDto = {
 } satisfies commonDto;
 
 /*
- * POST /super/community/:communityId/homestay
- * (alias รองรับ) POST /super/homestays/:communityId
- * สร้าง Homestay 1 รายการภายใต้ชุมชนที่กำหนด
+ * คำอธิบาย : Handler สำหรับสร้าง Homestay 1 รายการภายใต้ชุมชนที่กำหนด
  * Input: params.communityId, body: HomestayDto
  * Output: 200 + ข้อมูลที่พักที่ถูกสร้าง
 */
@@ -65,8 +62,8 @@ export const createHomestay = async (req: Request, res: Response) => {
 
         // ③ รวมไฟล์เป็น homestayImage (เหมือน createStore)
         const homestayImage = [
-            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
-            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+            ...(files?.cover?.map(file => ({ image: file.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(file => ({ image: file.path, type: "GALLERY" })) ?? []),
         ];
 
         const result = await HomestayService.createHomestayBySuperAdmin(
@@ -93,8 +90,7 @@ export const bulkCreateHomestayDto = {
 } satisfies commonDto;
 
 /*
- * POST /super/community/:communityId/homestay/bulk
- * สร้าง Homestay หลายรายการ (bulk) ภายใต้ชุมชนที่กำหนด
+ * คำอธิบาย : Handler สำหรับสร้าง Homestay หลายรายการ (bulk) ภายใต้ชุมชนที่กำหนด
  * Input: params.communityId, body: HomestayDto[]
  * Output: 200 + รายการผลลัพธ์ที่สร้าง
 */
@@ -119,13 +115,11 @@ export const createHomestaysBulk = async (req: Request, res: Response) => {
     }
 };
 
-
-/* *************************************** ทำไว้ชั่วคราวรอใช้ของเพื่อน กรณีเพื่อน pr มาแล้เ้ว ค่อยลบ
- * GET /super/homestays/:homestayId
- * ดูรายละเอียด Homestay รายการเดียว
+/**
+ * คำอธิบาย : Handler สำหรับดูรายละเอียด Homestay รายการเดียว
  * Input: params.homestayId
  * Output: 200 + รายละเอียด
-*/
+ */
 export const getHomestayDetail = async (req: Request, res: Response) => {
     try {
         if (!req.user) return createErrorResponse(res, 401, "Unauthorized");
@@ -140,10 +134,9 @@ export const getHomestayDetail = async (req: Request, res: Response) => {
 };
 
 /*
- * คำอธิบาย : Schema สำหรับ validate ข้อมูลตอน "แก้ไข Homestay"
+ * DTO : editHomestayDto
+ * วัตถุประสงค์ : สำหรับ validate ข้อมูลตอน "แก้ไข Homestay"
  * Input  : body (HomestayDto)  // หากมี Update DTO แยก ใช้แทนได้
- * Notice : เส้นทางจะมี params.homestayId (ตรวจใน route/controller ไม่อยู่ใน DTO)
- * Routes : PUT  /super/homestay/:homestayId
  * Output : commonDto object
 */
 export const editHomestayDto = {
@@ -151,9 +144,7 @@ export const editHomestayDto = {
 } satisfies commonDto;
 
 /*
- * PUT /super/homestay/:homestayId
- * (alias รองรับ) PATCH /super/homestays/:homestayId
- * แก้ไข Homestay
+ * คำอธิบาย : Handler สำหรับแก้ไข Homestay
  * Input: params.homestayId, body: HomestayDto (หรือ partial ที่ validate แล้ว)
  * Output: 200 + updated entity
 */
@@ -191,8 +182,8 @@ export const editHomestay = async (req: Request, res: Response) => {
         }
 
         const homestayImage = [
-            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
-            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+            ...(files?.cover?.map(file => ({ image: file.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(file => ({ image: file.path, type: "GALLERY" })) ?? []),
         ];
 
         const result = await HomestayService.editHomestayBySuperAdmin(
@@ -274,8 +265,7 @@ export const getHomestaysAll: TypedHandlerFromDto<
 
 
 /*
- * POST /admin/community/:communityId/homestay
- * (Admin/SuperAdmin) สร้าง Homestay 1 รายการภายใต้ชุมชนที่กำหนด
+ * คำอธิบาย : สร้าง Homestay 1 รายการภายใต้ชุมชนที่กำหนด
  * Input: params.communityId, body: HomestayDto
  * Output: 200 + ข้อมูลที่พักที่ถูกสร้าง
  */
@@ -312,8 +302,8 @@ export const createHomestayAdmin = async (req: Request, res: Response) => {
 
         // ③ รวมไฟล์เป็น homestayImage
         const homestayImage = [
-            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
-            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+            ...(files?.cover?.map(file => ({ image: file.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(file => ({ image: file.path, type: "GALLERY" })) ?? []),
         ];
 
         // *** เปลี่ยนไปเรียก Service "ByAdmin" ***
@@ -329,11 +319,9 @@ export const createHomestayAdmin = async (req: Request, res: Response) => {
 };
 
 /*
- * Controller: getHomestaysAllAdmin
- * วัตถุประสงค์ : ดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ
+ * คำอธิบาย : ดึงรายการโฮมสเตย์ทั้งหมดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบ
  * Input : req.user.id (รหัสผู้ดูแลที่เข้าสู่ระบบ)
  * Output : ส่งกลับรายการโฮมสเตย์ทั้งหมดของชุมชนในรูปแบบ JSON (status 200)
- * Error : หากเกิดข้อผิดพลาดระหว่างดึงข้อมูล จะส่งสถานะ 400 พร้อมข้อความ error
  */
 export const getHomestaysAllAdmin: TypedHandlerFromDto<
     typeof getHomestaysAllDto
@@ -347,8 +335,7 @@ export const getHomestaysAllAdmin: TypedHandlerFromDto<
     }
 };
 /*
- * PUT /admin/homestay/edit/:homestayId
- * (Admin/SuperAdmin) แก้ไข Homestay
+ * คำอธิบาย : แก้ไข Homestay
  * Input: params.homestayId, body: HomestayDto (หรือ partial)
  * Output: 200 + updated entity
  */
@@ -385,8 +372,8 @@ export const editHomestayAdmin = async (req: Request, res: Response) => {
         }
 
         const homestayImage = [
-            ...(files?.cover?.map(f => ({ image: f.path, type: "COVER" })) ?? []),
-            ...(files?.gallery?.map(f => ({ image: f.path, type: "GALLERY" })) ?? []),
+            ...(files?.cover?.map(file => ({ image: file.path, type: "COVER" })) ?? []),
+            ...(files?.gallery?.map(file => ({ image: file.path, type: "GALLERY" })) ?? []),
         ];
 
         // *** เปลี่ยนไปเรียก Service "ByAdmin" ***
@@ -403,7 +390,7 @@ export const editHomestayAdmin = async (req: Request, res: Response) => {
 };
 
 /*
- * วัตถุประสงค์ : ลบ Homestay แบบ Soft Delete โดย Superadmin เท่านั้น
+ * ตำอธิบาย : ลบ Homestay แบบ Soft Delete โดย Superadmin เท่านั้น
  * Input :
  *   - req.user.role (ต้องเป็น "superadmin")
  *   - req.params.homestayId : หมายเลข Homestay
@@ -438,10 +425,10 @@ export const deleteHomestaySuperAdmin = async (req: Request, res: Response) => {
 };
 
 /*
-* Controller: deleteHomestayAdmin
-* วัตถุประสงค์ : ลบ Homestay ที่อยู่ในชุมชนที่ Admin ดูแล
+* คำอธิบาย : ลบ Homestay ที่อยู่ในชุมชนที่ Admin ดูแล
 * Input : req.user.id (adminId), req.params.homestayId
-* */
+* Output : 200 + updated entity
+*/
 
 export const deleteHomestayAdmin = async (req: Request, res: Response) => {
     try {
@@ -462,7 +449,6 @@ export const deleteHomestayAdmin = async (req: Request, res: Response) => {
         return createErrorResponse(res, 400, (error as Error).message);
     }
 };
-
 
 /**
 * DTO: HomestayIdParamDto

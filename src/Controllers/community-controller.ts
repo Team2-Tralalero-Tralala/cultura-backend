@@ -16,7 +16,8 @@ import { CommunityDetailPublicQueryDto } from "~/Libs/Types/communityDetailPubli
 import { GetCommunityQuery } from "~/Services/community/community-dto.js";
 
 /*
- * คำอธิบาย : DTO สำหรับสร้างข้อมูลชุมชนใหม่
+ * DTO : createCommunityDto
+ * วัตถุประสงค์ : สำหรับสร้างข้อมูลชุมชนใหม่
  * Input : body (CommunityDto)
  * Output : ข้อมูลชุมชนที่ถูกสร้าง
  */
@@ -31,9 +32,6 @@ export const createCommunityDto = {
  *   - req.files : ไฟล์แนบ (logo, cover, gallery, video)
  * Output :
  *   - JSON response พร้อมข้อมูลของชุมชนที่ถูกสร้างสำเร็จ
- * หมายเหตุ :
- *   - ใช้ multipart/form-data ในการส่งข้อมูล
- *   - แนบไฟล์จาก Multer ไปสร้าง communityImage[]
  */
 export const createCommunity: TypedHandlerFromDto<
   typeof createCommunityDto
@@ -54,9 +52,9 @@ export const createCommunity: TypedHandlerFromDto<
         ? [{ image: files.cover[0].path, type: "COVER" }]
         : []),
 
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+      ...(files.gallery?.map((file) => ({ image: file.path, type: "GALLERY" })) ||
         []),
-      ...(files.video?.map((f) => ({ image: f.path, type: "VIDEO" })) || []),
+      ...(files.video?.map((file) => ({ image: file.path, type: "VIDEO" })) || []),
     ];
     const result = await CommunityService.createCommunity({
       ...parsed,
@@ -69,7 +67,8 @@ export const createCommunity: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับตรวจสอบค่า communityId ที่รับมาจาก params
+ * DTO : IdParamDto
+ * วัตถุประสงค์ : สำหรับตรวจสอบค่า communityId ที่รับมาจาก params
  * Input : communityId (number)
  * Output : communityId ที่ถูกตรวจสอบแล้ว
  */
@@ -79,7 +78,8 @@ export class IdParamDto {
 }
 
 /*
- * คำอธิบาย : Controller สำหรับแก้ไขข้อมูลของชุมชนที่มีอยู่
+ * DTO : editCommunityDto
+ * วัตถุประสงค์ : สำหรับแก้ไขข้อมูลของชุมชนที่มีอยู่
  * Input :
  *   - req.params.communityId : รหัสชุมชนที่ต้องการแก้ไข
  *   - req.body.data : ข้อมูลใหม่ของชุมชน
@@ -94,7 +94,6 @@ export const editCommunityDto = {
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขข้อมูลชุมชนที่มีอยู่
  * Input : req.params.communityId, req.body
- 
  * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกแก้ไข
  */
 export const editCommunity: TypedHandlerFromDto<
@@ -117,9 +116,9 @@ export const editCommunity: TypedHandlerFromDto<
         ? [{ image: files.cover[0].path, type: "COVER" }]
         : []),
 
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+      ...(files.gallery?.map((file) => ({ image: file.path, type: "GALLERY" })) ||
         []),
-      ...(files.video?.map((f) => ({ image: f.path, type: "VIDEO" })) || []),
+      ...(files.video?.map((file) => ({ image: file.path, type: "VIDEO" })) || []),
     ];
     const result = await CommunityService.editCommunity(communityId, {
       ...parsed,
@@ -132,7 +131,8 @@ export const editCommunity: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับลบข้อมูลชุมชนตาม communityId
+ * DTO : deleteCommunityByIdDto
+ * วัตถุประสงค์ : สำหรับลบข้อมูลชุมชนตาม communityId
  * Input : params (IdParamDto)
  * Output : ข้อมูลชุมชนที่ถูกลบ
  */
@@ -158,11 +158,16 @@ export const deleteCommunityById: TypedHandlerFromDto<
 };
 
 /*
- * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * DTO : getCommunityByIdDto
+ * วัตถุประสงค์ : สำหรับดึงข้อมูลชุมชนตามรหัส
+ * Input : params (IdParamDto)
+ * Output : ข้อมูลชุมชนที่ถูกดึง
  */
 export const getCommunityByIdDto = { params: IdParamDto } satisfies commonDto;
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลชุมชนตาม communityId
+ * Input : req.params.communityId
+ * Output : JSON response พร้อมข้อมูลชุมชนที่ถูกดึง
  */
 export const getCommunityById: TypedHandlerFromDto<
   typeof getCommunityByIdDto
@@ -176,12 +181,17 @@ export const getCommunityById: TypedHandlerFromDto<
   }
 };
 /*
- * DTO สำหรับ "ดึงแอดมินที่ยังไม่ถูกผูกกับชุมชน"
+ * DTO : unassignedAdminsDto
+ * วัตถุประสงค์ : สำหรับดึงแอดมินที่ยังไม่ถูกผูกกับชุมชน
+ * Input : ไม่มี
+ * Output : รายชื่อแอดมินที่ยังไม่ถูกผูกกับชุมชน
  */
 export const unassignedAdminsDto = {} satisfies commonDto;
 
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึงรายชื่อแอดมินที่ยังไม่ได้เป็นเจ้าของชุมชน"
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายชื่อแอดมินที่ยังไม่ได้เป็นเจ้าของชุมชน
+ * Input : ไม่มี
+ * Output : JSON response พร้อมรายชื่อแอดมินที่ยังไม่ได้เป็นเจ้าของชุมชน
  */
 export const getUnassignedAdmins: TypedHandlerFromDto<
   typeof unassignedAdminsDto
@@ -194,12 +204,17 @@ export const getUnassignedAdmins: TypedHandlerFromDto<
   }
 };
 /*
- * DTO สำหรับ "ดึงสมาชิกที่ยังไม่สังกัดชุมชน"
+ * DTO : unassignedMemberDto
+ * วัตถุประสงค์ : สำหรับดึงสมาชิกที่ยังไม่สังกัดชุมชน
+ * Input : ไม่มี
+ * Output : รายชื่อสมาชิกที่ยังไม่สังกัดชุมชน
  */
 export const unassignedMemberDto = {} satisfies commonDto;
 
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึงรายชื่อสมาชิกที่ยังไม่สังกัดชุมชน"
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงรายชื่อสมาชิกที่ยังไม่สังกัดชุมชน
+ * Input : ไม่มี
+ * Output : JSON response พร้อมรายชื่อสมาชิกที่ยังไม่สังกัดชุมชน
  */
 export const getUnassignedMembers: TypedHandlerFromDto<
   typeof unassignedMemberDto
@@ -261,7 +276,8 @@ export const getCommunityAll: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับดึงข้อมูลชุมชนตาม communityId
+ * DTO : getCommunityDetailByIdDto
+ * วัตถุประสงค์ : สำหรับดึงข้อมูลชุมชนตาม communityId
  * Input : params (IdParamDto)
  * Output : ข้อมูลชุมชนที่พบ
  */
@@ -296,7 +312,8 @@ export const getCommunityDetailById: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนของแอดมิน (ไม่ต้องมี params/query)
+ * DTO : getCommunityDetailByAdminDto
+ * วัตถุประสงค์ : สำหรับดึงรายละเอียดชุมชนของแอดมิน (ไม่ต้องมี params/query)
  * Input : ไม่มี (ใช้ req.user.id)
  * Output : รายละเอียดชุมชนของแอดมินคนนั้น
  */
@@ -350,9 +367,9 @@ export const editCommunityByAdmin: TypedHandlerFromDto<
         ? [{ image: files.cover[0].path, type: "COVER" }]
         : []),
 
-      ...(files.gallery?.map((f) => ({ image: f.path, type: "GALLERY" })) ||
+      ...(files.gallery?.map((file) => ({ image: file.path, type: "GALLERY" })) ||
         []),
-      ...(files.video?.map((f) => ({ image: f.path, type: "VIDEO" })) || []),
+      ...(files.video?.map((file) => ({ image: file.path, type: "VIDEO" })) || []),
     ];
     const result = await CommunityService.editCommunityByAdmin(req.user, {
       ...parsed,
@@ -364,11 +381,16 @@ export const editCommunityByAdmin: TypedHandlerFromDto<
   }
 };
 /*
- * DTO สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * DTO : getCommunityOwnDto
+ * วัตถุประสงค์ : สำหรับดึงข้อมูลชุมชนตามรหัส
+ * Input : ไม่มี
+ * Output : ข้อมูลชุมชนที่พบ
  */
 export const getCommunityOwnDto = {} satisfies commonDto;
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
+ * คำอธิบาย : ฟังก์ชันสำหรับดึงข้อมูลชุมชนของตัวเอง
+ * Input : ไม่มี
+ * Output : JSON response พร้อมข้อมูลชุมชน
  */
 export const getCommunityOwn: TypedHandlerFromDto<
   typeof getCommunityOwnDto
@@ -383,7 +405,8 @@ export const getCommunityOwn: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับดึงรายละเอียดชุมชนของสมาชิก(ไม่ต้องมี params/query)
+ * DTO : getCommunityDetailByMemberDto
+ * วัตถุประสงค์ : สำหรับดึงรายละเอียดชุมชนของสมาชิก(ไม่ต้องมี params/query)
  * Input : ไม่มี (ใช้ req.user.id)
  * Output : รายละเอียดชุมชนของสมาชิกคนนั้น
  */

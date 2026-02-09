@@ -26,10 +26,11 @@ import {
 import "reflect-metadata";
 import { LocationDto } from "../location/location-dto.js";
 
-/*
- * คำอธิบาย : Data Transfer Object (DTO) สำหรับข้อมูลไฟล์ที่แนบกับ Package
- * Input  : filePath (string), type (ImageType)
- * Output : ใช้สำหรับ validate ข้อมูลไฟล์ก่อนบันทึกลงฐานข้อมูล
+/**
+ * DTO: PackageFileDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Package File
+ * Input: body parameters (filePath, type)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class PackageFileDto {
   @IsString()
@@ -42,11 +43,11 @@ export class PackageFileDto {
   type!: ImageType; // เพิ่ม DTO สำหรับไฟล์
 }
 
-/*
- * คำอธิบาย : DTO สำหรับการสร้าง Package ใหม่
- * ใช้ตรวจสอบความถูกต้องของข้อมูลจาก Client ก่อนบันทึกลงฐานข้อมูล
- * Input : JSON body ที่มีข้อมูล communityId, location, overseerMemberId, name, description, ฯลฯ
- * Output : Object PackageDto ที่ผ่านการ validate แล้ว
+/**
+ * DTO: PackageDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Package
+ * Input: body parameters (communityId, location, overseerMemberId, name, description, ฯลฯ)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class PackageDto {
   @IsNumber()
@@ -202,11 +203,11 @@ export class PackageDto {
   homestayCheckOutTime?: string;
 }
 
-/*
- * คำอธิบาย : DTO สำหรับการแก้ไข Package เดิม
- * ฟิลด์ทั้งหมดเป็น Optional (เลือกแก้ได้) แต่ยังคงตรวจสอบรูปแบบตาม Validation rule
- * Input : JSON body ที่มีข้อมูล field ใดๆ ที่ต้องการแก้ เช่น name, price, location
- * Output : Object updatePackageDto ที่ผ่านการ validate แล้ว
+/**
+ * DTO: updatePackageDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (communityId, location, overseerMemberId, name, price, location)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class updatePackageDto {
   @IsNumber()
@@ -361,16 +362,34 @@ export class updatePackageDto {
   bookedRoom?: number;
 }
 
+/**
+ * DTO: PackageIdParamDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class PackageIdParamDto {
   @IsNumberString()
   id?: string;
 }
 
+/**
+ * DTO: PackageDuplicateParamDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class PackageDuplicateParamDto {
   @IsNumberString()
   packageId?: string;
 }
 
+/**
+ * DTO: QueryHomestaysDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class QueryHomestaysDto {
   @IsOptional()
   @IsString()
@@ -381,6 +400,12 @@ export class QueryHomestaysDto {
   limit?: string;
 }
 
+/**
+ * DTO: MembersQueryDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class MembersQueryDto {
   @IsOptional()
   @IsString()
@@ -391,6 +416,12 @@ export class MembersQueryDto {
   limit?: string;
 }
 
+/**
+ * DTO: QueryListHomestaysDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class QueryListHomestaysDto {
   @IsOptional()
   @IsString()
@@ -404,10 +435,23 @@ export class QueryListHomestaysDto {
   limit?: number = 8;
 }
 
+/**
+ * DTO: IdParamDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class IdParamDto {
   @IsNumberString()
   communityId?: string;
 }
+
+/**
+ * DTO: BulkDeletePackagesDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class BulkDeletePackagesDto {
   @IsArray()
   @ArrayNotEmpty()
@@ -415,6 +459,12 @@ export class BulkDeletePackagesDto {
   ids!: number[];
 }
 
+/**
+ * DTO: HistoryPackageQueryDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class HistoryPackageQueryDto {
   @IsOptional()
   @IsNumberString()
@@ -423,18 +473,38 @@ export class HistoryPackageQueryDto {
   @IsOptional()
   @IsNumberString()
   limit?: string;
+
+  @IsOptional()
+  search?: string;
 }
 
+/**
+ * DTO: UpdateParticipantStatusBodyDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class UpdateParticipantStatusBodyDto {
   @IsBoolean()
   isParticipate?: boolean;
 }
 
+/**
+ * DTO: BookingHistoryIdParamDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class BookingHistoryIdParamDto {
   @IsNumberString()
   bookingHistoryId?: string;
 }
-
+/**
+ * DTO: ParticipantsQueryDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อแก้ไข Package
+ * Input: body parameters (id)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
+ */
 export class ParticipantsQueryDto {
   @IsOptional()
   @IsNumberString()

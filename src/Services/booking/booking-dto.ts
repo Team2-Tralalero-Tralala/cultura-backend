@@ -1,13 +1,9 @@
-/*
- * คำอธิบาย : DTO สำหรับการสร้าง Booking History
- * รองรับการสร้างข้อมูลการจองโดยระบุแพ็กเกจและผู้จอง
- */
 import { Expose } from "class-transformer";
 import {
     IsInt,
     IsNotEmpty,
     IsNumber,
-    IsNumberString,
+    IsNumberString, 
     IsOptional,
     IsString,
     MaxLength,
@@ -15,7 +11,10 @@ import {
 } from "class-validator";
 
 /**
- * DTO สำหรับ path parameter (bookingId)
+ * DTO: BookingIdParamDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อใช้ bookingId ในการเรียกข้อมูล Booking
+ * Input: path parameters (bookingId)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class BookingIdParamDto {
   @Expose()
@@ -24,11 +23,10 @@ export class BookingIdParamDto {
 }
 
 /**
- * DTO สำหรับ body ของการสร้าง Booking
- * - packageId: รหัสแพ็กเกจที่ต้องการจอง
- * - totalParticipant: จำนวนผู้เข้าร่วม
- * - transferSlip: หลักฐานการโอนเงิน (optional)
- * - touristBankId: รหัสบัญชีธนาคารของนักท่องเที่ยว (optional)
+ * DTO: CreateBookingBodyDto
+ * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อสร้าง Booking
+ * Input: body parameters (packageId, totalParticipant, transferSlip, touristBankId)
+ * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class CreateBookingBodyDto {
   @Expose()

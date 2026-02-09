@@ -1,19 +1,5 @@
-/* 
- * File: banner-service.ts
- * Module: Banner Service (Prisma)
- * มาตรฐาน: CS v1.1.1 (คอมเมนต์ไทย), Error-handling เบื้องต้น, Side-effect file delete หลัง DB สำเร็จ
- * หน้าที่:
- *   - เพิ่ม/อ่าน/แก้ไข/ลบข้อมูลแบนเนอร์ (image path) ในตาราง prisma.banner
- *   - ลบไฟล์รูปเก่าออกจากสตอเรจ เมื่อเกิดการอัปเดต/ลบในฐานข้อมูลสำเร็จเท่านั้น
- * หมายเหตุความปลอดภัย:
- *   - ไม่ยอมให้แก้ไขค่า id ของแถว (ห้าม set id ตอน update)
- *   - ตรวจอินพุตพื้นฐาน (เช่น path ว่าง) และคืนค่าที่ชัดเจน
- */
-
-import prisma from "./database-service.js";
+import prisma from "../database-service.js";
 import { deleteFileIfExists, toStorageAbsPath } from "~/Libs/fs-utils.js";
-
-/* ---------- Types ---------- */
 
 /** โครงสร้างไฟล์ที่อัปโหลดมาจาก middleware (ใช้บางฟิลด์เท่านั้น) */
 export type BannerInput = {
@@ -37,25 +23,20 @@ export type EditBannerPayload = {
     path: string; // relative storage path ใหม่
 };
 
-/* ---------- Services ---------- */
 
 /**
- * ฟังก์ชัน: addBanner
  * คำอธิบาย: เพิ่มรายการแบนเนอร์แบบหลายรายการ (bulk) โดยบันทึกเฉพาะ path ลง DB
  * Input  : payload: BannerInput[] (ต้องมี path)
  * Output : Promise<BannerDto[]>
- * หมายเหตุ:
- *   - ใช้ $transaction เพื่อให้การสร้างหลายเรคคอร์ด atomic
- *   - ข้ามรายการที่ไม่มี path (ป้องกันข้อมูลเสีย)
  */
 export async function addBanner(payload: BannerBatchInput): Promise<BannerDto[]> {
     const items = (payload ?? []).filter((p) => !!p?.path);
     if (!items.length) return [];
 
     const created = await prisma.$transaction(
-        items.map((c) =>
+        items.map((create) =>
             prisma.banner.create({
-                data: { image: c.path }, // ไม่แตะ id (auto-increment)
+                data: { image: create.path }, // ไม่แตะ id (auto-increment)
                 select: { id: true, image: true },
             })
         )
@@ -65,7 +46,6 @@ export async function addBanner(payload: BannerBatchInput): Promise<BannerDto[]>
 }
 
 /**
- * ฟังก์ชัน: getBanner
  * คำอธิบาย: ดึงรายการแบนเนอร์ทั้งหมด
  * Input  : -
  * Output : Promise<BannerDto[]>
@@ -77,13 +57,9 @@ export async function getBanner(): Promise<BannerDto[]> {
 }
 
 /**
- * ฟังก์ชัน: editBanner
  * คำอธิบาย: แก้ไข path ของรูปแบนเนอร์ และลบไฟล์รูปเก่าหลังอัปเดตสำเร็จ
  * Input  : id: number, payload: { path: string }
  * Output : Promise<BannerDto> (รายการที่อัปเดตแล้ว)
- * ข้อควรระวัง:
- *   - ไม่อนุญาตให้แก้ไข id ใน data update
- *   - ลบไฟล์เก่า *หลังจาก* อัปเดต DB สำเร็จเท่านั้น
  */
 export async function editBanner(id: number, payload: EditBannerPayload): Promise<BannerDto> {
     if (!id || !payload?.path) {
@@ -120,12 +96,9 @@ export async function editBanner(id: number, payload: EditBannerPayload): Promis
 }
 
 /**
- * ฟังก์ชัน: deleteBanner
  * คำอธิบาย: ลบเรคคอร์ดแบนเนอร์ และลบไฟล์รูปที่เกี่ยวข้อง
  * Input  : id: number
  * Output : Promise<BannerDto> (ข้อมูลที่ถูกลบ เผื่อผู้เรียกจะใช้แสดงผล/undo)
- * หมายเหตุ:
- *   - ลบไฟล์หลัง delete สำเร็จ (ป้องกัน orphan DB ถ้าลบไฟล์ก่อนแล้ว DB ล้มเหลว)
  */
 export async function deleteBanner(id: number): Promise<BannerDto> {
     if (!id) {

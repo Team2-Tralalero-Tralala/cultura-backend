@@ -65,7 +65,6 @@ export const getPackageFeedbacksByPackageIdAdmin = async (
 };
 
 /**
- * ฟังก์ชัน : getMemberPackageFeedbacks
  * คำอธิบาย : ดึงรายการ Feedback ของแพ็กเกจตามรหัสแพ็กเกจ (เฉพาะ Member เจ้าของแพ็กเกจ)
  * Input : packageId, user (UserPayload)
  * Output : Feedback ทั้งหมดของแพ็กเกจนั้น

@@ -3,7 +3,7 @@
  * ประกอบด้วยการสมัครสมาชิก (signup), เข้าสู่ระบบ (login), และออกจากระบบ (logout)
  * โดยใช้ AuthService ในการทำงานหลัก และส่งผลลัพธ์กลับด้วย createResponse / createErrorResponse
  */
-import * as AuthService from "~/Services/auth-service.js";
+import * as AuthService from "~/Services/authentication/auth-service.js";
 
 import type {
   commonDto,
@@ -11,22 +11,21 @@ import type {
 } from "~/Libs/Types/TypedHandler.js";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import { verifyToken } from "~/Libs/token.js";
+import { ForgetPasswordDto, LoginDto, SetPasswordDto, SignupDto } from "~/Services/authentication/auth-dto.js";
 
 export const JWT_EXPIRATION_SECONDS = 24 * 60 * 60;
 
 /*
  * DTO : signupDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /signup
- * Input : body (AuthService.signupDto) - ข้อมูลผู้ใช้ เช่น username, password, email
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /signup
+ * Input : body (SignupDto) - ข้อมูลผู้ใช้ เช่น username, password, email
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
-
 export const signupDto = {
-  body: AuthService.SignupDto,
+  body: SignupDto,
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : signup
  * คำอธิบาย : Handler สำหรับสมัครสมาชิกผู้ใช้ใหม่
  * Input : req.body - ข้อมูลผู้ใช้จาก client (ผ่านการ validate ด้วย signupDto แล้ว)
  * Output :
@@ -46,12 +45,12 @@ export const signup: TypedHandlerFromDto<typeof signupDto> = async (
 };
 /*
  * DTO : loginDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /login
- * Input : body (AuthService.loginDto) - ข้อมูลผู้ใช้ เช่น username, password
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /login
+ * Input : body (LoginDto) - ข้อมูลผู้ใช้ เช่น username, password
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export const loginDto = {
-  body: AuthService.LoginDto,
+  body: LoginDto,
 } satisfies commonDto;
 /*
  * คำอธิบาย : Handler สำหรับเข้าสู่ระบบ
@@ -100,14 +99,13 @@ export const logout: TypedHandlerFromDto<typeof loginDto> = async (
 };
 /*
  * DTO : checkLoginDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /login
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /login
  * Input : body (AuthService.checkLoginDto) - ข้อมูลผู้ใช้ เช่น username, password
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export const checkLoginDto = {} satisfies commonDto;
 
 /*
- * ฟังก์ชัน : me
  * คำอธิบาย : Handler เช็คว่ายังเข้าสู่ระบบอยู่มั้ย
  * Input : -
  * Output :
@@ -129,12 +127,23 @@ export const me: TypedHandlerFromDto<typeof checkLoginDto> = async (
   }
 };
 
-/* ============================== Forget/Set Password ============================== */
-
+/*
+ * DTO : forgetPasswordDto
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /forget-password
+ * Input : body (ForgetPasswordDto) - ข้อมูลผู้ใช้ เช่น email
+ * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
+ */
 export const forgetPasswordDto = {
-  body: AuthService.ForgetPasswordDto,
+  body: ForgetPasswordDto,
 } satisfies commonDto;
 
+/*
+ * คำอธิบาย : Handler สำหรับลืมรหัสผ่าน
+ * Input : req.body - ข้อมูลผู้ใช้จาก client (ผ่านการ validate ด้วย forgetPasswordDto แล้ว)
+ * Output :
+ *   - 200 Created พร้อมข้อมูลที่สร้างใหม่
+ *   - 400 Bad Request ถ้ามี error
+ */
 export const forgetPassword: TypedHandlerFromDto<typeof forgetPasswordDto> = async (
   req,
   res
@@ -147,10 +156,23 @@ export const forgetPassword: TypedHandlerFromDto<typeof forgetPasswordDto> = asy
   }
 };
 
+/*
+ * DTO : setPasswordDto
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /set-password
+ * Input : body (SetPasswordDto) - ข้อมูลผู้ใช้ เช่น password
+ * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
+ */
 export const setPasswordDto = {
-  body: AuthService.SetPasswordDto,
+  body: SetPasswordDto,
 } satisfies commonDto;
 
+/*
+ * คำอธิบาย : Handler สำหรับตั้งรหัสผ่าน
+ * Input : req.body - ข้อมูลผู้ใช้จาก client (ผ่านการ validate ด้วย setPasswordDto แล้ว)
+ * Output :
+ *   - 200 Created พร้อมข้อมูลที่สร้างใหม่
+ *   - 400 Bad Request ถ้ามี error
+ */
 export const setPassword: TypedHandlerFromDto<typeof setPasswordDto> = async (
   req,
   res

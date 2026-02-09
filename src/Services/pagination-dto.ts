@@ -1,14 +1,9 @@
-/*
- * คำอธิบาย : DTO สำหรับ pagination parameters
- * ใช้สำหรับ endpoints ที่ต้องการแบ่งหน้าข้อมูล
- */
-
 import { Expose, Transform } from "class-transformer";
 import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
-/*
- * Class : PaginationDto
- * คำอธิบาย : กำหนด schema สำหรับ pagination parameters
+/**
+ * DTO : PaginationDto
+ * วัตถุประสงค์ : กำหนด schema สำหรับ pagination parameters
  * Input : query parameters
  *   - page (optional) : หมายเลขหน้าที่ต้องการ (เริ่มจาก 1) default = 1
  *   - limit (optional) : จำนวนรายการต่อหน้า default = 10, max = 100
@@ -36,6 +31,10 @@ export class PaginationDto {
   @Min(1, { message: "Limit must be at least 1" })
   @Max(100, { message: "Limit cannot exceed 100" })
   limit?: number = 10;
+
+  @Expose()
+  @IsOptional()
+  search?: string;
 }
 
 /*

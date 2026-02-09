@@ -1,15 +1,8 @@
-/*
- * คำอธิบาย : Controller สำหรับการจัดการ Configuration ของระบบ
- * ประกอบด้วยการดูสถานะเซิร์ฟเวอร์ และการเปิด/ปิดเซิร์ฟเวอร์
- * โดยใช้ ConfigService ในการทำงานหลัก และส่งผลลัพธ์กลับด้วย createResponse / createErrorResponse
- */
 import type { Request, Response } from "express";
 import { createErrorResponse, createResponse } from "~/Libs/createResponse.js";
 import * as ConfigService from "~/Services/config-service.js";
 
 /*
- * ฟังก์ชัน : getServerStatus
- * คำอธิบาย : Handler สำหรับดูสถานะการทำงานของเซิร์ฟเวอร์
  * Route : GET /shared/server-status
  * Input : ไม่มี
  * Output :
@@ -31,9 +24,7 @@ export const getServerStatus = async (
 };
 
 /*
- * ฟังก์ชัน : enableServer
  * คำอธิบาย : Handler สำหรับเปิดเซิร์ฟเวอร์
- * Route : POST /super/server/enable
  * Input : ไม่มี
  * Output :
  *   - 200 OK พร้อมข้อความยืนยันการเปิดเซิร์ฟเวอร์
@@ -54,9 +45,7 @@ export const enableServer = async (
 };
 
 /*
- * ฟังก์ชัน : disableServer
  * คำอธิบาย : Handler สำหรับปิดเซิร์ฟเวอร์
- * Route : POST /super/server/disable
  * Input : ไม่มี
  * Output :
  *   - 200 OK พร้อมข้อความยืนยันการปิดเซิร์ฟเวอร์

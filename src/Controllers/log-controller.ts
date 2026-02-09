@@ -1,11 +1,3 @@
-/*
- * คำอธิบาย : Controller สำหรับการจัดการ Logs
- * ประกอบด้วยการดึงข้อมูล logs ตาม role, pagination, และการค้นหา/กรองข้อมูล
- * - superadmin เห็น logs ทั้งหมด
- * - admin เห็น logs ของสมาชิกในชุมชนของตนเองเท่านั้น
- * - member/tourist เห็น logs ของตนเองเท่านั้น
- * - รองรับการค้นหาตามชื่อผู้ใช้และกรองตาม role
- */
 import * as LogService from "~/Services/authenticationlog/log-service.js";
 
 import type {
@@ -17,8 +9,8 @@ import { LogQueryDto } from "~/Services/authenticationlog/log-dto.js";
 
 /*
  * DTO : getLogsDto
- * คำอธิบาย : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /logs
- * Input : query (PaginationDto) - pagination parameters
+ * วัตถุประสงค์ : กำหนด schema สำหรับข้อมูลที่รับเข้ามาใน endpoint /logs
+ * Input : query (LogQueryDto) - pagination parameters
  * Output : ตรวจสอบความถูกต้องของข้อมูลก่อนเข้าสู่ handler
  */
 export const getLogsDto = {
@@ -26,7 +18,6 @@ export const getLogsDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : getLogs
  * คำอธิบาย : Handler สำหรับดึงข้อมูล logs ตาม role พร้อมการค้นหาและกรองข้อมูล
  * Input : 
  *   - req.query - pagination parameters, searchName, filterRole (ผ่านการ validate ด้วย getLogsDto แล้ว)
@@ -35,11 +26,6 @@ export const getLogsDto = {
  *   - 200 OK พร้อมข้อมูล logs และ pagination metadata
  *   - 401 Unauthorized ถ้าไม่มีการ authenticate
  *   - 400 Bad Request ถ้ามี error
- * Logic :
- *   - superadmin เห็นทุก log
- *   - admin เห็นเฉพาะ log ของสมาชิกในชุมชนที่ตนเป็น admin
- *   - รองรับการค้นหาตามชื่อผู้ใช้ (searchName)
- *   - รองรับการกรองตาม role (filterRole: "all" = ทั้งหมด, อื่นๆ = กรองตาม role)
  */
 export const getLogs: TypedHandlerFromDto<typeof getLogsDto> = async (
   req,

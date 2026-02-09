@@ -86,7 +86,6 @@ export const getByRole: TypedHandlerFromDto<typeof getByRoleDto> = async (
 };
 
 /*
- * ฟังก์ชัน : getDetailBooking
  * คำอธิบาย : สำหรับดึงข้อมูลรายละเอียดการจอง
  * Input :
  *   - req.params.id : รหัสการจอง (BookingID) ที่ต้องการดูรายละเอียด
@@ -125,8 +124,8 @@ export const getBookingsByAdminDto = {
   query: GetBookingQuery, 
 } satisfies commonDto;
 
-/**
- * คำอธิบาย : Controller สำหรับจัดการคำขอดึงข้อมูลรายการจองสำหรับแอดมินชุมชน 
+/*
+ * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจในชุมชนที่แอดมินดูแล
  * Input :
  * - req.user.id (number) : รหัสผู้ใช้งาน (Admin) ที่ดึงจาก Token
  * - req.query :
@@ -166,21 +165,12 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : updateBookingStatus
  * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง (เฉพาะ Admin)
- * Route : PATCH /admin/bookings/:id/status
  * Input :
  *   - req.params.id : รหัสของการจอง (bookingId)
  *   - req.body.status : สถานะใหม่ที่ต้องการอัปเดต
  * Output :
  *   - JSON response พร้อมข้อมูลการจองที่ถูกอัปเดต
- * หมายเหตุ :
- *   - รองรับเฉพาะสถานะต่อไปนี้:
- *       • BOOKED (จองสำเร็จ)
- *       • REJECTED (ปฏิเสธจอง)
- *       • REFUNDED (คืนเงินแล้ว)
- *       • REFUND_REJECTED (ปฏิเสธการคืนเงิน)
- *   - เฉพาะผู้ใช้ role "admin" เท่านั้นที่เข้าถึงได้
  */
 export const updateBookingStatus: TypedHandlerFromDto<any> = async (
   req,
@@ -224,9 +214,9 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (
   }
 };
 
-/**
- * DTO: getBookingsByMemberDto
- * วัตถุประสงค์ : ใช้สำหรับตรวจสอบข้อมูลนำเข้า เมื่อต้องการดึงรายการจองของแพ็กเกจตนเอง (สำหรับ Member)
+/*
+ * DTO : getBookingsByMemberDto
+ * วัตถุประสงค์ : สำหรับดึงรายการการจองทั้งหมดของ Member (รองรับ pagination)
  * Input :
  * - query : page, limit, search, status (จาก GetBookingMemberQuery)
  * Output :
@@ -237,8 +227,8 @@ export const getBookingsByMemberDto = {
   query: GetBookingMemberQuery, 
 } satisfies commonDto;
 
-/**
- * คำอธิบาย : Controller สำหรับจัดการคำขอดึงข้อมูลรายการจองสำหรับสมาชิก (Member) ที่ดูแลแพ็กเกจ
+/*
+ * คำอธิบาย : ดึงรายการการจองทั้งหมดของแพ็กเกจที่ Member คนนั้นเป็นผู้ดูแล (overseerMember)
  * Input :
  * - req.user.id (number) : รหัสผู้ใช้งาน (Member) ที่ดึงจาก Token
  * - req.query :
@@ -247,8 +237,7 @@ export const getBookingsByMemberDto = {
  * - search (string) : คำค้นหา
  * - status (string) : สถานะการจอง (เช่น "all", "PENDING", "CONFIRMED")
  * Output :
- * - Response 200 : สำเร็จ (ส่งคืนข้อมูลรายการจองจาก Service)
- * - Response 400 : ล้มเหลว (เกิด Error จากการตรวจสอบ หรือ Service)
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
  */
 export const getBookingsByMember: TypedHandlerFromDto<
   typeof getBookingsByMemberDto
@@ -278,9 +267,7 @@ export const getBookingsByMember: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : updateBookingStatusByMember
  * คำอธิบาย : ใช้สำหรับอัปเดตสถานะของรายการการจอง (เฉพาะ Member)
- * Route : POST /member/bookings/:id/status
  * Input :
  *   - req.user.id    : รหัสของ Member (ใช้เช็คว่าเป็นเจ้าของแพ็กเกจจริงไหม)
  *   - req.params.id  : รหัสของการจอง (bookingId)
@@ -288,13 +275,6 @@ export const getBookingsByMember: TypedHandlerFromDto<
  *   - req.body.rejectReason : เหตุผลการปฏิเสธ (ถ้ามี)
  * Output :
  *   - JSON response พร้อมข้อมูลการจองที่ถูกอัปเดต
- * หมายเหตุ :
- *   - รองรับเฉพาะสถานะต่อไปนี้:
- *       • BOOKED (จองสำเร็จ)
- *       • REJECTED (ปฏิเสธจอง)
- *       • REFUNDED (คืนเงินแล้ว)
- *       • REFUND_REJECTED (ปฏิเสธการคืนเงิน)
- *   - เฉพาะผู้ใช้ role "member" และต้องเป็นผู้ดูแลแพ็กเกจ (overseerMember) ของ booking นั้นเท่านั้น
  */
 export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
   req,
@@ -367,8 +347,13 @@ export const getBookingDetailForTourist = async (
 };
 
 /*
- * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
+ * DTO : GetHistoryDto
+ * วัตถุประสงค์ : สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
  * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
+ * Input :
+ *   - query (page, limit, status)
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
  */
 export class GetHistoryDto {
   /**
@@ -393,7 +378,13 @@ export class GetHistoryDto {
 }
 
 /**
- * คำอธิบาย : กำหนด Schema ของ Query สำหรับ Endpoint นี้
+ * DTO : getHistoryDto
+ * วัตถุประสงค์ : สำหรับรับ Query Parameters ของ API ประวัติการจองสมาชิก
+ * ใช้สำหรับการแบ่งหน้า (Pagination) และการกรองสถานะการจอง
+ * Input :
+ *   - query (page, limit, status)
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
  */
 export const getHistoryDto = {
   query: GetHistoryDto,
@@ -434,8 +425,10 @@ export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (
 
 /**
  * คำอธิบาย : Dispatcher สำหรับเลือกเส้นทางการทำงานของ API
- * - ถ้า status = "ALL" → ใช้ Logic ใหม่
- * - ถ้า status อื่น     → ใช้ Logic เดิม
+ * Input : 
+ *   - req.query.status : "ALL" หรือสถานะอื่น ๆ
+ * Output : 
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
  */
 export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   req,
@@ -451,18 +444,22 @@ export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   return getBookingsByMember(req, res, next);
 };
 /**
- * DTO สำหรับรับ Parameter ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * DTO : TouristIdParamDto
+ * วัตถุประสงค์ : สำหรับรับ Parameter ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
  * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
+ * Input :
+ *   - touristId : รหัสของผู้ที่เดินทาง (Tourist)
+ * Output :
+ *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
  */
 export class TouristIdParamDto {
   @IsNumberString()
   touristId?: string;
 }
 /**
- * DTO สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * DTO : TouristBookingHistoryQueryDto
+ * วัตถุประสงค์ : สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
  * ใช้สำหรับการกรองและแบ่งหน้า (Pagination)
- * วัตถุประสงค์ : เพื่อให้ผู้ที่เดินทางสามารถดูประวัติการจองของตัวเอง
- * คำอธิบาย : DTO สำหรับรับ Query Parameters ของ API ประวัติการจองของผู้ที่เดินทาง (Tourist)
  * input :
  *   - req.query.sort : ลำดับการเรียงข้อมูล (asc/desc)
  *   - req.query.status : สถานะการจอง
@@ -486,12 +483,13 @@ export class TouristBookingHistoryQueryDto extends PaginationDto {
 
   @IsOptional()
   @IsString()
+  @IsOptional()
+  @IsString()
   endDate?: string;
 }
 /**
  * DTO สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
  * วัตถุประสงค์ : เพื่อให้ผู้ที่เดินทางสามารถดูประวัติการจองของตัวเอง
- * คำอธิบาย : DTO สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
  * Input :
  *   - req.params.touristId : รหัสผู้ที่เดินทาง (TouristID)
  *   - req.query.page, req.query.limit
@@ -503,9 +501,12 @@ export const getTouristBookingHistoriesDto = {
   query: TouristBookingHistoryQueryDto,
 } satisfies commonDto;
 /*
- * ฟังก์ชัน Controller สำหรับ "ดึงข้อมูลชุมชนตามรหัส"
- * input: communityId, page, limit
- * output: account in community
+ * คำอธิบาย : Controller สำหรับดึงประวัติการจองของผู้ที่เดินทาง (Tourist)
+ * Input :
+ *   - req.params.touristId : รหัสผู้ที่เดินทาง (TouristID)
+ *   - req.query.page, req.query.limit
+ * Output :
+ *   - JSON response พร้อมข้อมูลประวัติการจองของผู้ที่เดินทาง
  */
 export const getTouristBookingHistories: TypedHandlerFromDto<
   typeof getTouristBookingHistoriesDto
@@ -518,6 +519,7 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
       status,
       startDate,
       endDate,
+      search,
     } = req.query as any;
     const filter: {
       status?: string[];
@@ -544,7 +546,8 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
       Number(page),
       Number(limit),
       sort || "desc",
-      filter
+      filter,
+      search
     );
     return createResponse(
       res,
@@ -558,7 +561,8 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
 };
 
 /*
- * คำอธิบาย : DTO สำหรับสร้าง Booking History
+ * DTO : createTouristBookingDto
+ * วัตถุประสงค์ : สำหรับสร้าง Booking History
  * Input :
  *   - params.bookingId - รหัสการจอง (ใช้เป็น reference, อาจจะไม่ใช้ในการสร้างจริง)
  *   - body.packageId - รหัสแพ็กเกจที่ต้องการจอง
@@ -573,7 +577,6 @@ export const createTouristBookingDto = {
 } satisfies commonDto;
 
 /*
- * ฟังก์ชัน : createTouristBooking
  * คำอธิบาย : Handler สำหรับสร้าง Booking History โดย Tourist
  * Input :
  *   - req.params.bookingId - รหัสการจอง (reference)
@@ -613,7 +616,6 @@ export const createTouristBooking: TypedHandlerFromDto<
 };
 
 /*
- * ฟังก์ชัน : uploadPaymentProof
  * คำอธิบาย : Handler สำหรับอัปโหลดหลักฐานการชำระเงิน
  * Input :
  *   - req.file - ไฟล์ที่อัปโหลด (จาก multer middleware)
