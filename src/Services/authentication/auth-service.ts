@@ -244,7 +244,7 @@ export async function login(
     },
     include: { role: true },
   });
-  if (!user) throw new Error("ไม่พบผู้ใช้งาน");
+  if (!user) throw new Error("ไม่พบผู้บัญชีใช้งาน");
 
   const match = await bcrypt.compare(data.password, user.password);
   if (!match) throw new Error("รหัสผ่านไม่ถูกต้อง");
