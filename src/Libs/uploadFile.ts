@@ -1,50 +1,83 @@
-/* 
+/*
  * คำอธิบาย: Middleware สำหรับอัปโหลดไฟล์ด้วย Multer
- * กำหนดโฟลเดอร์ปลายทาง (uploads/) และสร้างชื่อไฟล์ใหม่แบบ unique
+ * กำหนดโฟลเดอร์ปลายทาง สร้างชื่อไฟล์ใหม่
+ * และจำกัดชนิดไฟล์ + ขนาดไฟล์
  */
-import multer from 'multer';
+import multer from "multer";
 import path from "path";
+import type { Request } from "express";
+import type { FileFilterCallback } from "multer";
 
-function decodeName(name: string) {
-    // busboy/multer ให้มาเป็น latin1 ในบางเคส -> แปลงเป็น utf8
-    return Buffer.from(name, "latin1").toString("utf8");
-  }
-  
-  function cleanOriginal(name: string) {
-    const base = path.basename(decodeName(name))
-      .normalize("NFC")                         // เก็บอักขระไทยให้ตรง
-      .replace(/[/\\?%*:|"<>]/g, "-")          // กันอักขระต้องห้าม
-      .replace(/[\x00-\x1f\x80-\x9f]/g, "")    // ลบ control chars
-      .replace(/\s+/g, " ")
-      .replace(/\.+$/, "")
-      .trim();
-    return base || "file";
-  }
+const allowedImageExtensions = new Set([".jpg", ".jpeg", ".png"]);
+const allowedImageMimeTypes = new Set(["image/jpeg", "image/png"]);
 
-/* 
- * Function: storage (multer.diskStorage)
- * - destination: กำหนด path ที่เก็บไฟล์ (uploads/)
- * - filename   : กำหนดชื่อไฟล์ใหม่ โดยใช้ timestamp + ชื่อไฟล์ต้นฉบับ
- */
-function createUploader(folder: string) {
-    const storage = multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, folder)
-        },
-        filename: (req, file, cb) => {
-            const uniqueName = `${Date.now()}-${cleanOriginal(file.originalname)}`;
-            cb(null, uniqueName)
-        }
-    })
+const maxUploadFileSizeInBytes = 5 * 1024 * 1024; // 5 MB
 
-    return multer({ storage });
+function decodeName(originalName: string) {
+  return Buffer.from(originalName, "latin1").toString("utf8");
 }
 
-/* 
- * Export: upload
- * Multer middleware ที่ใช้ config จาก storage
- * upload จะอัพโหลดลง Folder "uploads"
- * uploadPublic จะอัพโหลดลง Folder "public"
+function cleanOriginal(originalName: string) {
+  const baseName = path
+    .basename(decodeName(originalName))
+    .normalize("NFC")
+    .replace(/[/\\?%*:|"<>]/g, "-")
+    .replace(/[\x00-\x1f\x80-\x9f]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\.+$/, "")
+    .trim();
+
+  return baseName || "file";
+}
+
+/**
+ * คำอธิบาย: ตรวจสอบชนิดไฟล์ อนุญาตเฉพาะไฟล์รูปภาพ
+ */
+function imageOnlyFileFilter(
+  _request: Request,
+  file: Express.Multer.File,
+  callback: FileFilterCallback,
+) {
+  const fileExtension = path.extname(file.originalname).toLowerCase();
+
+  const isAllowedImageFile =
+    allowedImageExtensions.has(fileExtension) &&
+    allowedImageMimeTypes.has(file.mimetype);
+
+  if (!isAllowedImageFile) {
+    callback(new Error("อนุญาตเฉพาะไฟล์ .jpg, .jpeg, .png เท่านั้น"));
+    return;
+  }
+
+  callback(null, true);
+}
+
+/**
+ * คำอธิบาย: สร้าง Multer uploader พร้อมกำหนด storage,
+ * fileFilter และจำกัดขนาดไฟล์
+ */
+function createUploader(folderPath: string) {
+  const storage = multer.diskStorage({
+    destination: (_request, _file, callback) => {
+      callback(null, folderPath);
+    },
+    filename: (_request, file, callback) => {
+      const uniqueFileName = `${Date.now()}-${cleanOriginal(file.originalname)}`;
+      callback(null, uniqueFileName);
+    },
+  });
+
+  return multer({
+    storage,
+    fileFilter: imageOnlyFileFilter,
+    limits: {
+      fileSize: maxUploadFileSizeInBytes,
+    },
+  });
+}
+
+/*
+ * Export uploader
  */
 export const upload = createUploader("uploads/");
 export const uploadPublic = createUploader("public/");
