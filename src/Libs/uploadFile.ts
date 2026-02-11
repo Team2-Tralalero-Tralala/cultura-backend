@@ -13,10 +13,20 @@ const allowedImageMimeTypes = new Set(["image/jpeg", "image/png"]);
 
 const maxUploadFileSizeInBytes = 5 * 1024 * 1024; // 5 MB
 
+/**
+ * คำอธิบาย: แปลงชื่อไฟล์จาก latin1 เป็น utf8 เพื่อรองรับอักขระภาษาไทย/พิเศษ
+ * Input  : originalName (string)
+ * Output : ชื่อไฟล์ที่ decode แล้ว (string)
+ */
 function decodeName(originalName: string) {
   return Buffer.from(originalName, "latin1").toString("utf8");
 }
 
+/**
+ * คำอธิบาย: ทำความสะอาดชื่อไฟล์ให้ปลอดภัยต่อการบันทึกลงระบบไฟล์
+ * Input  : originalName (string)
+ * Output : baseName ที่ sanitize แล้ว (string)
+ */
 function cleanOriginal(originalName: string) {
   const baseName = path
     .basename(decodeName(originalName))
@@ -31,7 +41,14 @@ function cleanOriginal(originalName: string) {
 }
 
 /**
- * คำอธิบาย: ตรวจสอบชนิดไฟล์ อนุญาตเฉพาะไฟล์รูปภาพ
+ * คำอธิบาย: ตรวจสอบชนิดไฟล์ก่อนอัปโหลด อนุญาตเฉพาะไฟล์รูปภาพตามนามสกุลและ MIME type ที่กำหนด
+ * Input  :
+ *   - _request (Request) - คำขอจาก client (ไม่ได้ใช้งานในฟังก์ชันนี้)
+ *   - file (Express.Multer.File) - ข้อมูลไฟล์ที่ Multer อ่านได้จากการอัปโหลด
+ *   - callback (FileFilterCallback) - callback สำหรับอนุญาต/ปฏิเสธไฟล์
+ * Output :
+ *   - เรียก callback(null, true) เมื่อไฟล์ผ่านเงื่อนไข
+ *   - เรียก callback(Error) เมื่อไฟล์ไม่ผ่านเงื่อนไข (ปฏิเสธการอัปโหลด)
  */
 function imageOnlyFileFilter(
   _request: Request,
@@ -53,8 +70,12 @@ function imageOnlyFileFilter(
 }
 
 /**
- * คำอธิบาย: สร้าง Multer uploader พร้อมกำหนด storage,
- * fileFilter และจำกัดขนาดไฟล์
+ * คำอธิบาย: สร้าง instance ของ Multer uploader โดยกำหนด storage (ปลายทาง/ชื่อไฟล์),
+ * fileFilter (อนุญาตชนิดไฟล์) และ limits (จำกัดขนาดไฟล์) เพื่อใช้เป็น middleware ใน route
+ * Input  :
+ *   - folderPath (string) - โฟลเดอร์ปลายทางสำหรับบันทึกไฟล์ที่อัปโหลด (เช่น "uploads/" หรือ "public/")
+ * Output :
+ *   - Multer uploader (multer.Multer) - middleware สำหรับใช้กับ Express route (เช่น upload.single / upload.array)
  */
 function createUploader(folderPath: string) {
   const storage = multer.diskStorage({
@@ -76,8 +97,5 @@ function createUploader(folderPath: string) {
   });
 }
 
-/*
- * Export uploader
- */
 export const upload = createUploader("uploads/");
 export const uploadPublic = createUploader("public/");
