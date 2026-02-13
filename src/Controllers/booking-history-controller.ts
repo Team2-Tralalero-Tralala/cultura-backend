@@ -14,7 +14,10 @@ import * as TouristBookingService from "~/Services/booking/booking-service.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import * as bookingService from "../Services/booking-history/booking-history-service.js";
 import { getHistoriesByRole } from "../Services/booking-history/booking-history-service.js";
-import { GetBookingQuery } from "~/Services/booking-history/booking-history-dto.js";
+import {
+  CancelBookingDto,
+  GetBookingQuery,
+} from "~/Services/booking-history/booking-history-dto.js";
 import { GetBookingMemberQuery } from "~/Services/booking-history/booking-history-dto.js";
 
 /* DTO : GetHistoriesByRoleQueryDto
@@ -65,20 +68,20 @@ export const getByRoleDto = {
  */
 export const getByRole: TypedHandlerFromDto<typeof getByRoleDto> = async (
   req,
-  res
+  res,
 ) => {
   try {
     const { page = "1", limit = "10" } = req.query;
     const data = await getHistoriesByRole(
       req.user!,
       Number(page),
-      Number(limit)
+      Number(limit),
     );
     return createResponse(
       res,
       200,
       "Get booking histories by role successfully",
-      data
+      data,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -104,7 +107,7 @@ export const getDetailBooking = async (req: Request, res: Response) => {
       res,
       200,
       "Get booking detail successfully",
-      detailBooking
+      detailBooking,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -121,7 +124,7 @@ export const getDetailBooking = async (req: Request, res: Response) => {
  * - ข้อมูล Metadata สำหรับ Pagination
  */
 export const getBookingsByAdminDto = {
-  query: GetBookingQuery, 
+  query: GetBookingQuery,
 } satisfies commonDto;
 
 /*
@@ -142,22 +145,22 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const adminId = Number(req.user!.id);
-    
+
     const { page, limit, search, status } = req.query;
 
     const result = await bookingService.getBookingsByAdmin(
       adminId,
       page,
       limit,
-      search, 
-      status  
+      search,
+      status,
     );
 
     return createResponse(
       res,
       200,
       "Bookings (admin) retrieved successfully",
-      result
+      result,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -174,7 +177,7 @@ export const getBookingsByAdmin: TypedHandlerFromDto<
  */
 export const updateBookingStatus: TypedHandlerFromDto<any> = async (
   req,
-  res
+  res,
 ) => {
   try {
     const bookingId = Number(req.params.id);
@@ -200,14 +203,14 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (
     const updated = await BookingHistoryService.updateBookingStatus(
       bookingId,
       status,
-      rejectReason
+      rejectReason,
     );
 
     return createResponse(
       res,
       200,
       "update booking status successfully",
-      updated
+      updated,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -224,7 +227,7 @@ export const updateBookingStatus: TypedHandlerFromDto<any> = async (
  * - ข้อมูล Metadata สำหรับ Pagination
  */
 export const getBookingsByMemberDto = {
-  query: GetBookingMemberQuery, 
+  query: GetBookingMemberQuery,
 } satisfies commonDto;
 
 /*
@@ -244,22 +247,22 @@ export const getBookingsByMember: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const memberId = Number(req.user!.id);
-    
+
     const { page, limit, search, status } = req.query;
 
     const result = await bookingService.getBookingsByMember(
       memberId,
       Number(page),
       Number(limit),
-      search, 
-      status
+      search,
+      status,
     );
 
     return createResponse(
       res,
       200,
       "Bookings (member) retrieved successfully",
-      result
+      result,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -278,7 +281,7 @@ export const getBookingsByMember: TypedHandlerFromDto<
  */
 export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
   req,
-  res
+  res,
 ) => {
   try {
     const memberId = Number(req.user!.id);
@@ -311,14 +314,14 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
       memberId,
       bookingId,
       status,
-      rejectReason
+      rejectReason,
     );
 
     return createResponse(
       res,
       200,
       "update booking status (member) successfully",
-      updated
+      updated,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -334,7 +337,7 @@ export const updateBookingStatusByMember: TypedHandlerFromDto<any> = async (
  */
 export const getBookingDetailForTourist = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const bookingId = Number(req.params.id);
@@ -398,7 +401,7 @@ export const getHistoryDto = {
  */
 export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (
   req,
-  res
+  res,
 ) => {
   try {
     // ดึง memberId จากข้อมูลผู้ใช้งานที่ผ่านการยืนยันตัวตน
@@ -412,7 +415,7 @@ export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (
       memberId,
       Number(page),
       Number(limit),
-      status
+      status,
     );
 
     // ส่ง Response กลับเมื่อดึงข้อมูลสำเร็จ
@@ -425,15 +428,15 @@ export const getMemberBookingHistoriesNew: TypedHandlerFromDto<any> = async (
 
 /**
  * คำอธิบาย : Dispatcher สำหรับเลือกเส้นทางการทำงานของ API
- * Input : 
+ * Input :
  *   - req.query.status : "ALL" หรือสถานะอื่น ๆ
- * Output : 
+ * Output :
  *   - JSON response พร้อมข้อมูลการจองทั้งหมด (พร้อม pagination)
  */
 export const getBookingHistoriesDispatcher: TypedHandlerFromDto<any> = async (
   req,
   res,
-  next
+  next,
 ) => {
   // ถ้าเจอ ALL -> ไปทางใหม่
   if (req.query.status === "ALL") {
@@ -531,7 +534,7 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
         .split(",")
         .map((status: string) => status.trim())
         .map((status: string) =>
-          status === "REFUNDED_PENDING" ? "REFUND_PENDING" : status
+          status === "REFUNDED_PENDING" ? "REFUND_PENDING" : status,
         );
     }
 
@@ -547,13 +550,13 @@ export const getTouristBookingHistories: TypedHandlerFromDto<
       Number(limit),
       sort || "desc",
       filter,
-      search
+      search,
     );
     return createResponse(
       res,
       200,
       "get booking histories successfully",
-      result
+      result,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -606,7 +609,7 @@ export const createTouristBooking: TypedHandlerFromDto<
       packageId,
       totalParticipant,
       transferSlip,
-      touristBankId
+      touristBankId,
     );
 
     return createResponse(res, 201, "สร้างข้อมูลการจองสำเร็จ", booking);
@@ -630,7 +633,7 @@ export const uploadPaymentProof = async (req: Request, res: Response) => {
       return createErrorResponse(
         res,
         400,
-        "ไม่พบไฟล์หลักฐานการชำระเงิน กรุณาแนบไฟล์"
+        "ไม่พบไฟล์หลักฐานการชำระเงิน กรุณาแนบไฟล์",
       );
     }
 
@@ -641,6 +644,46 @@ export const uploadPaymentProof = async (req: Request, res: Response) => {
       filePath,
       fileName,
     });
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
+};
+export const cancelBookingDto = {
+  params: BookingIdParamDto,
+  body: CancelBookingDto,
+} satisfies commonDto;
+/*
+ * คำอธิบาย : Handler ยกเลิก Booking History โดย Tourist
+ * Input :
+ *   - req.params.bookingId - รหัสการจอง (reference)
+ *   - req.body.touristRejectReason - เหตุผลการยกเลิกโดยนักท่องเที่ยว
+ *   - req.user.id - รหัสผู้ใช้ (Tourist) จาก authentication middleware
+ * Output :
+ *   - 200 OK พร้อมข้อมูล Booking History ที่ยกเลิก
+ *   - 400 Bad Request ถ้ามี error
+ */
+export const cancelBookingHistory: TypedHandlerFromDto<
+  typeof cancelBookingDto
+> = async (req, res) => {
+  try {
+    const touristId = Number(req.user?.id);
+    const bookingId = Number(req.params.bookingId);
+    const { touristRejectReason } = req.body;
+
+    if (!touristId) {
+      return createErrorResponse(res, 401, "ไม่พบข้อมูลผู้ใช้");
+    }
+    if (!touristRejectReason) {
+      return createErrorResponse(res, 400, "ไม่พบเหตุผลการยกเลิก");
+    }
+
+    const booking = await BookingHistoryService.cancelBookingHistory(
+      Number(bookingId),
+      touristRejectReason,
+      touristId,
+    );
+
+    return createResponse(res, 201, "ยกเลิกข้อมูลการจองสำเร็จ", booking);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }

@@ -122,7 +122,7 @@ bookingRoutes.get(
   validateDto(BookingHistoryController.getBookingsByAdminDto),
   authMiddleware,
   allowRoles("admin"),
-  BookingHistoryController.getBookingsByAdmin
+  BookingHistoryController.getBookingsByAdmin,
 );
 
 /**
@@ -227,7 +227,7 @@ bookingRoutes.post(
   "/admin/bookings/:id/status",
   authMiddleware,
   allowRoles("admin"),
-  BookingHistoryController.updateBookingStatus
+  BookingHistoryController.updateBookingStatus,
 );
 
 /**
@@ -359,7 +359,7 @@ bookingRoutes.get(
   validateDto(BookingHistoryController.getByRoleDto),
   authMiddleware,
   allowRoles("admin", "member"),
-  BookingHistoryController.getByRole
+  BookingHistoryController.getByRole,
 );
 
 /**
@@ -417,7 +417,7 @@ bookingRoutes.get(
   "/admin/booking/:id",
   authMiddleware,
   allowRoles("admin", "member", "tourist"),
-  BookingHistoryController.getDetailBooking
+  BookingHistoryController.getDetailBooking,
 );
 
 /**
@@ -557,7 +557,7 @@ bookingRoutes.get(
   validateDto(BookingHistoryController.getHistoryDto),
   authMiddleware,
   allowRoles("member"),
-  BookingHistoryController.getBookingHistoriesDispatcher
+  BookingHistoryController.getBookingHistoriesDispatcher,
 );
 
 /**
@@ -648,7 +648,7 @@ bookingRoutes.post(
   "/member/booking/:id/status",
   authMiddleware,
   allowRoles("member"),
-  BookingHistoryController.updateBookingStatusByMember
+  BookingHistoryController.updateBookingStatusByMember,
 );
 /*
  *                   example: Booking histories (tourist) retrieved successfully
@@ -747,7 +747,7 @@ bookingRoutes.get(
   "/tourist/booking-histories",
   authMiddleware,
   allowRoles("tourist"),
-  BookingHistoryController.getTouristBookingHistories
+  BookingHistoryController.getTouristBookingHistories,
 );
 /**
  * @swagger
@@ -879,7 +879,7 @@ bookingRoutes.get(
   "/tourist/booking-history/own",
   authMiddleware,
   allowRoles("tourist"),
-  BookingHistoryController.getTouristBookingHistories
+  BookingHistoryController.getTouristBookingHistories,
 );
 
 /**
@@ -1020,7 +1020,7 @@ bookingRoutes.post(
   authMiddleware,
   allowRoles("tourist"),
   validateDto(BookingHistoryController.createTouristBookingDto),
-  BookingHistoryController.createTouristBooking
+  BookingHistoryController.createTouristBooking,
 );
 
 /**
@@ -1117,7 +1117,7 @@ bookingRoutes.post(
   allowRoles("tourist"),
   upload.single("paymentProof"),
   compressUploadedFile,
-  BookingHistoryController.uploadPaymentProof
+  BookingHistoryController.uploadPaymentProof,
 );
 /**
  * @swagger
@@ -1226,7 +1226,7 @@ bookingRoutes.get(
   "/tourist/booking-history/:id",
   authMiddleware,
   allowRoles("tourist"),
-  BookingHistoryController.getBookingDetailForTourist
+  BookingHistoryController.getBookingDetailForTourist,
 );
 
 /**
@@ -1237,7 +1237,7 @@ bookingRoutes.get(
  *       - Member / Booking
  *     summary: ดึงรายละเอียดประวัติการจองของสมาชิก
  *     description: |
- *       ใช้สำหรับดึงข้อมูลรายละเอียดการจอง (Booking History) ตามรหัสการจอง  
+ *       ใช้สำหรับดึงข้อมูลรายละเอียดการจอง (Booking History) ตามรหัสการจอง
  *       เฉพาะผู้ใช้งานที่มีสิทธิ์ **member** และต้องผ่านการยืนยันตัวตนด้วย JWT
  *     security:
  *       - bearerAuth: []
@@ -1302,5 +1302,96 @@ bookingRoutes.get(
   authMiddleware,
   allowRoles("member"),
   BookingHistoryController.getDetailBooking,
+);
+
+/**
+ * @swagger
+ * /api/tourist/booking-history/{bookingId}/cancel:
+ *   post:
+ *     summary: ยกเลิก Booking History โดย Tourist
+ *     description: |
+ *       ใช้สำหรับยกเลิก Booking History โดย Tourist
+ *       **อนุญาตให้ยกเลิกได้เฉพาะรายการที่อยู่ในสถานะ:**
+ *       - `PENDING` (รอตรวจสอบ)
+ *       - `BOOKED` (จองสำเร็จ)
+ *       **สถานะที่สามารถเปลี่ยนได้:**
+ *       - `REFUND_PENDING` (รอคืนเงิน)
+ *       **กรณีที่ต้องส่ง touristRejectReason (จำเป็น)**
+ *       - เมื่อส่งสถานะ `REFUND_PENDING`
+ *       ต้องเป็นผู้ใช้ Role: **Tourist** และต้องแนบ JWT Token ใน Header
+ *     tags:
+ *       - Tourist / Booking
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 23
+ *         description: รหัสการจอง (reference)
+ *       - in: body
+ *         name: body
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - touristRejectReason
+ *               properties:
+ *                 touristRejectReason:
+ *                   type: string
+ *                   example: "ไม่สะดวกเดินทาง"
+ *                   description: เหตุผลการยกเลิกโดยนักท่องเที่ยว
+ *     responses:
+ *       200:
+ *         description: ยกเลิก Booking History สำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Booking history cancelled successfully
+ *                 data:
+ *                   type: object
+ *                   description: ข้อมูล Booking History ที่ยกเลิก
+ *       400:
+ *         description: เกิดข้อผิดพลาด เช่น ID ไม่ถูกต้องหรือไม่พบข้อมูลการจอง
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Booking not found
+ *       401:
+ *         description: ไม่ได้ยืนยันตัวตน (Unauthorized)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ */
+
+bookingRoutes.post(
+  "/tourist/booking-history/:bookingId/cancel",
+  validateDto(BookingHistoryController.cancelBookingDto),
+  authMiddleware,
+  allowRoles("tourist"),
+  BookingHistoryController.cancelBookingHistory,
 );
 export default bookingRoutes;

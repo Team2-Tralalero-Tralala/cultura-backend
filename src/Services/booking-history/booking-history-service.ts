@@ -3,7 +3,7 @@ import { BookingStatus, ImageType } from "@prisma/client";
 import type { Location, PackageFile } from "@prisma/client";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import type { PaginationResponse } from "../pagination-dto.js";
-import { PrismaClient, Prisma} from '@prisma/client';
+import { PrismaClient, Prisma } from "@prisma/client";
 
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับการดึงข้อมูลรายละเอียดการจอง (bookingHistory)
@@ -28,7 +28,7 @@ export const getDetailBookingById = async (id: number) => {
     where: { id: numberId },
     include: {
       package: {
-        select: { name: true },
+        select: { name: true, location: true },
       },
     },
   });
@@ -96,7 +96,7 @@ export const createBooking = async (data: any) => {
 export const getHistoriesByRole = async (
   user: UserPayload,
   page = 1,
-  limit = 10
+  limit = 10,
 ) => {
   let where: any = {};
   if (user.role === "tourist") {
@@ -207,8 +207,8 @@ export const getBookingsByAdmin = async (
   adminId: number,
   page = 1,
   limit = 10,
-  search = "",      
-  status = "all"    
+  search = "",
+  status = "all",
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(adminId)) throw new Error("ID must be Number");
 
@@ -219,9 +219,9 @@ export const getBookingsByAdmin = async (
   });
   if (!user || user.role?.name?.toLowerCase() !== "admin") {
     return {
-      data: [], 
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit }
-     };
+      data: [],
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+    };
   }
 
   // ตรวจสอบว่าแอดมินมีชุมชนอยู่จริง
@@ -242,7 +242,7 @@ export const getBookingsByAdmin = async (
     // กรณี User เลือกเจาะจงจาก Dropdown (เช่น "รอตรวจสอบ", "รอคืนเงิน")
     whereCondition.status = status as BookingStatus;
   } else {
-    // กรณีเลือก "ทั้งหมด" (all) หรือค่า Default 
+    // กรณีเลือก "ทั้งหมด" (all) หรือค่า Default
     // ให้แสดงแค่ "รายการรอจัดการ" (PENDING + REFUND_PENDING) เท่านั้น
     whereCondition.status = { in: ["PENDING", "REFUND_PENDING"] };
   }
@@ -263,21 +263,21 @@ export const getBookingsByAdmin = async (
 
   const bookings = await prisma.bookingHistory.findMany({
     where: whereCondition,
-    orderBy: { bookingAt: "asc" }, 
+    orderBy: { bookingAt: "asc" },
     skip,
     take: limit,
     select: {
       id: true,
       tourist: {
-        select: { 
-          fname: true, 
-          lname: true 
+        select: {
+          fname: true,
+          lname: true,
         },
       },
       package: {
-        select: { 
-          name: true, 
-          price: true 
+        select: {
+          name: true,
+          price: true,
         },
       },
       totalParticipant: true,
@@ -316,7 +316,7 @@ export const getBookingsByAdmin = async (
 export const updateBookingStatus = async (
   id: number,
   newStatus: string,
-  rejectReason?: string
+  rejectReason?: string,
 ) => {
   const validStatuses = ["BOOKED", "REJECTED", "REFUNDED", "REFUND_REJECTED"];
 
@@ -367,8 +367,8 @@ export const getBookingsByMember = async (
   memberId: number,
   page = 1,
   limit = 10,
-  search = "",      
-  status = "all"    
+  search = "",
+  status = "all",
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(memberId)) throw new Error("ID must be Number");
 
@@ -379,14 +379,15 @@ export const getBookingsByMember = async (
   });
   if (!user) throw new Error("User not found");
   if (user.role?.name?.toLowerCase() !== "member") {
-    return { 
-      data: [], 
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit } };
+    return {
+      data: [],
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
+    };
   }
 
   const whereCondition: Prisma.BookingHistoryWhereInput = {
     package: {
-      overseerMemberId: memberId, 
+      overseerMemberId: memberId,
       isDeleted: false,
     },
   };
@@ -414,21 +415,21 @@ export const getBookingsByMember = async (
 
   const bookings = await prisma.bookingHistory.findMany({
     where: whereCondition,
-    orderBy: { bookingAt: "asc" }, 
+    orderBy: { bookingAt: "asc" },
     skip,
     take: limit,
     select: {
       id: true,
       tourist: {
-        select: { 
-          fname: true, 
-          lname: true 
+        select: {
+          fname: true,
+          lname: true,
         },
       },
       package: {
-        select: { 
-          name: true, 
-          price: true 
+        select: {
+          name: true,
+          price: true,
         },
       },
       totalParticipant: true,
@@ -471,7 +472,7 @@ export const updateBookingStatusByMember = async (
   memberId: number,
   bookingId: number,
   newStatus: string,
-  rejectReason?: string
+  rejectReason?: string,
 ) => {
   if (!Number.isInteger(memberId) || memberId <= 0) {
     throw new Error("memberId must be Number");
@@ -527,7 +528,7 @@ export const updateBookingStatusByMember = async (
 
   if (!booking) {
     throw new Error(
-      "Booking not found or not belong to this member's packages"
+      "Booking not found or not belong to this member's packages",
     );
   }
 
@@ -555,7 +556,7 @@ export const getMemberBookingHistories = async (
   memberId: number,
   page: number,
   limit: number,
-  status?: string
+  status?: string,
 ) => {
   // 1. เงื่อนไขพื้นฐาน: ดึงเฉพาะแพ็กเกจที่ Member นี้ดูแล
   const whereCondition: any = {
@@ -665,7 +666,7 @@ export async function getTouristBookingHistory(
       to: Date;
     };
   },
-  search?: string
+  search?: string,
 ): Promise<PaginationResponse<TouristBookingHistory>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = { touristId };
@@ -695,7 +696,26 @@ export async function getTouristBookingHistory(
       status: true,
       totalParticipant: true,
       rejectReason: true,
-      feedbacks: true,
+      isParticipate: true,
+      feedbacks: {
+        select: {
+          id: true,
+          rating: true,
+          message: true,
+          createdAt: true,
+          responder: {
+            select: {
+              id: true,
+              fname: true,
+              lname: true,
+              profileImage: true,
+            },
+          },
+          replyMessage: true,
+          replyAt: true,
+          feedbackImages: true,
+        },
+      },
       package: {
         select: {
           name: true,
@@ -733,4 +753,54 @@ export async function getTouristBookingHistory(
       limit,
     },
   };
+}
+/**
+ * คำอธิบาย : ยกเลิก Booking History โดย Tourist
+ * Input :
+ *   - id : รหัสการจอง (reference)
+ *   - touristRejectReason : เหตุผลการยกเลิกโดยนักท่องเที่ยว
+ *   - touristId : รหัสผู้ใช้ (Tourist)
+ * Output :
+ *   - 200 OK พร้อมข้อมูล Booking History ที่ยกเลิก
+ *   - 400 Bad Request ถ้ามี error
+ */
+
+export async function cancelBookingHistory(
+  id: number,
+  touristRejectReason: string,
+  touristId: number,
+) {
+  const bookingHistory = await prisma.bookingHistory.findUnique({
+    where: { id, touristId },
+    include: {
+      package: {
+        select: {
+          startDate: true,
+        },
+      },
+    },
+  });
+  if (!bookingHistory) {
+    throw new Error("ไม่พบข้อมูลการจอง");
+  }
+  if (bookingHistory.status !== BookingStatus.BOOKED) {
+    throw new Error("ไม่สามารถยกเลิกข้อมูลการจองได้");
+  }
+
+  if (bookingHistory.package?.startDate) {
+    const startDate = new Date(bookingHistory.package.startDate);
+    const now = new Date();
+    const diffTime = startDate.getTime() - now.getTime();
+    const diffDays = diffTime / (1000 * 3600 * 24);
+
+    if (diffDays < 7) {
+      throw new Error("สามารถยกเลิกได้ก่อนวันเริ่มทริป 7 วันเท่านั้น");
+    }
+  }
+
+  const updateBookingHistory = await prisma.bookingHistory.update({
+    where: { id, touristId },
+    data: { status: BookingStatus.REFUND_PENDING, touristRejectReason },
+  });
+  return updateBookingHistory;
 }
