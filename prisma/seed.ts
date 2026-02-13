@@ -410,7 +410,7 @@ async function main() {
         registerDate: getRandomDatePast(),
         description: `รายละเอียดชุมชน ${communityInfo.name} แหล่งท่องเที่ยววิถีชุมชน`,
         bankName: "KBANK",
-        accountName: `บัญชี`,
+        accountName: `ACC-${i}`,
         accountNumber: `123456789${i}`,
         mainActivityName: "กิจกรรมหลักชุมชน",
         mainActivityDescription: "รายละเอียดกิจกรรมหลัก",
@@ -436,7 +436,7 @@ async function main() {
     for (let s = 0; s < 5; s++) {
       await prisma.store.create({
         data: {
-          name: `ร้านค้า ${s + 1} ของ ${communityInfo.name}`,
+          name: `ร้านค้า ${s + 1}`,
           detail: "จำหน่ายสินค้าชุมชน",
           communityId: community.id,
           locationId: location.id,
@@ -456,7 +456,7 @@ async function main() {
     for (let h = 0; h < 5; h++) {
       const homestay = await prisma.homestay.create({
         data: {
-          name: `โฮมสเตย์ ${h + 1} ของ ${communityInfo.name}`,
+          name: `โฮมสเตย์ ${h + 1} `,
           communityId: community.id,
           locationId: location.id,
           type: "บ้านพัก",
