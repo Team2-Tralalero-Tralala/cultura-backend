@@ -20,10 +20,15 @@ export class SearchQueryDto extends PaginationDto {
   @Expose()
   @IsOptional()
   @Transform(({ value }) => {
-    // แปลง tag เป็น array ถ้ายังไม่ใช่ array
+    // แปลง tag เป็น array รองรับทั้ง ?tag=a,b,c และ ?tag=a&tag=b
     if (!value) return undefined;
-    if (Array.isArray(value)) return value;
-    return [value];
+    const toTags = (v: string) =>
+      v.split(",").map((t) => t.trim()).filter((t) => t !== "");
+    if (Array.isArray(value)) {
+      return value.flatMap((v) => (typeof v === "string" ? toTags(v) : []));
+    }
+    if (typeof value === "string") return toTags(value);
+    return undefined;
   })
   @IsArray({ message: "Tag ต้องเป็น array" })
   @IsString({ each: true, message: "แต่ละ tag ต้องเป็นข้อความ" })
