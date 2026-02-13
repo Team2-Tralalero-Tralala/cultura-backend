@@ -9,7 +9,12 @@ import crypto from "crypto";
 import { generateToken } from "~/Libs/token.js";
 import type { UserPayload } from "~/Libs/Types/index.js";
 import prisma from "../database-service.js";
-import type { ForgetPasswordDto, LoginDto, SetPasswordDto, SignupDto } from "./auth-dto.js";
+import type {
+  ForgetPasswordDto,
+  LoginDto,
+  SetPasswordDto,
+  SignupDto,
+} from "./auth-dto.js";
 import { UserStatus } from "@prisma/client";
 
 /*
@@ -30,7 +35,7 @@ async function findRoleIdByName(name: string) {
  */
 async function handleExpiredSessions(
   userId: number,
-  expirationSeconds: number
+  expirationSeconds: number,
 ) {
   const expirationTimeAgo = new Date(Date.now() - expirationSeconds * 1000);
 
@@ -48,7 +53,7 @@ async function handleExpiredSessions(
     // อัพเดตแต่ละ log โดยตั้งค่า logoutTime เป็นเวลาที่ session หมดอายุจริง
     for (const log of expiredLogs) {
       const expirationTime = new Date(
-        log.loginTime!.getTime() + expirationSeconds * 1000
+        log.loginTime!.getTime() + expirationSeconds * 1000,
       );
       await prisma.log.update({
         where: { id: log.id },
@@ -140,7 +145,7 @@ function parseBirthDateBE(birthDateBE: string) {
 function isSameDate(a: Date, b: Date) {
   return (
     a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&  
+    a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
 }
@@ -156,9 +161,7 @@ export async function forgetPassword(payload: ForgetPasswordDto) {
 
   const birthDateAD = parseBirthDateBE(payload.birthDateBE);
 
-  const where = isEmail
-    ? { email: contact }
-    : { phone: contact };
+  const where = isEmail ? { email: contact } : { phone: contact };
 
   const user = await prisma.user.findFirst({
     where: { ...where, isDeleted: false },
@@ -166,7 +169,8 @@ export async function forgetPassword(payload: ForgetPasswordDto) {
   });
 
   if (!user || !user.birthDate) throw new Error("ไม่พบผู้ใช้งาน");
-  if (!isSameDate(user.birthDate, birthDateAD)) throw new Error("ข้อมูลไม่ถูกต้อง");
+  if (!isSameDate(user.birthDate, birthDateAD))
+    throw new Error("ข้อมูลไม่ถูกต้อง");
 
   const changePasswordCode =
     typeof crypto.randomUUID === "function"
@@ -236,7 +240,7 @@ export async function setPassword(payload: SetPasswordDto) {
 export async function login(
   data: LoginDto,
   ipAddress: string,
-  expirationSeconds: number
+  expirationSeconds: number,
 ) {
   const user = await prisma.user.findFirst({
     where: {
@@ -244,7 +248,7 @@ export async function login(
     },
     include: { role: true },
   });
-  if (!user) throw new Error("ไม่พบผู้บัญชีใช้งาน");
+  if (!user) throw new Error("ไม่พบบัญชีผู้ใช้งาน");
 
   const match = await bcrypt.compare(data.password, user.password);
   if (!match) throw new Error("รหัสผ่านไม่ถูกต้อง");
