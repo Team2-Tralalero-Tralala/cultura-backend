@@ -22,7 +22,7 @@ packageRoutes.post(
     { name: "video", maxCount: 5 },
   ]),
   // validateDto(createPackageDto),
-  PackageController.createPackageMember
+  PackageController.createPackageMember,
 );
 
 /*
@@ -34,7 +34,7 @@ packageRoutes.get(
   "/member/packages",
   authMiddleware,
   allowRoles("member"),
-  PackageController.listPackagesMember
+  PackageController.listPackagesMember,
 );
 
 /*
@@ -52,7 +52,7 @@ packageRoutes.put(
     { name: "video", maxCount: 5 },
   ]),
   // validateDto(editPackageDto),
-  PackageController.editPackageMember
+  PackageController.editPackageMember,
 );
 
 /*
@@ -64,7 +64,7 @@ packageRoutes.patch(
   "/member/package/:id",
   authMiddleware,
   allowRoles("member"),
-  PackageController.deletePackageMember
+  PackageController.deletePackageMember,
 );
 
 /**
@@ -121,7 +121,7 @@ packageRoutes.post(
     { name: "gallery", maxCount: 5 },
     { name: "video", maxCount: 5 },
   ]),
-  PackageController.createPackageAdmin
+  PackageController.createPackageAdmin,
 );
 
 /*
@@ -134,7 +134,7 @@ packageRoutes.post(
   authMiddleware,
   allowRoles("admin"),
   validateDto(PackageController.duplicatePackageHistoryDto),
-  PackageController.duplicatePackageHistoryAdmin
+  PackageController.duplicatePackageHistoryAdmin,
 );
 
 /**
@@ -218,7 +218,7 @@ packageRoutes.get(
   "/admin/packages",
   authMiddleware,
   allowRoles("admin"),
-  PackageController.listPackagesAdmin
+  PackageController.listPackagesAdmin,
 );
 
 /**
@@ -275,7 +275,7 @@ packageRoutes.put(
     { name: "gallery", maxCount: 5 },
     { name: "video", maxCount: 5 },
   ]),
-  PackageController.editPackageAdmin
+  PackageController.editPackageAdmin,
 );
 
 /**
@@ -315,7 +315,7 @@ packageRoutes.patch(
   "/admin/package/:id",
   authMiddleware,
   allowRoles("admin"),
-  PackageController.deletePackageAdmin
+  PackageController.deletePackageAdmin,
 );
 
 /**
@@ -367,7 +367,7 @@ packageRoutes.post(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(PackageController.createPackageDto),
-  PackageController.createPackageSuperAdmin
+  PackageController.createPackageSuperAdmin,
 );
 
 /**
@@ -462,13 +462,13 @@ packageRoutes.get(
   "/super/packages",
   authMiddleware,
   allowRoles("superadmin"),
-  PackageController.listPackagesSuperAdmin
+  PackageController.listPackagesSuperAdmin,
 );
 packageRoutes.get(
   "/:id",
   authMiddleware,
   allowRoles("superadmin", "admin", "member", "tourist"),
-  PackageController.getPackageById
+  PackageController.getPackageById,
 );
 
 /**
@@ -539,7 +539,7 @@ packageRoutes.put(
     { name: "video", maxCount: 5 },
   ]),
   // validateDto(editPackageDto),
-  PackageController.editPackageSuperAdmin
+  PackageController.editPackageSuperAdmin,
 );
 
 /**
@@ -579,7 +579,7 @@ packageRoutes.patch(
   "/super/package/:id",
   authMiddleware,
   allowRoles("superadmin"),
-  PackageController.deletePackageSuperAdmin
+  PackageController.deletePackageSuperAdmin,
 );
 
 /*
@@ -605,7 +605,7 @@ packageRoutes.get(
   },
   authMiddleware,
   allowRoles("tourist"),
-  PackageController.listPackagesTourist
+  PackageController.listPackagesTourist,
 );
 
 /*
@@ -617,7 +617,7 @@ packageRoutes.get(
   "/member/package/:id",
   authMiddleware,
   allowRoles("member"),
-  PackageController.getPackageDetail
+  PackageController.getPackageDetail,
 );
 
 /*
@@ -629,7 +629,7 @@ packageRoutes.get(
   "/admin/package/:id",
   authMiddleware,
   allowRoles("admin"),
-  PackageController.getPackageDetail
+  PackageController.getPackageDetail,
 );
 
 /**
@@ -694,7 +694,7 @@ packageRoutes.get(
   "/super/package/:id",
   authMiddleware,
   allowRoles("superadmin"),
-  PackageController.getPackageDetail
+  PackageController.getPackageDetail,
 );
 
 /**
@@ -798,7 +798,7 @@ packageRoutes.get(
   validateDto(PackageController.listHomestaysByPackageDto),
   authMiddleware,
   allowRoles("superadmin"),
-  PackageController.listHomestaysByPackage
+  PackageController.listHomestaysByPackage,
 );
 
 /**
@@ -921,7 +921,7 @@ packageRoutes.get(
   validateDto(PackageController.listCommunityHomestaysDto),
   authMiddleware,
   allowRoles("superadmin"),
-  PackageController.listAllHomestaysSuperAdmin
+  PackageController.listAllHomestaysSuperAdmin,
 );
 
 packageRoutes.get(
@@ -929,7 +929,7 @@ packageRoutes.get(
   validateDto(PackageController.listCommunityHomestaysDto),
   authMiddleware,
   allowRoles("admin"),
-  PackageController.listCommunityHomestays
+  PackageController.listCommunityHomestays,
 );
 
 /*
@@ -942,7 +942,7 @@ packageRoutes.get(
   validateDto(PackageController.getCommunityMembersDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  PackageController.getCommunityMembers
+  PackageController.getCommunityMembers,
 );
 
 /*
@@ -955,7 +955,7 @@ packageRoutes.get(
   validateDto(PackageController.listCommunityHomestaysDto),
   authMiddleware,
   allowRoles("member"),
-  PackageController.listCommunityHomestays
+  PackageController.listCommunityHomestays,
 );
 
 /*
@@ -969,7 +969,7 @@ packageRoutes.get(
   "/admin/package/feedbacks/all",
   authMiddleware,
   allowRoles("admin", "member"),
-  PackageController.getAllFeedbacks
+  PackageController.getAllFeedbacks,
 );
 
 /**
@@ -1073,7 +1073,7 @@ packageRoutes.get(
   "/admin/package/history/:packageId",
   authMiddleware,
   allowRoles("admin"),
-  PackageController.getPackageHistoryDetailAdmin
+  PackageController.getPackageHistoryDetailAdmin,
 );
 
 /*
@@ -1191,7 +1191,7 @@ packageRoutes.get(
   authMiddleware,
   allowRoles("admin"),
   validateDto(PackageController.getHistoriesPackageByAdminDto),
-  PackageController.getHistoriesPackageAdmin
+  PackageController.getHistoriesPackageAdmin,
 );
 
 /*
@@ -1309,14 +1309,14 @@ packageRoutes.get(
   authMiddleware,
   allowRoles("member"),
   validateDto(PackageController.getHistoriesPackageByMemberDto),
-  PackageController.getHistoriesPackageByMember
+  PackageController.getHistoriesPackageByMember,
 );
 
 packageRoutes.get(
   "/member/package/:id",
   authMiddleware,
   allowRoles("member"),
-  PackageController.getPackageDetailByMember
+  PackageController.getPackageDetailByMember,
 );
 /**
  * @swagger
@@ -1409,7 +1409,7 @@ packageRoutes.get(
   validateDto(PackageController.getDraftPackagesDto),
   authMiddleware,
   allowRoles("admin"),
-  PackageController.getDraftPackages
+  PackageController.getDraftPackages,
 );
 /**
  * @swagger
@@ -1503,7 +1503,7 @@ packageRoutes.get(
   validateDto(PackageController.getDraftPackagesDto),
   authMiddleware,
   allowRoles("member"),
-  PackageController.getDraftPackages
+  PackageController.getDraftPackages,
 );
 /**
  * @swagger
@@ -1558,7 +1558,7 @@ packageRoutes.get(
 packageRoutes.delete(
   "/member/packages/draft/:id",
   authMiddleware,
-  PackageController.deleteDraftPackageController
+  PackageController.deleteDraftPackageController,
 );
 /**
  * @swagger
@@ -1613,7 +1613,7 @@ packageRoutes.delete(
 packageRoutes.delete(
   "/admin/packages/draft/:id",
   authMiddleware,
-  PackageController.deleteDraftPackageController
+  PackageController.deleteDraftPackageController,
 );
 /**
  * @swagger
@@ -1711,7 +1711,7 @@ packageRoutes.patch(
   validateDto(PackageController.BulkDeletePackagesDtoSchema),
   authMiddleware,
   allowRoles("member"),
-  PackageController.bulkDeleteDraftPackages
+  PackageController.bulkDeleteDraftPackages,
 );
 /**
  * @swagger
@@ -1809,7 +1809,7 @@ packageRoutes.patch(
   validateDto(PackageController.BulkDeletePackagesDtoSchema),
   authMiddleware,
   allowRoles("admin"),
-  PackageController.bulkDeleteDraftPackages
+  PackageController.bulkDeleteDraftPackages,
 );
 
 /**
@@ -1875,7 +1875,7 @@ packageRoutes.patch(
 packageRoutes.get(
   "/tourist/package/:packageId",
   validateDto(PackageController.getPackageByIdTouristDto),
-  PackageController.getPackageByIdTourist
+  PackageController.getPackageByIdTourist,
 );
 
 /**
@@ -2065,8 +2065,8 @@ packageRoutes.get(
   "/shared/participants/package/:packageId",
   validateDto(PackageController.getParticipantsInPackageDto),
   authMiddleware,
-  allowRoles("admin", "member"),
-  PackageController.getParticipantsInPackage
+  allowRoles("admin", "member", "superadmin"),
+  PackageController.getParticipantsInPackage,
 );
 /**
  * @swagger
@@ -2194,7 +2194,7 @@ packageRoutes.post(
   validateDto(PackageController.updateParticipantStatusDto),
   authMiddleware,
   allowRoles("admin", "member"),
-  PackageController.updateParticipantStatus
+  PackageController.updateParticipantStatus,
 );
 
 export default packageRoutes;

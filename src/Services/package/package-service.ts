@@ -3,6 +3,7 @@ import { PackageApproveStatus, PackagePublishStatus } from "@prisma/client";
 import prisma from "../database-service.js";
 import type { PaginationResponse } from "../pagination-dto.js";
 import type { PackageDto, PackageFileDto } from "./package-dto.js";
+import type { UserPayload } from "~/Libs/Types/index.js";
 
 /* ============================================================================================
  * Helpers (เก็บเฉพาะที่จำเป็น)
@@ -20,8 +21,11 @@ const toNull = <T>(value: T | undefined | null): T | null => value ?? null;
  * Input: user - object ผู้ใช้ที่มีข้อมูล role และ community
  * Output : object เงื่อนไข where สำหรับ Prisma
  */
-function buildWhereForRole(user: any, filters?: { status?: string; approve?: string }): any {
-  const base: any = { isDeleted: false, statusPackage: { not: 'DRAFT' } };
+function buildWhereForRole(
+  user: any,
+  filters?: { status?: string; approve?: string },
+): any {
+  const base: any = { isDeleted: false, statusPackage: { not: "DRAFT" } };
   // ถ้ามีการส่ง status กรองมา (เช่น PUBLISH, UNPUBLISH) ให้ใช้ค่านั้นแทน
   if (filters?.status) {
     base.statusPackage = filters.status;
@@ -36,7 +40,7 @@ function buildWhereForRole(user: any, filters?: { status?: string; approve?: str
       return base;
     case "admin": {
       const adminCommunityIds = user.communityAdmin.map(
-        (community: any) => community.id
+        (community: any) => community.id,
       );
       return { ...base, communityId: { in: adminCommunityIds } };
     }
@@ -58,7 +62,7 @@ function buildWhereForRole(user: any, filters?: { status?: string; approve?: str
 function composeDateTimeIso(
   dateStr: string, // "yyyy-mm-dd"
   timeStr?: string, // "HH:mm"
-  useEndOfDayIfMissing = false
+  useEndOfDayIfMissing = false,
 ): Date {
   if (typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     throw new Error(`Invalid dateStr: ${dateStr}`);
@@ -68,8 +72,8 @@ function composeDateTimeIso(
     timeStr && /^\d{2}:\d{2}$/.test(timeStr)
       ? timeStr
       : useEndOfDayIfMissing
-      ? "23:59"
-      : "00:00";
+        ? "23:59"
+        : "00:00";
 
   // ทำเป็น "YYYY-MM-DDTHH:mm:ss" (ไม่มี Z ⇒ ตีความเป็น local)
   const isoLocal = `${dateStr}T${timeFormat}:${
@@ -174,7 +178,7 @@ export const createPackage = async (data: PackageDto) => {
       ? composeDateTimeIso(
           data.homestayCheckOutDate,
           data.homestayCheckOutTime,
-          true
+          true,
         )
       : undefined;
 
@@ -270,7 +274,7 @@ export async function duplicatePackageFromHistory({
   }
 
   const adminCommunityIds = adminUser.communityAdmin.map(
-    (community) => community.id
+    (community) => community.id,
   );
 
   return prisma.$transaction(async (transaction) => {
@@ -431,7 +435,7 @@ export const editPackage = async (id: number, data: any) => {
       ? composeDateTimeIso(
           data.homestayCheckOutDate,
           data.homestayCheckOutTime,
-          true
+          true,
         )
       : undefined;
 
@@ -568,7 +572,7 @@ export const getPackageByRole = async (
   userId: number,
   page = 1,
   limit = 10,
-  filters?: { status?: string; approve?: string }
+  filters?: { status?: string; approve?: string },
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -601,8 +605,8 @@ export const getPackageByRole = async (
       },
       bookingHistories: {
         where: { status: "BOOKED" },
-        select: { id: true }
-      }
+        select: { id: true },
+      },
     },
     skip,
     take: limit,
@@ -626,7 +630,7 @@ export const getPackageByRole = async (
  */
 export const deletePackage = async (
   currentUserId: number,
-  packageId: number
+  packageId: number,
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: Number(currentUserId) },
@@ -642,7 +646,7 @@ export const deletePackage = async (
   const role = user.role?.name;
   if (role === "admin") {
     const adminCommunityIds = user.communityAdmin.map(
-      (community) => community.id
+      (community) => community.id,
     );
     if (!adminCommunityIds.includes(foundPackage.communityId)) {
       throw new Error("คุณไม่มีสิทธิ์ลบ Package ของชุมชนอื่น");
@@ -732,7 +736,7 @@ export const getPackageDetailById = async (id: number) => {
  */
 export const createPackageBySuperAdmin = (
   data: PackageDto,
-  _unusedUserId: number
+  _unusedUserId: number,
 ) => createPackage(data);
 /*
  * คำอธิบาย : (Delegate) สร้างแพ็กเกจโดย Admin
@@ -744,7 +748,7 @@ export const createPackageByAdmin = (data: PackageDto, _unusedUserId: number) =>
  */
 export const createPackageByMember = (
   data: PackageDto,
-  _unusedUserId: number
+  _unusedUserId: number,
 ) => createPackage(data);
 
 /*
@@ -753,7 +757,7 @@ export const createPackageByMember = (
 export const editPackageBySuperAdmin = (
   id: number,
   data: any,
-  _unusedUserId: number
+  _unusedUserId: number,
 ) => editPackage(id, data);
 /*
  * คำอธิบาย : (Delegate) แก้ไขแพ็กเกจโดย Admin
@@ -761,7 +765,7 @@ export const editPackageBySuperAdmin = (
 export const editPackageByAdmin = (
   id: number,
   data: any,
-  _unusedUserId: number
+  _unusedUserId: number,
 ) => editPackage(id, data);
 /*
  * คำอธิบาย : (Delegate) แก้ไขแพ็กเกจโดย Member
@@ -769,7 +773,7 @@ export const editPackageByAdmin = (
 export const editPackageByMember = (
   id: number,
   data: any,
-  _unusedUserId: number
+  _unusedUserId: number,
 ) => editPackage(id, data);
 
 /*
@@ -791,18 +795,30 @@ export const deletePackageByMember = (userId: number, packageId: number) =>
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ SuperAdmin
  */
-export const getPackagesBySuperAdmin = (userId: number, page = 1, limit = 10, filters?: any) =>
-  getPackageByRole(userId, page, limit, filters);
+export const getPackagesBySuperAdmin = (
+  userId: number,
+  page = 1,
+  limit = 10,
+  filters?: any,
+) => getPackageByRole(userId, page, limit, filters);
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Admin
  */
-export const getPackagesByAdmin = (userId: number, page = 1, limit = 10, filters?: any) =>
-  getPackageByRole(userId, page, limit, filters);
+export const getPackagesByAdmin = (
+  userId: number,
+  page = 1,
+  limit = 10,
+  filters?: any,
+) => getPackageByRole(userId, page, limit, filters);
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Member
  */
-export const getPackagesByMember = (userId: number, page = 1, limit = 10, filters?: any) =>
-  getPackageByRole(userId, page, limit, filters);
+export const getPackagesByMember = (
+  userId: number,
+  page = 1,
+  limit = 10,
+  filters?: any,
+) => getPackageByRole(userId, page, limit, filters);
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Tourist
  */
@@ -1144,7 +1160,7 @@ export async function listCommunityHomestays({
 export async function getCommunityMembersAndAdmin(
   communityId: number,
   query?: string,
-  limit = 50
+  limit = 50,
 ) {
   if (!Number.isInteger(communityId) || communityId <= 0) {
     throw new Error("ID must be Number");
@@ -1363,7 +1379,7 @@ export const getHistoriesPackageByAdmin = async (
   userId: number,
   page = 1,
   limit = 10,
-  search?: string
+  search?: string,
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -1432,7 +1448,7 @@ export const getHistoriesPackageByAdmin = async (
  */
 export const getPackageDetailByMember = async (
   memberId: number,
-  packageId: number
+  packageId: number,
 ) => {
   return await prisma.package.findFirst({
     where: {
@@ -1607,7 +1623,7 @@ export const getHistoriesPackageByMember = async (
   userId: number,
   page = 1,
   limit = 10,
-  search?: string
+  search?: string,
 ): Promise<PaginationResponse<any>> => {
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
@@ -1710,8 +1726,10 @@ export async function getDraftPackages(createById: number) {
  * Input : รหัสแพ็กเกจ (packageId), รหัสผู้ใช้งานผู้สร้างแพ็กเกจ (createById)
  * Output : ลบแพ็กเกจ Draft สำเร็จ หรือส่งข้อผิดพลาดกรณีไม่ผ่านเงื่อนไข
  */
-export async function deleteDraftPackage(packageIdInput: unknown, createByIdInput: unknown) {
-
+export async function deleteDraftPackage(
+  packageIdInput: unknown,
+  createByIdInput: unknown,
+) {
   const packageId = Number(packageIdInput);
   const createById = Number(createByIdInput);
 
@@ -1785,7 +1803,6 @@ export const bulkDeletePackages = async (ids: number[]) => {
     message: `${result.count} แพ็กเกจถูกลบเรียบร้อย`,
   };
 };
-
 
 /*
  * คำอธิบาย : ดึงรายละเอียดแพ็กเกจสำหรับนักท่องเที่ยว (Tourist)
@@ -1874,11 +1891,13 @@ export const getPackageDetailByTourist = async (packageId: number) => {
 
   const bookedCount = packageDetail.bookingHistories.reduce(
     (sum, history) => sum + (history.totalParticipant || 0),
-    0
+    0,
   );
 
-  const currentTagIds = packageDetail.tagPackages.map(tagPackage => tagPackage.tagId);
-  
+  const currentTagIds = packageDetail.tagPackages.map(
+    (tagPackage) => tagPackage.tagId,
+  );
+
   const relatedPackages = await prisma.package.findMany({
     where: {
       id: { not: packageDetail.id },
@@ -1959,10 +1978,10 @@ export type ParticipantsInPackage = {
  */
 export async function getParticipantsInPackage(
   packageId: number,
-  userId: number,
+  user: UserPayload,
   page: number = 1,
   limit: number = 10,
-  searchName?: string
+  searchName?: string,
 ): Promise<PaginationResponse<ParticipantsInPackage>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
@@ -1981,8 +2000,9 @@ export async function getParticipantsInPackage(
     throw new Error("ไม่พบแพ็กเกจที่คุณต้องการ");
   }
   if (
-    packageDetail.createById !== userId &&
-    packageDetail.overseerMemberId !== userId
+    user?.role !== "superadmin" &&
+    packageDetail.createById !== user.id &&
+    packageDetail.overseerMemberId !== user.id
   ) {
     throw new Error("คุณไม่มีสิทธิ์เข้าถึง");
   }
@@ -2054,7 +2074,7 @@ export async function getParticipantsInPackage(
 export async function updateParticipateStatus(
   bookingHistoryId: number,
   userId: number,
-  isParticipate: boolean
+  isParticipate: boolean,
 ) {
   const packageDetail = await prisma.bookingHistory.findUnique({
     where: {
