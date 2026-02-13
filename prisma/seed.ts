@@ -12,7 +12,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const communityData = [
+const communitiesSeedData = [
   {
     name: "วิสาหกิจชุมชนท่องเที่ยวเชิงเกษตรบ้านร่องกล้า",
     subDistrict: "เนินเพิ่ม",
@@ -150,7 +150,7 @@ const communityData = [
   },
 ];
 
-const thaiTags = [
+const thaiTagNames = [
   "ท่องเที่ยวเชิงเกษตร",
   "อาหารพื้นเมือง",
   "วัฒนธรรมท้องถิ่น",
@@ -203,7 +203,7 @@ const thaiTags = [
   "เลี้ยงสัตว์",
 ];
 
-const packageNames = [
+const packageSeedNames = [
   "เที่ยวชมสวนผลไม้",
   "ล่องแพชมธรรมชาติ",
   "เรียนรู้วิถีชุมชน",
@@ -260,11 +260,11 @@ async function main() {
   await prisma.store.deleteMany();
   await prisma.communityImage.deleteMany();
   await prisma.communityMembers.deleteMany();
-  await prisma.community.deleteMany(); // Delete communities first
+  await prisma.community.deleteMany();
   await prisma.location.deleteMany();
   await prisma.passwordResetToken.deleteMany();
   await prisma.log.deleteMany();
-  await prisma.user.deleteMany(); // Then users
+  await prisma.user.deleteMany();
   await prisma.role.deleteMany();
   await prisma.tag.deleteMany();
   await prisma.banner.deleteMany();
@@ -283,23 +283,22 @@ async function main() {
     tourist: roles.find((r) => r.name === "tourist")!.id,
   };
 
-  // Create Tags (50 tags)
-  const tagData = thaiTags.map((name) => ({ name }));
+  // Create Tags
+  const tagData = thaiTagNames.map((name) => ({ name }));
   await prisma.tag.createMany({ data: tagData });
   const allTags = await prisma.tag.findMany();
 
-  // Common password hash
-  const hashPassword = bcrypt.hashSync("hashedpw", 10);
+  // Default password for all users
+  const hashedPassword = bcrypt.hashSync("hashedpw", 10);
 
   // --- Create Users ---
 
-  // 1 Super Admin
   const superAdmin = await prisma.user.create({
     data: {
       roleId: roleMap.superadmin,
       username: "superadmin",
       email: "superadmin@example.com",
-      password: hashPassword,
+      password: hashedPassword,
       fname: "Super",
       lname: "Admin",
       phone: "0800000001",
@@ -309,7 +308,7 @@ async function main() {
     },
   });
 
-  // 25 Admins (15 for communities, 10 extras)
+  // Admins
   const adminIds: number[] = [];
   for (let i = 0; i < 25; i++) {
     const user = await prisma.user.create({
@@ -317,7 +316,7 @@ async function main() {
         roleId: roleMap.admin,
         username: `admin${i + 1}`,
         email: `admin${i + 1}@example.com`,
-        password: hashPassword,
+        password: hashedPassword,
         fname: `Admin`,
         lname: `${i + 1}`,
         phone: `081${String(i).padStart(7, "0")}`,
@@ -329,7 +328,7 @@ async function main() {
     adminIds.push(user.id);
   }
 
-  // 50 Members (30 for communities, 20 extras)
+  // Members
   const memberIds: number[] = [];
   for (let i = 0; i < 50; i++) {
     const user = await prisma.user.create({
@@ -337,7 +336,7 @@ async function main() {
         roleId: roleMap.member,
         username: `member${i + 1}`,
         email: `member${i + 1}@example.com`,
-        password: hashPassword,
+        password: hashedPassword,
         fname: `Member`,
         lname: `${i + 1}`,
         phone: `082${String(i).padStart(7, "0")}`,
@@ -349,7 +348,7 @@ async function main() {
     memberIds.push(user.id);
   }
 
-  // 20 Tourists
+  // Tourists
   const touristIds: number[] = [];
   for (let i = 0; i < 20; i++) {
     const user = await prisma.user.create({
@@ -357,7 +356,7 @@ async function main() {
         roleId: roleMap.tourist,
         username: `tourist${i + 1}`,
         email: `tourist${i + 1}@example.com`,
-        password: hashPassword,
+        password: hashedPassword,
         fname: `Tourist`,
         lname: `${i + 1}`,
         phone: `083${String(i).padStart(7, "0")}`,
@@ -370,46 +369,48 @@ async function main() {
   }
 
   // --- Create Communities ---
-  // Using 15 communities from the fixed list if available, or slice
-  const targetCommunityCount = 15;
-  const communitiesToCreate = communityData.slice(0, targetCommunityCount);
 
-  // Assign Users to Communities
-  // Admins: 0-14 assigned to Communities (1 each)
-  // Members: 0-29 assigned to Communities (2 each)
-  let adminIndex = 0;
-  let memberIndex = 0;
+  const targetCommunityCount = 15;
+  const communitiesToCreate = communitiesSeedData.slice(
+    0,
+    targetCommunityCount,
+  );
+
+  let assignedAdminIndex = 0;
+  let assignedMemberIndex = 0;
 
   for (let i = 0; i < communitiesToCreate.length; i++) {
-    const comInfo = communitiesToCreate[i]!;
-    const adminId = adminIds[adminIndex++];
-    const comMemberIds = [memberIds[memberIndex++], memberIds[memberIndex++]];
+    const communityInfo = communitiesToCreate[i]!;
+    const adminId = adminIds[assignedAdminIndex++];
+    const communityMemberIds = [
+      memberIds[assignedMemberIndex++],
+      memberIds[assignedMemberIndex++],
+    ];
 
-    // Create Community Location
     const location = await prisma.location.create({
       data: {
-        detail: `ที่อยู่ชุมชน ${comInfo.name}`,
+        detail: `ที่อยู่ชุมชน ${communityInfo.name}`,
         houseNumber: `${getRandomInt(1, 100)}`,
-        subDistrict: comInfo.subDistrict,
-        district: comInfo.district,
-        province: comInfo.province,
-        postalCode: comInfo.postalCode,
-        latitude: comInfo.lat,
-        longitude: comInfo.lng,
+        subDistrict: communityInfo.subDistrict,
+        district: communityInfo.district,
+        province: communityInfo.province,
+        postalCode: communityInfo.postalCode,
+        latitude: communityInfo.lat,
+        longitude: communityInfo.lng,
       },
     });
 
     const community = await prisma.community.create({
       data: {
-        name: comInfo.name,
+        name: communityInfo.name,
         type: "ท่องเที่ยว",
         locationId: location.id,
         adminId: adminId!,
         registerNumber: `REG-${i + 1}`,
         registerDate: getRandomDatePast(),
-        description: `รายละเอียดชุมชน ${comInfo.name} แหล่งท่องเที่ยววิถีชุมชน`,
+        description: `รายละเอียดชุมชน ${communityInfo.name} แหล่งท่องเที่ยววิถีชุมชน`,
         bankName: "KBANK",
-        accountName: `บัญชี ${comInfo.name}`,
+        accountName: `บัญชี ${communityInfo.name}`,
         accountNumber: `123456789${i}`,
         mainActivityName: "กิจกรรมหลักชุมชน",
         mainActivityDescription: "รายละเอียดกิจกรรมหลัก",
@@ -427,19 +428,18 @@ async function main() {
           ],
         },
         communityMembers: {
-          create: comMemberIds.map((mid) => ({ memberId: mid! })),
+          create: communityMemberIds.map((mid) => ({ memberId: mid! })),
         },
       },
     });
 
-    // Create 5 Stores
     for (let s = 0; s < 5; s++) {
       await prisma.store.create({
         data: {
-          name: `ร้านค้า ${s + 1} ของ ${comInfo.name}`,
+          name: `ร้านค้า ${s + 1} ของ ${communityInfo.name}`,
           detail: "จำหน่ายสินค้าชุมชน",
           communityId: community.id,
-          locationId: location.id, // Simplification: Same location ID
+          locationId: location.id,
           storeImage: {
             create: [
               { image: "uploads/store1.jpg", type: ImageType.COVER },
@@ -447,17 +447,16 @@ async function main() {
               { image: "uploads/store1.jpg", type: ImageType.GALLERY },
             ],
           },
-          tagStores: { create: { tagId: getRandom(allTags)!.id } }, // 1 Random Tag
+          tagStores: { create: { tagId: getRandom(allTags)!.id } },
         },
       });
     }
 
-    // Create 5 Homestays
-    const homestaysInCom = [];
+    const communityHomestays = [];
     for (let h = 0; h < 5; h++) {
       const homestay = await prisma.homestay.create({
         data: {
-          name: `โฮมสเตย์ ${h + 1} ของ ${comInfo.name}`,
+          name: `โฮมสเตย์ ${h + 1} ของ ${communityInfo.name}`,
           communityId: community.id,
           locationId: location.id,
           type: "บ้านพัก",
@@ -474,22 +473,21 @@ async function main() {
           tagHomestays: { create: { tagId: getRandom(allTags)!.id } },
         },
       });
-      homestaysInCom.push(homestay);
+      communityHomestays.push(homestay);
     }
 
     // --- Create Packages ---
-    // Users who create packages: Admin (1) + Members (2)
-    const creaters = [adminId, ...comMemberIds];
+    const packageCreators = [adminId, ...communityMemberIds];
 
-    for (const creatorId of creaters) {
-      // Each creates 3 Active Packages
+    for (const creatorId of packageCreators) {
+      // 3 Active Packages per creator
       for (let p = 0; p < 3; p++) {
-        const pkg = await prisma.package.create({
+        const travelPackage = await prisma.package.create({
           data: {
             communityId: community.id,
             locationId: location.id,
             createById: creatorId!,
-            overseerMemberId: creatorId!, // Simplify: creator oversees
+            overseerMemberId: creatorId!,
             name: `แพ็กเกจ ${p + 1} โดย User ${creatorId}`,
             description: "รายละเอียดแพ็กเกจท่องเที่ยว",
             capacity: 20,
@@ -504,7 +502,6 @@ async function main() {
             packageFile: {
               create: { filePath: "uploads/store1.jpg", type: ImageType.COVER },
             },
-            // 3 Tags per package
             tagPackages: {
               create: [
                 { tagId: allTags[0]!.id },
@@ -515,51 +512,53 @@ async function main() {
           },
         });
 
-        // 10 Past Bookings (Completed -> Feedbacks)
-        for (let b = 0; b < 10; b++) {
-          const tourist = touristIds[b % touristIds.length]!; // Cycle through tourists
-          const booking = await prisma.bookingHistory.create({
-            data: {
-              touristId: tourist,
-              packageId: pkg.id,
-              bookingAt: getRandomDatePast(),
-              status: BookingStatus.BOOKED,
-              totalParticipant: 2,
-              isParticipate: true, // Mark as participated
-            },
-          });
+        const activeBookingStatuses = [
+          BookingStatus.PENDING,
+          BookingStatus.BOOKED,
+          BookingStatus.REJECTED,
+          BookingStatus.REFUND_PENDING,
+          BookingStatus.REFUNDED,
+          BookingStatus.REFUND_REJECTED,
+        ];
 
-          // Create Feedback
-          await prisma.feedback.create({
-            data: {
-              bookingHistoryId: booking.id,
-              message: `Feedback for package ${pkg.id} booking ${booking.id}`,
-              rating: 5,
-              createdAt: new Date(),
-              responderId: adminId!,
-              replyMessage: "ขอบคุณครับ",
-              replyAt: new Date(),
-            },
-          });
-        }
+        for (let b = 0; b < activeBookingStatuses.length; b++) {
+          const status = activeBookingStatuses[b];
+          const validCreatorId = creatorId || 0;
+          const tourist =
+            touristIds[(b + i + p + validCreatorId) % touristIds.length]!;
 
-        // 2 Active Bookings (Pending/Booked) for "New Booking List"
-        for (let b = 0; b < 2; b++) {
-          const tourist = touristIds[(b + 10) % touristIds.length]!;
+          let statusSpecificData: any = {};
+          if (status === BookingStatus.REJECTED) {
+            statusSpecificData = { rejectReason: "แพ็กเกจเต็มแล้วครับ" };
+          } else if (status === BookingStatus.REFUND_PENDING) {
+            statusSpecificData = { refundReason: "เจ็บป่วยกระทันหัน" };
+          } else if (status === BookingStatus.REFUNDED) {
+            statusSpecificData = {
+              refundReason: "เจ็บป่วยกระทันหัน",
+              refundAt: new Date(),
+            };
+          } else if (status === BookingStatus.REFUND_REJECTED) {
+            statusSpecificData = {
+              refundReason: "เจ็บป่วยกระทันหัน",
+              rejectReason: "หลักฐานไม่เพียงพอ",
+            };
+          }
+
           await prisma.bookingHistory.create({
             data: {
               touristId: tourist,
-              packageId: pkg.id,
-              bookingAt: new Date(), // Now
-              status: BookingStatus.PENDING,
+              packageId: travelPackage.id,
+              bookingAt: new Date(),
+              status: status,
               totalParticipant: 2,
               transferSlip: "uploads/slip.jpg",
+              ...statusSpecificData,
             },
           });
         }
       }
 
-      // Each creates 3 Draft Packages
+      // 3 Draft Packages per creator
       for (let p = 0; p < 3; p++) {
         await prisma.package.create({
           data: {
@@ -572,7 +571,7 @@ async function main() {
             capacity: 20,
             price: 1500,
             statusPackage: PackagePublishStatus.DRAFT,
-            statusApprove: PackageApproveStatus.PENDING, // Draft usually pending or none
+            statusApprove: PackageApproveStatus.PENDING,
             startDate: getRandomDateFuture(),
             dueDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
             bookingOpenDate: new Date(),
@@ -593,9 +592,9 @@ async function main() {
       }
     }
 
-    // Community History: 5 Ended Packages (Expired Due Date)
+    // Community History: 5 Ended Packages
     for (let h = 0; h < 5; h++) {
-      await prisma.package.create({
+      const historyPackage = await prisma.package.create({
         data: {
           communityId: community.id,
           locationId: location.id,
@@ -612,30 +611,51 @@ async function main() {
           },
         },
       });
+
+      for (let b = 0; b < 10; b++) {
+        const tourist = touristIds[b % touristIds.length]!;
+        const booking = await prisma.bookingHistory.create({
+          data: {
+            touristId: tourist,
+            packageId: historyPackage.id,
+            bookingAt: getRandomDatePast(),
+            status: BookingStatus.BOOKED,
+            totalParticipant: 2,
+            isParticipate: true,
+          },
+        });
+
+        await prisma.feedback.create({
+          data: {
+            bookingHistoryId: booking.id,
+            message: `Feedback for package ${historyPackage.id} booking ${booking.id}`,
+            rating: 5,
+            createdAt: new Date(),
+            responderId: adminId!,
+            replyMessage: "ขอบคุณครับ",
+            replyAt: new Date(),
+          },
+        });
+      }
     }
-  } // End Community Loop
-
-  // --- Global Items ---
-
-  // 1. Tourist Refund Requests: 5 requests
-  // Pick random active packages to refund
-  const allPackages = await prisma.package.findMany({
+  }
+  const publishedPackages = await prisma.package.findMany({
     where: {
       statusPackage: PackagePublishStatus.PUBLISH,
       statusApprove: PackageApproveStatus.APPROVE,
     },
   });
 
-  if (allPackages.length > 0) {
+  if (publishedPackages.length > 0) {
     for (let i = 0; i < 5; i++) {
-      const pkg = allPackages[i % allPackages.length];
-      const tourist = touristIds[i % touristIds.length]; // Distinct tourists
+      const travelPackage = publishedPackages[i % publishedPackages.length];
+      const tourist = touristIds[i % touristIds.length];
       await prisma.bookingHistory.create({
         data: {
           touristId: tourist!,
-          packageId: pkg!.id,
+          packageId: travelPackage!.id,
           bookingAt: getRandomDateRecent(),
-          status: BookingStatus.REFUND_PENDING, // Requesting refund
+          status: BookingStatus.REFUND_PENDING,
           totalParticipant: 1,
           transferSlip: "uploads/slip.jpg",
           refundReason: "ไม่สะดวกเดินทางแล้วครับ",
@@ -644,26 +664,28 @@ async function main() {
     }
   }
 
-  const allCommunityAdmins = adminIds.slice(0, 15); // First 15 are Com Admins
-  const allCommunityMembers = memberIds.slice(0, 30); // First 30 are Com Members
-  const potentialCreators = [...allCommunityAdmins, ...allCommunityMembers];
+  const allCommunityAdmins = adminIds.slice(0, 15);
+  const allCommunityMembers = memberIds.slice(0, 30);
+  const pendingPackageCreators = [
+    ...allCommunityAdmins,
+    ...allCommunityMembers,
+  ];
 
-  // We need valid community IDs for these.
   const allCommunities = await prisma.community.findMany();
 
   for (let i = 0; i < 50; i++) {
-    const creatorId = potentialCreators[i % potentialCreators.length];
-    const com = allCommunities[i % allCommunities.length];
+    const creatorId = pendingPackageCreators[i % pendingPackageCreators.length];
+    const community = allCommunities[i % allCommunities.length];
 
     await prisma.package.create({
       data: {
-        communityId: com!.id,
-        createById: creatorId!, // Ideally should match community logic
+        communityId: community!.id,
+        createById: creatorId!,
         name: `แพ็กเกจรออนุมัติ ${i + 1}`,
         description: "รอตรวจสอบ",
         price: 1000,
-        statusPackage: PackagePublishStatus.PUBLISH, // Published but waiting approval
-        statusApprove: PackageApproveStatus.PENDING_SUPER, // Waiting for Super Admin? Or just PENDING
+        statusPackage: PackagePublishStatus.PUBLISH,
+        statusApprove: PackageApproveStatus.PENDING_SUPER,
         startDate: getRandomDateFuture(),
         dueDate: getRandomDateFuture(),
         packageFile: {
