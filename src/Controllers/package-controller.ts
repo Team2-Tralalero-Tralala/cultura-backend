@@ -166,6 +166,7 @@ export async function createPackageMember(req: Request, res: Response) {
         ...parsedBody,
         packageFile,
         createById: userId,
+        statusApprove: "PENDING",
       },
       userId
     );

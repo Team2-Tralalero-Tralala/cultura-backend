@@ -44,8 +44,7 @@ export async function getPackageRequestAll(
 ): Promise<PaginationResponse<PackageRequestListItem>> {
   const skip = (page - 1) * limit;
 
-  // ค่าสถานะดีฟอลต์ (เมื่อไม่ส่งหรือส่ง "all" ให้แสดงเฉพาะที่รออนุมัติ)
-  const DEFAULT_STATUSES = ["PENDING_SUPER"] as const;
+  const DEFAULT_STATUSES = ["PENDING", "PENDING_SUPER"] as const;
   const approveFilter =
     statusApprove && statusApprove.toLowerCase() !== "all"
       ? [statusApprove]

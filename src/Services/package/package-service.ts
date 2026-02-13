@@ -184,12 +184,10 @@ export const createPackage = async (data: PackageDto) => {
   return prisma.package.create({
     data: {
       communityId: Number(resolvedCommunityId),
-      locationId: locationId, // ใช้ตัวแปรที่คำนวณไว้ข้างบน (อาจเป็น null)
+      locationId: locationId,
       overseerMemberId: Number(targetOverseerId),
       createById: data.createById ?? Number(targetOverseerId),
       name: data.name,
-
-      // เพิ่ม || null หรือ ?? null เพื่อรองรับกรณีไม่มีข้อมูล
       description: data.description || null,
       capacity: data.capacity ?? null,
       price: data.price ?? null,
