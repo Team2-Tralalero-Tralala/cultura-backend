@@ -474,6 +474,7 @@ model BookingHistory {
   rejectReason     String?        @map("bh_reject_reason") @db.VarChar(100)
   refundReason     String?        @map("bh_refund_reason") @db.VarChar(100)
   transferSlip     String?        @map("bh_transfer_slip") @db.VarChar(256)
+  touristRejectReason String?     @map("bh_tourist_reject_reason") @db.VarChar(100)
 
   // Relations
   tourist   User       @relation("Tourist", fields: [touristId], references: [id])
