@@ -44,12 +44,32 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     let tagArray: string[] | undefined;
     const allTags: string[] = [];
 
-    // เพิ่ม tags จาก tag parameter (multiple tag=)
+    // เพิ่ม tags จาก tag parameter (?tag=a,b,c หรือ ?tag=a&tag=b)
     if (tags) {
       if (Array.isArray(tags)) {
-        allTags.push(...tags.filter((tag) => tag && tag.trim() !== ""));
+        tags.forEach((t) => {
+          if (typeof t === "string" && t.trim() !== "") {
+            if (t.includes(",")) {
+              allTags.push(
+                ...t
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter((tag) => tag !== "")
+              );
+            } else {
+              allTags.push(t.trim());
+            }
+          }
+        });
       } else {
-        allTags.push(tags.trim());
+        allTags.push(
+          ...(typeof tags === "string"
+            ? tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag !== "")
+            : [])
+        );
       }
     }
 
