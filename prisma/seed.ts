@@ -410,7 +410,7 @@ async function main() {
         registerDate: getRandomDatePast(),
         description: `รายละเอียดชุมชน ${communityInfo.name} แหล่งท่องเที่ยววิถีชุมชน`,
         bankName: "KBANK",
-        accountName: `บัญชี ${communityInfo.name}`,
+        accountName: `บัญชี`,
         accountNumber: `123456789${i}`,
         mainActivityName: "กิจกรรมหลักชุมชน",
         mainActivityDescription: "รายละเอียดกิจกรรมหลัก",
