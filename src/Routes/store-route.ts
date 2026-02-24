@@ -549,7 +549,7 @@ storeRoute.put(
  */
 /**
  * @swagger
- * /api/shared/store/{storeId}:
+ * /api/community/stores/{storeId}:
  *   get:
  *     summary: ดึงข้อมูลร้านค้าตามรหัส (Store ID)
  *     description: ใช้สำหรับดึงรายละเอียดร้านค้า พร้อมข้อมูลตำแหน่ง พิกัด และแท็กของร้านนั้นๆ เฉพาะผู้มีสิทธิ์ superadmin หรือ admin เท่านั้น
@@ -685,7 +685,7 @@ storeRoute.put(
  *                   example: ไม่พบข้อมูลร้านค้า
  */
 storeRoute.get(
-  "/shared/store/:storeId",
+  "/community/stores/:storeId",
   validateDto(StoreController.getStoreByIdDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
