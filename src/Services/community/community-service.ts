@@ -361,17 +361,29 @@ export async function getCommunityDetailById(
       location: true,
 
       packages: {
+        where: {
+          statusPackage: "PUBLISH",
+          statusApprove: "APPROVE",
+          isDeleted: false,
+        },
         include: {
           packageFile: true,
         },
       },
+
       homestays: {
+        where:{
+          isDeleted: false,
+        },
         include: {
           homestayImage: true,
         },
       },
 
       stores: {
+        where: {
+          isDeleted: false,
+        },
         include: {
           storeImage: true,
         },
@@ -516,16 +528,29 @@ export async function getCommunityDetailByAdmin(userId: number) {
       location: true,
 
       packages: {
+        where: {
+          statusPackage: "PUBLISH",
+          statusApprove: "APPROVE",
+          isDeleted: false,
+        },
         include: {
           packageFile: true,
         },
       },
+
       homestays: {
+        where: {
+          isDeleted: false,
+        },
         include: {
           homestayImage: true,
         },
       },
+
       stores: {
+        where: {
+          isDeleted: false,
+        },
         include: {
           storeImage: true,
         },
@@ -686,11 +711,18 @@ export async function getCommunityDetailByMember(userId: number) {
       location: true,
 
       homestays: {
+        where: {
+          isDeleted: false,
+        },
         include: {
           homestayImage: true,
         },
       },
+
       stores: {
+        where: {
+          isDeleted: false,
+        },
         include: {
           storeImage: true,
         },
