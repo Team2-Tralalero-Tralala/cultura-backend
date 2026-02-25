@@ -3,6 +3,7 @@ import * as CommunityController from "~/Controllers/community-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
+import { compressUploaded } from "~/Middlewares/upload-middleware.js";
 
 const communityRoutes = Router();
 
@@ -193,7 +194,8 @@ communityRoutes.post(
     { name: "gallery", maxCount: 5 },
     { name: "video", maxCount: 5 },
   ]),
-  CommunityController.createCommunity
+  compressUploaded,
+  CommunityController.createCommunity,
 );
 
 /*
@@ -382,7 +384,8 @@ communityRoutes.put(
     { name: "gallery", maxCount: 5 },
     { name: "video", maxCount: 5 },
   ]),
-  CommunityController.editCommunity
+  compressUploaded,
+  CommunityController.editCommunity,
 );
 
 /*
@@ -466,7 +469,7 @@ communityRoutes.patch(
   validateDto(CommunityController.deleteCommunityByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityController.deleteCommunityById
+  CommunityController.deleteCommunityById,
 );
 /*
  * คำอธิบาย : ใช้สำหรับดึงข้อมูลของชุมชนตาม ID
@@ -578,7 +581,7 @@ communityRoutes.get(
   validateDto(CommunityController.getCommunityByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityController.getCommunityById
+  CommunityController.getCommunityById,
 );
 
 /*
@@ -634,7 +637,7 @@ communityRoutes.get(
   validateDto(CommunityController.unassignedAdminsDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  CommunityController.getUnassignedAdmins
+  CommunityController.getUnassignedAdmins,
 );
 /*
  * คำอธิบาย : ดึงรายชื่อสมาชิก (Member) ที่ยังไม่ถูกมอบหมายกับชุมชน
@@ -689,7 +692,7 @@ communityRoutes.get(
   validateDto(CommunityController.unassignedMemberDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  CommunityController.getUnassignedMembers
+  CommunityController.getUnassignedMembers,
 );
 /*
  * คำอธิบาย : ใช้สำหรับดึงข้อมูลรายละเอียดของชุมชนที่ผู้ดูแล (Admin) รับผิดชอบอยู่
@@ -795,7 +798,7 @@ communityRoutes.get(
   validateDto(CommunityController.getCommunityDetailByAdminDto),
   authMiddleware,
   allowRoles("admin"),
-  CommunityController.getCommunityDetailByAdmin
+  CommunityController.getCommunityDetailByAdmin,
 );
 
 /**
@@ -905,7 +908,7 @@ communityRoutes.get(
   validateDto(CommunityController.getCommunityAllDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityController.getCommunityAll
+  CommunityController.getCommunityAll,
 );
 
 /**
@@ -1052,7 +1055,7 @@ communityRoutes.get(
   validateDto(CommunityController.getCommunityDetailByIdDto),
   authMiddleware,
   allowRoles("superadmin"),
-  CommunityController.getCommunityDetailById
+  CommunityController.getCommunityDetailById,
 );
 
 /**
@@ -1202,7 +1205,7 @@ communityRoutes.get(
   validateDto(CommunityController.getCommunityOwnDto),
   authMiddleware,
   allowRoles("admin"),
-  CommunityController.getCommunityOwn
+  CommunityController.getCommunityOwn,
 );
 /*
  * คำอธิบาย : ใช้สำหรับอัปเดตข้อมูลของชุมชน
@@ -1374,7 +1377,8 @@ communityRoutes.put(
     { name: "gallery", maxCount: 5 },
     { name: "video", maxCount: 5 },
   ]),
-  CommunityController.editCommunityByAdmin
+  compressUploaded,
+  CommunityController.editCommunityByAdmin,
 );
 
 /**
@@ -1383,8 +1387,8 @@ communityRoutes.put(
  *   get:
  *     summary: ดึงข้อมูลรายละเอียดของชุมชนที่สมาชิกสังกัดอยู่ (สำหรับ Member)
  *     description: |
- *       ใช้สำหรับดึงข้อมูลชุมชนที่ผู้ใช้ Role: **Member** ปัจจุบันสังกัดอยู่  
- *       ระบบจะตรวจสอบจาก JWT Token (req.user.id) และคืนค่ารายละเอียดชุมชนพร้อมข้อมูลที่เกี่ยวข้อง  
+ *       ใช้สำหรับดึงข้อมูลชุมชนที่ผู้ใช้ Role: **Member** ปัจจุบันสังกัดอยู่
+ *       ระบบจะตรวจสอบจาก JWT Token (req.user.id) และคืนค่ารายละเอียดชุมชนพร้อมข้อมูลที่เกี่ยวข้อง
  *       เช่น location, รูปภาพ, รายชื่อสมาชิก, ร้านค้า และที่พักในชุมชน
  *     tags:
  *       - Community (Member)
@@ -1559,7 +1563,7 @@ communityRoutes.get(
   validateDto(CommunityController.getCommunityDetailByMemberDto),
   authMiddleware,
   allowRoles("member"),
-  CommunityController.getCommunityDetailByMember
+  CommunityController.getCommunityDetailByMember,
 );
 
 /**
@@ -1724,8 +1728,7 @@ communityRoutes.get(
 communityRoutes.get(
   "/shared/community/:communityId",
   validateDto(CommunityController.getCommunityDetailPublicDto),
-  CommunityController.getCommunityDetailPublic
+  CommunityController.getCommunityDetailPublic,
 );
-
 
 export default communityRoutes;

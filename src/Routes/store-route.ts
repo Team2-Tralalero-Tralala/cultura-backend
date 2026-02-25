@@ -3,6 +3,7 @@ import * as StoreController from "~/Controllers/store-controller.js";
 import { upload } from "~/Libs/uploadFile.js";
 import { validateDto } from "~/Libs/validateDto.js";
 import { allowRoles, authMiddleware } from "~/Middlewares/auth-middleware.js";
+import { compressUploaded } from "~/Middlewares/upload-middleware.js";
 
 const storeRoute = Router();
 
@@ -118,7 +119,7 @@ storeRoute.get(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(StoreController.getAllStoreDto),
-  StoreController.getAllStore
+  StoreController.getAllStore,
 );
 
 /*
@@ -342,7 +343,8 @@ storeRoute.post(
   ]),
   authMiddleware,
   allowRoles("superadmin"),
-  StoreController.createStore
+  compressUploaded,
+  StoreController.createStore,
 );
 
 /*
@@ -542,7 +544,8 @@ storeRoute.put(
   ]),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  StoreController.editStore
+  compressUploaded,
+  StoreController.editStore,
 );
 /**
  * คำอธิบาย : สำหรับดึงข้อมูลร้านค้าตาม id
@@ -689,7 +692,7 @@ storeRoute.get(
   validateDto(StoreController.getStoreByIdDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  StoreController.getStoreById
+  StoreController.getStoreById,
 );
 
 /*
@@ -908,7 +911,8 @@ storeRoute.post(
   ]),
   authMiddleware,
   allowRoles("admin"),
-  StoreController.createStoreByAdmin
+  compressUploaded,
+  StoreController.createStoreByAdmin,
 );
 
 /*
@@ -1017,7 +1021,7 @@ storeRoute.get(
   authMiddleware,
   allowRoles("admin"),
   validateDto(StoreController.getAllStoreForAdminDto),
-  StoreController.getAllStoreForAdmin
+  StoreController.getAllStoreForAdmin,
 );
 
 /**
@@ -1102,7 +1106,7 @@ storeRoute.delete(
   validateDto(StoreController.deleteStoreByAdminDto),
   authMiddleware,
   allowRoles("admin"),
-  StoreController.deleteStoreByAdmin
+  StoreController.deleteStoreByAdmin,
 );
 
 /**
@@ -1191,7 +1195,7 @@ storeRoute.delete(
   validateDto(StoreController.deleteStoreDto),
   authMiddleware,
   allowRoles("superadmin", "admin"),
-  StoreController.deleteStore
+  StoreController.deleteStore,
 );
 
 /**
@@ -1355,7 +1359,7 @@ storeRoute.delete(
 storeRoute.get(
   "/shared/community/:communityId/store/:storeId",
   validateDto(StoreController.getStoreWithOtherStoresInCommunityDto),
-  StoreController.getStoreWithOtherStoresInCommunity
+  StoreController.getStoreWithOtherStoresInCommunity,
 );
 /**
  * @swagger
@@ -1469,7 +1473,7 @@ storeRoute.get(
   authMiddleware,
   validateDto(StoreController.storeDto),
   allowRoles("admin"),
-  StoreController.getStoreByIdShared
+  StoreController.getStoreByIdShared,
 );
 /**
  * @swagger
@@ -1583,6 +1587,6 @@ storeRoute.get(
   authMiddleware,
   validateDto(StoreController.storeDto),
   allowRoles("superadmin"),
-  StoreController.getStoreByIdShared
+  StoreController.getStoreByIdShared,
 );
 export default storeRoute;
