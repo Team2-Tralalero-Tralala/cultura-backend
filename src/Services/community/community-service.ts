@@ -275,6 +275,7 @@ export const getCommunityAll = async (
 
   const whereCondition: Prisma.CommunityWhereInput = {
     isDeleted: false,
+    deleteAt: null,
   };
   
   if (status && status !== 'all') {
@@ -355,7 +356,7 @@ export async function getCommunityDetailById(
     throw new Error("Forbidden");
 
   const community = await prisma.community.findFirst({
-    where: { id: communityId, isDeleted: false },
+    where: { id: communityId, isDeleted: false, deleteAt: null },
     include: {
       communityImage: true,
       location: true,
@@ -365,6 +366,7 @@ export async function getCommunityDetailById(
           statusPackage: "PUBLISH",
           statusApprove: "APPROVE",
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           packageFile: true,
@@ -374,6 +376,7 @@ export async function getCommunityDetailById(
       homestays: {
         where:{
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           homestayImage: true,
@@ -383,6 +386,7 @@ export async function getCommunityDetailById(
       stores: {
         where: {
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           storeImage: true,
@@ -401,7 +405,7 @@ export async function getCommunityDetailById(
       },
 
       communityMembers: {
-        where: { isDeleted: false },
+        where: { isDeleted: false, deleteAt: null },
         include: {
           user: {
             select: {
@@ -522,7 +526,7 @@ export async function getCommunityDetailByAdmin(userId: number) {
 
   // ดึงข้อมูลชุมชนของแอดมิน
   const community = await prisma.community.findFirst({
-    where: { adminId: userId, isDeleted: false },
+    where: { adminId: userId, isDeleted: false, deleteAt: null },
     include: {
       communityImage: true,
       location: true,
@@ -532,6 +536,7 @@ export async function getCommunityDetailByAdmin(userId: number) {
           statusPackage: "PUBLISH",
           statusApprove: "APPROVE",
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           packageFile: true,
@@ -541,6 +546,7 @@ export async function getCommunityDetailByAdmin(userId: number) {
       homestays: {
         where: {
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           homestayImage: true,
@@ -550,6 +556,7 @@ export async function getCommunityDetailByAdmin(userId: number) {
       stores: {
         where: {
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           storeImage: true,
@@ -568,7 +575,7 @@ export async function getCommunityDetailByAdmin(userId: number) {
       },
 
       communityMembers: {
-        where: { isDeleted: false },
+        where: { isDeleted: false, deleteAt: null },
         include: {
           user: {
             select: {
@@ -703,6 +710,7 @@ export async function getCommunityDetailByMember(userId: number) {
         some: {
           memberId: userId,
           isDeleted: false,
+          deleteAt: null,
         },
       },
     },
@@ -713,6 +721,7 @@ export async function getCommunityDetailByMember(userId: number) {
       homestays: {
         where: {
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           homestayImage: true,
@@ -722,6 +731,7 @@ export async function getCommunityDetailByMember(userId: number) {
       stores: {
         where: {
           isDeleted: false,
+          deleteAt: null,
         },
         include: {
           storeImage: true,
@@ -801,6 +811,7 @@ export async function getCommunityDetailPublic(params: {
     where: {
       id: communityId,
       isDeleted: false,
+      deleteAt: null,
       status: CommunityStatus.OPEN,
     },
     include: {
@@ -818,7 +829,7 @@ export async function getCommunityDetailPublic(params: {
         },
       },
       communityMembers: {
-        where: { isDeleted: false },
+        where: { isDeleted: false, deleteAt: null },
         include: {
           user: {
             select: {
@@ -845,12 +856,13 @@ export async function getCommunityDetailPublic(params: {
   const packageWhere = {
     communityId,
     isDeleted: false,
+    deleteAt: null,
     statusPackage: PackagePublishStatus.PUBLISH,
     statusApprove: PackageApproveStatus.APPROVE,
   };
 
-  const homestayWhere = { communityId, isDeleted: false };
-  const storeWhere = { communityId, isDeleted: false };
+  const homestayWhere = { communityId, isDeleted: false, deleteAt: null };
+  const storeWhere = { communityId, isDeleted: false, deleteAt: null };
 
   const [packageTotal, homestayTotal, storeTotal, packages, homestays, stores] =
     await prisma.$transaction([
