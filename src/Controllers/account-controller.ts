@@ -69,12 +69,14 @@ export const createAccount: TypedHandlerFromDto<
           403,
           "ไม่สามารถสร้างบัญชีประเภทนี้ได้"
         );
-      case "duplicate":
-        return createErrorResponse(
-          res,
-          409,
-          "มีข้อมูลซ้ำ (username, email, หรือ phone)"
-        );
+      case "duplicate_username":
+        return createErrorResponse(res, 409, "ชื่อผู้ใช้นี้มีในระบบแล้ว");
+      case "duplicate_email":
+        return createErrorResponse(res, 409, "อีเมลนี้มีในระบบแล้ว");
+      case "duplicate_phone":
+        return createErrorResponse(res, 409, "เบอร์โทรศัพท์นี้มีในระบบแล้ว");
+      case "duplicate": 
+        return createErrorResponse(res, 409, "มีข้อมูลบางอย่างซ้ำในระบบ");
       default:
         return createErrorResponse(res, 400, "ไม่สามารถสร้างบัญชีได้");
     }
