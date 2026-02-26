@@ -29,9 +29,9 @@ export class CreateFeedbackDto {
   rating!: number;
 
   @IsString({ message: "ข้อความต้องเป็นตัวอักษร" })
-  @IsNotEmpty({ message: "กรุณากรอกความคิดเห็น" })
+  @IsOptional()
   @MaxLength(200, { message: "ความคิดเห็นต้องไม่เกิน 200 ตัวอักษร" })
-  message!: string;
+  message?: string;
 
   @IsArray({ message: "รูปภาพต้องเป็นอาเรย์" })
   @IsOptional()

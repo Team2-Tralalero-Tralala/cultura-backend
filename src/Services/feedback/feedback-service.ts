@@ -295,6 +295,11 @@ export const createFeedback = async (
       id: bookingId,
       touristId: user.id,
     },
+    include: {
+      package: {
+        select: { communityId: true},
+      },
+    },
   });
 
   if (!booking) {
@@ -325,6 +330,26 @@ export const createFeedback = async (
       feedbackImages: true,
     },
   });
+
+  const communityId = booking.package?.communityId;
+
+  if (communityId) {
+    const aggregations = await prisma.feedback.aggregate({
+      _avg: { rating: true },
+      where: {
+        bookingHistory: {
+          package: { communityId: communityId },
+        },
+      },
+    });
+
+    const newAverageRating = aggregations._avg.rating || 0;
+
+    await prisma.community.update({
+      where: { id: communityId },
+      data: { rating: newAverageRating },
+    });
+  }
 
   return feedback;
 };

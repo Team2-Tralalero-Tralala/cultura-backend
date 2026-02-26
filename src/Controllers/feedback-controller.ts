@@ -238,7 +238,7 @@ export const createFeedback: TypedHandlerFromDto<typeof createFeedbackDto> = asy
       id,
       {
         rating: Number(rating),
-        message,
+        message: message || "",
         images: feedbackImagePaths
       },
       req.user!
