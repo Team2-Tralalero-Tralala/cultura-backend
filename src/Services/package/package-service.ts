@@ -34,6 +34,8 @@ function buildWhereForRole(
   // ถ้ามีการส่งสถานะการอนุมัติกรองมา (เช่น APPROVE, PENDING, REJECTED)
   if (filters?.approve) {
     base.statusApprove = filters.approve;
+  } else {
+    base.statusApprove = { in: ["APPROVE", "REJECTED"] }; 
   }
   switch (user?.role?.name) {
     case "superadmin":
