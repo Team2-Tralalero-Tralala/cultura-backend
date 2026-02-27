@@ -40,7 +40,6 @@ export const editAccountDto = {
   params: AccountIdParamDto,
 } satisfies commonDto;
 
-
 /*
  * คำอธิบาย : จัดการคำขอสร้างบัญชีผู้ใช้ (เฉพาะ superadmin สร้าง admin)
  * Input : ข้อมูลจาก body ที่ผ่าน DTO ตรวจสอบแล้ว
@@ -52,7 +51,7 @@ export const createAccount: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const result = await AccountService.createAccount(
-      req.body as AccountDto.CreateAccountDto
+      req.body as AccountDto.CreateAccountDto,
     );
     return createResponse(res, 201, "Account created successfully", result);
   } catch (error) {
@@ -64,23 +63,20 @@ export const createAccount: TypedHandlerFromDto<
       case "role_not_found":
         return createErrorResponse(res, 404, "ไม่พบบทบาท");
       case "role_not_allowed":
-        return createErrorResponse(
-          res,
-          403,
-          "ไม่สามารถสร้างบัญชีประเภทนี้ได้"
-        );
+        return createErrorResponse(res, 403, "ไม่สามารถสร้างบัญชีประเภทนี้ได้");
+      case "duplicate_username":
+        return createErrorResponse(res, 409, "ชื่อผู้ใช้นี้มีในระบบแล้ว");
+      case "duplicate_email":
+        return createErrorResponse(res, 409, "อีเมลนี้มีในระบบแล้ว");
+      case "duplicate_phone":
+        return createErrorResponse(res, 409, "เบอร์โทรศัพท์นี้มีในระบบแล้ว");
       case "duplicate":
-        return createErrorResponse(
-          res,
-          409,
-          "มีข้อมูลซ้ำ (username, email, หรือ phone)"
-        );
+        return createErrorResponse(res, 409, "มีข้อมูลบางอย่างซ้ำในระบบ");
       default:
         return createErrorResponse(res, 400, "ไม่สามารถสร้างบัญชีได้");
     }
   }
 };
-
 
 /**
  * คำอธิบาย : จัดการคำขอแก้ไขข้อมูลบัญชีผู้ใช้ตาม id
@@ -89,19 +85,18 @@ export const createAccount: TypedHandlerFromDto<
  */
 export const editAccount: TypedHandlerFromDto<typeof editAccountDto> = async (
   req,
-  res
+  res,
 ) => {
   try {
     const result = await AccountService.editAccount(
       Number(req.params.id),
-      req.body as AccountDto.EditAccountDto
+      req.body as AccountDto.EditAccountDto,
     );
     return createResponse(res, 200, "Account updated successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
 
 /**
  * คำอธิบาย : จัดการคำขอแสดงข้อมูลผู้ใช้ทั้งหมดแบบแบ่งหน้า (pagination)
@@ -135,7 +130,7 @@ export const getMemberByAdmin = async (req: Request, res: Response) => {
       res,
       200,
       "Community members retrieved successfully",
-      result
+      result,
     );
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
@@ -195,19 +190,13 @@ export const getAccountInCommunity: TypedHandlerFromDto<
     const result = await AccountService.getAccountInCommunity(
       Number(req.params.communityId),
       Number(req.query.page),
-      Number(req.query.limit)
+      Number(req.query.limit),
     );
-    return createResponse(
-      res,
-      200,
-      "ดึงข้อมูลสมาชิกในชุมชนสำเร็จ",
-      result
-    );
+    return createResponse(res, 200, "ดึงข้อมูลสมาชิกในชุมชนสำเร็จ", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-
 
 /*
  * คำอธิบาย : จัดการคำขอสร้างบัญชีผู้ใช้ใหม่
@@ -238,7 +227,7 @@ export const createMemberByAdmin: TypedHandlerFromDto<
       return createErrorResponse(
         res,
         403,
-        "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้"
+        "คุณไม่ได้เป็นผู้ดูแลชุมชนใดๆ ไม่สามารถสร้างสมาชิกได้",
       );
     }
     return createErrorResponse(res, 400, message);
@@ -258,9 +247,8 @@ export const editMemberByAdmin: TypedHandlerFromDto<
     const targetUserId = Number(req.params.id);
     const body = req.body as AccountDto.EditAccountDto;
 
-    const adminCommunityId = await AccountService.getCommunityIdByAdminId(
-      adminId
-    );
+    const adminCommunityId =
+      await AccountService.getCommunityIdByAdminId(adminId);
 
     const targetUser = await AccountService.getAccountById(targetUserId);
 
@@ -268,7 +256,7 @@ export const editMemberByAdmin: TypedHandlerFromDto<
       return createErrorResponse(
         res,
         403,
-        "คุณไม่มีสิทธิ์แก้ไขข้อมูลสมาชิกรายนี้ (เนื่องจากสมาชิกไม่ได้อยู่ในชุมชนของคุณ)"
+        "คุณไม่มีสิทธิ์แก้ไขข้อมูลสมาชิกรายนี้ (เนื่องจากสมาชิกไม่ได้อยู่ในชุมชนของคุณ)",
       );
     }
 
@@ -310,7 +298,7 @@ export class ProfileIdParamDto {
  *   - หากข้อมูลถูกต้อง ระบบจะส่งต่อไปยัง controller เพื่อประมวลผล
  */
 export const editProfileDto = {
-  body: AccountDto.EditAccountDto, 
+  body: AccountDto.EditAccountDto,
 } satisfies commonDto;
 
 /*
@@ -350,7 +338,7 @@ export const editProfile = async (req: Request, res: Response) => {
     }
     const result = await AccountService.editProfile(
       userId,
-      bodyData // ส่ง Object ที่รวมข้อมูล + Path รูป ไปให้ Service
+      bodyData, // ส่ง Object ที่รวมข้อมูล + Path รูป ไปให้ Service
     );
     return createResponse(res, 200, "แก้ไขข้อมูลสำเร็จ", result);
   } catch (error: any) {
@@ -417,7 +405,7 @@ export const editProfileTourist = async (req: Request, res: Response) => {
 
     const result = await AccountService.editProfileTourist(
       Number(req.user?.id),
-      body
+      body,
     );
 
     return createResponse(res, 200, "แก้ไขข้อมูลสำเร็จ", result);

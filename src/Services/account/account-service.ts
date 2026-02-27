@@ -76,9 +76,15 @@ export async function createAccount(body: CreateAccountDto) {
         { phone: body.phone },
       ],
     },
-    select: { id: true },
+    select: { username: true, email: true, phone: true }, // ดึงค่ามาเพื่อเทียบว่าอะไรซ้ำ
   });
-  if (duplicate) throw new Error("duplicate");
+
+  if (duplicate) {
+    if (duplicate.username === body.username)
+      throw new Error("duplicate_username");
+    if (duplicate.email === body.email) throw new Error("duplicate_email");
+    if (duplicate.phone === body.phone) throw new Error("duplicate_phone");
+  }
 
   // แยก roleId ออกจาก body เพราะเราจะใช้ connect แทน
   const { roleId, ...restBody } = body;
@@ -102,8 +108,8 @@ export async function createAccount(body: CreateAccountDto) {
           restBody.gender.toUpperCase() === "MALE"
             ? "MALE"
             : restBody.gender.toUpperCase() === "FEMALE"
-            ? "FEMALE"
-            : "NONE",
+              ? "FEMALE"
+              : "NONE",
       }),
       ...(restBody.birthDate && { birthDate: new Date(restBody.birthDate) }),
       ...(restBody.province && { province: restBody.province }),
@@ -161,9 +167,17 @@ export async function editAccount(userId: number, body: EditAccountDto) {
           ...(body.phone ? [{ phone: body.phone }] : []),
         ],
       },
-      select: { id: true },
+      select: { username: true, email: true, phone: true }, // ดึงมาเทียบเช่นกัน
     });
-    if (duplicate) throw new Error("duplicate");
+
+    if (duplicate) {
+      if (body.username && duplicate.username === body.username)
+        throw new Error("duplicate_username");
+      if (body.email && duplicate.email === body.email)
+        throw new Error("duplicate_email");
+      if (body.phone && duplicate.phone === body.phone)
+        throw new Error("duplicate_phone");
+    }
   }
 
   // Prepare Data
@@ -294,7 +308,7 @@ export async function getAccountById(userId: number) {
  */
 export const getAllUser = async (
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<PaginationResponse<any>> => {
   const skip = (page - 1) * limit;
 
@@ -405,7 +419,7 @@ export async function getAccountInCommunity(
   communityId: number,
   page: number = 1,
   limit: number = 10,
-  searchName?: string
+  searchName?: string,
 ): Promise<PaginationResponse<AccountInCommunity>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
@@ -534,7 +548,7 @@ export async function editProfile(userId: number, data: EditAccountDto) {
     ...(data.postalCode && { postalCode: data.postalCode }),
   };
 
-    try {
+  try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
@@ -546,7 +560,7 @@ export async function editProfile(userId: number, data: EditAccountDto) {
         email: true,
         phone: true,
         profileImage: true,
-        role: true, 
+        role: true,
       },
     });
     return updatedUser;
@@ -585,18 +599,15 @@ export async function editProfile(userId: number, data: EditAccountDto) {
 /*
  * คำอธิบาย : ฟังก์ชันสำหรับแก้ไขโปรไฟล์ของผู้ใช้งานที่มีบทบาทเป็น Tourist
  * Input : รหัสผู้ใช้งานที่ต้องการแก้ไข (ต้องเป็นบัญชีที่ยังไม่ถูกลบ)
- *         ข้อมูลโปรไฟล์ที่ต้องการแก้ไข เช่น ชื่อ, นามสกุล, ชื่อผู้ใช้งาน, อีเมล, เบอร์โทร, วันเกิด, เพศ, ที่อยู่ 
+ *         ข้อมูลโปรไฟล์ที่ต้องการแก้ไข เช่น ชื่อ, นามสกุล, ชื่อผู้ใช้งาน, อีเมล, เบอร์โทร, วันเกิด, เพศ, ที่อยู่
  * Output : อัปเดตข้อมูลผู้ใช้งานในฐานข้อมูลสำเร็จ
  */
-export async function editProfileTourist(
-  userId: number,
-  data: EditAccountDto
-) {
-/*
- * คำอธิบาย : ฟังก์ชันตรวจสอบว่าผู้ใช้งานมีอยู่ในระบบหรือไม่
- * Input : รหัสผู้ใช้งานที่ต้องการตรวจสอบ
- * Output : ข้อมูลผู้ใช้งานหากพบ, ส่งข้อผิดพลาดหากไม่พบ
- */
+export async function editProfileTourist(userId: number, data: EditAccountDto) {
+  /*
+   * คำอธิบาย : ฟังก์ชันตรวจสอบว่าผู้ใช้งานมีอยู่ในระบบหรือไม่
+   * Input : รหัสผู้ใช้งานที่ต้องการตรวจสอบ
+   * Output : ข้อมูลผู้ใช้งานหากพบ, ส่งข้อผิดพลาดหากไม่พบ
+   */
   const user = await prisma.user.findFirst({
     where: {
       id: userId,
@@ -608,23 +619,22 @@ export async function editProfileTourist(
   if (!user) {
     throw new Error("ไม่พบสมาชิก");
   }
-/*
- * คำอธิบาย : ฟังก์ชันตรวจสอบรูปแบบอีเมลและหมายเลขโทรศัพท์
- * Input : ข้อมูลอีเมลและเบอร์โทรศัพท์ที่ต้องการตรวจสอบ
- * Output : true หากข้อมูลถูกต้องตามรูปแบบ, false หากไม่ถูกต้อง
- */
+  /*
+   * คำอธิบาย : ฟังก์ชันตรวจสอบรูปแบบอีเมลและหมายเลขโทรศัพท์
+   * Input : ข้อมูลอีเมลและเบอร์โทรศัพท์ที่ต้องการตรวจสอบ
+   * Output : true หากข้อมูลถูกต้องตามรูปแบบ, false หากไม่ถูกต้อง
+   */
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const isValidPhone = (phone: string) =>
-    /^[0-9]{9,10}$/.test(phone);
+  const isValidPhone = (phone: string) => /^[0-9]{9,10}$/.test(phone);
 
   const allowedGender = ["MALE", "FEMALE", "NONE"];
- /*
- * คำอธิบาย : ฟังก์ชันเตรียมข้อมูลสำหรับการอัปเดตโปรไฟล์ 
- * Input : ข้อมูลโปรไฟล์ที่ต้องการแก้ไข
- * Output : ข้อมูลที่เตรียมไว้สำหรับการอัปเดตในฐานข้อมูล
- */
+  /*
+   * คำอธิบาย : ฟังก์ชันเตรียมข้อมูลสำหรับการอัปเดตโปรไฟล์
+   * Input : ข้อมูลโปรไฟล์ที่ต้องการแก้ไข
+   * Output : ข้อมูลที่เตรียมไว้สำหรับการอัปเดตในฐานข้อมูล
+   */
   const updateData: Prisma.UserUpdateInput = {};
   if (data.fname !== undefined) updateData.fname = data.fname;
   if (data.lname !== undefined) updateData.lname = data.lname;
