@@ -794,6 +794,55 @@ userRoutes.patch(
 
 /**
  * @swagger
+ * /api/admin/member/{userId}/reset-password:
+ * patch:
+ * summary: รีเซ็ตรหัสผ่านของสมาชิก (เฉพาะ Admin)
+ * description: Admin สามารถรีเซ็ตรหัสผ่านใหม่ให้สมาชิกในชุมชนที่กำหนด โดยต้องระบุ userId ผ่าน path parameter และส่งข้อมูลรหัสผ่านใหม่ใน body
+ * tags:
+ * - Admin - Member
+ * security:
+ * - bearerAuth: []
+ * parameters:
+ * - in: path
+ * name: userId
+ * required: true
+ * description: รหัส ID ของสมาชิกที่ต้องการรีเซ็ตรหัสผ่าน
+ * schema:
+ * type: integer
+ * example: 1
+ * requestBody:
+ * required: true
+ * content:
+ * application/json:
+ * schema:
+ * type: object
+ * required:
+ * - newPassword
+ * properties:
+ * newPassword:
+ * type: string
+ * maxLength: 80
+ * description: รหัสผ่านใหม่ของผู้ใช้
+ * example: "NewP@ssword123"
+ * responses:
+ * 200:
+ * description: รีเซ็ตรหัสผ่านสำเร็จ
+ */
+/*
+ * เส้นทาง : PATCH /admin/member/:userId/reset-password
+ * คำอธิบาย : รีเซ็ตรหัสผ่านของสมาชิก (เฉพาะ Admin)
+ * สิทธิ์ที่เข้าถึงได้ : Admin
+ */
+userRoutes.patch(
+  "/admin/member/:userId/reset-password",
+  validateDto(UserController.resetPasswordDto),
+  authMiddleware,
+  allowRoles("admin"),
+  UserController.resetPassword
+);
+
+/**
+ * @swagger
  * /api/account/change-password/me:
  *   post:
  *     tags:
