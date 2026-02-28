@@ -55,6 +55,7 @@ export async function getPackageRequestAll(
     // prisma type แคบกว่า array of string บางกรณี จึงคงรูปแบบ cast เดิมไว้เพื่อไม่เปลี่ยนพฤติกรรม
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     statusApprove: { in: approveFilter as any },
+    statusPackage: { in: ["PUBLISH", "UNPUBLISH"] },
   };
 
   const roleLower = user.role.toLowerCase();
