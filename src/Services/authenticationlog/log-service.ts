@@ -3,7 +3,7 @@
  * ประกอบด้วยการดึงข้อมูล logs ตาม role, pagination, และการค้นหา/กรองข้อมูล
  * - superadmin เห็น logs ทั้งหมด
  * - admin เห็น logs ของสมาชิกในชุมชนของตนเองเท่านั้น
- * - รองรับการค้นหาตามชื่อผู้ใช้และกรองตาม role
+ * - รองรับการค้นหาตามชื่อผู้ใช้หรืออีเมลและกรองตาม role
  */
 
 import type { UserPayload } from "~/Libs/Types/index.js";
@@ -36,7 +36,7 @@ export type LogWithUser = {
  *   - user (UserPayload) - ข้อมูลผู้ใช้จาก token
  *   - page (number) - หน้าที่ต้องการ
  *   - limit (number) - จำนวนรายการต่อหน้า
- *   - searchName (string | undefined) - ค้นหาตามชื่อผู้ใช้
+ *   - searchName (string | undefined) - ค้นหาตามชื่อผู้ใช้หรืออีเมล
  *   - filterRole (string | undefined) - กรองตาม role ("all" = ทั้งหมด, อื่นๆ = กรองตาม role)
  *   - filterStartDate (string | undefined) - กรองตามวันที่เริ่มต้นในรูปแบบ YYYY-MM-DD
  *   - filterEndDate (string | undefined) - กรองตามวันที่สิ้นสุดในรูปแบบ YYYY-MM-DD
@@ -97,13 +97,14 @@ export async function getUserLogs(
     }
   }
 
-  // เพิ่ม filter สำหรับค้นหาชื่อผู้ใช้
+  // เพิ่ม filter สำหรับค้นหาชื่อผู้ใช้หรืออีเมล
   if (searchName) {
     whereCondition.user = {
       ...whereCondition.user,
-      username: {
-        contains: searchName,
-      },
+      OR: [
+        { username: { contains: searchName } },
+        { email: { contains: searchName } },
+      ],
     };
   }
 

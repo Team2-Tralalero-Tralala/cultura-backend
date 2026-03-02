@@ -10,7 +10,7 @@ import { PaginationDto } from "../pagination-dto.js";
 /**
  * DTO: LogQueryDto
  * วัตถุประสงค์: ตรวจสอบข้อมูลเมื่อค้นหา Log
- * Input: query parameters (searchName, filterRole, filterStartDate, filterEndDate)
+ * Input: query parameters (searchName = search by username or email, filterRole, filterStartDate, filterEndDate)
  * Output: ผ่านการตรวจสอบพร้อมข้อความผิดพลาดเมื่อไม่ถูกต้อง
  */
 export class LogQueryDto extends PaginationDto {

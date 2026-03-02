@@ -20,10 +20,20 @@ export class SearchQueryDto extends PaginationDto {
   @Expose()
   @IsOptional()
   @Transform(({ value }) => {
-    // แปลง tag เป็น array ถ้ายังไม่ใช่ array
+    // แปลง tag เป็น array รองรับทั้ง ?tag=a,b,c และ ?tag=a&tag=b
     if (!value) return undefined;
-    if (Array.isArray(value)) return value;
-    return [value];
+    const toTags = (tagInput: string) =>
+      tagInput
+        .split(",")
+        .map((tagText) => tagText.trim())
+        .filter((tagText) => tagText !== "");
+    if (Array.isArray(value)) {
+      return value.flatMap((tagValue) =>
+        typeof tagValue === "string" ? toTags(tagValue) : []
+      );
+    }
+    if (typeof value === "string") return toTags(value);
+    return undefined;
   })
   @IsArray({ message: "Tag ต้องเป็น array" })
   @IsString({ each: true, message: "แต่ละ tag ต้องเป็นข้อความ" })
@@ -35,7 +45,10 @@ export class SearchQueryDto extends PaginationDto {
     // รองรับ comma-separated tags เช่น "tag1,tag2"
     if (!value) return undefined;
     if (typeof value === "string") {
-      return value.split(",").map((t) => t.trim()).filter((t) => t !== "");
+      return value
+        .split(",")
+        .map((tagText) => tagText.trim())
+        .filter((tagText) => tagText !== "");
     }
     return undefined;
   })
