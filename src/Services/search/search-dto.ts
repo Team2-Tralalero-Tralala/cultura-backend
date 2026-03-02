@@ -22,10 +22,15 @@ export class SearchQueryDto extends PaginationDto {
   @Transform(({ value }) => {
     // แปลง tag เป็น array รองรับทั้ง ?tag=a,b,c และ ?tag=a&tag=b
     if (!value) return undefined;
-    const toTags = (v: string) =>
-      v.split(",").map((t) => t.trim()).filter((t) => t !== "");
+    const toTags = (tagInput: string) =>
+      tagInput
+        .split(",")
+        .map((tagText) => tagText.trim())
+        .filter((tagText) => tagText !== "");
     if (Array.isArray(value)) {
-      return value.flatMap((v) => (typeof v === "string" ? toTags(v) : []));
+      return value.flatMap((tagValue) =>
+        typeof tagValue === "string" ? toTags(tagValue) : []
+      );
     }
     if (typeof value === "string") return toTags(value);
     return undefined;
@@ -40,7 +45,10 @@ export class SearchQueryDto extends PaginationDto {
     // รองรับ comma-separated tags เช่น "tag1,tag2"
     if (!value) return undefined;
     if (typeof value === "string") {
-      return value.split(",").map((t) => t.trim()).filter((t) => t !== "");
+      return value
+        .split(",")
+        .map((tagText) => tagText.trim())
+        .filter((tagText) => tagText !== "");
     }
     return undefined;
   })

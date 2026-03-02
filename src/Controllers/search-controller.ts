@@ -47,17 +47,17 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     // เพิ่ม tags จาก tag parameter (?tag=a,b,c หรือ ?tag=a&tag=b)
     if (tags) {
       if (Array.isArray(tags)) {
-        tags.forEach((t) => {
-          if (typeof t === "string" && t.trim() !== "") {
-            if (t.includes(",")) {
+        tags.forEach((rawTag) => {
+          if (typeof rawTag === "string" && rawTag.trim() !== "") {
+            if (rawTag.includes(",")) {
               allTags.push(
-                ...t
+                ...rawTag
                   .split(",")
                   .map((tag) => tag.trim())
                   .filter((tag) => tag !== "")
               );
             } else {
-              allTags.push(t.trim());
+              allTags.push(rawTag.trim());
             }
           }
         });
