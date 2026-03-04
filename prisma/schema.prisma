@@ -282,31 +282,31 @@ model PackageFile {
 model Package {
   id               Int                   @id @default(autoincrement()) @map("pk_id")
   communityId      Int                   @map("pk_community_id")
-  locationId       Int?                   @map("pk_location_id")
-  overseerMemberId Int?                   @map("pk_overseer_member_id")
+  locationId       Int?                  @map("pk_location_id")
+  overseerMemberId Int?                  @map("pk_overseer_member_id")
   createById       Int                   @map("pk_create_by")
-  name             String?                @map("pk_name") @db.VarChar(100)
-  description      String?                @map("pk_description") @db.VarChar(500)
-  capacity         Int?                   @map("pk_capacity")
-  price            Float?                 @map("pk_price") @db.Double
-  warning          String?                @map("pk_warning") @db.VarChar(200)
+  name             String?               @map("pk_name") @db.VarChar(100)
+  description      String?               @map("pk_description") @db.VarChar(500)
+  capacity         Int?                  @map("pk_capacity")
+  price            Float?                @map("pk_price") @db.Double
+  warning          String?               @map("pk_warning") @db.VarChar(200)
   statusPackage    PackagePublishStatus  @map("pk_status_package")
   statusApprove    PackageApproveStatus? @map("pk_status_approve")
-  startDate        DateTime?              @map("pk_start_date") @db.DateTime
-  dueDate          DateTime?              @map("pk_due_date") @db.DateTime
-  bookingOpenDate  DateTime?              @map("pk_booking_open_date") @db.DateTime
-  bookingCloseDate DateTime?              @map("pk_booking_close_date") @db.DateTime
-  facility         String?                @map("pk_facility") @db.VarChar(200)
+  startDate        DateTime?             @map("pk_start_date") @db.DateTime
+  dueDate          DateTime?             @map("pk_due_date") @db.DateTime
+  bookingOpenDate  DateTime?             @map("pk_booking_open_date") @db.DateTime
+  bookingCloseDate DateTime?             @map("pk_booking_close_date") @db.DateTime
+  facility         String?               @map("pk_facility") @db.VarChar(200)
   rejectReason     String?               @map("pk_reject_reason") @db.VarChar(100)
-  createdAt        DateTime              @map("pk_created_at") @db.Timestamp(0) @default(now())
+  createdAt        DateTime              @default(now()) @map("pk_created_at") @db.Timestamp(0)
   isDeleted        Boolean               @default(false) @map("pk_is_deleted")
   deleteAt         DateTime?             @map("pk_delete_at") @db.Timestamp(0)
 
   // Relations
   community       Community @relation(fields: [communityId], references: [id])
-  location        Location?  @relation(fields: [locationId], references: [id])
+  location        Location? @relation(fields: [locationId], references: [id])
   createPackage   User      @relation("createPackage", fields: [createById], references: [id])
-  overseerPackage User?      @relation("OverseerMember", fields: [overseerMemberId], references: [id])
+  overseerPackage User?     @relation("OverseerMember", fields: [overseerMemberId], references: [id])
 
   bookingHistories  BookingHistory[]
   homestayHistories HomestayHistory[]
@@ -362,14 +362,14 @@ model User {
   deleteAt     DateTime?   @map("us_delete_at") @db.Timestamp(0)
 
   // Relations
-  role             Role               @relation(fields: [roleId], references: [id])
-  communityAdmin   Community[]        @relation("CommunityAdmin")
-  bookingHistories BookingHistory[]   @relation("Tourist")
-  feedbacksReplied Feedback[]         @relation("FeedbackResponder")
-  logs             Log[]
-  overseerPackages Package[]          @relation("OverseerMember")
-  createdPackages  Package[]          @relation("createPackage")
-  communityMembers communityMembers[]
+  role                Role                 @relation(fields: [roleId], references: [id])
+  communityAdmin      Community[]          @relation("CommunityAdmin")
+  bookingHistories    BookingHistory[]     @relation("Tourist")
+  feedbacksReplied    Feedback[]           @relation("FeedbackResponder")
+  logs                Log[]
+  overseerPackages    Package[]            @relation("OverseerMember")
+  createdPackages     Package[]            @relation("createPackage")
+  communityMembers    communityMembers[]
   passwordResetTokens PasswordResetToken[]
 
   @@index([roleId])
@@ -461,20 +461,21 @@ model Location {
  * Output : booking history ของนักท่องเที่ยว
  */
 model BookingHistory {
-  id               Int            @id @default(autoincrement()) @map("bh_id")
-  touristId        Int            @map("bh_tourist_id")
-  packageId        Int?           @map("bh_package_id")
-  touristBankId    Int?           @map("bh_tourist_bank_account_id")
-  bookingAt        DateTime       @default(now()) @map("bh_booking_at") @db.DateTime(0)
-  cancelAt         DateTime?      @map("bh_cancel_at") @db.Timestamp(0)
-  refundAt         DateTime?      @map("bh_refund_at") @db.Timestamp(0)
-  status           BookingStatus? @map("bh_status")
-  isParticipate    Boolean        @default(false) @map("bh_is_participate")
-  totalParticipant Int            @map("bh_total_participant")
-  rejectReason     String?        @map("bh_reject_reason") @db.VarChar(100)
-  refundReason     String?        @map("bh_refund_reason") @db.VarChar(100)
-  transferSlip     String?        @map("bh_transfer_slip") @db.VarChar(256)
-  touristRejectReason String?     @map("bh_tourist_reject_reason") @db.VarChar(100)
+  id                  Int            @id @default(autoincrement()) @map("bh_id")
+  touristId           Int            @map("bh_tourist_id")
+  packageId           Int?           @map("bh_package_id")
+  touristBankId       Int?           @map("bh_tourist_bank_account_id")
+  bookingAt           DateTime       @default(now()) @map("bh_booking_at") @db.DateTime(0)
+  confirmAt           DateTime?      @map("bh_confirm_at") @db.Timestamp(0)
+  cancelAt            DateTime?      @map("bh_cancel_at") @db.Timestamp(0)
+  refundAt            DateTime?      @map("bh_refund_at") @db.Timestamp(0)
+  status              BookingStatus? @map("bh_status")
+  isParticipate       Boolean        @default(false) @map("bh_is_participate")
+  totalParticipant    Int            @map("bh_total_participant")
+  rejectReason        String?        @map("bh_reject_reason") @db.VarChar(100)
+  refundReason        String?        @map("bh_refund_reason") @db.VarChar(100)
+  transferSlip        String?        @map("bh_transfer_slip") @db.VarChar(256)
+  touristRejectReason String?        @map("bh_tourist_reject_reason") @db.VarChar(100)
 
   // Relations
   tourist   User       @relation("Tourist", fields: [touristId], references: [id])

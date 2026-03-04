@@ -10,7 +10,8 @@
 
 */
 -- AlterTable
-ALTER TABLE `booking_histories` ADD COLUMN `bh_tourist_reject_reason` VARCHAR(100) NULL;
+ALTER TABLE `booking_histories` ADD COLUMN `bh_confirm_at` TIMESTAMP(0) NULL,
+    ADD COLUMN `bh_tourist_reject_reason` VARCHAR(100) NULL;
 
 -- AlterTable
 ALTER TABLE `feedbacks` ALTER COLUMN `fb_created_at` DROP DEFAULT;
