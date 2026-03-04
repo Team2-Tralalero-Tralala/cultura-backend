@@ -33,9 +33,22 @@ function buildWhereForRole(
 
   // ถ้ามีการส่งสถานะการอนุมัติกรองมา (เช่น APPROVE, PENDING, REJECTED)
   if (filters?.approve) {
-    base.statusApprove = filters.approve;
+    if (filters.approve === "PENDING") {
+      // กรณีเลือกฟิลเตอร์ "รออนุมัติ"
+      if (user.role.name === "superadmin") {
+        base.statusApprove = { in: ["PENDING", "PENDING_SUPER"] }; 
+      } else {
+        base.statusApprove = "PENDING";
+      }
+    } else {
+      base.statusApprove = filters.approve;
+    }
   } else {
-    base.statusApprove = { in: ["APPROVE", "REJECTED"] }; 
+    if (user.role.name === "superadmin") {
+      base.statusApprove = { in: ["APPROVE", "REJECTED", "PENDING", "PENDING_SUPER"] };
+    } else {
+      base.statusApprove = { in: ["APPROVE", "REJECTED", "PENDING"] };
+    }
   }
   switch (user?.role?.name) {
     case "superadmin":
