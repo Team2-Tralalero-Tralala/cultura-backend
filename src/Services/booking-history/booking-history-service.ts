@@ -340,12 +340,26 @@ export const updateBookingStatus = async (
     rejectReasonValue = null;
   }
 
+  const updateData: Prisma.BookingHistoryUpdateInput = {
+    status: newStatus as BookingStatus,
+    rejectReason: rejectReasonValue,
+  };
+
+  if (newStatus === "BOOKED") {
+    updateData.confirmAt = new Date();
+  }
+
+  if (newStatus === "REJECTED" || newStatus === "REFUND_REJECTED") {
+    updateData.cancelAt = new Date();
+  }
+
+  if (newStatus === "REFUNDED") {
+    updateData.refundAt = new Date();
+  }
+
   const booking = await prisma.bookingHistory.update({
     where: { id },
-    data: {
-      status: newStatus as BookingStatus,
-      rejectReason: rejectReasonValue,
-    },
+    data: updateData,
   });
 
   return booking;
@@ -532,14 +546,27 @@ export const updateBookingStatusByMember = async (
     );
   }
 
+  const updateData: Prisma.BookingHistoryUpdateInput = {
+    status: newStatus as BookingStatus,
+    rejectReason: rejectReasonValue,
+  };
+
+  if (newStatus === "BOOKED") {
+    updateData.confirmAt = new Date();
+  }
+
+  if (newStatus === "REJECTED" || newStatus === "REFUND_REJECTED") {
+    updateData.cancelAt = new Date();
+  }
+
+  if (newStatus === "REFUNDED") {
+    updateData.refundAt = new Date();
+  }
+
   const updated = await prisma.bookingHistory.update({
     where: { id: booking.id },
-    data: {
-      status: newStatus as BookingStatus,
-      rejectReason: rejectReasonValue,
-    },
+    data: updateData,
   });
-
   return updated;
 };
 /*
