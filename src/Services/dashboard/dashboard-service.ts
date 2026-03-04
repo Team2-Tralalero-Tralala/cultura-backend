@@ -261,7 +261,7 @@ function getProvincesByRegion(region: string): string[] {
 function generateDateRange(
   startDate: Date,
   endDate: Date,
-  groupBy: "hour" | "day" | "week" | "month" | "year"
+  groupBy: "hour" | "day" | "week" | "month" | "year",
 ): string[] {
   const dates: string[] = [];
   const current = new Date(startDate);
@@ -273,16 +273,16 @@ function generateDateRange(
     switch (groupBy) {
       case "hour":
         dateKey = `${current.getFullYear()}-${String(
-          current.getMonth() + 1
+          current.getMonth() + 1,
         ).padStart(2, "0")}-${String(current.getDate()).padStart(
           2,
-          "0"
+          "0",
         )} ${String(current.getHours()).padStart(2, "0")}:00`;
         current.setHours(current.getHours() + 1);
         break;
       case "day":
         dateKey = `${current.getFullYear()}-${String(
-          current.getMonth() + 1
+          current.getMonth() + 1,
         ).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
         current.setDate(current.getDate() + 1);
         break;
@@ -290,13 +290,13 @@ function generateDateRange(
         const weekStart = new Date(current);
         weekStart.setDate(current.getDate() - current.getDay());
         dateKey = `${weekStart.getFullYear()}-${String(
-          weekStart.getMonth() + 1
+          weekStart.getMonth() + 1,
         ).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
         current.setDate(current.getDate() + 7);
         break;
       case "month":
         dateKey = `${current.getFullYear()}-${String(
-          current.getMonth() + 1
+          current.getMonth() + 1,
         ).padStart(2, "0")}`;
         current.setMonth(current.getMonth() + 1);
         break;
@@ -306,7 +306,7 @@ function generateDateRange(
         break;
       default:
         dateKey = `${current.getFullYear()}-${String(
-          current.getMonth() + 1
+          current.getMonth() + 1,
         ).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
         current.setDate(current.getDate() + 1);
     }
@@ -337,7 +337,7 @@ export async function getSuperAdminDashboardData(
     province?: string;
     region?: string;
     search?: string;
-  } = {}
+  } = {},
 ) {
   const skip = (page - 1) * limit;
 
@@ -427,27 +427,27 @@ export async function getSuperAdminDashboardData(
     switch (groupBy) {
       case "hour":
         dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
+          bookingDate.getMonth() + 1,
         ).padStart(2, "0")}-${String(bookingDate.getDate()).padStart(
           2,
-          "0"
+          "0",
         )} ${String(bookingDate.getHours()).padStart(2, "0")}:00`;
         break;
       case "day":
         dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
+          bookingDate.getMonth() + 1,
         ).padStart(2, "0")}-${String(bookingDate.getDate()).padStart(2, "0")}`;
         break;
       case "week":
         const weekStart = new Date(bookingDate);
         weekStart.setDate(bookingDate.getDate() - bookingDate.getDay());
         dateKey = `${weekStart.getFullYear()}-${String(
-          weekStart.getMonth() + 1
+          weekStart.getMonth() + 1,
         ).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
         break;
       case "month":
         dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
+          bookingDate.getMonth() + 1,
         ).padStart(2, "0")}`;
         break;
       case "year":
@@ -455,7 +455,7 @@ export async function getSuperAdminDashboardData(
         break;
       default:
         dateKey = `${bookingDate.getFullYear()}-${String(
-          bookingDate.getMonth() + 1
+          bookingDate.getMonth() + 1,
         ).padStart(2, "0")}-${String(bookingDate.getDate()).padStart(2, "0")}`;
     }
 
@@ -569,11 +569,11 @@ export async function getSuperAdminDashboardData(
 
       provinceStats[provinceName].bookingCount += bookings.length;
       provinceStats[provinceName].successBookingCount += bookings.filter(
-        (booking) => booking.status === "BOOKED"
+        (booking) => booking.status === "BOOKED",
       ).length;
       provinceStats[provinceName].cancelledBookingCount += bookings.filter(
         (booking) =>
-          booking.status === "REFUNDED" || booking.status === "REFUND_REJECTED"
+          booking.status === "REFUNDED" || booking.status === "REFUND_REJECTED",
       ).length;
     }
   }
@@ -634,15 +634,11 @@ export async function getAdminDashboard(
   userId: number,
   bookingFilter: DashboardFilter,
   revenueFilter: DashboardFilter,
-  packageFilter: DashboardFilter
+  packageFilter: DashboardFilter,
 ) {
   const bookingRanges = calculateDateRanges(bookingFilter);
   const revenueRanges = calculateDateRanges(revenueFilter);
   const packageRanges = calculateDateRanges(packageFilter);
-
-  const bookingDateFilters = bookingRanges.map((range) => ({
-    bookingAt: { gte: range.start, lte: range.end },
-  }));
 
   const community = await findCommunityId(userId);
   if (!community) {
@@ -668,10 +664,26 @@ export async function getAdminDashboard(
   const summaryBookings = await prisma.bookingHistory.findMany({
     where: {
       package: { communityId: community.id },
-      ...(bookingDateFilters.length > 0 ? { OR: bookingDateFilters } : {}),
+      ...(bookingRanges.length > 0
+        ? {
+            OR: [
+              ...bookingRanges.map((range) => ({
+                confirmAt: { gte: range.start, lte: range.end },
+              })),
+              ...bookingRanges.map((range) => ({
+                cancelAt: { gte: range.start, lte: range.end },
+              })),
+              ...bookingRanges.map((range) => ({
+                refundAt: { gte: range.start, lte: range.end },
+              })),
+            ],
+          }
+        : {}),
     },
     select: {
-      bookingAt: true,
+      cancelAt: true,
+      refundAt: true,
+      confirmAt: true,
       totalParticipant: true,
       status: true,
       package: { select: { price: true } },
@@ -683,12 +695,30 @@ export async function getAdminDashboard(
   let cancelledBookingCount = 0;
 
   summaryBookings.forEach((booking) => {
-    if (booking.status === "BOOKED") {
+    const isBookedInRange = bookingRanges.some(
+      (range) =>
+        booking.confirmAt &&
+        booking.confirmAt >= range.start &&
+        booking.confirmAt <= range.end,
+    );
+    const isCancelledOrRefundedInRange = bookingRanges.some((range) => {
+      const isCancel =
+        booking.cancelAt &&
+        booking.cancelAt >= range.start &&
+        booking.cancelAt <= range.end;
+      const isRefund =
+        booking.refundAt &&
+        booking.refundAt >= range.start &&
+        booking.refundAt <= range.end;
+      return isCancel || isRefund;
+    });
+
+    if (booking.status === "BOOKED" && isBookedInRange) {
       successBookingCount++;
       totalRevenue += (booking.package?.price || 0) * booking.totalParticipant;
     } else if (
-      booking.status === "REFUNDED" ||
-      booking.status === "REFUND_REJECTED"
+      (booking.status === "REFUNDED" || booking.status === "REFUND_REJECTED") &&
+      isCancelledOrRefundedInRange
     ) {
       cancelledBookingCount++;
     }
@@ -698,14 +728,14 @@ export async function getAdminDashboard(
     { communityId: community.id },
     bookingRanges,
     bookingFilter.periodType,
-    (booking: any) => 1 // Count 1 for each booking
+    (booking: any) => 1, // Count 1 for each booking
   );
 
   const revenueGraph = await buildGraphData(
     { communityId: community.id },
     revenueRanges,
     revenueFilter.periodType,
-    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant // Calculate revenue
+    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant, // Calculate revenue
   );
 
   // หาแพคเกจที่ยอดจองเยอะที่สุด
@@ -732,7 +762,7 @@ export async function getAdminDashboard(
   });
   // map packageId to packages
   const packageIds = topPackagesRaw.map(
-    (groupedPackage) => groupedPackage.packageId!
+    (groupedPackage) => groupedPackage.packageId!,
   );
 
   const packages = await prisma.package.findMany({
@@ -742,7 +772,7 @@ export async function getAdminDashboard(
   // ทำให้ข้อมูลที่ได้มาเป็น object ที่มี rank, name, bookingCount
   const topPackages = topPackagesRaw.map((groupedPackage, index) => {
     const packageData = packages.find(
-      (packageEntity) => packageEntity.id === groupedPackage.packageId
+      (packageEntity) => packageEntity.id === groupedPackage.packageId,
     );
     return {
       rank: index + 1,
@@ -772,7 +802,7 @@ export async function getAdminDashboard(
  * output: { start: Date; end: Date; label: string }[]
  */
 function calculateDateRanges(
-  filter: DashboardFilter
+  filter: DashboardFilter,
 ): { start: Date; end: Date; label: string }[] {
   const dateRanges: { start: Date; end: Date; label: string }[] = [];
 
@@ -789,26 +819,47 @@ function calculateDateRanges(
     const effectivePeriodType = filter.periodType || "weekly";
 
     if (effectivePeriodType === "weekly") {
-      rangeEndDate = new Date(targetDate);
-      rangeEndDate.setHours(23, 59, 59, 999);
+      let startDateStr = targetDates[0] || new Date().toISOString();
+      let endDateStr =
+        targetDates.length > 1 ? targetDates[1] || startDateStr : startDateStr;
 
-      rangeStartDate = new Date(rangeEndDate);
-      rangeStartDate.setDate(rangeEndDate.getDate() - 6);
+      if (
+        targetDates.length === 1 &&
+        targetDates[0] &&
+        targetDates[0].includes(",")
+      ) {
+        const parts = targetDates[0].split(",");
+        startDateStr = parts[0] || startDateStr;
+        endDateStr = parts[1] || startDateStr;
+      }
+
+      rangeStartDate = new Date(startDateStr);
       rangeStartDate.setHours(0, 0, 0, 0);
+
+      rangeEndDate = new Date(endDateStr);
+      rangeEndDate.setHours(23, 59, 59, 999);
 
       rangeLabel = `${rangeStartDate.getDate()}/${
         rangeStartDate.getMonth() + 1
       } - ${rangeEndDate.getDate()}/${rangeEndDate.getMonth() + 1}`;
+
+      dateRanges.push({
+        start: rangeStartDate,
+        end: rangeEndDate,
+        label: rangeLabel,
+      });
+
+      return dateRanges;
     } else if (effectivePeriodType === "monthly") {
       rangeStartDate = new Date(
         targetDate.getFullYear(),
         targetDate.getMonth(),
-        1
+        1,
       );
       rangeEndDate = new Date(
         targetDate.getFullYear(),
         targetDate.getMonth() + 1,
-        0
+        0,
       );
       rangeEndDate.setHours(23, 59, 59, 999);
       const thaiMonths = [
@@ -857,7 +908,7 @@ async function buildGraphData(
   },
   dateRanges: { start: Date; end: Date; label: string }[],
   periodType: "weekly" | "monthly" | "yearly",
-  valueExtractor: (booking: any) => number
+  valueExtractor: (booking: any) => number,
 ) {
   // สร้างเงื่อนไข filter ตามช่วงวันที่ที่รับมา
   const dateFilters = dateRanges.map((range) => ({
@@ -931,7 +982,7 @@ async function buildGraphData(
         .filter(
           (booking) =>
             new Date(booking.bookingAt) >= week.start &&
-            new Date(booking.bookingAt) <= week.end
+            new Date(booking.bookingAt) <= week.end,
         )
         .reduce((total, booking) => total + valueExtractor(booking), 0);
     });
@@ -970,20 +1021,30 @@ async function buildGraphData(
     const firstRangeStart = dateRanges[0]?.start
       ? new Date(dateRanges[0].start)
       : new Date();
-    labels = Array.from({ length: 7 }, (_, dayIndex) => {
+    const firstRangeEnd = dateRanges[0]?.end
+      ? new Date(dateRanges[0].end)
+      : new Date();
+
+    const diffTime = Math.abs(
+      firstRangeEnd.getTime() - firstRangeStart.getTime(),
+    );
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const length = diffDays > 0 ? diffDays : 1;
+
+    labels = Array.from({ length }, (_, dayIndex) => {
       const generatedDate = new Date(firstRangeStart);
       generatedDate.setDate(generatedDate.getDate() + dayIndex);
       return `${generatedDate.getDate()}/${generatedDate.getMonth() + 1}`;
     });
     dateRanges.forEach((range) => {
-      const rangeData = new Array(7).fill(0);
+      const rangeData = new Array(length).fill(0);
       bookings.forEach((booking) => {
         const date = new Date(booking.bookingAt);
         if (date >= range.start && date <= range.end) {
           const differenceInDays = Math.floor(
-            (date.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24)
+            (date.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24),
           );
-          if (differenceInDays >= 0 && differenceInDays < 7)
+          if (differenceInDays >= 0 && differenceInDays < length)
             rangeData[differenceInDays] += valueExtractor(booking);
         }
       });
@@ -1026,16 +1087,11 @@ export async function getMemberDashboard(
   userId: number,
   bookingFilter: DashboardFilter,
   revenueFilter: DashboardFilter,
-  packageFilter: DashboardFilter
+  packageFilter: DashboardFilter,
 ) {
   const bookingRanges = calculateDateRanges(bookingFilter);
   const revenueRanges = calculateDateRanges(revenueFilter);
   const packageRanges = calculateDateRanges(packageFilter);
-
-  // สร้างเงื่อนไขสำหรับการค้นหา Booking
-  const bookingDateFilters = bookingRanges.map((range) => ({
-    bookingAt: { gte: range.start, lte: range.end },
-  }));
 
   // หาจำนวนแพคเกจที่ผู้ดูแล
   const totalPackages = await prisma.package.count({
@@ -1046,10 +1102,26 @@ export async function getMemberDashboard(
   const summaryBookings = await prisma.bookingHistory.findMany({
     where: {
       package: { overseerMemberId: userId },
-      ...(bookingDateFilters.length > 0 ? { OR: bookingDateFilters } : {}),
+      ...(bookingRanges.length > 0
+        ? {
+            OR: [
+              ...bookingRanges.map((range) => ({
+                confirmAt: { gte: range.start, lte: range.end },
+              })),
+              ...bookingRanges.map((range) => ({
+                cancelAt: { gte: range.start, lte: range.end },
+              })),
+              ...bookingRanges.map((range) => ({
+                refundAt: { gte: range.start, lte: range.end },
+              })),
+            ],
+          }
+        : {}),
     },
     select: {
-      bookingAt: true,
+      confirmAt: true,
+      cancelAt: true,
+      refundAt: true,
       totalParticipant: true,
       status: true,
       package: { select: { price: true } },
@@ -1059,15 +1131,32 @@ export async function getMemberDashboard(
   let totalRevenue = 0;
   let successBookingCount = 0;
   let cancelledBookingCount = 0;
-
   // คำนวนรายได้และจำนวน Booking
   summaryBookings.forEach((booking) => {
-    if (booking.status === "BOOKED") {
+    const isBookedInRange = bookingRanges.some(
+      (range) =>
+        booking.confirmAt &&
+        booking.confirmAt >= range.start &&
+        booking.confirmAt <= range.end,
+    );
+    const isCancelledOrRefundedInRange = bookingRanges.some((range) => {
+      const isCancel =
+        booking.cancelAt &&
+        booking.cancelAt >= range.start &&
+        booking.cancelAt <= range.end;
+      const isRefund =
+        booking.refundAt &&
+        booking.refundAt >= range.start &&
+        booking.refundAt <= range.end;
+      return isCancel || isRefund;
+    });
+
+    if (booking.status === "BOOKED" && isBookedInRange) {
       successBookingCount++;
       totalRevenue += (booking.package?.price || 0) * booking.totalParticipant;
     } else if (
-      booking.status === "REFUNDED" ||
-      booking.status === "REFUND_REJECTED"
+      (booking.status === "REFUNDED" || booking.status === "REFUND_REJECTED") &&
+      isCancelledOrRefundedInRange
     ) {
       cancelledBookingCount++;
     }
@@ -1078,7 +1167,7 @@ export async function getMemberDashboard(
     { overseerMemberId: userId },
     bookingRanges,
     bookingFilter.periodType,
-    (booking: any) => 1 // Count 1 for each booking
+    (booking: any) => 1, // Count 1 for each booking
   );
 
   // สร้างกราฟ Revenue
@@ -1086,7 +1175,7 @@ export async function getMemberDashboard(
     { overseerMemberId: userId },
     revenueRanges,
     revenueFilter.periodType,
-    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant // Calculate revenue
+    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant, // Calculate revenue
   );
 
   // หาแพคเกจที่ยอดจองเยอะที่สุด
@@ -1114,7 +1203,7 @@ export async function getMemberDashboard(
 
   // map packageId to packages
   const packageIds = topPackagesRaw.map(
-    (groupedPackage) => groupedPackage.packageId!
+    (groupedPackage) => groupedPackage.packageId!,
   );
 
   const packages = await prisma.package.findMany({
@@ -1124,7 +1213,7 @@ export async function getMemberDashboard(
   // ทำให้ข้อมูลที่ได้มาเป็น object ที่มี rank, name, bookingCount
   const topPackages = topPackagesRaw.map((groupedPackage, index) => {
     const packageData = packages.find(
-      (packageEntity) => packageEntity.id === groupedPackage.packageId
+      (packageEntity) => packageEntity.id === groupedPackage.packageId,
     );
     return {
       rank: index + 1,
@@ -1156,7 +1245,7 @@ export async function getMemberDashboard(
  */
 export async function getTouristDashboard(
   userId: number,
-  bookingFilter: DashboardFilter
+  bookingFilter: DashboardFilter,
 ) {
   const bookingRanges = calculateDateRanges(bookingFilter);
 
@@ -1174,10 +1263,26 @@ export async function getTouristDashboard(
   const summaryBookings = await prisma.bookingHistory.findMany({
     where: {
       touristId: userId,
-      ...(bookingDateFilters.length > 0 ? { OR: bookingDateFilters } : {}),
+      ...(bookingRanges.length > 0
+        ? {
+            OR: [
+              ...bookingRanges.map((range) => ({
+                bookingAt: { gte: range.start, lte: range.end },
+              })),
+              ...bookingRanges.map((range) => ({
+                cancelAt: { gte: range.start, lte: range.end },
+              })),
+              ...bookingRanges.map((range) => ({
+                refundAt: { gte: range.start, lte: range.end },
+              })),
+            ],
+          }
+        : {}),
     },
     select: {
       bookingAt: true,
+      cancelAt: true,
+      refundAt: true,
       totalParticipant: true,
       status: true,
       package: { select: { name: true, price: true } },
@@ -1193,12 +1298,28 @@ export async function getTouristDashboard(
 
   // คำนวนรายได้และจำนวน Booking
   summaryBookings.forEach((booking) => {
-    if (booking.status === "BOOKED") {
+    const isBookedInRange = bookingRanges.some(
+      (range) =>
+        booking.bookingAt >= range.start && booking.bookingAt <= range.end,
+    );
+    const isCancelledOrRefundedInRange = bookingRanges.some((range) => {
+      const isCancel =
+        booking.cancelAt &&
+        booking.cancelAt >= range.start &&
+        booking.cancelAt <= range.end;
+      const isRefund =
+        booking.refundAt &&
+        booking.refundAt >= range.start &&
+        booking.refundAt <= range.end;
+      return isCancel || isRefund;
+    });
+
+    if (booking.status === "BOOKED" && isBookedInRange) {
       successBookingCount++;
       totalSpend += (booking.package?.price || 0) * booking.totalParticipant;
     } else if (
-      booking.status === "REFUNDED" ||
-      booking.status === "REFUND_REJECTED"
+      (booking.status === "REFUNDED" || booking.status === "REFUND_REJECTED") &&
+      isCancelledOrRefundedInRange
     ) {
       cancelledBookingCount++;
     }
@@ -1209,7 +1330,7 @@ export async function getTouristDashboard(
     { touristId: userId },
     bookingRanges,
     bookingFilter.periodType,
-    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant // Calculate spending
+    (booking: any) => (booking.package?.price || 0) * booking.totalParticipant, // Calculate spending
   );
 
   // lastesr 5 booking sort by ascending
