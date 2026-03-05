@@ -36,7 +36,7 @@ function buildWhereForRole(
     if (filters.approve === "PENDING") {
       // กรณีเลือกฟิลเตอร์ "รออนุมัติ"
       if (user.role.name === "superadmin") {
-        base.statusApprove = { in: ["PENDING", "PENDING_SUPER"] }; 
+        base.statusApprove = { in: ["PENDING", "PENDING_SUPER"] };
       } else {
         base.statusApprove = "PENDING";
       }
@@ -45,7 +45,9 @@ function buildWhereForRole(
     }
   } else {
     if (user.role.name === "superadmin") {
-      base.statusApprove = { in: ["APPROVE", "REJECTED", "PENDING", "PENDING_SUPER"] };
+      base.statusApprove = {
+        in: ["APPROVE", "REJECTED", "PENDING", "PENDING_SUPER"],
+      };
     } else {
       base.statusApprove = { in: ["APPROVE", "REJECTED", "PENDING"] };
     }
@@ -2011,6 +2013,17 @@ export async function getParticipantsInPackage(
     select: {
       createById: true,
       overseerMemberId: true,
+      communityId: true,
+    },
+  });
+  const adminId = await prisma.community.findFirst({
+    where: {
+      adminId: user.id,
+      isDeleted: false,
+      deleteAt: null,
+    },
+    select: {
+      id: true,
     },
   });
 
@@ -2018,9 +2031,9 @@ export async function getParticipantsInPackage(
     throw new Error("ไม่พบแพ็กเกจที่คุณต้องการ");
   }
   if (
-    user?.role !== "superadmin" &&
     packageDetail.createById !== user.id &&
-    packageDetail.overseerMemberId !== user.id
+    packageDetail.overseerMemberId !== user.id &&
+    adminId?.id !== packageDetail.communityId
   ) {
     throw new Error("คุณไม่มีสิทธิ์เข้าถึง");
   }
