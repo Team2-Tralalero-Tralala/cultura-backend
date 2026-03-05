@@ -810,7 +810,10 @@ export async function cancelBookingHistory(
   if (!bookingHistory) {
     throw new Error("ไม่พบข้อมูลการจอง");
   }
-  if (bookingHistory.status !== BookingStatus.BOOKED) {
+  if (
+    bookingHistory.status !== BookingStatus.BOOKED &&
+    bookingHistory.status !== BookingStatus.PENDING
+  ) {
     throw new Error("ไม่สามารถยกเลิกข้อมูลการจองได้");
   }
 
