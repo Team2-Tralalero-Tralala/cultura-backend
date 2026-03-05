@@ -616,18 +616,21 @@ export const getPackageByRole = async (
           email: true,
         },
       },
-      bookingHistories: {
-        where: { status: "BOOKED" },
-        select: { id: true },
-      },
     },
     skip,
     take: limit,
   });
 
+  const packagesWithCount = await Promise.all(
+    packages.map(async (pkg) => ({
+      ...pkg,
+      bookedCount: await getBookedCount(pkg.id),
+    }))
+  );
+  
   const totalPages = Math.ceil(totalCount / limit);
   return {
-    data: packages,
+    data: packagesWithCount,
     pagination: { currentPage: page, totalPages, totalCount, limit },
   };
 };
@@ -992,21 +995,23 @@ export async function getPopularPackages() {
   });
 
   // นับจำนวนการจองที่สำเร็จและเรียงลำดับ
-  const packagesWithBookingCount = packages.map((pkg) => ({
-    id: pkg.id,
-    name: pkg.name,
-    description: pkg.description,
-    price: pkg.price,
-    capacity: pkg.capacity,
-    startDate: pkg.startDate,
-    dueDate: pkg.dueDate,
-    facility: pkg.facility,
-    community: pkg.community,
-    location: pkg.location,
-    coverImage: pkg.packageFile[0]?.filePath || null,
-    tags: pkg.tagPackages.map((tp) => tp.tag),
-    bookingCount: pkg.bookingHistories.length,
-  }));
+const packagesWithBookingCount = await Promise.all(
+    packages.map(async (pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description,
+      price: pkg.price,
+      capacity: pkg.capacity,
+      startDate: pkg.startDate,
+      dueDate: pkg.dueDate,
+      facility: pkg.facility,
+      community: pkg.community,
+      location: pkg.location,
+      coverImage: pkg.packageFile[0]?.filePath || null,
+      tags: pkg.tagPackages.map((tp) => tp.tag),
+      bookingCount: await getBookedCount(pkg.id), // ดึงจำนวนคนจองจริง
+    }))
+  );
 
   // เรียงตามจำนวนการจอง (มากไปน้อย) แล้วเลือก 40 อันแรก
   const popularPackages = packagesWithBookingCount
@@ -2126,4 +2131,24 @@ export async function updateParticipateStatus(
       isParticipate: true,
     },
   });
+}
+
+/*
+ * ฟังก์ชัน : getBookedCount
+ * คำอธิบาย : ใช้คำสั่ง Database เพื่อรวมจำนวนผู้เข้าร่วมทั้งหมดจากฟิลด์ totalParticipant
+ * Input : packageId (number)
+ * Output : ผลรวมจำนวนที่นั่งที่ถูกจองจริง (number)
+ */
+async function getBookedCount(packageId: number): Promise<number> {
+  const result = await prisma.bookingHistory.aggregate({
+    _sum: {
+      totalParticipant: true, 
+    },
+    where: {
+      packageId: packageId,
+      status: "BOOKED",
+    },
+  });
+
+  return result?._sum?.totalParticipant ?? 0;
 }
