@@ -627,9 +627,9 @@ export const getPackageByRole = async (
     packages.map(async (pkg) => ({
       ...pkg,
       bookedCount: await getBookedCount(pkg.id),
-    }))
+    })),
   );
-  
+
   const totalPages = Math.ceil(totalCount / limit);
   return {
     data: packagesWithCount,
@@ -997,7 +997,7 @@ export async function getPopularPackages() {
   });
 
   // นับจำนวนการจองที่สำเร็จและเรียงลำดับ
-const packagesWithBookingCount = await Promise.all(
+  const packagesWithBookingCount = await Promise.all(
     packages.map(async (pkg) => ({
       id: pkg.id,
       name: pkg.name,
@@ -1012,7 +1012,7 @@ const packagesWithBookingCount = await Promise.all(
       coverImage: pkg.packageFile[0]?.filePath || null,
       tags: pkg.tagPackages.map((tp) => tp.tag),
       bookingCount: await getBookedCount(pkg.id), // ดึงจำนวนคนจองจริง
-    }))
+    })),
   );
 
   // เรียงตามจำนวนการจอง (มากไปน้อย) แล้วเลือก 40 อันแรก
@@ -2031,6 +2031,7 @@ export async function getParticipantsInPackage(
     throw new Error("ไม่พบแพ็กเกจที่คุณต้องการ");
   }
   if (
+    user.role !== "superadmin" &&
     packageDetail.createById !== user.id &&
     packageDetail.overseerMemberId !== user.id &&
     adminId?.id !== packageDetail.communityId
@@ -2155,7 +2156,7 @@ export async function updateParticipateStatus(
 async function getBookedCount(packageId: number): Promise<number> {
   const result = await prisma.bookingHistory.aggregate({
     _sum: {
-      totalParticipant: true, 
+      totalParticipant: true,
     },
     where: {
       packageId: packageId,
