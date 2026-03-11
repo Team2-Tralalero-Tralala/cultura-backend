@@ -27,7 +27,7 @@ export const createAccountDto = {
  */
 export class AccountIdParamDto {
   @IsNumberString()
-  id?: number;
+  id?: string;
 }
 /**
  * DTO: editAccountDto
