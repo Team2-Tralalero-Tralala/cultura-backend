@@ -155,7 +155,7 @@ export async function createCommunity(community: CommunityDto) {
  */
 export async function editCommunity(
   communityId: number,
-  community: CommunityDto
+  community: CommunityDto,
 ) {
   const {
     location,
@@ -192,6 +192,13 @@ export async function editCommunity(
               type: img.type,
             })) ?? [],
         },
+        communityMembers: {
+          deleteMany: {},
+          create:
+            communityMembers?.map((memberId) => ({
+              memberId,
+            })) ?? [],
+        },
       },
       include: {
         location: true,
@@ -206,17 +213,6 @@ export async function editCommunity(
         },
       },
     });
-    await transaction.communityMembers.deleteMany({
-      where: { communityId },
-    });
-    if (community.communityMembers?.length) {
-      await transaction.communityMembers.createMany({
-        data: community.communityMembers.map((memberId) => ({
-          communityId,
-          memberId,
-        })),
-      });
-    }
     return updateCommunity;
   });
 }
@@ -257,19 +253,19 @@ export const getCommunityAll = async (
   id: number,
   page = 1,
   limit = 10,
-  search = "",      
-  status = "all"   
+  search = "",
+  status = "all",
 ): Promise<PaginationResponse<any>> => {
   if (!Number.isInteger(id)) throw new Error("ID must be Number");
 
-  const user = await prisma.user.findUnique({ 
+  const user = await prisma.user.findUnique({
     where: { id },
-     include: { role: true } 
+    include: { role: true },
   });
   if (!user || user.role?.name !== "superadmin") {
-    return { 
-      data: [], 
-      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit } 
+    return {
+      data: [],
+      pagination: { currentPage: page, totalPages: 0, totalCount: 0, limit },
     };
   }
 
@@ -277,12 +273,12 @@ export const getCommunityAll = async (
     isDeleted: false,
     deleteAt: null,
   };
-  
-  if (status && status !== 'all') {
+
+  if (status && status !== "all") {
     // แปลง string เป็น Enum (OPEN/CLOSED)
     const statusEnum = status.toUpperCase() as CommunityStatus;
     if (Object.values(CommunityStatus).includes(statusEnum)) {
-        whereCondition.status = statusEnum;
+      whereCondition.status = statusEnum;
     }
   }
   if (search) {
@@ -337,7 +333,7 @@ export const getCommunityAll = async (
  */
 export async function getCommunityDetailById(
   userId: number,
-  communityId: number
+  communityId: number,
 ) {
   if (
     !Number.isInteger(userId) ||
@@ -374,7 +370,7 @@ export async function getCommunityDetailById(
       },
 
       homestays: {
-        where:{
+        where: {
           isDeleted: false,
           deleteAt: null,
         },
@@ -608,7 +604,7 @@ export async function getCommunityDetailByAdmin(userId: number) {
  */
 export async function editCommunityByAdmin(
   user: UserPayload,
-  communityData: CommunityDto
+  communityData: CommunityDto,
 ) {
   const { location, adminId, communityImage, communityMembers, ...data } =
     communityData;
@@ -641,6 +637,13 @@ export async function editCommunityByAdmin(
           communityImage?.map((img) => ({
             image: img.image,
             type: img.type,
+          })) ?? [],
+      },
+      communityMembers: {
+        deleteMany: {},
+        create:
+          communityMembers?.map((memberId) => ({
+            memberId,
           })) ?? [],
       },
     },
