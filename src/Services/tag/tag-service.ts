@@ -26,8 +26,35 @@ export async function createTag(tag: TagDto) {
 export async function deleteTagById(tagId: number) {
   const findTag = await prisma.tag.findUnique({
     where: { id: tagId, isDeleted: false },
+    include: {
+      _count: {
+        select: {
+          tagHomestays: {
+            where: {
+              homestay: { isDeleted: false },
+            },
+          },
+          tagPackages: {
+            where: {
+              package: { isDeleted: false },
+            },
+          },
+          tagStores: {
+            where: {
+              store: { isDeleted: false },
+            },
+          },
+        },
+      },
+    },
   });
   if (!findTag) throw new Error("ไม่พบประเภทที่ต้องการลบ");
+
+  const totalUsed =
+    findTag._count.tagHomestays +
+    findTag._count.tagPackages +
+    findTag._count.tagStores;
+  if (totalUsed > 0) throw new Error("ไม่สามารถลบประเภทที่มีการใช้งานอยู่ได้");
 
   return await prisma.tag.update({
     where: { id: tagId },
@@ -71,6 +98,27 @@ export async function getAllTags(
       take: limit,
       where: whereCondition,
       orderBy: { id: "asc" },
+      include: {
+        _count: {
+          select: {
+            tagHomestays: {
+              where: {
+                homestay: { isDeleted: false },
+              },
+            },
+            tagPackages: {
+              where: {
+                package: { isDeleted: false },
+              },
+            },
+            tagStores: {
+              where: {
+                store: { isDeleted: false },
+              },
+            },
+          },
+        },
+      },
     }),
     prisma.tag.count({
       where: whereCondition,
@@ -79,8 +127,18 @@ export async function getAllTags(
 
   const totalPages = Math.ceil(totalCount / limit);
 
+  const mappedTags = tags.map((tag) => {
+    const totalUsed =
+      tag._count.tagHomestays + tag._count.tagPackages + tag._count.tagStores;
+    const { _count, ...rest } = tag;
+    return {
+      ...rest,
+      isUsed: totalUsed > 0,
+    };
+  });
+
   return {
-    data: tags,
+    data: mappedTags,
     pagination: {
       currentPage: page,
       limit,
