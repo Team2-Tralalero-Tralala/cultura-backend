@@ -48,7 +48,12 @@ function compressVideo(filePath: string): Promise<void> {
         const temp = filePath + ".tmp.mp4";
         ffmpeg(filePath)
             // Use ultrafast preset to make compression much faster
-            .outputOptions("-vcodec libx264", "-crf 28", "-preset ultrafast")
+            // Split options correctly to prevent "Unrecognized option 'vcodec libx264'" error
+            .outputOptions([
+                "-vcodec", "libx264",
+                "-crf", "28",
+                "-preset", "ultrafast"
+            ])
             .save(temp)
             .on("end", async () => {
                 await fs.promises.rename(temp, filePath);
