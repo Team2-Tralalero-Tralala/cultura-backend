@@ -491,66 +491,66 @@ export const getHomestaysAll = async (
  * อธิบาย : ดึง homestay ทั้งหมดของชุมชนที่ admin คนนั้นดูแล
  * Mapping : GET /admin/community/homestays/all
  */
-export const getHomestaysAllAdmin = async (
+export async function getHomestaysAllAdmin(
   userId: number,
   page: number = 1,
-  limit: number = 10
-): Promise<PaginationResponse<any>> => {
-  if (!Number.isInteger(userId)) {
-    throw new Error("User ID must be a number");
-  }
-
-  // ตรวจสอบสิทธิ์ผู้ใช้
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { role: true },
-  });
-  if (!user) throw new Error("User not found");
-
-  const role = user.role?.name?.toLowerCase();
-  if (role !== "admin") {
-    throw new Error("Forbidden: Only Admin can access this route");
-  }
-
-  // หา community ที่ admin ดูแล
+  limit: number = 10,
+  search?: string
+) {
+  // ตรวจสอบสิทธิ์ Admin และหาชุมชนที่ดูแล
   const community = await prisma.community.findFirst({
-    where: { adminId: userId, isDeleted: false },
-  });
-  if (!community) throw new Error("Admin has no assigned community");
-
-  const communityId = community.id;
-
-  // Pagination
-  const skip = (page - 1) * limit;
-
-  // ดึงข้อมูล homestay
-  const totalCount = await prisma.homestay.count({
-    where: { communityId, isDeleted: false },
-  });
-
-  const homestays = await prisma.homestay.findMany({
-    where: { communityId, isDeleted: false },
-    orderBy: { id: "asc" },
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      facility: true,
+    where: { 
+      adminId: userId, 
+      isDeleted: false 
     },
   });
+
+  if (!community) {
+    throw new Error("Admin has no assigned community");
+  }
+
+  // กำหนดเงื่อนไขการค้นหา (Where Condition)
+  const whereCondition: any = { 
+    communityId: community.id, 
+    isDeleted: false 
+  };
+
+  if (search) {
+    whereCondition.name = { contains: search };
+  }
+
+  // ดึงข้อมูลและนับจำนวนพร้อมกัน
+  const [homestays, totalCount] = await Promise.all([
+    prisma.homestay.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      where: whereCondition,
+      orderBy: { id: "asc" },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        facility: true,
+      },
+    }),
+    prisma.homestay.count({
+      where: whereCondition,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   return {
     data: homestays,
     pagination: {
       currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-      totalCount,
       limit,
+      totalCount,
+      totalPages,
     },
   };
-};
+}
+
 /*
  * (Helper ใหม่)
  * คำอธิบาย : ตรวจสิทธิ์ว่าผู้ใช้เป็น Admin และดึง communityId ที่ผูกกับ Admin
