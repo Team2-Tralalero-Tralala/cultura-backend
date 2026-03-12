@@ -323,16 +323,22 @@ export const createHomestayAdmin = async (req: Request, res: Response) => {
  * Input : req.user.id (รหัสผู้ดูแลที่เข้าสู่ระบบ)
  * Output : ส่งกลับรายการโฮมสเตย์ทั้งหมดของชุมชนในรูปแบบ JSON (status 200)
  */
-export const getHomestaysAllAdmin: TypedHandlerFromDto<
-    typeof getHomestaysAllDto
-> = async (req, res) => {
-    try {
-        const userId = Number(req.user!.id);
-        const result = await HomestayService.getHomestaysAllAdmin(userId);
-        return createResponse(res, 200, "get homestay successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 400, (error as Error).message);
-    }
+export const getHomestaysAllAdmin: TypedHandlerFromDto<typeof getHomestaysAllDto> = async (req, res) => {
+  try {
+    const userId = Number(req.user!.id);
+    const { page = 1, limit = 10, search } = req.query;
+
+    const result = await HomestayService.getHomestaysAllAdmin(
+      userId,
+      Number(page),
+      Number(limit),
+      search ? String(search) : undefined
+    );
+
+    return createResponse(res, 200, "get homestays successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 400, (error as Error).message);
+  }
 };
 /*
  * คำอธิบาย : แก้ไข Homestay
