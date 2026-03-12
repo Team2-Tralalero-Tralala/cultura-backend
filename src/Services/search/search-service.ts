@@ -31,6 +31,7 @@ export async function searchPackagesAndCommunities(
   priceMax: number | undefined,
   startDateStr: string | undefined,
   endDateStr: string | undefined,
+  searchRange: "singleDay" | "MultipleDay" | undefined,
   page: number = 1,
   limit: number = 10,
   sort: "latest" | "price-low" | "price-high" | "popular" | undefined = "latest"
@@ -66,6 +67,15 @@ export async function searchPackagesAndCommunities(
   const startDateFilter = startDateStr ? parseSearchDateParam(startDateStr, "start") : null;
   const endDateFilter = endDateStr ? parseSearchDateParam(endDateStr, "end") : null;
   const now = new Date();
+  const isSameCalendarDay = (firstDate: Date, secondDate: Date): boolean =>
+    firstDate.getFullYear() === secondDate.getFullYear() &&
+    firstDate.getMonth() === secondDate.getMonth() &&
+    firstDate.getDate() === secondDate.getDate();
+
+  const isMultipleDayPackage = (packageStartDate?: Date | null, packageDueDate?: Date | null): boolean => {
+    if (!packageStartDate || !packageDueDate) return false;
+    return !isSameCalendarDay(packageStartDate, packageDueDate);
+  };
 
   // ค้นหา tag records ถ้ามี tags (ใช้ exact match)
   let tagIds: number[] = [];
@@ -197,14 +207,8 @@ export async function searchPackagesAndCommunities(
     }
   }
 
-  // นับจำนวนแพ็กเกจทั้งหมด
-  const totalCount = await prisma.package.count({
-    where: packageWhereConditions,
-  });
-
-  // คำนวณ skip และ totalPages
+  // คำนวณ skip สำหรับ pagination
   const skip = (page - 1) * limit;
-  const totalPages = Math.ceil(totalCount / limit);
 
   // กำหนด orderBy ตาม sort parameter
   let orderBy: any;
@@ -228,8 +232,9 @@ export async function searchPackagesAndCommunities(
       break;
   }
 
-  // ค้นหาแพ็กเกจ (พร้อม pagination)
-  // สำหรับ popular ต้อง include bookingHistories เพื่อนับจำนวนการจอง
+  // ค้นหาแพ็กเกจ
+  // - popular: ดึงทั้งหมดเพื่อ sort ตามจำนวนการจอง
+  // - searchRange: ดึงทั้งหมดเพื่อกรอง singleDay/MultipleDay ก่อนคำนวณ pagination
   const baseSelect = {
     id: true,
     name: true,
@@ -276,8 +281,7 @@ export async function searchPackagesAndCommunities(
   };
 
   let foundPackages: any[];
-  if (needBookingCount) {
-    // สำหรับ popular ต้องดึงทั้งหมดก่อนเพื่อ sort ตามจำนวนการจอง
+  if (needBookingCount || searchRange) {
     foundPackages = await prisma.package.findMany({
       where: packageWhereConditions,
       select: {
@@ -294,7 +298,6 @@ export async function searchPackagesAndCommunities(
       orderBy,
     });
   } else {
-    // สำหรับ sort อื่นๆ ใช้ pagination ตามปกติ
     foundPackages = await prisma.package.findMany({
       where: packageWhereConditions,
       select: baseSelect,
@@ -304,29 +307,60 @@ export async function searchPackagesAndCommunities(
     });
   }
 
+  // กรองตามช่วงประเภททริป (singleDay/MultipleDay)
+  let rangeFilteredPackages: any[] = foundPackages;
+  if (searchRange === "singleDay") {
+    rangeFilteredPackages = foundPackages.filter(
+      (pkg) => !isMultipleDayPackage(pkg.startDate, pkg.dueDate)
+    );
+  } else if (searchRange === "MultipleDay") {
+    rangeFilteredPackages = foundPackages.filter((pkg) =>
+      isMultipleDayPackage(pkg.startDate, pkg.dueDate)
+    );
+  }
+
   // ถ้าเป็น popular ให้ sort ตามจำนวนการจอง
   let sortedPackages: any[];
   if (needBookingCount) {
-    sortedPackages = foundPackages
+    sortedPackages = rangeFilteredPackages
       .map((pkg: any) => ({
         ...pkg,
         bookingCount: pkg.bookingHistories?.length || 0,
       }))
       .sort((a: any, b: any) => b.bookingCount - a.bookingCount)
-      .slice(skip, skip + limit)
       .map(({ bookingCount, bookingHistories, ...pkg }: any) => pkg);
   } else {
-    sortedPackages = foundPackages;
+    sortedPackages = rangeFilteredPackages;
   }
 
+  const totalCount = sortedPackages.length;
+  const totalPages = Math.ceil(totalCount / limit);
+  const paginatedPackages = needBookingCount || searchRange
+    ? sortedPackages.slice(skip, skip + limit)
+    : sortedPackages;
+
+  const mappedPackages = paginatedPackages.map((pkg) => ({
+    id: pkg.id,
+    name: pkg.name,
+    description: pkg.description,
+    price: pkg.price,
+    capacity: pkg.capacity,
+    startDate: pkg.startDate,
+    dueDate: pkg.dueDate,
+    facility: pkg.facility,
+    community: pkg.community,
+    location: pkg.location,
+    coverImage: pkg.packageFile[0]?.filePath || null,
+    tags: pkg.tagPackages.map((tagPackage: any) => tagPackage.tag),
+  }));
+
+  const communityPackagesForLookup =
+    needBookingCount || searchRange ? sortedPackages : foundPackages;
+
   // ดึง community IDs จากแพ็กเกจทั้งหมดที่พบ (ไม่ใช่แค่หน้าที่เลือก)
-  const allPackagesForCommunities = await prisma.package.findMany({
-    where: packageWhereConditions,
-    select: {
-      communityId: true,
-    },
-  });
-  const packageCommunityIds = [...new Set(allPackagesForCommunities.map((pkg) => pkg.communityId))];
+  const packageCommunityIds = [
+    ...new Set(communityPackagesForLookup.map((pkg) => pkg.communityId)),
+  ];
 
   // สร้างเงื่อนไข OR สำหรับชุมชน
   const communityOrConditions: any[] = [];
@@ -359,20 +393,7 @@ export async function searchPackagesAndCommunities(
   if (communityOrConditions.length === 0) {
     return {
       packages: {
-        data: sortedPackages.map((pkg) => ({
-          id: pkg.id,
-          name: pkg.name,
-          description: pkg.description,
-          price: pkg.price,
-          capacity: pkg.capacity,
-          startDate: pkg.startDate,
-          dueDate: pkg.dueDate,
-          facility: pkg.facility,
-          community: pkg.community,
-          location: pkg.location,
-          coverImage: pkg.packageFile[0]?.filePath || null,
-          tags: pkg.tagPackages.map((tagPackage: any) => tagPackage.tag),
-        })),
+        data: mappedPackages,
         pagination: {
           currentPage: page,
           totalPages,
@@ -425,21 +446,8 @@ export async function searchPackagesAndCommunities(
 
   return {
     packages: {
-      data: sortedPackages.map((pkg) => ({
-        id: pkg.id,
-        name: pkg.name,
-        description: pkg.description,
-        price: pkg.price,
-        capacity: pkg.capacity,
-        startDate: pkg.startDate,
-        dueDate: pkg.dueDate,
-        facility: pkg.facility,
-        community: pkg.community,
-        location: pkg.location,
-          coverImage: pkg.packageFile[0]?.filePath || null,
-          tags: pkg.tagPackages.map((tagPackage: any) => tagPackage.tag),
-        })),
-        pagination: {
+      data: mappedPackages,
+      pagination: {
         currentPage: page,
         totalPages,
         totalCount,

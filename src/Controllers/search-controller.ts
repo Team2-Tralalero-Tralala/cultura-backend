@@ -9,7 +9,7 @@ import * as SearchService from "../Services/search/search-service.js";
 /**
  * DTO : searchDto
  * วัตถุประสงค์ : กำหนด schema ของ query สำหรับค้นหาแพ็กเกจและชุมชน
- * Input : req.query - search, tag, tags, priceMin, priceMax, sort, page, limit
+ * Input : req.query - search, tag, tags, priceMin, priceMax, sort, searchRange, page, limit
  * Output : 200 - ข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
  * 400 - Error message
  */
@@ -19,7 +19,7 @@ export const searchDto = {
 
 /*
  * คำอธิบาย : Handler สำหรับค้นหาแพ็กเกจและชุมชน
- * Input : req.query.search, req.query.tag (array), req.query.tags (comma-separated), req.query.priceMin, req.query.priceMax, req.query.sort, req.query.page, req.query.limit
+ * Input : req.query.search, req.query.tag (array), req.query.tags (comma-separated), req.query.priceMin, req.query.priceMax, req.query.sort, req.query.searchRange, req.query.page, req.query.limit
  * Output :
  *   - 200 OK พร้อมข้อมูลแพ็กเกจและชุมชนที่เกี่ยวข้อง
  *   - 400 Bad Request ถ้ามี error หรือไม่ระบุ search/tag อย่างใดอย่างหนึ่ง
@@ -37,6 +37,7 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
     const sort = (req.query.sort as "latest" | "price-low" | "price-high" | "popular" | undefined) ?? "latest";
+    const searchRange = req.query.searchRange as "singleDay" | "MultipleDay" | undefined;
     const page = (req.query.page as number) ?? 1;
     const limit = (req.query.limit as number) ?? 10;
 
@@ -125,6 +126,7 @@ export const search: TypedHandlerFromDto<typeof searchDto> = async (
       priceMax,
       startDate,
       endDate,
+      searchRange,
       page,
       limit,
       sort

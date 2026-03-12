@@ -840,8 +840,20 @@ export const getPackagesByMember = (
 /*
  * คำอธิบาย : (Delegate) ดึงรายการแพ็กเกจสำหรับ Tourist
  */
-export const getPackagesByTourist = (userId: number, page = 1, limit = 10) =>
-  getPackageByRole(userId, page, limit);
+export const getPackagesByTourist = async (
+  userId: number,
+  page = 1,
+  limit = 10,
+) => {
+  const packageResult = await getPackageByRole(userId, page, limit);
+  return {
+    ...packageResult,
+    data: packageResult.data.map((packageItem: any) => ({
+      ...packageItem,
+      booked: packageItem.bookedCount ?? 0,
+    })),
+  };
+};
 
 /*
  * คำอธิบาย : ดึงรายการแพ็กเกจใหม่ 40 อัน (Public API)
@@ -902,6 +914,14 @@ export async function getNewestPackages() {
           },
         },
       },
+      bookingHistories: {
+        where: {
+          status: "BOOKED",
+        },
+        select: {
+          totalParticipant: true,
+        },
+      },
     },
     orderBy: {
       id: "desc",
@@ -909,20 +929,29 @@ export async function getNewestPackages() {
     take: 40,
   });
 
-  return packages.map((pkg) => ({
-    id: pkg.id,
-    name: pkg.name,
-    description: pkg.description,
-    price: pkg.price,
-    capacity: pkg.capacity,
-    startDate: pkg.startDate,
-    dueDate: pkg.dueDate,
-    facility: pkg.facility,
-    community: pkg.community,
-    location: pkg.location,
-    coverImage: pkg.packageFile[0]?.filePath || null,
-    tags: pkg.tagPackages.map((tp) => tp.tag),
-  }));
+  return packages.map((packageItem) => {
+    const booked = packageItem.bookingHistories.reduce(
+      (totalBooked, bookingHistory) =>
+        totalBooked + (bookingHistory.totalParticipant || 0),
+      0,
+    );
+
+    return {
+      id: packageItem.id,
+      name: packageItem.name,
+      description: packageItem.description,
+      price: packageItem.price,
+      capacity: packageItem.capacity,
+      startDate: packageItem.startDate,
+      dueDate: packageItem.dueDate,
+      facility: packageItem.facility,
+      community: packageItem.community,
+      location: packageItem.location,
+      coverImage: packageItem.packageFile[0]?.filePath || null,
+      tags: packageItem.tagPackages.map((tagPackage) => tagPackage.tag),
+      booked,
+    };
+  });
 }
 
 /*
@@ -990,36 +1019,43 @@ export async function getPopularPackages() {
           status: "BOOKED",
         },
         select: {
-          id: true,
+          totalParticipant: true,
         },
       },
     },
   });
 
   // นับจำนวนการจองที่สำเร็จและเรียงลำดับ
-  const packagesWithBookingCount = await Promise.all(
-    packages.map(async (pkg) => ({
-      id: pkg.id,
-      name: pkg.name,
-      description: pkg.description,
-      price: pkg.price,
-      capacity: pkg.capacity,
-      startDate: pkg.startDate,
-      dueDate: pkg.dueDate,
-      facility: pkg.facility,
-      community: pkg.community,
-      location: pkg.location,
-      coverImage: pkg.packageFile[0]?.filePath || null,
-      tags: pkg.tagPackages.map((tp) => tp.tag),
-      bookingCount: await getBookedCount(pkg.id), // ดึงจำนวนคนจองจริง
-    })),
-  );
+  const packagesWithBookingCount = packages.map((packageItem) => {
+    const booked = packageItem.bookingHistories.reduce(
+      (totalBooked, bookingHistory) =>
+        totalBooked + (bookingHistory.totalParticipant || 0),
+      0,
+    );
+
+    return {
+      id: packageItem.id,
+      name: packageItem.name,
+      description: packageItem.description,
+      price: packageItem.price,
+      capacity: packageItem.capacity,
+      startDate: packageItem.startDate,
+      dueDate: packageItem.dueDate,
+      facility: packageItem.facility,
+      community: packageItem.community,
+      location: packageItem.location,
+      coverImage: packageItem.packageFile[0]?.filePath || null,
+      tags: packageItem.tagPackages.map((tagPackage) => tagPackage.tag),
+      booked,
+      bookingCount: booked,
+    };
+  });
 
   // เรียงตามจำนวนการจอง (มากไปน้อย) แล้วเลือก 40 อันแรก
   const popularPackages = packagesWithBookingCount
     .sort((a, b) => b.bookingCount - a.bookingCount)
     .slice(0, 40)
-    .map(({ bookingCount, ...pkg }) => pkg); // ลบ bookingCount ออกจากผลลัพธ์
+    .map(({ bookingCount, ...packageItem }) => packageItem); // ลบ bookingCount ออกจากผลลัพธ์
 
   return popularPackages;
 }
