@@ -33,6 +33,7 @@ services:
     environment:
       PMA_HOST: db # or cultura_db (service/container name)
       PMA_PORT: "3306" # use container port, not host port
+      PMA_ALLOW_USER_DROP_DATABASE: 1
     ports:
       - "${PHPMYADMIN_PORT:-4880}:80" # host port parameterized
     depends_on:
