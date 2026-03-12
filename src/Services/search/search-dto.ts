@@ -86,6 +86,14 @@ export class SearchQueryDto extends PaginationDto {
 
   @Expose()
   @IsOptional()
+  @IsString({ message: "searchRange ต้องเป็นข้อความ" })
+  @IsIn(["singleDay", "MultipleDay"], {
+    message: "searchRange ต้องเป็นหนึ่งใน: singleDay, MultipleDay",
+  })
+  searchRange?: "singleDay" | "MultipleDay";
+
+  @Expose()
+  @IsOptional()
   @IsString({ message: "startDate ต้องเป็นข้อความ" })
   startDate?: string;
 
