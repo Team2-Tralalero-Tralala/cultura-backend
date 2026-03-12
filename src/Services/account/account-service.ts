@@ -49,15 +49,31 @@ export async function createAccount(body: CreateAccountDto) {
   let roleConnect;
   let roleNameCheck = "";
 
-  if (body.roleId) {
-    roleConnect = { id: Number(body.roleId) };
-    // เช็ค Role เพื่อความชัวร์ (เหมือนเดิม)
-    const role = await prisma.role.findUnique({ where: { id: body.roleId } });
+  if (body.roleName) {
+    let expectedRoleName = body.roleName.toLowerCase();
+
+    const role = await prisma.role.findFirst({
+      where: {
+        OR: [
+          { name: expectedRoleName },
+          { name: expectedRoleName.toUpperCase() },
+          { name: expectedRoleName.toLowerCase() },
+        ],
+      },
+    });
+
     if (!role) throw new Error("role_not_found");
+    roleConnect = { id: role.id };
     roleNameCheck = role.name;
   } else {
-    // ถ้าไม่มี roleId ให้ Default เป็น MEMBER โดยใช้ Name
-    roleConnect = { name: "MEMBER" };
+    // ถ้าไม่มี roleName ให้ Default เป็น MEMBER โดยใช้ Name
+    const role = await prisma.role.findFirst({
+      where: {
+        OR: [{ name: "member" }, { name: "MEMBER" }],
+      },
+    });
+    if (!role) throw new Error("role_not_found");
+    roleConnect = { id: role.id };
     roleNameCheck = "member";
   }
 
@@ -86,8 +102,8 @@ export async function createAccount(body: CreateAccountDto) {
     if (duplicate.phone === body.phone) throw new Error("duplicate_phone");
   }
 
-  // แยก roleId ออกจาก body เพราะเราจะใช้ connect แทน
-  const { roleId, ...restBody } = body;
+  // แยก roleName ออกจาก body เพราะเราจะใช้ connect แทน
+  const { roleName, ...restBody } = body;
 
   // 4. Create User
   const created = await prisma.user.create({
@@ -180,6 +196,26 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     }
   }
 
+  // Map roleName from frontend to database ID if present
+  let finalRoleId: number | undefined = undefined;
+
+  if (body.roleName) {
+    const expectedRoleName = body.roleName.toLowerCase();
+
+    const mappedRole = await prisma.role.findFirst({
+      where: {
+        OR: [
+          { name: expectedRoleName },
+          { name: expectedRoleName.toUpperCase() },
+          { name: expectedRoleName.toLowerCase() },
+        ],
+      },
+      select: { id: true, name: true }
+    });
+    if (!mappedRole) throw new Error("role_not_found");
+    finalRoleId = mappedRole.id;
+  }
+
   // Prepare Data
   const data: any = {
     ...(body.fname && { fname: body.fname }),
@@ -195,7 +231,7 @@ export async function editAccount(userId: number, body: EditAccountDto) {
     ...(body.district && { district: body.district }),
     ...(body.subDistrict && { subDistrict: body.subDistrict }),
     ...(body.postalCode && { postalCode: body.postalCode }),
-    ...(body.roleId && { roleId: body.roleId }),
+    ...(finalRoleId && { roleId: finalRoleId }),
   };
 
   if (body.password && body.password.trim() !== "") {
@@ -203,9 +239,9 @@ export async function editAccount(userId: number, body: EditAccountDto) {
   }
 
   // Logic เคลียร์ข้อมูลเมื่อเปลี่ยน Role
-  if (body.roleId) {
+  if (finalRoleId) {
     const role = await prisma.role.findUnique({
-      where: { id: body.roleId },
+      where: { id: finalRoleId },
       select: { name: true },
     });
 
