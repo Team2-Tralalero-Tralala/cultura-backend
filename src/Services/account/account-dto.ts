@@ -18,9 +18,9 @@ export class CreateAccountDto {
   profileImage?: string | null;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
-  roleId?: number;
+  @IsString()
+  roleName?: string;
+
 
   @IsString()
   @MinLength(1)
@@ -118,9 +118,8 @@ export class EditAccountDto {
   password?: string;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
-  roleId?: number;
+  @IsString()
+  roleName?: string;
 
   @IsOptional()
   @IsInt()
