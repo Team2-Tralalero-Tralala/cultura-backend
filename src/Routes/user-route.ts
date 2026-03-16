@@ -34,7 +34,7 @@ userRoutes.post(
   upload.single("profileImage"),
   compressUploadedFile,
   validateDto(UserController.createAccountDto),
-  UserController.createAccount
+  UserController.createAccount,
 );
 
 /*
@@ -48,7 +48,7 @@ userRoutes.put(
   allowRoles("superadmin"),
   upload.single("profileImage"),
   compressUploadedFile,
-  UserController.updateProfileImage
+  UserController.updateProfileImage,
 );
 
 /*
@@ -62,7 +62,7 @@ userRoutes.put(
   allowRoles("admin"),
   upload.single("profileImage"),
   compressUploadedFile,
-  UserController.updateProfileImage
+  UserController.updateProfileImage,
 );
 
 /**
@@ -73,8 +73,8 @@ userRoutes.put(
  *       - Admin - Member
  *     summary: Get all members by admin
  *     description: |
- *       ดึงรายการสมาชิกทั้งหมด สำหรับผู้ใช้ที่มีสิทธิ์ **admin**  
- *       รองรับการกรอง/ค้นหาตามเงื่อนไขจาก `getMemberAllByAdminDto`  
+ *       ดึงรายการสมาชิกทั้งหมด สำหรับผู้ใช้ที่มีสิทธิ์ **admin**
+ *       รองรับการกรอง/ค้นหาตามเงื่อนไขจาก `getMemberAllByAdminDto`
  *       Response ทุกกรณีอยู่ในรูปแบบ `createResponse` / `createErrorResponse`
  *     security:
  *       - bearerAuth: []
@@ -230,7 +230,7 @@ userRoutes.get(
   authMiddleware,
   allowRoles("admin"),
   validateDto(UserController.getMemberAllByAdminDto),
-  UserController.getMemberAllByAdmin
+  UserController.getMemberAllByAdmin,
 );
 
 /**
@@ -308,7 +308,7 @@ userRoutes.get(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(UserController.getAccountsDto),
-  UserController.getAccountAll
+  UserController.getAccountAll,
 );
 
 /**
@@ -382,7 +382,7 @@ userRoutes.get(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(UserController.getUserByStatusDto),
-  UserController.getUserByStatus
+  UserController.getUserByStatus,
 );
 
 /**
@@ -441,7 +441,7 @@ userRoutes.get(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(UserController.getUserByIdDto),
-  UserController.getUserById
+  UserController.getUserById,
 );
 
 /**
@@ -500,7 +500,7 @@ userRoutes.get(
   authMiddleware,
   allowRoles("admin"),
   validateDto(UserController.getUserByIdDto),
-  UserController.getMemberByAdmin
+  UserController.getMemberByAdmin,
 );
 
 // userRoutes.get(
@@ -567,7 +567,7 @@ userRoutes.patch(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(UserController.deleteAccountByIdDto),
-  UserController.deleteAccountById
+  UserController.deleteAccountById,
 );
 
 /**
@@ -626,7 +626,7 @@ userRoutes.put(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(UserController.blockAccountByIdDto),
-  UserController.blockAccountById
+  UserController.blockAccountById,
 );
 
 /**
@@ -685,7 +685,7 @@ userRoutes.put(
   authMiddleware,
   allowRoles("superadmin"),
   validateDto(UserController.unblockAccountByIdDto),
-  UserController.unblockAccountById
+  UserController.unblockAccountById,
 );
 
 /**
@@ -778,55 +778,11 @@ userRoutes.put(
  *               message: "User not found"
  */
 userRoutes.patch(
-  "/super/account/:userId/reset-password",
+  "/shared/account/:userId/reset-password",
   validateDto(UserController.resetPasswordDto),
   authMiddleware,
-  allowRoles("superadmin"),
-  UserController.resetPassword
-);
-
-/**
- * @swagger
- * /api/admin/member/{userId}/reset-password:
- *   patch:
- *     summary: รีเซ็ตรหัสผ่านของสมาชิก (เฉพาะ Admin)
- *     description: Admin สามารถรีเซ็ตรหัสผ่านใหม่ให้สมาชิกในชุมชนที่กำหนด โดยต้องระบุ userId ผ่าน path parameter และส่งข้อมูลรหัสผ่านใหม่ใน body
- *     tags:
- *       - Admin - Member
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         description: รหัส ID ของสมาชิกที่ต้องการรีเซ็ตรหัสผ่าน
- *         schema:
- *           type: integer
- *           example: 1
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - newPassword
- *             properties:
- *               newPassword:
- *                 type: string
- *                 maxLength: 80
- *                 description: รหัสผ่านใหม่ของผู้ใช้
- *                 example: "NewP@ssword123"
- *     responses:
- *       200:
- *         description: รีเซ็ตรหัสผ่านสำเร็จ
- */
-userRoutes.patch(
-  "/admin/member/:userId/reset-password",
-  validateDto(UserController.resetPasswordDto),
-  authMiddleware,
-  allowRoles("admin"),
-  UserController.resetPassword
+  allowRoles("superadmin", "admin"),
+  UserController.resetPassword,
 );
 
 /**
@@ -978,7 +934,7 @@ userRoutes.post(
   authMiddleware,
   allowRoles("superadmin", "admin", "member", "tourist"),
   validateDto(UserController.changePasswordDto),
-  UserController.changePassword
+  UserController.changePassword,
 );
 
 /**
@@ -1046,7 +1002,7 @@ userRoutes.patch(
   authMiddleware,
   allowRoles("admin"),
   validateDto(UserController.deleteCommunityMemberByIdDto),
-  UserController.deleteCommunityMemberById
+  UserController.deleteCommunityMemberById,
 );
 
 //  ดึงบัญชีผู้ใช้ทั้งหมด role Admin (พร้อม search / filterRole / pagination)
@@ -1055,7 +1011,7 @@ userRoutes.get(
   authMiddleware, // ตรวจสอบ token ก่อน
   allowRoles("admin"), // ตรวจสอบสิทธิ์
   validateDto(UserController.getAccountsDto), // ตรวจสอบ query parameters
-  UserController.getAccountAll
+  UserController.getAccountAll,
 );
 
 userRoutes.patch(
@@ -1063,6 +1019,6 @@ userRoutes.patch(
   authMiddleware,
   allowRoles("admin"),
   validateDto(UserController.softDeleteCommunityMemberByIdDto),
-  UserController.softDeleteCommunityMemberById
+  UserController.softDeleteCommunityMemberById,
 );
 export default userRoutes;

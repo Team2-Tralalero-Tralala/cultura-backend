@@ -21,10 +21,7 @@ import type {
 } from "~/Libs/Types/TypedHandler.js";
 import { PaginationDto } from "~/Services/pagination-dto.js";
 import { PasswordDto } from "~/Services/user/password-dto.js";
-import {
-  CreateAccountDto,
-  IdParamDto,
-} from "~/Services/user/user-dto.js";
+import { CreateAccountDto, IdParamDto } from "~/Services/user/user-dto.js";
 import * as UserService from "../Services/user/user-service.js";
 
 /**
@@ -49,7 +46,7 @@ export const getUserByIdDto = {
  */
 export const getUserById: TypedHandlerFromDto<typeof getUserByIdDto> = async (
   req,
-  res
+  res,
 ) => {
   try {
     const userId = Number(req.params.userId);
@@ -94,7 +91,7 @@ export const getAccountsDto = {
  */
 export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
   req,
-  res
+  res,
 ) => {
   try {
     if (!req.user)
@@ -103,7 +100,7 @@ export const getAccountAll: TypedHandlerFromDto<typeof getAccountsDto> = async (
     const userData = await UserService.getAccountAll(
       req.user,
       Number(page),
-      Number(limit)
+      Number(limit),
     );
 
     return createResponse(res, 200, "Accounts fetched successfully", userData);
@@ -149,7 +146,7 @@ export const getUserByStatus: TypedHandlerFromDto<
       return createErrorResponse(
         res,
         400,
-        "Invalid status. Must be ACTIVE or BLOCKED"
+        "Invalid status. Must be ACTIVE or BLOCKED",
       );
     }
 
@@ -157,7 +154,7 @@ export const getUserByStatus: TypedHandlerFromDto<
       req.user,
       status as UserStatus,
       Number(page),
-      Number(limit)
+      Number(limit),
     );
 
     return createResponse(res, 200, "Users fetched successfully", userData);
@@ -251,7 +248,7 @@ export const unblockAccountById: TypedHandlerFromDto<
       res,
       200,
       "User unblocked successfully",
-      unblockedUser
+      unblockedUser,
     );
   } catch (caughtError) {
     return createErrorResponse(res, 404, (caughtError as Error).message);
@@ -331,7 +328,7 @@ export const updateProfileImage = async (req: Request, res: Response) => {
       const oldPath = path.resolve(
         process.cwd(),
         "uploads",
-        oldImage.replace(/^\//, "")
+        oldImage.replace(/^\//, ""),
       );
       try {
         if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
@@ -399,13 +396,15 @@ export const resetPassword: TypedHandlerFromDto<
 > = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
-    const result = await UserService.resetPassword(userId, req.body);
+    if (!req.user)
+      return createErrorResponse(res, 401, "User not authenticated");
+    const result = await UserService.resetPassword(userId, req.body, req.user);
     return createResponse(res, 200, "Reset new password successfully", result);
   } catch (error) {
     return createErrorResponse(res, 400, (error as Error).message);
   }
 };
-/* 
+/*
  * DTO : ChangePasswordDto
  * วัตถุประสงค์ : กำหนด schema ของ query สำหรับเปลี่ยนรหัสผ่าน
  * Input : req.body - currentPassword, newPassword, confirmNewPassword
@@ -413,17 +412,17 @@ export const resetPassword: TypedHandlerFromDto<
  * 400 - Error message
  */
 export class ChangePasswordDto {
-    @IsString()
-    currentPassword?: string;
-    
-    @IsString()
-    newPassword?: string;
-    
-    @IsString()
-    confirmNewPassword?: string;
+  @IsString()
+  currentPassword?: string;
+
+  @IsString()
+  newPassword?: string;
+
+  @IsString()
+  confirmNewPassword?: string;
 }
 
-/* 
+/*
  * DTO: ChangePasswordDto
  * วัตถุประสงค์ : กำหนด schema ของ query สำหรับเปลี่ยนรหัสผ่าน
  * Input : req.body - currentPassword, newPassword, confirmNewPassword
@@ -431,11 +430,11 @@ export class ChangePasswordDto {
  * 400 - Error message
  */
 export const changePasswordDto = {
-    body: ChangePasswordDto,
+  body: ChangePasswordDto,
 } satisfies commonDto;
 
-/* 
- * คำอธิบาย : 
+/*
+ * คำอธิบาย :
  *   เปลี่ยนรหัสผ่านของผู้ใช้งาน
  * Input :
  *   - req.user.id : รหัสผู้ใช้ (number)
@@ -444,15 +443,17 @@ export const changePasswordDto = {
  *   - 200 OK พร้อมข้อมูลผู้ใช้ที่ถูกเปลี่ยนรหัสผ่าน
  *   - 400 Bad request
  */
-export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = async (req, res) => {
-    try {
-        const userId = Number(req?.user?.id);
-        const payload = req?.body
-        const result = await UserService.changePassword(userId, payload);
-        return createResponse(res, 200, "Change password successfully", result);
-    } catch (error) {
-        return createErrorResponse(res, 404, (error as Error).message);
-    }
+export const changePassword: TypedHandlerFromDto<
+  typeof changePasswordDto
+> = async (req, res) => {
+  try {
+    const userId = Number(req?.user?.id);
+    const payload = req?.body;
+    const result = await UserService.changePassword(userId, payload);
+    return createResponse(res, 200, "Change password successfully", result);
+  } catch (error) {
+    return createErrorResponse(res, 404, (error as Error).message);
+  }
 };
 /**
  * DTO : deleteCommunityMemberByIdDto
@@ -461,8 +462,8 @@ export const changePassword: TypedHandlerFromDto<typeof changePasswordDto> = asy
  * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
  * 400 - Error message
  */
-export const deleteCommunityMemberByIdDto = { 
-  params: IdParamDto 
+export const deleteCommunityMemberByIdDto = {
+  params: IdParamDto,
 } satisfies commonDto;
 
 /**
@@ -472,30 +473,34 @@ export const deleteCommunityMemberByIdDto = {
  */
 export const deleteCommunityMemberById: TypedHandlerFromDto<
   typeof deleteCommunityMemberByIdDto
-> = async (req, res) => { 
+> = async (req, res) => {
   try {
     const memberId = Number(req.params.userId);
     const deletedMember = await UserService.deleteCommunityMember(memberId);
-    return createResponse(res, 200, "Deleted community member successfully", deletedMember);
-  }
-  catch (caughtError) {
+    return createResponse(
+      res,
+      200,
+      "Deleted community member successfully",
+      deletedMember,
+    );
+  } catch (caughtError) {
     return createErrorResponse(res, 404, (caughtError as Error).message);
   }
-  };
+};
 
 /**
-* DTO: getMembersByAdminDto
-* วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงรายชื่อสมาชิก
-* Input : req.query.page, req.query.limit
-* Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
-* 400 - Error message
-*/
+ * DTO: getMembersByAdminDto
+ * วัตถุประสงค์ : กำหนด schema ของ query สำหรับดึงรายชื่อสมาชิก
+ * Input : req.query.page, req.query.limit
+ * Output : 200 - ข้อมูลรายการคำขอแพ็กเกจ
+ * 400 - Error message
+ */
 export const getMemberAllByAdminDto = {
   query: PaginationDto,
 } satisfies commonDto;
 
 /**
- * คำอธิบาย : 
+ * คำอธิบาย :
  *   แอดมินชุมชนดูรายชื่อสมาชิกทั้งหมดในชุมชนที่ตนดูแลได้
  * Input:
  *   - req.user : ข้อมูลผู้ใช้ที่ล็อกอิน
@@ -516,7 +521,7 @@ export const getMemberAllByAdmin: TypedHandlerFromDto<
     const memberData = await UserService.getMemberAllByAdmin(
       req.user,
       Number(page),
-      Number(limit)
+      Number(limit),
     );
 
     return createResponse(res, 200, "Members fetched successfully", memberData);
@@ -549,14 +554,16 @@ export const softDeleteCommunityMemberById: TypedHandlerFromDto<
 
     const memberId = Number(req.params.userId);
 
-    const deletedMember =
-      await UserService.softDeleteCommunityMemberByAdmin(req.user.id, memberId);
+    const deletedMember = await UserService.softDeleteCommunityMemberByAdmin(
+      req.user.id,
+      memberId,
+    );
 
     return createResponse(
       res,
       200,
       "Deleted community member successfully",
-      deletedMember
+      deletedMember,
     );
   } catch (caughtError) {
     return createErrorResponse(res, 404, (caughtError as Error).message);

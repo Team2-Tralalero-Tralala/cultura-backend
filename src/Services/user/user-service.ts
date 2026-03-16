@@ -15,7 +15,7 @@ import { createErrorResponse } from "~/Libs/createResponse.js";
 export async function getAccountAll(
   user: UserPayload,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<PaginationResponse<any>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
@@ -87,7 +87,7 @@ export async function getUserByStatus(
   user: UserPayload,
   status: UserStatus,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<PaginationResponse<any>> {
   const skip = (page - 1) * limit;
   const whereCondition: any = {};
@@ -231,7 +231,7 @@ export async function unblockAccount(userId: number): Promise<any> {
  */
 export async function createAccount(
   payload: any,
-  pathFile: string
+  pathFile: string,
 ): Promise<any> {
   const user = await prisma.user.create({
     data: {
@@ -257,7 +257,7 @@ export async function createAccount(
  */
 export async function updateProfileImage(
   userId: number,
-  pathFile: string
+  pathFile: string,
 ): Promise<any> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -288,7 +288,7 @@ export async function updateProfileImage(
  */
 export async function getMemberByAdmin(
   userId: number,
-  adminId: number
+  adminId: number,
 ): Promise<any> {
   const adminCommunities = await prisma.community.findMany({
     where: { adminId },
@@ -323,7 +323,8 @@ export async function getMemberByAdmin(
 
   const isMemberInCommunity =
     user.communityMembers?.some(
-      (member) => member.Community && communityIds.includes(member.Community.id)
+      (member) =>
+        member.Community && communityIds.includes(member.Community.id),
     ) ?? false;
 
   // if (!isMemberInCommunity) {
@@ -341,18 +342,40 @@ export async function getMemberByAdmin(
  * Output :
  *   - ข้อมูลผู้ใช้ที่อัปเดตรหัสผ่านแล้ว (ไม่รวม password)
  */
-export async function resetPassword(userId: number, newPassword: PasswordDto) {
+export async function resetPassword(
+  userId: number,
+  newPassword: PasswordDto,
+  user: UserPayload,
+) {
   // เข้ารหัสรหัสผ่านด้วย bcrypt
   const hashedPassword = await bcrypt.hash(newPassword.newPassword, 10);
+  if (user.role !== "superadmin" && user.role !== "admin")
+    throw new Error("คุณไม่มีสิทธิ์");
+  if (user.role === "admin") {
+    const isMemberInAdminCommunity = await prisma.communityMembers.findFirst({
+      where: {
+        memberId: userId,
+        isDeleted: false,
+        Community: {
+          adminId: user.id,
+          isDeleted: false,
+        },
+      },
+    });
+
+    if (!isMemberInAdminCommunity) {
+      throw new Error("คุณสามารถแก้ไขได้เฉพาะสมาชิกในชุมชนของตนเองเท่านั้น");
+    }
+  }
 
   // อัปเดตรหัสผ่านใหม่ในฐานข้อมูล
-  const user = await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: { password: hashedPassword },
     select: { id: true, email: true, role: true },
   });
 
-  return user;
+  return updatedUser;
 }
 
 /*
@@ -383,7 +406,7 @@ export async function changePassword(userId: number, payload: any) {
 
   const isPasswordCorrect = await bcrypt.compare(
     currentPassword,
-    dataInDb.password
+    dataInDb.password,
   );
   if (!isPasswordCorrect) throw new Error("Invalid current password");
 
@@ -432,7 +455,7 @@ export async function deleteCommunityMember(memberId: number) {
 export async function getMemberAllByAdmin(
   user: UserPayload,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<PaginationResponse<any>> {
   const skip = (page - 1) * limit;
 
@@ -503,7 +526,7 @@ export async function getMemberAllByAdmin(
  */
 export async function softDeleteCommunityMemberByAdmin(
   adminId: number,
-  memberId: number
+  memberId: number,
 ) {
   const target = await prisma.communityMembers.findFirst({
     where: {
