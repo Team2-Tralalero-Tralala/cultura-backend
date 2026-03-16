@@ -179,7 +179,7 @@ export async function searchPackagesAndCommunities(
     });
   }
 
-  // เพิ่มเงื่อนไขช่วงวันที่ (กรองจาก startDate ของแพ็กเกจ)
+  // เพิ่มเงื่อนไขช่วงวันที่ให้แพ็กเกจ "เริ่มและจบ" อยู่ภายในช่วงที่ค้นหา
   if (startDateFilter) {
     andConditions.push({
       startDate: {
@@ -190,7 +190,7 @@ export async function searchPackagesAndCommunities(
 
   if (endDateFilter) {
     andConditions.push({
-      startDate: {
+      dueDate: {
         lte: endDateFilter,
       },
     });
