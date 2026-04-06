@@ -7,6 +7,7 @@ import {
   CommunityStatus,
   PackageApproveStatus,
   PackagePublishStatus,
+  BookingStatus,
 } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
@@ -772,24 +773,26 @@ export async function getCommunityDetailByMember(userId: number) {
 }
 /*
  * คำอธิบาย :
- *  - ดึงรายละเอียดชุมชนสำหรับหน้า public (guest / tourist)
- *  - ชุมชนต้อง OPEN และไม่ถูกลบ
- *  - package ต้อง PUBLISH + APPROVE และไม่ถูกลบ
- *  - homestay / store ต้องไม่ถูกลบ
- *  - ดึง tag ของ package / homestay / store มาด้วย
+ * - ดึงรายละเอียดชุมชนสำหรับหน้า public (guest / tourist)
+ * - ชุมชนต้อง OPEN และไม่ถูกลบ
+ * - package ต้อง PUBLISH + APPROVE และไม่ถูกลบ
+ * - package ต้องยังไม่เลยกำหนดเวลาปิดจอง และเปิดให้จองแล้ว
+ * - package ต้องมีจำนวนที่นั่งเหลือ (ไม่เต็ม)
+ * - homestay / store ต้องไม่ถูกลบ
+ * - ดึง tag ของ package / homestay / store มาด้วย
  *
  * Input:
- *  - communityId   : number  (รหัสชุมชน)
- *  - packagePage   : number  (หน้าของแพ็กเกจ)
- *  - packageLimit  : number  (จำนวนแพ็กเกจต่อหน้า)
- *  - homestayPage  : number  (หน้าของที่พัก)
- *  - homestayLimit : number  (จำนวนที่พักต่อหน้า)
- *  - storePage     : number  (หน้าของร้านค้า)
- *  - storeLimit    : number  (จำนวนร้านค้าต่อหน้า)
+ * - communityId   : number  (รหัสชุมชน)
+ * - packagePage   : number  (หน้าของแพ็กเกจ)
+ * - packageLimit  : number  (จำนวนแพ็กเกจต่อหน้า)
+ * - homestayPage  : number  (หน้าของที่พัก)
+ * - homestayLimit : number  (จำนวนที่พักต่อหน้า)
+ * - storePage     : number  (หน้าของร้านค้า)
+ * - storeLimit    : number  (จำนวนร้านค้าต่อหน้า)
  *
  * Output:
- *  - ข้อมูลรายละเอียดชุมชน
- *  - รายการแพ็กเกจ / ที่พัก / ร้านค้า พร้อมข้อมูล pagination
+ * - ข้อมูลรายละเอียดชุมชน
+ * - รายการแพ็กเกจ / ที่พัก / ร้านค้า พร้อมข้อมูล pagination
  */
 export async function getCommunityDetailPublic(params: {
   communityId: number;
@@ -856,12 +859,30 @@ export async function getCommunityDetailPublic(params: {
   const homestaySkip = (homestayPage - 1) * homestayLimit;
   const storeSkip = (storePage - 1) * storeLimit;
 
+  // 1. ตัวแปรเวลาปัจจุบัน สำหรับเช็คเปิด/ปิดจอง
+  const now = new Date();
+
+  // 2. เพิ่มเงื่อนไขเวลาใน Where
   const packageWhere = {
     communityId,
     isDeleted: false,
     deleteAt: null,
     statusPackage: PackagePublishStatus.PUBLISH,
     statusApprove: PackageApproveStatus.APPROVE,
+    AND: [
+      {
+        OR: [
+          { bookingCloseDate: { gt: now } }, // ยังไม่ถึงเวลาปิดจอง
+          { bookingCloseDate: null }         // หรือไม่ได้กำหนดเวลาปิด
+        ]
+      },
+      {
+        OR: [
+          { bookingOpenDate: { lte: now } }, // ถึงเวลาเปิดจองแล้ว
+          { bookingOpenDate: null }          // หรือไม่ได้กำหนดเวลาเปิด
+        ]
+      }
+    ]
   };
 
   const homestayWhere = { communityId, isDeleted: false, deleteAt: null };
@@ -882,6 +903,17 @@ export async function getCommunityDetailPublic(params: {
           packageFile: true,
           tagPackages: {
             include: { tag: true },
+          },
+          // ดึงประวัติการจองมาเพื่อนับจำนวนคน
+          bookingHistories: {
+            where: {
+              status: {
+                in: [BookingStatus.BOOKED, BookingStatus.PENDING],
+              },
+            },
+            select: {
+              totalParticipant: true,
+            },
           },
         },
       }),
@@ -913,14 +945,40 @@ export async function getCommunityDetailPublic(params: {
       }),
     ]);
 
+  // 3. กรองแพ็กเกจที่คนเต็มออก และแนบยอด bookedCount ไปให้ FE
+  const availablePackages = packages
+    .filter((pkg) => {
+      if (!pkg.capacity) return true; // ถ้าไม่ได้จำกัดคน ให้ผ่านเลย
+
+      const currentParticipants = pkg.bookingHistories.reduce(
+        (sum, booking) => sum + booking.totalParticipant,
+        0
+      );
+
+      return currentParticipants < pkg.capacity; // คืนค่าเฉพาะที่ยังไม่เต็ม
+    })
+    .map((pkg) => {
+      // คำนวณยอดจองเพื่อส่งไปให้ Frontend แสดงผล
+      const currentParticipants = pkg.bookingHistories.reduce(
+        (sum, booking) => sum + booking.totalParticipant,
+        0
+      );
+      
+      const { bookingHistories, ...rest } = pkg;
+      return {
+        ...rest,
+        bookedCount: currentParticipants // FE จะเอาค่านี้ไปโชว์ใน Card ได้เลย
+      };
+    });
+
   return {
     community,
     packages: {
-      data: packages,
+      data: availablePackages,
       pagination: {
         currentPage: packagePage,
         totalPages: Math.ceil(packageTotal / packageLimit),
-        totalCount: packageTotal,
+        totalCount: packageTotal, // ตรงนี้ถ้ายากเป๊ะจริงๆ ต้องเปลี่ยนไปนับจาก availablePackages ที่กรองแล้ว แต่ถ้าข้อมูลไม่เยอะมากใช้ค่านี้ได้
         limit: packageLimit,
       },
     },
